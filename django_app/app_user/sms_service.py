@@ -1,21 +1,22 @@
 import requests
 import uuid  # Unikal ID yaratish uchun
-
+import os
+from dotenv import load_dotenv
 def send_sms(phone, sms_code):
-    url = "http://sms.etc.uz:8084/single-sms"
+    url = os.getenv("SMS_URL")
     headers = {
         "Content-Type": "application/json"
     }
 
     data = {
         "header": {
-            "login": "sms0255ts",
-            "pwd": "09enUC",
+            "login": os.getenv("SMS_LOGIN"),
+            "pwd": os.getenv("SMS_PASSWORD"),
             "CgPN": "IQMATH"
         },
         "body": {
-            "message_id_in": str(uuid.uuid4()),  # Unikal message_id_in
-            "CdPN": phone,  # Telefon raqamini to'g'rilang
+            "message_id_in": str(uuid.uuid4()),  
+            "CdPN": phone, 
             "text": f"IQMATH.UZ Saytidan ro‘yxatdan o‘tish uchun. Diqqat, kodni hech kimga aytmang. "
                     f"Dlya registratsii na sayte IQMATH.UZ. Vnimanie, ne soobshayte kod nikomu. Kod: {sms_code}"
         }
@@ -27,15 +28,15 @@ def send_sms(phone, sms_code):
     return response.status_code == 200  # True agar muvaffaqiyatli bo‘lsa
 
 def send_sms_resend(phone, sms_code):
-    url = "http://sms.etc.uz:8084/single-sms"
+    url = os.getenv("SMS_URL")
     headers = {
         "Content-Type": "application/json"
     }
 
     data = {
         "header": {
-            "login": "sms0255ts",
-            "pwd": "09enUC",
+            "login": os.getenv("SMS_LOGIN"),
+            "pwd": os.getenv("SMS_PASSWORD"),
             "CgPN": "IQMATH"
         },
         "body": {
