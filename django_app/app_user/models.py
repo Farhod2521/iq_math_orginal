@@ -65,7 +65,7 @@ class Student(models.Model):
     
 
 class Teacher(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='student_profile')
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='teacher_profile') 
     full_name = models.CharField(max_length=200)
     region = models.CharField(max_length=200)
     districts = models.CharField(max_length=200)
@@ -78,3 +78,50 @@ class Teacher(models.Model):
 
     def __str__(self):
         return self.full_name
+    
+
+
+class UserSMSAttempt(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sms_attempts')
+    created_at = models.DateTimeField(auto_now_add=True)
+    wrong_attempts = models.IntegerField(default=0)
+
+    @staticmethod
+    def can_send_sms(user):
+        """
+        Ushbu metod foydalanuvchi yana SMS kod olishi mumkinligini tekshiradi.
+        Agar SMS olish uchun kutish vaqti bo‘lsa, qolgan kutish vaqtini qaytaradi.
+        """
+        attempts = UserSMSAttempt.objects.filter(user=user).order_by('created_at')
+
+        if attempts.count() < 3:
+            return True, None  # Dastlabki 3 ta SMS cheklovsiz ketadi
+        
+        last_attempt = attempts.last()
+        attempt_count = attempts.count()
+
+        if attempt_count == 3:
+            wait_time = 5 * 60  # 5 daqiqa
+        elif attempt_count == 4:
+            wait_time = 30 * 60  # 30 daqiqa
+        else:
+            wait_time = (2 ** (attempt_count - 3)) * 60  # Har safar 2 baravar ortadi
+
+        # Agar kutish vaqti o‘tmagan bo‘lsa
+        if now() - last_attempt.created_at < timedelta(seconds=wait_time):
+            remaining_time = timedelta(seconds=wait_time) - (now() - last_attempt.created_at)
+            return False, remaining_time
+
+        return True, None
+
+    @staticmethod
+    def register_attempt(user, wrong=False):
+        """
+        Foydalanuvchiga SMS yuborishdan oldin ushbu metod orqali urinishni ro‘yxatga olish.
+        wrong=True bo‘lsa, urinish noto‘g‘ri kiritilgan hisoblanadi.
+        """
+        attempt = UserSMSAttempt.objects.create(user=user)
+        if wrong:
+            attempt.wrong_attempts += 1
+            attempt.save()
+
