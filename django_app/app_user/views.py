@@ -23,6 +23,13 @@ User = get_user_model()
 
 
 
+class RegisterStudentAPIView(APIView):
+    def post(self, request, *args, **kwargs):
+        serializer = StudentRegisterSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "Telefon raqamga SMS kodi yuborildi. Kodni tasdiqlang."}, status=status.HTTP_200_OK)
+        return Response({"errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ForgotPasswordView(APIView):
