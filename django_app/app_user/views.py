@@ -315,28 +315,14 @@ class VerifySmsCodeAPIView(APIView):
             except Student.DoesNotExist:
                 return Response({"detail": "Student profile not found."}, status=status.HTTP_404_NOT_FOUND)
 
-            # **Eski sessiyalarni o‘chirish**
-            UserSession.objects.filter(user=user).delete()
 
-            # **JWT Token yaratish**
             refresh = RefreshToken.for_user(user)
             access_token = refresh.access_token
             access_token.set_exp(lifetime=timedelta(hours=3))
             access_token['student_id'] = student.id
             expires_in = timedelta(hours=3).total_seconds()
 
-            # **Foydalanuvchining qurilma ma’lumotlarini olish**
-            device = request.headers.get('User-Agent', 'Unknown Device')
-            ip_address = request.META.get('REMOTE_ADDR', '0.0.0.0')
-
-            # **Yangi sessiyani yaratish**
-            user_session = UserSession.objects.create(
-                user=user,
-                device=device,
-                browser=device,  # Agar alohida browser olish bo'lsa, user-agentdan parsing qilish kerak
-                ip_address=ip_address,
-                token=str(access_token)  # Tokenni saqlash
-            )
+      
 
             return Response({
                 "message": "Ro'yxatdan o'tish muvaffaqiyatli yakunlandi.",
@@ -344,7 +330,6 @@ class VerifySmsCodeAPIView(APIView):
                 "password": serializer.validated_data['password'],
                 "access_token": str(access_token),
                 "expires_in": expires_in,
-                "user_session_id": user_session.id
             }, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
