@@ -60,13 +60,14 @@ CACHES = {
 }
 ROOT_URLCONF = 'config.urls'
 CORS_ALLOW_ALL_ORIGINS = True
-CORS_ALLOWED_ORIGINS = [
-    "https://tmsiti.uz", 
-    "https://tmsiti.vercel.app",
-    "http://127.0.0.1:5500",
+# CORS_ALLOWED_ORIGINS = [
+#     "https://tmsiti.uz", 
+#     "https://tmsiti.vercel.app",
+#     "http://127.0.0.1:5500",
+#     "http://localhost:3000",
 
 
-]
+# ]
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
