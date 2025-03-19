@@ -24,6 +24,8 @@ schema_view = get_schema_view(
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/v1/auth/', include("django_app.app_user.urls")),
+    path('api/v1/func_teacher/', include("django_app.app_teacher.urls")),
+    path('api/v1/func_student/', include("django_app.app_student.urls")),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='swagger-docs'),
 ]
 
