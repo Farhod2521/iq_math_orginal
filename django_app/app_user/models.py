@@ -39,6 +39,7 @@ class User(AbstractUser):
 
     USERNAME_FIELD = 'phone' 
     REQUIRED_FIELDS = []  
+    objects = UserManager()  
 
     def __str__(self):
         return f'{self.phone} - {self.role}'
