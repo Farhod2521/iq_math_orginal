@@ -28,57 +28,80 @@ class UserManager(BaseUserManager):
 
 class User(AbstractUser):
     username = None  # username maydonini o‘chirish
-    phone = models.CharField(max_length=15, unique=True)
+    phone = models.CharField(max_length=15, unique=True, verbose_name="Telefon raqam")
     role = models.CharField(
         max_length=10,
         choices=[('student', 'Student'), ('teacher', 'Teacher'), ('admin', 'Admin')],
-        default='student'
+        default='student',
+        verbose_name="Foydalanuvchi roli"
     )
-    sms_code = models.CharField(max_length=6, blank=True, null=True)
+    sms_code = models.CharField(max_length=6, blank=True, null=True, verbose_name="SMS kod")
 
     USERNAME_FIELD = 'phone' 
     REQUIRED_FIELDS = []  
 
-    objects = UserManager()  
-
     def __str__(self):
         return f'{self.phone} - {self.role}'
 
+    class Meta:
+        verbose_name = "Foydalanuvchi"
+        verbose_name_plural = "Foydalanuvchilar"
+
+
+class Class(models.Model):
+    name = models.CharField(max_length=20, unique=True, verbose_name="Sinf nomi")  # Masalan, "5", "6", "7"
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = "Sinf"
+        verbose_name_plural = "Sinflar"
+
+
 class Student(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='student_profile')
-    full_name = models.CharField(max_length=200)
-    region = models.CharField(max_length=200)
-    districts = models.CharField(max_length=200)
-    address = models.CharField(max_length=500)
-    brithday = models.CharField(max_length=20)
-    academy_or_school = models.CharField(max_length=200)
-    academy_or_school_name = models.CharField(max_length=500)
-    class_name = models.CharField(max_length=20)
-    document_type  = models.CharField(max_length=50)
-    document  =  models.CharField(max_length=20)
-    type_of_education =  models.CharField(max_length=200)
-    status = models.BooleanField(default=False)
-    student_date = models.DateTimeField(auto_now=True, null=True)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='student_profile', verbose_name="Foydalanuvchi")
+    full_name = models.CharField(max_length=200, verbose_name="To‘liq ism")
+    region = models.CharField(max_length=200, verbose_name="Viloyat")
+    districts = models.CharField(max_length=200, verbose_name="Tuman")
+    address = models.CharField(max_length=500, verbose_name="Manzil")
+    brithday = models.CharField(max_length=20, verbose_name="Tug‘ilgan kun")
+    academy_or_school = models.CharField(max_length=200, verbose_name="Akademiya yoki maktab")
+    academy_or_school_name = models.CharField(max_length=500, verbose_name="Muassasa nomi")
+    class_name = models.ForeignKey(Class, on_delete=models.SET_NULL, null=True, related_name='students', verbose_name="Sinf")
+    document_type = models.CharField(max_length=50, verbose_name="Hujjat turi")
+    document = models.CharField(max_length=20, verbose_name="Hujjat raqami")
+    type_of_education = models.CharField(max_length=200, verbose_name="Ta’lim turi")
+    status = models.BooleanField(default=False, verbose_name="Holat")
+    student_date = models.DateTimeField(auto_now=True, null=True, verbose_name="Ro‘yxatdan o‘tgan sana")
 
     def __str__(self):
         return self.full_name
-    
+
+    class Meta:
+        verbose_name = "O‘quvchi"
+        verbose_name_plural = "O‘quvchilar"
+
 
 class Teacher(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='teacher_profile') 
-    full_name = models.CharField(max_length=200)
-    region = models.CharField(max_length=200)
-    districts = models.CharField(max_length=200)
-    address = models.CharField(max_length=500)
-    brithday = models.CharField(max_length=20)
-    document_type  = models.CharField(max_length=50)
-    document  =  models.CharField(max_length=20)
-    status = models.BooleanField(default=False)
-    teacher_date = models.DateTimeField(auto_now=True, null=True)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='teacher_profile', verbose_name="Foydalanuvchi") 
+    full_name = models.CharField(max_length=200, verbose_name="To‘liq ism")
+    region = models.CharField(max_length=200, verbose_name="Viloyat")
+    districts = models.CharField(max_length=200, verbose_name="Tuman")
+    address = models.CharField(max_length=500, verbose_name="Manzil")
+    brithday = models.CharField(max_length=20, verbose_name="Tug‘ilgan kun")
+    document_type = models.CharField(max_length=50, verbose_name="Hujjat turi")
+    document = models.CharField(max_length=20, verbose_name="Hujjat raqami")
+    status = models.BooleanField(default=False, verbose_name="Holat")
+    is_verified_teacher = models.BooleanField(default=False, verbose_name="O‘qituvchi")
+    teacher_date = models.DateTimeField(auto_now=True, null=True, verbose_name="Ro‘yxatdan o‘tgan sana")
 
     def __str__(self):
         return self.full_name
-    
+
+    class Meta:
+        verbose_name = "O‘qituvchi"
+        verbose_name_plural = "O‘qituvchilar"
 
 
 class UserSMSAttempt(models.Model):

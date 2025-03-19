@@ -1,8 +1,11 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .serializers import StudentRegisterSerializer, VerifySmsCodeSerializer, LoginSerializer, StudentProfileSerializer
-from .models import Student, UserSMSAttempt  
+from .serializers import (
+StudentRegisterSerializer, VerifySmsCodeSerializer, 
+LoginSerializer, StudentProfileSerializer, TeacherRegisterSerializer, Class_Serializer
+)
+from .models import Student, UserSMSAttempt, Teacher, Class
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.settings import api_settings
 from datetime import timedelta
@@ -23,6 +26,44 @@ User = get_user_model()
 
 
 
+
+
+
+
+##############################################################
+###################     CLASS NAME LIST VIEW    ##############
+##############################################################
+class ClassListView(ListAPIView):
+    queryset = Class.objects.all()
+    serializer_class = Class_Serializer
+
+
+
+
+
+
+
+
+##############################################################
+###################     TEACHERS    REGISTER   ###############
+##############################################################
+
+class RegisterTeacherAPIView(APIView):
+    def post(self, request, *args, **kwargs):
+        serializer = TeacherRegisterSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
+                {"message": "Telefon raqamga SMS kodi yuborildi. Kodni tasdiqlang."},
+                status=status.HTTP_200_OK
+            )
+        return Response({"errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+##############################################################
+###################     STUNDENT    REGISTER   ###############
+##############################################################
 class RegisterStudentAPIView(APIView):
     def post(self, request, *args, **kwargs):
         serializer = StudentRegisterSerializer(data=request.data)
@@ -30,6 +71,92 @@ class RegisterStudentAPIView(APIView):
             serializer.save()
             return Response({"message": "Telefon raqamga SMS kodi yuborildi. Kodni tasdiqlang."}, status=status.HTTP_200_OK)
         return Response({"errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+##############################################################
+###################     TEACHER     VERIFY SMS   #############
+##############################################################
+
+class TeacherVerifySmsCodeAPIView(APIView):
+    def post(self, request, *args, **kwargs):
+        serializer = VerifySmsCodeSerializer(data=request.data)
+
+        if serializer.is_valid():
+            user = serializer.validated_data["user"]
+
+            try:
+                teacher = Teacher.objects.get(user=user)
+            except Teacher.DoesNotExist:
+                return Response({"detail": "Teacher profile not found."}, status=status.HTTP_404_NOT_FOUND)
+
+
+            refresh = RefreshToken.for_user(user)
+            access_token = refresh.access_token
+            access_token.set_exp(lifetime=timedelta(hours=13))
+            access_token['teacher_id'] = teacher.id
+            expires_in = timedelta(hours=13).total_seconds()
+
+      
+
+            return Response({
+                "message": "Ro'yxatdan o'tish muvaffaqiyatli yakunlandi.",
+                "login": serializer.validated_data['phone'],
+                "password": serializer.validated_data['password'],
+                "access_token": str(access_token),
+                "expires_in": expires_in,
+            }, status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+##############################################################
+###################     STUNDENT    VERIFY SMS   #############
+##############################################################
+class StudentVerifySmsCodeAPIView(APIView):
+    def post(self, request, *args, **kwargs):
+        serializer = VerifySmsCodeSerializer(data=request.data)
+
+        if serializer.is_valid():
+            user = serializer.validated_data["user"]
+
+            try:
+                student = Student.objects.get(user=user)
+            except Student.DoesNotExist:
+                return Response({"detail": "Student profile not found."}, status=status.HTTP_404_NOT_FOUND)
+
+
+            refresh = RefreshToken.for_user(user)
+            access_token = refresh.access_token
+            access_token.set_exp(lifetime=timedelta(hours=13))
+            access_token['student_id'] = student.id
+            expires_in = timedelta(hours=13).total_seconds()
+
+      
+
+            return Response({
+                "message": "Ro'yxatdan o'tish muvaffaqiyatli yakunlandi.",
+                "login": serializer.validated_data['phone'],
+                "password": serializer.validated_data['password'],
+                "access_token": str(access_token),
+                "expires_in": expires_in,
+            }, status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class ForgotPasswordView(APIView):
@@ -303,36 +430,7 @@ class StudentsListView(APIView):
 
 
 
-class VerifySmsCodeAPIView(APIView):
-    def post(self, request, *args, **kwargs):
-        serializer = VerifySmsCodeSerializer(data=request.data)
 
-        if serializer.is_valid():
-            user = serializer.validated_data["user"]
-
-            try:
-                student = Student.objects.get(user=user)
-            except Student.DoesNotExist:
-                return Response({"detail": "Student profile not found."}, status=status.HTTP_404_NOT_FOUND)
-
-
-            refresh = RefreshToken.for_user(user)
-            access_token = refresh.access_token
-            access_token.set_exp(lifetime=timedelta(hours=3))
-            access_token['student_id'] = student.id
-            expires_in = timedelta(hours=3).total_seconds()
-
-      
-
-            return Response({
-                "message": "Ro'yxatdan o'tish muvaffaqiyatli yakunlandi.",
-                "login": serializer.validated_data['phone'],
-                "password": serializer.validated_data['password'],
-                "access_token": str(access_token),
-                "expires_in": expires_in,
-            }, status=status.HTTP_201_CREATED)
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 

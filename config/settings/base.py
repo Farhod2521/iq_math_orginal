@@ -7,6 +7,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 SECRET_KEY = 'django-insecure-qt_8=(jct5oh3csd@rq&ns*7mph&3k%xrja7n%m!@+m97@d!n='
 
 INSTALLED_APPS = [
+    "jazzmin",
+    'modeltranslation',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -25,6 +27,8 @@ INSTALLED_APPS = [
 
     ############## APP ###############
     "django_app.app_user",
+    "django_app.app_teacher",
+    "django_app.app_student",
 ]
 
 MIDDLEWARE = [
@@ -102,10 +106,22 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'UTC'
+LANGUAGE_CODE = 'uz'
+
+TIME_ZONE = 'Asia/Tashkent'
+
 USE_I18N = True
-USE_TZ = True
+USE_L10N = True
+
+LANGUAGES = (
+    ('uz', 'Uzbek'),
+    ('ru', 'Russion'),
+)
+
+LOCALE_PATHS = [
+    BASE_DIR / 'locale/',
+]
+MODELTRANSLATION_DEFAULT_LANGUAGE = 'uz'
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
