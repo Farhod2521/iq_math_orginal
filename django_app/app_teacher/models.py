@@ -16,8 +16,8 @@ class Subject(models.Model):
     name = models.CharField(max_length=200, verbose_name="Fan nomi")
     image = models.ImageField(upload_to="FILES/Subject", blank=True, null=True)
     teachers = models.ManyToManyField(Teacher, related_name="subjects", verbose_name="O‘qituvchilar")
-    classes = models.ForeignKey(Class, on_delete=models.SET_NULL, related_name="subjects", verbose_name="Sinf")
-    category = models.ForeignKey(Subject_Category, on_delete=models.SET_NULL, related_name="subjects", verbose_name="Fan bo'limi")
+    classes = models.ForeignKey(Class, on_delete=models.SET_NULL, related_name="subjects", verbose_name="Sinf", null=True)
+    category = models.ForeignKey(Subject_Category, on_delete=models.SET_NULL, related_name="subjects", verbose_name="Fan bo'limi", null=True)
 
     def __str__(self):
         return f"{self.name} - {self.classes.name}"
@@ -28,7 +28,7 @@ class Subject(models.Model):
 
 class Chapter(models.Model):
     name = models.CharField(max_length=500, verbose_name="Bob nomi")
-    subject = models.ForeignKey(Subject,on_delete=models.SET_NULL,related_name="chapters",verbose_name="Tegishli fan")
+    subject = models.ForeignKey(Subject,on_delete=models.SET_NULL,related_name="chapters",verbose_name="Tegishli fan", null=True )
 
     def __str__(self):
         return self.name
