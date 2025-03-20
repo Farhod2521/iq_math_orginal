@@ -3,7 +3,8 @@ from modeltranslation.admin import TranslationAdmin
 
 from .models import Subject, Topic, Question, Chapter, Subject_Category
 
-@admin.site.register(Subject_Category)
+admin.site.register(Subject_Category)
+
 @admin.register(Subject)
 class SubjectAdmin(TranslationAdmin):
     list_display = ('name', )
