@@ -52,7 +52,7 @@ class Question(models.Model):
     topic = models.ForeignKey(Topic, on_delete=models.CASCADE, related_name="questions", verbose_name="Tegishli mavzu")
     question_text = RichTextField(verbose_name="Savol matni")
     correct_answer = RichTextField(verbose_name="To‘g‘ri javob")
-    level = models.PositiveIntegerField(vebose_name="Savol darajasi")
+    level = models.PositiveIntegerField(verbose_name="Savol darajasi")
 
 
     def __str__(self):
