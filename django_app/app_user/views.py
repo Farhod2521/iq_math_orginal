@@ -370,7 +370,7 @@ class StudentProfileAPIView(APIView):
                 'brithday': student.brithday,
                 'academy_or_school': student.academy_or_school,
                 'academy_or_school_name': student.academy_or_school_name,
-                'class_name': student.class_name,
+                'class_name': student.class_name.name,
                 'address': student.address,
                 'document_type': student.document_type,
                 'document': student.document,
