@@ -1,5 +1,5 @@
 from modeltranslation.translator import translator, TranslationOptions
-from .models import Subject, Topic, Question
+from .models import Subject, Topic, Question, Chapter
 
 class SubjectTranslationOptions(TranslationOptions):
     fields = ('name',)
@@ -7,7 +7,9 @@ class SubjectTranslationOptions(TranslationOptions):
 translator.register(Subject, SubjectTranslationOptions)
 
 
-
+class ChapterTranslationOptions(TranslationOptions):
+    fields = ('name',)
+translator.register(Chapter, ChapterTranslationOptions)
 
 class TopicTranslationOptions(TranslationOptions):
     fields = ('name',)
