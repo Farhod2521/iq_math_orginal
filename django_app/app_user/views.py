@@ -498,7 +498,7 @@ class LoginAPIView(APIView):
                 "address": student.address,
                 "brithday": student.brithday,
                 "academy_or_school": student.academy_or_school,
-                "class_name": student.class_name,
+                "class_name": student.class_name.name,
                 "role": user.role,
                 "status": student.status,
                 "access_token": str(access_token),
