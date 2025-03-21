@@ -18,7 +18,14 @@ class ChapterAdmin(TranslationAdmin):
 class TopicAdmin(TranslationAdmin):
     list_display = ('name', )
 
-
+from django.utils.safestring import mark_safe
 @admin.register(Question)
 class QuestionAdmin(TranslationAdmin):
-    list_display = ('id', "question_text" )
+    list_display = ("id", "question_text")
+
+    def question_text(self, obj):
+        return mark_safe(obj.question_text_uz)
+
+    class Media:
+        js = ('https://polyfill.io/v3/polyfill.min.js?features=es6', 
+              'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js')
