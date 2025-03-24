@@ -7,7 +7,8 @@ from .serializers import SubjectSerializer
 import random
 from django.db.models import Q
 from collections import defaultdict
-
+from bs4 import BeautifulSoup  # HTML teglarini tozalash uchun
+from django.utils.html import strip_tags
 
 class MySubjectsView(APIView):
     permission_classes = [IsAuthenticated]
@@ -99,7 +100,11 @@ class CheckAnswersAPIView(APIView):
             except Question.DoesNotExist:
                 continue  # Noto‘g‘ri yoki mavjud bo‘lmagan savollarni e'tiborsiz qoldiramiz
 
-            if question.correct_answer.strip().lower() == user_answer.strip().lower():
+            # HTML teglarini olib tashlash
+            correct_answer_text = strip_tags(question.correct_answer).strip().lower()
+            user_answer_text = strip_tags(user_answer).strip().lower()
+
+            if correct_answer_text == user_answer_text:
                 correct_count += 1
             else:
                 incorrect_count += 1
