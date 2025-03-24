@@ -6,7 +6,7 @@ from django_app.app_user.models import Student, Class
 from .serializers import SubjectSerializer
 import random
 from django.db.models import Q
-
+from collections import defaultdict
 
 
 class MySubjectsView(APIView):
@@ -78,3 +78,41 @@ class GenerateTestAPIView(APIView):
         ]
 
         return Response({"questions": data})
+    
+
+class CheckAnswersAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user_answers = request.data.get("answers", {})  # Foydalanuvchidan kelgan javoblar
+
+        if not user_answers:
+            return Response({"message": "Javoblar taqdim etilmagan"}, status=400)
+
+        correct_count = 0
+        incorrect_count = 0
+        incorrect_topics = defaultdict(set)
+
+        for question_id, user_answer in user_answers.items():
+            try:
+                question = Question.objects.get(id=question_id)
+            except Question.DoesNotExist:
+                continue  # Noto‘g‘ri yoki mavjud bo‘lmagan savollarni e'tiborsiz qoldiramiz
+
+            if question.correct_answer.strip().lower() == user_answer.strip().lower():
+                correct_count += 1
+            else:
+                incorrect_count += 1
+                incorrect_topics[question.topic.chapter.name].add(question.topic.name)
+
+        # Xato qilingan mavzularni tuzib chiqamiz
+        recommended_topics = [
+            {"chapter": chapter, "topics": list(topics)}
+            for chapter, topics in incorrect_topics.items()
+        ]
+
+        return Response({
+            "correct": correct_count,
+            "incorrect": incorrect_count,
+            "recommendations": recommended_topics
+        })
