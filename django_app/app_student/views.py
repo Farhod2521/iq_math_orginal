@@ -28,12 +28,21 @@ class MySubjectsView(APIView):
 class GenerateTestAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
+    def post(self, request):
         student = request.user.student_profile  
         current_class = student.class_name
+        level = request.data.get("level")  # POST so‘rov orqali level qabul qilinadi
 
         if not current_class:
             return Response({"message": "Sinf topilmadi"}, status=400)
+
+        if level is None:
+            return Response({"message": "Level ko‘rsatilmagan"}, status=400)
+
+        try:
+            level = int(level)  # Levelni int formatga o‘tkazamiz
+        except ValueError:
+            return Response({"message": "Level noto‘g‘ri formatda"}, status=400)
 
         lower_class = Class.objects.filter(id=current_class.id - 1).first()
         if not lower_class:
@@ -53,7 +62,7 @@ class GenerateTestAPIView(APIView):
 
             for chapter in chapters:
                 chapter_questions = list(
-                    Question.objects.filter(topic__chapter=chapter, level=1)
+                    Question.objects.filter(topic__chapter=chapter, level=level)
                 )
                 if chapter_questions:
                     selected_questions = random.sample(
