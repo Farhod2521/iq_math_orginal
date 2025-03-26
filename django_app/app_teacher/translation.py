@@ -12,7 +12,7 @@ class ChapterTranslationOptions(TranslationOptions):
 translator.register(Chapter, ChapterTranslationOptions)
 
 class TopicTranslationOptions(TranslationOptions):
-    fields = ('name',)
+    fields = ('name','content',)
 
 translator.register(Topic, TopicTranslationOptions)
 

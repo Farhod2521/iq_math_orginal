@@ -2,7 +2,7 @@ from django.contrib import admin
 from modeltranslation.admin import TranslationAdmin
 from django.utils.safestring import mark_safe
 
-from .models import Subject, Topic, Question, Chapter, Subject_Category
+from .models import Subject, Topic, Question, Chapter, Subject_Category, QuestionImage
 
 
 @admin.register(Subject_Category)
@@ -55,3 +55,6 @@ class QuestionAdmin(TranslationAdmin):
     class Media:
         js = ('https://polyfill.io/v3/polyfill.min.js?features=es6',
               'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js')
+
+
+admin.site.register(QuestionImage)
