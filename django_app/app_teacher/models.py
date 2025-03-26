@@ -61,7 +61,7 @@ class Question(models.Model):
     topic = models.ForeignKey("Topic", on_delete=models.CASCADE, related_name="questions", verbose_name="Tegishli mavzu")
     question_text = RichTextField(verbose_name="Savol matni")
     question_type = models.CharField(max_length=20, choices=QUESTION_TYPES, verbose_name="Savol turi")
-    correct_answer = models.TextField(verbose_name="To‘g‘ri javob", blank=True, null=True)
+    correct_answer = RichTextField(verbose_name="To‘g‘ri javob", blank=True, null=True)
     level = models.PositiveIntegerField(verbose_name="Savol darajasi")
     choices = models.JSONField(blank=True, null=True, verbose_name="Variantlar")
 
