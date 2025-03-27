@@ -71,12 +71,7 @@ class TeacherRegisterSerializer(serializers.Serializer):
     brithday = serializers.CharField(required=True)
     document_type = serializers.CharField(required=True)
     document = serializers.CharField(required=True)
-    classes = serializers.SlugRelatedField(
-        queryset=Class.objects.all(),
-        slug_field="name",
-        many=True,  # Ko'p sinf tanlash uchun
-        required=True
-    )
+
 
     def validate_user_data(self, email, phone):
         """Foydalanuvchi ma'lumotlarini tekshirish"""
