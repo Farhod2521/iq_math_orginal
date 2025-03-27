@@ -59,8 +59,98 @@ class RegisterTeacherAPIView(APIView):
             )
         return Response({"errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
+##############################################################
+###################     TEACHERS    LOGIN     ###############
+##############################################################
+class TeacherLoginAPIView(APIView):
+    def post(self, request, *args, **kwargs):
+        serializer = LoginSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.validated_data["user"]
+
+            try:
+                teacher = Teacher.objects.get(user=user)
+            except Teacher.DoesNotExist:
+                return Response({"detail": "Teacher profile not found."}, status=status.HTTP_404_NOT_FOUND)
+            refresh = RefreshToken.for_user(user)
+            access_token = refresh.access_token
+            access_token.set_exp(lifetime=timedelta(hours=13))
+            access_token['teacher_id'] = teacher.id
+            expires_in = timedelta(hours=13).total_seconds()
+
+            # Foydalanuvchining sessiya ma'lumotlarini qaytarish
+            teacher_data = {
+                "id": teacher.id,
+                "full_name": teacher.full_name,
+                "email": user.email,
+                "phone": user.phone,
+                "region": teacher.region,
+                "districts": teacher.districts,
+                "address": teacher.address,
+                "brithday": teacher.brithday,
+                "role": user.role,
+                "status": teacher.status,
+                "access_token": str(access_token),
+                "expires_in": expires_in,
+            }
+
+            return Response(teacher_data, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+##############################################################
+###################     TEACHERS    PROFILE    ###############
+##############################################################
+class TeacherProfileAPIView(APIView):
+
+    def get(self, request, *args, **kwargs):
+        token_header = request.headers.get('Authorization', '')
+        if not token_header or not token_header.startswith('Bearer '):
+            return Response({"error": "Authorization token missing or invalid"}, status=status.HTTP_401_UNAUTHORIZED)
+
+        token = token_header.split(' ')[1]
+
+        try:
+            decoded_token = jwt.decode(token, options={"verify_signature": False})
+        except jwt.DecodeError:
+            return Response({"error": "Failed to decode token"}, status=status.HTTP_401_UNAUTHORIZED)
+
+   
+        teacher_id = decoded_token.get('teacher_id')
+      
+        if not teacher_id:
+            raise AuthenticationFailed('Student ID not found in token')
 
 
+        try:
+            teacher = Teacher.objects.get(id=teacher_id)
+        except Teacher.DoesNotExist:
+            return Response({"error": "Teacher profile not found"}, status=404)
+        teacher_datetime = teacher.teacher_date  # teacherning vaqt maydoni
+        ashgabat_tz = pytz.timezone("Asia/Ashgabat") 
+        if teacher_datetime:
+            teacher_datetime = teacher_datetime.astimezone(ashgabat_tz)
+            teacher_date = teacher_datetime.strftime('%Y-%m-%d')  # YYYY-MM-DD
+            teacher_time = teacher_datetime.strftime('%H:%M:%S')  # HH:MM:SS
+        else:
+            teacher_date = None
+            teacher_time = None
+        data = {
+                'full_name': teacher.full_name,
+                'phone': teacher.user.phone if hasattr(teacher.user, 'phone') else None,
+                'email': teacher.user.email if hasattr(teacher.user, 'email') else None,
+                'region': teacher.region,
+                'districts': teacher.districts,
+                'address': teacher.address,
+                'brithday': teacher.brithday,
+                'address': teacher.address,
+                'document_type': teacher.document_type,
+                'document': teacher.document,
+                'type_of_education': teacher.type_of_education,
+                'teacher_date': teacher_date,  # YYYY-MM-DD (UTC+5)
+                'teacher_time': teacher_time,  # HH:MM:SS (UTC+5)
+        }
+
+        return Response(data)
 ##############################################################
 ###################     STUNDENT    REGISTER   ###############
 ##############################################################
