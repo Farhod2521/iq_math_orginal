@@ -285,3 +285,41 @@ class VerifySmsCodeSerializer(serializers.Serializer):
             })
 
         return {"phone": phone, "password": password, "user": user}
+    
+
+class TeacherVerifySmsCodeSerializer(serializers.Serializer):
+    phone = serializers.CharField(required=True)
+    sms_code = serializers.CharField(required=True)
+
+    def validate(self, data):
+        phone = data.get('phone')
+        sms_code = data.get('sms_code')
+
+        try:
+            user = User.objects.get(phone=phone, sms_code=sms_code)
+        except User.DoesNotExist:
+            raise serializers.ValidationError({
+                "non_field_errors": ["Telefon raqam yoki kod noto'g'ri."]
+            })
+
+        # Generate a random password
+        chars = string.ascii_letters + string.digits
+        password = ''.join(random.choice(chars) for _ in range(8))
+
+        # Set the password for the user
+        user.set_password(password)
+        user.sms_code = None  # Clear the SMS code
+        user.save()
+        email = user.email
+        send_login_parol_email(email, phone,password)
+        # Update student status to True
+        try:
+            teacher = Teacher.objects.get(user=user)
+            teacher.status = True
+            teacher.save()
+        except teacher.DoesNotExist:
+            raise serializers.ValidationError({
+                "non_field_errors": ["teacher profili topilmadi."]
+            })
+
+        return {"phone": phone, "password": password, "user": user}
