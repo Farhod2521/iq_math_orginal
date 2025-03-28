@@ -110,7 +110,7 @@ class TeacherRegisterSerializer(serializers.Serializer):
     def create(self, validated_data):
         phone = validated_data['phone']
         email = validated_data['email']
-        classes = validated_data.pop('classes')  # ManyToManyField ni olish
+
 
         teacher_data = {
             "full_name": validated_data.pop("full_name"),
@@ -136,7 +136,7 @@ class TeacherRegisterSerializer(serializers.Serializer):
         # Teacher ma'lumotlarini saqlash
         teacher_data["user"] = user
         teacher = Teacher.objects.create(**teacher_data)
-        teacher.classes.set(classes)  # ManyToManyField ga sinflarni bog'lash
+
 
         # SMS yuborish
         send_sms(phone, sms_code)
