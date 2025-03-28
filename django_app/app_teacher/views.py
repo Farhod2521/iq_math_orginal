@@ -109,14 +109,11 @@ class MyChapterListView(APIView):
 
 
 class MyTopicListView(APIView):
-    """Tizimga kirgan o‘qituvchining barcha mavzularini olish"""
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
-        teacher = request.user.teacher_profile  
-        subjects = Subject.objects.filter(teachers=teacher)  
-        chapters = Chapter.objects.filter(subject__in=subjects)  
-        topics = Topic.objects.filter(chapter__in=chapters)
+    def get(self, request, id):
+    
+        topics = Topic.objects.filter(chapter__in=id)
 
         serializer = MyTopicAddSerializer(topics, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -126,12 +123,8 @@ class MyQuestionListView(APIView):
     """Tizimga kirgan o‘qituvchining barcha savollarini olish"""
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
-        teacher = request.user.teacher_profile  
-        subjects = Subject.objects.filter(teachers=teacher)  
-        chapters = Chapter.objects.filter(subject__in=subjects)  
-        topics = Topic.objects.filter(chapter__in=chapters)  
-        questions = Question.objects.filter(topic__in=topics)
+    def get(self, request, id):
+        questions = Question.objects.filter(topic__in=id)
 
         serializer = MyQuestionAddSerializer(questions, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)    
