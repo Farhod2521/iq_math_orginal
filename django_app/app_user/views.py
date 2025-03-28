@@ -146,7 +146,6 @@ class TeacherProfileAPIView(APIView):
                 'address': teacher.address,
                 'document_type': teacher.document_type,
                 'document': teacher.document,
-                'type_of_education': teacher.type_of_education,
                 'teacher_date': teacher_date,  # YYYY-MM-DD (UTC+5)
                 'teacher_time': teacher_time,  # HH:MM:SS (UTC+5)
         }

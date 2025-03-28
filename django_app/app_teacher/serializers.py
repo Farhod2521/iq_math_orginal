@@ -11,7 +11,7 @@ class SubjectSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Subject
-        fields = ["id", "name", "class_name", "teachers"]  # Kerakli maydonlar
+        fields = ["id", "name", "class_name", "teachers",  "image"]  # Kerakli maydonlar
 
 
 
