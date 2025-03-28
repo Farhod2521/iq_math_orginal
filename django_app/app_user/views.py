@@ -3,7 +3,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from .serializers import (
 StudentRegisterSerializer, VerifySmsCodeSerializer, 
-LoginSerializer, StudentProfileSerializer, TeacherRegisterSerializer, Class_Serializer
+LoginSerializer, StudentProfileSerializer, TeacherRegisterSerializer, Class_Serializer,
+TeacherVerifySmsCodeSerializer
 )
 from .models import Student, UserSMSAttempt, Teacher, Class
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -168,7 +169,7 @@ class RegisterStudentAPIView(APIView):
 
 class TeacherVerifySmsCodeAPIView(APIView):
     def post(self, request, *args, **kwargs):
-        serializer = VerifySmsCodeSerializer(data=request.data)
+        serializer = TeacherVerifySmsCodeSerializer(data=request.data)
 
         if serializer.is_valid():
             user = serializer.validated_data["user"]
