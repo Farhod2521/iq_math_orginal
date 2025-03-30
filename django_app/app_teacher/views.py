@@ -124,7 +124,7 @@ class MyQuestionListView(APIView):
     # permission_classes = [IsAuthenticated]
 
     def get(self, request, id):
-        questions = Question.objects.filter(topic__in=id)
+        questions = Question.objects.filter(topic__in=[id])
 
         serializer = MyQuestionAddSerializer(questions, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)    
+        return Response(serializer.data, status=status.HTTP_200_OK)  
