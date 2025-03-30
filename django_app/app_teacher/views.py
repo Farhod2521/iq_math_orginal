@@ -113,7 +113,7 @@ class MyTopicListView(APIView):
 
     def get(self, request, id):
     
-        topics = Topic.objects.filter(chapter__in=id)
+        topics = Topic.objects.filter(chapter__in=[id])
 
         serializer = MyTopicAddSerializer(topics, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
