@@ -121,7 +121,7 @@ class MyTopicListView(APIView):
 
 class MyQuestionListView(APIView):
     """Tizimga kirgan o‘qituvchining barcha savollarini olish"""
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, id):
         questions = Question.objects.filter(topic__in=[id])
