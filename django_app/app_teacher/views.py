@@ -99,10 +99,10 @@ class MyChapterListView(APIView):
     """Tizimga kirgan o‘qituvchining barcha bo‘limlarini olish"""
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
+    def get(self, request, id):
         teacher = request.user.teacher_profile  
         subjects = Subject.objects.filter(teachers=teacher)  
-        chapters = Chapter.objects.filter(subject__in=subjects)  
+        chapters = Chapter.objects.filter(subject__in=[id])  
 
         serializer = MyChapterAddSerializer(chapters, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
