@@ -87,12 +87,12 @@ class QuestionAddCreateView(APIView):
         except Topic.DoesNotExist:
             return Response({"error": "Siz bu mavzuga savol qo‘sha olmaysiz!"}, status=status.HTTP_403_FORBIDDEN)
 
+        # Serializerga ma'lumotlarni uzatishdan oldin tekshiruv
         serializer = MyQuestionAddSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            serializer.save()  # Agar serializer to'g'ri bo'lsa, saqlash
             return Response({"message": "Savol yaratildi!", "data": serializer.data}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 
 class MyChapterListView(APIView):
