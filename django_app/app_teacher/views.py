@@ -81,10 +81,33 @@ class QuestionAddCreateView(APIView):
         except Topic.DoesNotExist:
             return Response({"error": "Siz bu mavzuga savol qo‘sha olmaysiz!"}, status=status.HTTP_403_FORBIDDEN)
 
-        serializer = MyQuestionAddSerializer(data=request.data)
+        data = request.data.copy()
+        files = request.FILES
+
+        # Agar `images` fayllari bir nechta bo‘lsa, ularni to‘g‘ri formatga o‘tkazish kerak
+        images = []
+        index = 0
+        while f'images[{index}].image' in files:
+            images.append({
+                "image": files.get(f'images[{index}].image'),
+                "choice_letter": data.get(f'images[{index}].choice_letter')
+            })
+            index += 1
+
+        # Yangi strukturani serializerga beramiz
+        combined_data = data
+        combined_data.setlist('images', images)
+
+        serializer = MyQuestionAddSerializer(data={"question_text": data.get("question_text"),
+                                                   "question_type": data.get("question_type"),
+                                                   "correct_answer": data.get("correct_answer"),
+                                                   "level": data.get("level"),
+                                                   "choices": data.get("choices"),
+                                                   "images": images})
         if serializer.is_valid():
-            serializer.save(topic=topic)  # Agar `topic`ni uzatmoqchi bo‘lsang
-            return Response({"message": "Savol yaratildi!", "data": serializer.data}, status=status.HTTP_201_CREATED)
+            question = serializer.save(topic=topic)
+            return Response({"message": "Savol yaratildi!", "data": MyQuestionAddSerializer(question).data},
+                            status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
