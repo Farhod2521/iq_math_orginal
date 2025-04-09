@@ -7,7 +7,7 @@ from .serializers import(
     SubjectSerializer, MyChapterAddSerializer, MyTopicAddSerializer,
     MyQuestionAddSerializer, MyQuestionImageAddSerializer
 )
-
+from django.shortcuts import get_object_or_404
 
 
 
@@ -107,7 +107,20 @@ class MyChapterListView(APIView):
         serializer = MyChapterAddSerializer(chapters, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    def put(self, request, id):
+        chapter = get_object_or_404(Chapter, id=id)
+        serializer = MyChapterAddSerializer(chapter, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    def delete(self, request, id):
+        chapter = get_object_or_404(Chapter, id=id)
+        chapter.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    
+    
 class MyTopicListView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -117,7 +130,18 @@ class MyTopicListView(APIView):
 
         serializer = MyTopicAddSerializer(topics, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+    def put(self, request, id):
+        topic = get_object_or_404(Topic, id=id)
+        serializer = MyTopicAddSerializer(topic, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    def delete(self, request, id):
+        topic = get_object_or_404(Topic, id=id)
+        topic.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 class MyQuestionListView(APIView):
     """Tizimga kirgan o‘qituvchining barcha savollarini olish"""
@@ -128,3 +152,16 @@ class MyQuestionListView(APIView):
 
         serializer = MyQuestionAddSerializer(questions, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)  
+    
+    def put(self, request, id):
+        question = get_object_or_404(Question, id=id)
+        serializer = MyQuestionAddSerializer(question, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, id):
+        question = get_object_or_404(Question, id=id)
+        question.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
