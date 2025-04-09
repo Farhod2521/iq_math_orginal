@@ -1,7 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from django_app.app_teacher.models import Subject, Topic, Question, Chapter
+from django_app.app_teacher.models import Subject, Topic, Question, Chapter, Subject_Category
 from django_app.app_user.models import Student, Class
 from .serializers import SubjectSerializer
 import random
@@ -40,7 +40,7 @@ class GenerateTestAPIView(APIView):
             return Response({"message": "Level noto‘g‘ri formatda yoki mavjud emas"}, status=400)
 
         # Barcha sinflarni tartib bilan olib, nomi bo‘yicha tekshiramiz
-        all_classes = list(Class.objects.order_by('-name'))  # Masalan: 7-sinf, 6-sinf, 5-sinf,...
+        all_classes = list(Class.objects.order_by('-name'))  # Masalan: 7-sinf, 6-sinf, ...
         student_class = student.class_name
 
         try:
@@ -48,13 +48,23 @@ class GenerateTestAPIView(APIView):
         except ValueError:
             return Response({"message": "Foydalanuvchining sinfi ro'yxatda yo‘q"}, status=400)
 
-        # Agar 5-sinf yoki undan kichik bo‘lsa — o‘sha sinfga tegishli testlar
+        # 5-sinf yoki undan kichik bo‘lsa — o‘sha sinfga tegishli testlar
         if current_index == len(all_classes) - 1:
             target_class = student_class
         else:
             target_class = all_classes[current_index + 1]
 
-        subjects = Subject.objects.filter(classes=target_class).prefetch_related("chapters")
+        # Faqat "Matematika" kategoriyasiga tegishli fanlarni olish
+        try:
+            math_category = Subject_Category.objects.get(name__iexact="matematika")
+        except Subject_Category.DoesNotExist:
+            return Response({"message": "Matematika kategoriyasi topilmadi"}, status=400)
+
+        subjects = Subject.objects.filter(
+            classes=target_class,
+            category=math_category
+        ).prefetch_related("chapters")
+
         questions = []
 
         for subject in subjects:
@@ -93,6 +103,7 @@ class GenerateTestAPIView(APIView):
         ]
 
         return Response({"questions": data})
+
 
 
 
