@@ -27,21 +27,20 @@ class MyChapterAddCreateView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        teacher = request.user.teacher_profile  # Tizimga kirgan o‘qituvchi
-        subjects = Subject.objects.filter(teachers=teacher)  # O'qituvchiga tegishli fanlar
+        teacher = request.user.teacher_profile
+        subject_id = request.data.get("subject")
 
-        subject_id = request.data.get("subject")  # Foydalanuvchi tanlagan fan ID si
         if not subject_id:
             return Response({"error": "Fan ID majburiy!"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            subject = subjects.get(id=subject_id)  # O'qituvchiga tegishli fan bormi?
+            subject = Subject.objects.get(id=subject_id, teachers=teacher)
         except Subject.DoesNotExist:
             return Response({"error": "Siz bu fanga bo'lim qo'sha olmaysiz!"}, status=status.HTTP_403_FORBIDDEN)
 
         serializer = MyChapterAddSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            serializer.save(subject=subject)  # yoki kerakli boshqa fieldlar
             return Response({"message": "Chapter yaratildi!", "data": serializer.data}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -50,22 +49,20 @@ class MyTopicAddCreateView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        teacher = request.user.teacher_profile  # Tizimga kirgan o‘qituvchi
-        subjects = Subject.objects.filter(teachers=teacher)  # O‘qituvchiga tegishli fanlar
-        chapters = Chapter.objects.filter(subject__in=subjects)  # Ushbu fanlarga tegishli bo‘limlar
+        teacher = request.user.teacher_profile
+        chapter_id = request.data.get("chapter")
 
-        chapter_id = request.data.get("chapter")  # Foydalanuvchi yuborgan chapter ID
         if not chapter_id:
             return Response({"error": "Chapter ID majburiy!"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            chapter = chapters.get(id=chapter_id)  # Faqat o‘qituvchiga tegishli bo‘limni olish
+            chapter = Chapter.objects.get(id=chapter_id, subject__teachers=teacher)
         except Chapter.DoesNotExist:
             return Response({"error": "Siz bu bo‘limga mavzu qo‘sha olmaysiz!"}, status=status.HTTP_403_FORBIDDEN)
 
         serializer = MyTopicAddSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            serializer.save(chapter=chapter)  # kerakli bo‘lsa `chapter`ni o‘zing kirit
             return Response({"message": "Topic yaratildi!", "data": serializer.data}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
@@ -73,24 +70,20 @@ class QuestionAddCreateView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        teacher = request.user.teacher_profile  
-        subjects = Subject.objects.filter(teachers=teacher)  
-        chapters = Chapter.objects.filter(subject__in=subjects)  
-        topics = Topic.objects.filter(chapter__in=chapters)  
+        teacher = request.user.teacher_profile
+        topic_id = request.data.get("topic")
 
-        topic_id = request.data.get("topic")  # Foydalanuvchi yuborgan topic ID
         if not topic_id:
             return Response({"error": "Topic ID majburiy!"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            topic = topics.get(id=topic_id)  # O'qituvchiga tegishli topic bormi?
+            topic = Topic.objects.get(id=topic_id, chapter__subject__teachers=teacher)
         except Topic.DoesNotExist:
             return Response({"error": "Siz bu mavzuga savol qo‘sha olmaysiz!"}, status=status.HTTP_403_FORBIDDEN)
 
-        # Serializerga ma'lumotlarni uzatishdan oldin tekshiruv
         serializer = MyQuestionAddSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()  # Agar serializer to'g'ri bo'lsa, saqlash
+            serializer.save(topic=topic)  # Agar `topic`ni uzatmoqchi bo‘lsang
             return Response({"message": "Savol yaratildi!", "data": serializer.data}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
