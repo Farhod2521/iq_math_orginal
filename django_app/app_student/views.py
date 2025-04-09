@@ -39,8 +39,7 @@ class GenerateTestAPIView(APIView):
         except (ValueError, TypeError):
             return Response({"message": "Level noto‘g‘ri formatda yoki mavjud emas"}, status=400)
 
-        # Barcha sinflarni tartib bilan olib, nomi bo‘yicha tekshiramiz
-        all_classes = list(Class.objects.order_by('-name'))  # Masalan: 7-sinf, 6-sinf, ...
+        all_classes = list(Class.objects.order_by('-name'))  # 7, 6, 5...
         student_class = student.class_name
 
         try:
@@ -48,13 +47,9 @@ class GenerateTestAPIView(APIView):
         except ValueError:
             return Response({"message": "Foydalanuvchining sinfi ro'yxatda yo‘q"}, status=400)
 
-        # 5-sinf yoki undan kichik bo‘lsa — o‘sha sinfga tegishli testlar
-        if current_index == len(all_classes) - 1:
-            target_class = student_class
-        else:
-            target_class = all_classes[current_index + 1]
+        target_class = student_class if current_index == len(all_classes) - 1 else all_classes[current_index + 1]
 
-        # Faqat "Matematika" kategoriyasiga tegishli fanlarni olish
+        # Faqat "Matematika" bo'limidagi fanlar
         try:
             math_category = Subject_Category.objects.get(name__iexact="matematika")
         except Subject_Category.DoesNotExist:
@@ -87,7 +82,12 @@ class GenerateTestAPIView(APIView):
         data = [
             {
                 "id": q.id,
-                "text": q.question_text,
+                "question_text": q.question_text,
+                "question_text_uz": getattr(q, 'question_text_uz', ''),
+                "question_text_ru": getattr(q, 'question_text_ru', ''),
+                "correct_answer": q.correct_answer,
+                "correct_answer_uz": getattr(q, 'correct_answer_uz', ''),
+                "correct_answer_ru": getattr(q, 'correct_answer_ru', ''),
                 "topic": q.topic.name,
                 "question_type": q.question_type,
                 "choices": q.choices,
@@ -103,7 +103,6 @@ class GenerateTestAPIView(APIView):
         ]
 
         return Response({"questions": data})
-
 
 
 
