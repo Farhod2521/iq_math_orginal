@@ -51,35 +51,83 @@ class Topic(models.Model):
         verbose_name_plural = "Mavzular"
 
 
+# class Question(models.Model):
+#     QUESTION_TYPES = (
+#         ('text', "Matnli javob"),
+#         ('choice', "Variant tanlash"),
+#         ('image_choice', "Rasmli variant"),
+#     )
+    
+#     topic = models.ForeignKey("Topic", on_delete=models.CASCADE, related_name="questions", verbose_name="Tegishli mavzu")
+#     question_text = RichTextField(verbose_name="Savol matni")
+#     question_type = models.CharField(max_length=20, choices=QUESTION_TYPES, verbose_name="Savol turi")
+#     correct_answer = RichTextField(verbose_name="To‘g‘ri javob", blank=True, null=True)
+#     level = models.PositiveIntegerField(verbose_name="Savol darajasi")
+#     choices = models.JSONField(blank=True, null=True, verbose_name="Variantlar")
+
+#     def __str__(self):
+#         return self.question_text
+
+#     class Meta:
+#         verbose_name = "Savol"
+#         verbose_name_plural = "Savollar"
+
+# class QuestionImage(models.Model):
+#     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="images", verbose_name="Savol")
+#     image = models.ImageField(upload_to="questions/images/", verbose_name="Rasm")
+#     choice_letter = models.CharField(max_length=1, verbose_name="Variant harfi")  # Masalan: A, B, C
+
+#     def __str__(self):
+#         return f"{self.choice_letter} - {self.image.url}"
+
+#     class Meta:
+#         verbose_name = "Savol Rasmi"
+#         verbose_name_plural = "Savol Rasmlari"
+
+from django.core.exceptions import ValidationError
 class Question(models.Model):
-    QUESTION_TYPES = (
+    QUESTION_TYPES = [
         ('text', "Matnli javob"),
         ('choice', "Variant tanlash"),
         ('image_choice', "Rasmli variant"),
-    )
+        ('composite', "Bir nechta inputli savol"),
+    ]
+
+    topic = models.ForeignKey("Topic", on_delete=models.CASCADE, related_name="questions")
+    question_text = RichTextField()
+    question_type = models.CharField(max_length=20, choices=QUESTION_TYPES)
+    level = models.PositiveIntegerField()
     
-    topic = models.ForeignKey("Topic", on_delete=models.CASCADE, related_name="questions", verbose_name="Tegishli mavzu")
-    question_text = RichTextField(verbose_name="Savol matni")
-    question_type = models.CharField(max_length=20, choices=QUESTION_TYPES, verbose_name="Savol turi")
-    correct_answer = RichTextField(verbose_name="To‘g‘ri javob", blank=True, null=True)
-    level = models.PositiveIntegerField(verbose_name="Savol darajasi")
-    choices = models.JSONField(blank=True, null=True, verbose_name="Variantlar")
+    # Faqat text turi uchun
+    correct_text_answer = models.TextField(blank=True, null=True)
 
     def __str__(self):
-        return self.question_text
+        return f"{self.question_text[:30]}..."
+    def clean(self):
+        if self.question_type == 'text' and not self.correct_text_answer:
+            raise ValidationError("Matnli savollar uchun to‘g‘ri javob kiritilishi kerak.")
+        if self.question_type in ['choice', 'image_choice'] and not self.pk:
+            # Can't validate related objects until instance is saved
+            return
+        if self.question_type in ['choice', 'image_choice'] and not self.choices.exists():
+            raise ValidationError("Variantli savollar uchun hech bo‘lmasa bitta variant bo‘lishi kerak.")
+        if self.question_type == 'composite' and not self.sub_questions.exists():
+            raise ValidationError("Bir nechta inputli savollar uchun kamida bitta kichik savol bo‘lishi kerak.")
 
-    class Meta:
-        verbose_name = "Savol"
-        verbose_name_plural = "Savollar"
-
-class QuestionImage(models.Model):
-    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="images", verbose_name="Savol")
-    image = models.ImageField(upload_to="questions/images/", verbose_name="Rasm")
-    choice_letter = models.CharField(max_length=1, verbose_name="Variant harfi")  # Masalan: A, B, C
+class CompositeSubQuestion(models.Model):
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='sub_questions')
+    text = models.TextField()  # Masalan: Toshkentdan Samarqandgacha qancha?
+    correct_answer = models.CharField(max_length=255)  # Masalan: 545km
 
     def __str__(self):
-        return f"{self.choice_letter} - {self.image.url}"
+        return self.text
+    
+class Choice(models.Model):
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='choices')
+    letter = models.CharField(max_length=1)  # A, B, C...
+    text = models.CharField(max_length=255, blank=True, null=True)
+    image = models.ImageField(upload_to='choices/images/', blank=True, null=True)
+    is_correct = models.BooleanField(default=False)  # To‘g‘ri variant
 
-    class Meta:
-        verbose_name = "Savol Rasmi"
-        verbose_name_plural = "Savol Rasmlari"
+    def __str__(self):
+        return f"{self.letter} - {self.text or self.image.url}"
