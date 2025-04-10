@@ -123,7 +123,7 @@ class CompositeSubQuestion(models.Model):
     text2 =  models.TextField(blank=True, null=True)
 
     def __str__(self):
-        return self.text
+        return self.text1
     class Meta:
         verbose_name = "Kichik savol"
         verbose_name_plural = "Kichik savollar"
