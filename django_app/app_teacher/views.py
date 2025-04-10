@@ -4,7 +4,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from .models import Subject, Chapter, Topic, Question
 from .serializers import(
-    SubjectSerializer, MyChapterAddSerializer, MyTopicAddSerializer
+    SubjectSerializer, MyChapterAddSerializer, MyTopicAddSerializer,
+    ChoiceSerializer, CompositeSubQuestionSerializer, QuestionSerializer
 )
 from django.shortcuts import get_object_or_404
 
@@ -64,51 +65,46 @@ class MyTopicAddCreateView(APIView):
             serializer.save(chapter=chapter)  # kerakli bo‘lsa `chapter`ni o‘zing kirit
             return Response({"message": "Topic yaratildi!", "data": serializer.data}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-# class QuestionAddCreateView(APIView):
-#     permission_classes = [IsAuthenticated]
+from django.db import transaction
+   
+class QuestionAddCreateView(APIView):
+    permission_classes = [IsAuthenticated]
 
-#     def post(self, request):
-#         teacher = request.user.teacher_profile
-#         topic_id = request.data.get("topic")
+    def post(self, request):
+        user = request.user
 
-#         if not topic_id:
-#             return Response({"error": "Topic ID majburiy!"}, status=status.HTTP_400_BAD_REQUEST)
+        # Asosiy savolni serialize qilamiz
+        serializer = QuestionSerializer(data=request.data)
 
-#         try:
-#             topic = Topic.objects.get(id=topic_id, chapter__subject__teachers=teacher)
-#         except Topic.DoesNotExist:
-#             return Response({"error": "Siz bu mavzuga savol qo‘sha olmaysiz!"}, status=status.HTTP_403_FORBIDDEN)
+        if serializer.is_valid():
+            try:
+                with transaction.atomic():
+                    question = serializer.save()
+                    if question.question_type in ['choice', 'image_choice']:
+                        choices_data = request.data.get('choices', [])
+                        for choice_data in choices_data:
+                            choice_data['question'] = question.id
+                            choice_serializer = ChoiceSerializer(data=choice_data)
+                            if choice_serializer.is_valid():
+                                choice_serializer.save()
+                            else:
+                                raise ValueError("Variantdagi ma'lumotlar noto‘g‘ri")
 
-#         data = request.data.copy()
-#         files = request.FILES
+                    elif question.question_type == 'composite':
+                        sub_questions_data = request.data.get('sub_questions', [])
+                        for sub_data in sub_questions_data:
+                            sub_data['question'] = question.id
+                            sub_serializer = CompositeSubQuestionSerializer(data=sub_data)
+                            if sub_serializer.is_valid():
+                                sub_serializer.save()
+                            else:
+                                raise ValueError("Kichik savoldagi ma'lumotlar noto‘g‘ri")
 
-#         # Agar `images` fayllari bir nechta bo‘lsa, ularni to‘g‘ri formatga o‘tkazish kerak
-#         images = []
-#         index = 0
-#         while f'images[{index}].image' in files:
-#             images.append({
-#                 "image": files.get(f'images[{index}].image'),
-#                 "choice_letter": data.get(f'images[{index}].choice_letter')
-#             })
-#             index += 1
+                return Response(QuestionSerializer(question).data, status=status.HTTP_201_CREATED)
+            except Exception as e:
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-#         # Yangi strukturani serializerga beramiz
-#         combined_data = data
-#         combined_data.setlist('images', images)
-
-#         serializer = MyQuestionAddSerializer(data={"question_text": data.get("question_text"),
-#                                                    "question_type": data.get("question_type"),
-#                                                    "correct_answer": data.get("correct_answer"),
-#                                                    "level": data.get("level"),
-#                                                    "choices": data.get("choices"),
-#                                                    "images": images})
-#         if serializer.is_valid():
-#             question = serializer.save(topic=topic)
-#             return Response({"message": "Savol yaratildi!", "data": MyQuestionAddSerializer(question).data},
-#                             status=status.HTTP_201_CREATED)
-#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class MyChapterListView(APIView):
     """Tizimga kirgan o‘qituvchining barcha bo‘limlarini olish"""
