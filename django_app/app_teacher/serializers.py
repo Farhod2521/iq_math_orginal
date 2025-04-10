@@ -26,8 +26,12 @@ class MyTopicAddSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-class ChoiceSerializer(serializers.ModelSerializer): 
-    question = serializers.PrimaryKeyRelatedField(queryset=Question.objects.all(), write_only=True)
+class ChoiceSerializer(serializers.ModelSerializer):
+    question = serializers.PrimaryKeyRelatedField(
+        queryset=Question.objects.all(),
+        write_only=True,
+        required=False  # Bu yerga e'tibor
+    )
 
     class Meta:
         model = Choice
