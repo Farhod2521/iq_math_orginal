@@ -66,49 +66,49 @@ class MyTopicAddCreateView(APIView):
             return Response({"message": "Topic yaratildi!", "data": serializer.data}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-class QuestionAddCreateView(APIView):
-    permission_classes = [IsAuthenticated]
+# class QuestionAddCreateView(APIView):
+#     permission_classes = [IsAuthenticated]
 
-    def post(self, request):
-        teacher = request.user.teacher_profile
-        topic_id = request.data.get("topic")
+#     def post(self, request):
+#         teacher = request.user.teacher_profile
+#         topic_id = request.data.get("topic")
 
-        if not topic_id:
-            return Response({"error": "Topic ID majburiy!"}, status=status.HTTP_400_BAD_REQUEST)
+#         if not topic_id:
+#             return Response({"error": "Topic ID majburiy!"}, status=status.HTTP_400_BAD_REQUEST)
 
-        try:
-            topic = Topic.objects.get(id=topic_id, chapter__subject__teachers=teacher)
-        except Topic.DoesNotExist:
-            return Response({"error": "Siz bu mavzuga savol qo‘sha olmaysiz!"}, status=status.HTTP_403_FORBIDDEN)
+#         try:
+#             topic = Topic.objects.get(id=topic_id, chapter__subject__teachers=teacher)
+#         except Topic.DoesNotExist:
+#             return Response({"error": "Siz bu mavzuga savol qo‘sha olmaysiz!"}, status=status.HTTP_403_FORBIDDEN)
 
-        data = request.data.copy()
-        files = request.FILES
+#         data = request.data.copy()
+#         files = request.FILES
 
-        # Agar `images` fayllari bir nechta bo‘lsa, ularni to‘g‘ri formatga o‘tkazish kerak
-        images = []
-        index = 0
-        while f'images[{index}].image' in files:
-            images.append({
-                "image": files.get(f'images[{index}].image'),
-                "choice_letter": data.get(f'images[{index}].choice_letter')
-            })
-            index += 1
+#         # Agar `images` fayllari bir nechta bo‘lsa, ularni to‘g‘ri formatga o‘tkazish kerak
+#         images = []
+#         index = 0
+#         while f'images[{index}].image' in files:
+#             images.append({
+#                 "image": files.get(f'images[{index}].image'),
+#                 "choice_letter": data.get(f'images[{index}].choice_letter')
+#             })
+#             index += 1
 
-        # Yangi strukturani serializerga beramiz
-        combined_data = data
-        combined_data.setlist('images', images)
+#         # Yangi strukturani serializerga beramiz
+#         combined_data = data
+#         combined_data.setlist('images', images)
 
-        serializer = MyQuestionAddSerializer(data={"question_text": data.get("question_text"),
-                                                   "question_type": data.get("question_type"),
-                                                   "correct_answer": data.get("correct_answer"),
-                                                   "level": data.get("level"),
-                                                   "choices": data.get("choices"),
-                                                   "images": images})
-        if serializer.is_valid():
-            question = serializer.save(topic=topic)
-            return Response({"message": "Savol yaratildi!", "data": MyQuestionAddSerializer(question).data},
-                            status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#         serializer = MyQuestionAddSerializer(data={"question_text": data.get("question_text"),
+#                                                    "question_type": data.get("question_type"),
+#                                                    "correct_answer": data.get("correct_answer"),
+#                                                    "level": data.get("level"),
+#                                                    "choices": data.get("choices"),
+#                                                    "images": images})
+#         if serializer.is_valid():
+#             question = serializer.save(topic=topic)
+#             return Response({"message": "Savol yaratildi!", "data": MyQuestionAddSerializer(question).data},
+#                             status=status.HTTP_201_CREATED)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class MyChapterListView(APIView):
@@ -159,25 +159,25 @@ class MyTopicListView(APIView):
         topic.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-class MyQuestionListView(APIView):
-    """Tizimga kirgan o‘qituvchining barcha savollarini olish"""
-    permission_classes = [IsAuthenticated]
+# class MyQuestionListView(APIView):
+#     """Tizimga kirgan o‘qituvchining barcha savollarini olish"""
+#     permission_classes = [IsAuthenticated]
 
-    def get(self, request, id):
-        questions = Question.objects.filter(topic__in=[id])
+#     def get(self, request, id):
+#         questions = Question.objects.filter(topic__in=[id])
 
-        serializer = MyQuestionAddSerializer(questions, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)  
+#         serializer = MyQuestionAddSerializer(questions, many=True)
+#         return Response(serializer.data, status=status.HTTP_200_OK)  
     
-    def put(self, request, id):
-        question = get_object_or_404(Question, id=id)
-        serializer = MyQuestionAddSerializer(question, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#     def put(self, request, id):
+#         question = get_object_or_404(Question, id=id)
+#         serializer = MyQuestionAddSerializer(question, data=request.data)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response(serializer.data)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def delete(self, request, id):
-        question = get_object_or_404(Question, id=id)
-        question.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+#     def delete(self, request, id):
+#         question = get_object_or_404(Question, id=id)
+#         question.delete()
+#         return Response(status=status.HTTP_204_NO_CONTENT)
