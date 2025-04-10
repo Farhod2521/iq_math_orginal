@@ -69,7 +69,7 @@ from django.db import transaction
    
 class QuestionAddCreateView(APIView):
     permission_classes = [IsAuthenticated]
-    
+
     def post(self, request):
         user = request.user
         serializer = QuestionSerializer(data=request.data)
@@ -77,57 +77,46 @@ class QuestionAddCreateView(APIView):
             try:
                 with transaction.atomic():
                     question = serializer.save()
-                    
+
+                    # Choice savollarini saqlash
                     if question.question_type in ['choice', 'image_choice']:
                         choices_data = request.data.get('choices', [])
-                        seen_choices = set()  
+                        if not choices_data:
+                            raise ValueError("Choice savollar uchun variantlar kiritilmagan")
+                        
+                        # Avvalgi choicelarni o'chirish
+                        question.choices.all().delete()
+                        
                         for choice_data in choices_data:
-                            # Choice uchun unikalikni tekshirish
-                            choice_tuple = (
-                                choice_data['letter'], 
-                                choice_data['text'], 
-                                choice_data['is_correct']
-                            )
-                            if choice_tuple in seen_choices:
-                                continue
-                            seen_choices.add(choice_tuple)
-                            
                             choice_data['question'] = question.id
                             choice_serializer = ChoiceSerializer(data=choice_data)
                             if choice_serializer.is_valid():
                                 choice_serializer.save()
                             else:
-                                raise ValueError("Variantdagi ma'lumotlar noto‘g‘ri")
-                                
+                                raise ValueError(f"Variantdagi ma'lumotlar noto‘g‘ri: {choice_serializer.errors}")
+
+                    # Composite savollarini saqlash
                     elif question.question_type == 'composite':
                         sub_questions_data = request.data.get('sub_questions', [])
-                        seen_sub_questions = set()  # Sub questions uchun unikalikni tekshirish
+                        if not sub_questions_data:
+                            raise ValueError("Composite savol uchun kichik savollar kiritilmagan")
+                        
+                        # Avvalgi sub_questionlarni o'chirish
+                        question.sub_questions.all().delete()
                         
                         for sub_data in sub_questions_data:
-                            # Sub question uchun unikalikni tekshirish
-                            sub_tuple = (
-                                sub_data.get('text1'), 
-                                sub_data.get('correct_answer'), 
-                                sub_data.get('text2')
-                            )
-                            if sub_tuple in seen_sub_questions:
-                                continue
-                            seen_sub_questions.add(sub_tuple)
-                            
                             sub_data['question'] = question.id
                             sub_serializer = CompositeSubQuestionSerializer(data=sub_data)
                             if sub_serializer.is_valid():
                                 sub_serializer.save()
                             else:
-                                raise ValueError("Kichik savoldagi ma'lumotlar noto‘g‘ri")
+                                raise ValueError(f"Kichik savoldagi ma'lumotlar noto‘g‘ri: {sub_serializer.errors}")
 
-                    return Response(QuestionSerializer(question).data, status=status.HTTP_201_CREATED)
-                    
+                return Response(QuestionSerializer(question).data, status=status.HTTP_201_CREATED)
             except Exception as e:
                 return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 class MyChapterListView(APIView):
     """Tizimga kirgan o‘qituvchining barcha bo‘limlarini olish"""
     permission_classes = [IsAuthenticated]
