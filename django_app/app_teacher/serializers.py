@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from .models import (
     Subject, Chapter, Topic, Question,
-    QuestionImage
+    
 )
 
 
@@ -25,27 +25,3 @@ class MyTopicAddSerializer(serializers.ModelSerializer):
         model =  Topic
         fields = "__all__"
 
-class MyQuestionImageAddSerializer(serializers.ModelSerializer):
-    image = serializers.ImageField(required=True)
-    choice_letter = serializers.CharField(required=True)
-
-    class Meta:
-        model = QuestionImage
-        fields = ["image", "choice_letter"]
-
-
-class MyQuestionAddSerializer(serializers.ModelSerializer):
-    images = MyQuestionImageAddSerializer(many=True, required=False)
-
-    class Meta:
-        model = Question
-        fields = ["question_text", "question_type", "correct_answer", "level", "choices", "images"]
-
-    def create(self, validated_data):
-        images_data = validated_data.pop("images", [])
-        question = Question.objects.create(**validated_data)
-        
-        for image_data in images_data:
-            QuestionImage.objects.create(question=question, **image_data)
-
-        return question
