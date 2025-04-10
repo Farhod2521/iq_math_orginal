@@ -116,8 +116,9 @@ class Question(models.Model):
 
 class CompositeSubQuestion(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='sub_questions')
-    text = models.TextField()  # Masalan: Toshkentdan Samarqandgacha qancha?
-    correct_answer = models.CharField(max_length=255)  # Masalan: 545km
+    text1 = models.TextField(blank=True, null=True)  
+    correct_answer = models.CharField(max_length=255)
+    text2 =  models.TextField(blank=True, null=True)
 
     def __str__(self):
         return self.text

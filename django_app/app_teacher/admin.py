@@ -1,8 +1,11 @@
 from django.contrib import admin
-from modeltranslation.admin import TranslationAdmin
+from modeltranslation.admin import TranslationAdmin, TranslationTabularInline
 from django.utils.safestring import mark_safe
 
-from .models import Subject, Topic, Question, Chapter, Subject_Category, QuestionImage
+from .models import (
+    Subject, Topic, Question,
+                      Chapter, Subject_Category, Choice, CompositeSubQuestion
+                      )
 
 
 @admin.register(Subject_Category)
@@ -41,20 +44,32 @@ class TopicAdmin(TranslationAdmin):
     inlines = [QuestionInline]  # `Question` qo‘shishni osonlashtiradi
 
 
+class ChoiceInline(TranslationTabularInline):
+    model = Choice
+    extra = 1
+
+
+class CompositeSubQuestionInline(TranslationTabularInline):
+    model = CompositeSubQuestion
+    extra = 1
+
+
 @admin.register(Question)
 class QuestionAdmin(TranslationAdmin):
-    list_display = ("id", "formatted_question_text", "topic", "level")
-    list_filter = ("topic", "level")
-    search_fields = ("question_text",)
-
-    def formatted_question_text(self, obj):
-        return mark_safe(obj.question_text)  
-
-    formatted_question_text.short_description = "Savol matni"
-
-    class Media:
-        js = ('https://polyfill.io/v3/polyfill.min.js?features=es6',
-              'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js')
+    list_display = ('question_text', 'question_type', 'level')
+    list_filter = ('question_type', 'level')
+    search_fields = ('question_text',)
+    inlines = [ChoiceInline, CompositeSubQuestionInline]
 
 
-admin.site.register(QuestionImage)
+@admin.register(Choice)
+class ChoiceAdmin(TranslationAdmin):
+    list_display = ('question', 'letter', 'text', 'is_correct')
+    list_filter = ('is_correct',)
+    search_fields = ('text',)
+
+
+@admin.register(CompositeSubQuestion)
+class CompositeSubQuestionAdmin(TranslationAdmin):
+    list_display = ('question', 'text1', 'correct_answer', 'text2')
+    search_fields = ('text1', 'correct_answer', 'text2')
