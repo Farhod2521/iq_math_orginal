@@ -30,7 +30,7 @@ class ChoiceSerializer(serializers.ModelSerializer):
     question = serializers.PrimaryKeyRelatedField(
         queryset=Question.objects.all(),
         write_only=True,
-        required=True  # required=False dan required=True ga o'zgartirildi
+        
     )
 
     class Meta:
@@ -41,7 +41,7 @@ class CompositeSubQuestionSerializer(serializers.ModelSerializer):
     question = serializers.PrimaryKeyRelatedField(
         queryset=Question.objects.all(),
         write_only=True,
-        required=True  # required=False dan required=True ga o'zgartirildi
+        
     )
     
     class Meta:
