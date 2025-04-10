@@ -71,6 +71,9 @@ class QuestionAddCreateView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        user = request.user
+
+        # Asosiy savolni serialize qilamiz
         serializer = QuestionSerializer(data=request.data)
 
         if serializer.is_valid():
@@ -78,31 +81,40 @@ class QuestionAddCreateView(APIView):
                 with transaction.atomic():
                     question = serializer.save()
 
-                    # Agar savol varianti bor bo‘lsa
+                    # Savol turi 'choice' yoki 'image_choice' bo'lsa
                     if question.question_type in ['choice', 'image_choice']:
                         choices_data = request.data.get('choices', [])
+                        seen_choices = set()  # Takrorlanadigan variantlarni tekshirish
                         for choice_data in choices_data:
-                            # 'question' field ni avtomatik qo‘shamiz
+                            # Agar bu variant ilgari qo'shilgan bo'lsa, o'tkazib yuboring
+                            if choice_data['letter'] in seen_choices:
+                                continue
+                            seen_choices.add(choice_data['letter'])
+
                             choice_data['question'] = question.id
                             choice_serializer = ChoiceSerializer(data=choice_data)
-                            choice_serializer.is_valid(raise_exception=True)
-                            choice_serializer.save()
+                            if choice_serializer.is_valid():
+                                choice_serializer.save()
+                            else:
+                                raise ValueError("Variantdagi ma'lumotlar noto‘g‘ri")
 
-                    # Agar savol 'composite' (ichki savollar) bo‘lsa
+                    # Boshqa turdagi savollarni qo‘shish
                     elif question.question_type == 'composite':
                         sub_questions_data = request.data.get('sub_questions', [])
                         for sub_data in sub_questions_data:
                             sub_data['question'] = question.id
                             sub_serializer = CompositeSubQuestionSerializer(data=sub_data)
-                            sub_serializer.is_valid(raise_exception=True)
-                            sub_serializer.save()
+                            if sub_serializer.is_valid():
+                                sub_serializer.save()
+                            else:
+                                raise ValueError("Kichik savoldagi ma'lumotlar noto‘g‘ri")
 
                 return Response(QuestionSerializer(question).data, status=status.HTTP_201_CREATED)
-
             except Exception as e:
                 return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 class MyChapterListView(APIView):
     """Tizimga kirgan o‘qituvchining barcha bo‘limlarini olish"""
     permission_classes = [IsAuthenticated]
