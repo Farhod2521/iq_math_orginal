@@ -4,8 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from .models import Subject, Chapter, Topic, Question
 from .serializers import(
-    SubjectSerializer, MyChapterAddSerializer, MyTopicAddSerializer,
-    MyQuestionAddSerializer, MyQuestionImageAddSerializer
+    SubjectSerializer, MyChapterAddSerializer, MyTopicAddSerializer
 )
 from django.shortcuts import get_object_or_404
 
