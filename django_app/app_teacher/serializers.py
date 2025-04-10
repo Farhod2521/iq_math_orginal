@@ -37,9 +37,14 @@ class ChoiceSerializer(serializers.ModelSerializer):
         model = Choice
         fields = ['question', 'letter', 'text', 'image', 'is_correct']
 class CompositeSubQuestionSerializer(serializers.ModelSerializer):
+    question = serializers.PrimaryKeyRelatedField(
+        queryset=Question.objects.all(),
+        write_only=True,
+        required=False  # Bu yerga e'tibor
+    )
     class Meta:
         model = CompositeSubQuestion
-        fields = ['text1', 'correct_answer', 'text2']
+        fields = ["question",'text1', 'correct_answer', 'text2']
 class QuestionSerializer(serializers.ModelSerializer):
     choices = ChoiceSerializer(many=True, required=False)
     sub_questions = CompositeSubQuestionSerializer(many=True, required=False)
