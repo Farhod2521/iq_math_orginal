@@ -86,11 +86,14 @@ class QuestionAddCreateView(APIView):
                         choices_data = request.data.get('choices', [])
                         seen_choices = set()  # Takrorlanadigan variantlarni tekshirish
                         for choice_data in choices_data:
-                            # Agar bu variant ilgari qo'shilgan bo'lsa, o'tkazib yuboring
-                            if choice_data['letter'] in seen_choices:
-                                continue
-                            seen_choices.add(choice_data['letter'])
+                            # Agar choice ma'lumoti oldin qo'shilgan bo'lsa, o'tkazib yuborilsin
+                            choice_tuple = (choice_data['letter'], choice_data['text'], choice_data['is_correct'])
 
+                            if choice_tuple in seen_choices:
+                                continue
+                            seen_choices.add(choice_tuple)
+
+                            # Qo'shilgan variantni saqlaymiz
                             choice_data['question'] = question.id
                             choice_serializer = ChoiceSerializer(data=choice_data)
                             if choice_serializer.is_valid():
