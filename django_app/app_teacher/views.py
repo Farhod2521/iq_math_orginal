@@ -83,28 +83,35 @@ class QuestionAddCreateView(APIView):
                         choices_data = request.data.get('choices', [])
                         seen_choices = set()  
                         for choice_data in choices_data:
+                            # Choiceni yagona identifikator bilan tekshirish
                             choice_tuple = (choice_data['letter'], choice_data['text'], choice_data['is_correct'])
-                            # Agar choice takrorlansa, u holda uni o'rnatmaslik
+                            
+                            # Takrorlanmaslikni ta'minlash
                             if choice_tuple in seen_choices:
                                 continue
                             seen_choices.add(choice_tuple)
+                            
+                            # Savolga bog'lash
                             choice_data['question'] = question.id
                             choice_serializer = ChoiceSerializer(data=choice_data)
                             if choice_serializer.is_valid():
                                 choice_serializer.save()
                             else:
                                 raise ValueError("Variantdagi ma'lumotlar noto‘g‘ri")
-                    
+
                     # Composite savollarini saqlash
                     elif question.question_type == 'composite':
                         sub_questions_data = request.data.get('sub_questions', [])
                         seen_sub_questions = set()  
                         for sub_data in sub_questions_data:
                             sub_tuple = (sub_data['text1'], sub_data['correct_answer'])
-                            # Agar sub_question takrorlansa, u holda uni o'rnatmaslik
+                            
+                            # Takrorlanmaslikni ta'minlash
                             if sub_tuple in seen_sub_questions:
                                 continue
                             seen_sub_questions.add(sub_tuple)
+                            
+                            # Savolga bog'lash
                             sub_data['question'] = question.id  # Asosiy savolga bog'lash
                             sub_serializer = CompositeSubQuestionSerializer(data=sub_data)
                             if sub_serializer.is_valid():
