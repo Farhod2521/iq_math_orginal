@@ -105,7 +105,7 @@ class QuestionAddCreateView(APIView):
                     elif question.question_type == 'composite':
                         sub_questions_data = request.data.get('sub_questions', [])
                         for sub_data in sub_questions_data:
-                            sub_data['question'] = question.id
+                            sub_data['question'] = question.id  # Asosiy savolga bog'lash
                             sub_serializer = CompositeSubQuestionSerializer(data=sub_data)
                             if sub_serializer.is_valid():
                                 sub_serializer.save()
