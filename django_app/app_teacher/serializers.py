@@ -39,9 +39,7 @@ class ChoiceSerializer(serializers.ModelSerializer):
 class CompositeSubQuestionSerializer(serializers.ModelSerializer):
     class Meta:
         model = CompositeSubQuestion
-        fields = ['text1', 'correct_answer', "text2"]
-
-
+        fields = ['text1', 'correct_answer', 'text2', 'question']
 class QuestionSerializer(serializers.ModelSerializer):
     choices = ChoiceSerializer(many=True, required=False)
     sub_questions = CompositeSubQuestionSerializer(many=True, required=False)
