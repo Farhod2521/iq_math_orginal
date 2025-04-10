@@ -113,7 +113,9 @@ class Question(models.Model):
             raise ValidationError("Variantli savollar uchun hech bo‘lmasa bitta variant bo‘lishi kerak.")
         if self.question_type == 'composite' and not self.sub_questions.exists():
             raise ValidationError("Bir nechta inputli savollar uchun kamida bitta kichik savol bo‘lishi kerak.")
-
+    class Meta:
+        verbose_name = "Savol"
+        verbose_name_plural = "Savollar"
 class CompositeSubQuestion(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='sub_questions')
     text1 = models.TextField(blank=True, null=True)  
@@ -122,6 +124,9 @@ class CompositeSubQuestion(models.Model):
 
     def __str__(self):
         return self.text
+    class Meta:
+        verbose_name = "Kichik savol"
+        verbose_name_plural = "Kichik savollar"
     
 class Choice(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='choices')
@@ -132,3 +137,6 @@ class Choice(models.Model):
 
     def __str__(self):
         return f"{self.letter} - {self.text or self.image.url}"
+    class Meta:
+        verbose_name = "Variant"
+        verbose_name_plural = "Variantlar"
