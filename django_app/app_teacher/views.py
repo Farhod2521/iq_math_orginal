@@ -2,7 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
-from .models import Subject, Chapter, Topic, Question, Choice, CompositeSubQuestion
+from .models import Subject, Chapter, Topic, Question
 from .serializers import(
     SubjectSerializer, MyChapterAddSerializer, MyTopicAddSerializer,
     ChoiceSerializer, CompositeSubQuestionSerializer, QuestionSerializer
@@ -76,8 +76,7 @@ class QuestionAddCreateView(APIView):
         if serializer.is_valid():
             try:
                 with transaction.atomic():
-                    # Savolni yaratish
-                    question = serializer.save(created_by=user)
+                    question = serializer.save()
 
                     # Choice savollarini saqlash
                     if question.question_type in ['choice', 'image_choice']:
@@ -88,20 +87,13 @@ class QuestionAddCreateView(APIView):
                         # Avvalgi choicelarni o'chirish
                         question.choices.all().delete()
                         
-                        # Yangi choicelarni yaratish
-                        choices = []
                         for choice_data in choices_data:
-                            choice = Choice(
-                                question=question,
-                                letter=choice_data.get('letter'),
-                                text=choice_data.get('text'),
-                                image=choice_data.get('image'),
-                                is_correct=choice_data.get('is_correct', False)
-                            )
-                            choices.append(choice)
-                        
-                        # Bulk create qilish
-                        Choice.objects.bulk_create(choices)
+                            choice_data['question'] = question.id
+                            choice_serializer = ChoiceSerializer(data=choice_data)
+                            if choice_serializer.is_valid():
+                                choice_serializer.save()
+                            else:
+                                raise ValueError(f"Variantdagi ma'lumotlar noto‘g‘ri: {choice_serializer.errors}")
 
                     # Composite savollarini saqlash
                     elif question.question_type == 'composite':
@@ -112,31 +104,19 @@ class QuestionAddCreateView(APIView):
                         # Avvalgi sub_questionlarni o'chirish
                         question.sub_questions.all().delete()
                         
-                        # Yangi sub_questionlarni yaratish
-                        sub_questions = []
                         for sub_data in sub_questions_data:
-                            sub_question = CompositeSubQuestion(
-                                question=question,
-                                text1=sub_data.get('text1'),
-                                correct_answer=sub_data.get('correct_answer'),
-                                text2=sub_data.get('text2')
-                            )
-                            sub_questions.append(sub_question)
-                        
-                        # Bulk create qilish
-                        CompositeSubQuestion.objects.bulk_create(sub_questions)
+                            sub_data['question'] = question.id
+                            sub_serializer = CompositeSubQuestionSerializer(data=sub_data)
+                            if sub_serializer.is_valid():
+                                sub_serializer.save()
+                            else:
+                                raise ValueError(f"Kichik savoldagi ma'lumotlar noto‘g‘ri: {sub_serializer.errors}")
 
-                    # Savolni yangilangan holatda qaytarish
-                    question.refresh_from_db()
-                    return Response(QuestionSerializer(question).data, status=status.HTTP_201_CREATED)
-
-            except ValueError as e:
-                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(QuestionSerializer(question).data, status=status.HTTP_201_CREATED)
             except Exception as e:
-                return Response({"error": f"Server xatosi: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
 class MyChapterListView(APIView):
     """Tizimga kirgan o‘qituvchining barcha bo‘limlarini olish"""
     permission_classes = [IsAuthenticated]
