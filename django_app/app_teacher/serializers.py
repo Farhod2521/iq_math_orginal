@@ -25,12 +25,13 @@ class MyTopicAddSerializer(serializers.ModelSerializer):
         model =  Topic
         fields = "__all__"
 
-class ChoiceSerializer(serializers.ModelSerializer):
+
+class ChoiceSerializer(serializers.ModelSerializer): 
+    question = serializers.PrimaryKeyRelatedField(queryset=Question.objects.all(), write_only=True)
+
     class Meta:
         model = Choice
-        fields = ['letter', 'text', 'image', 'is_correct']
-
-
+        fields = ['question', 'letter', 'text', 'image', 'is_correct']
 class CompositeSubQuestionSerializer(serializers.ModelSerializer):
     class Meta:
         model = CompositeSubQuestion
