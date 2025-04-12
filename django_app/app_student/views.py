@@ -39,7 +39,9 @@ class GenerateTestAPIView(APIView):
         except (ValueError, TypeError):
             return Response({"message": "Level noto‘g‘ri formatda yoki mavjud emas"}, status=400)
 
-        all_classes = list(Class.objects.order_by('-name'))  # 7, 6, 5...
+        all_classes = list(Class.objects.all())
+        all_classes.sort(key=lambda c: int(c.name))  # bu yerda string emas, int bilan sort qilinyapti
+
         student_class = student.class_name
 
         try:
@@ -47,8 +49,11 @@ class GenerateTestAPIView(APIView):
         except ValueError:
             return Response({"message": "Foydalanuvchining sinfi ro'yxatda yo‘q"}, status=400)
 
-        target_class = student_class if current_index == len(all_classes) - 1 else all_classes[current_index + 1]
+        # Agar eng pastgi sinf bo‘lsa (1-sinf), unda o‘zidan past sinf yo‘q
+        if current_index == 0:
+            return Response({"message": "Quyi sinf topilmadi"}, status=400)
 
+        target_class = all_classes[current_index - 1]
         try:
             math_category = Subject_Category.objects.get(name__iexact="matematika")
         except Subject_Category.DoesNotExist:
