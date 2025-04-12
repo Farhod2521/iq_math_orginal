@@ -54,8 +54,10 @@ class GenerateTestAPIView(APIView):
 
         # Step 4: Fan boblari va savollar
         chapters = subject.chapters.all()
+        
         chapter_count = chapters.count()
         level = request.data.get("level")
+        print(chapters)
         if not level:
             return Response({"message": "Level yuboring"}, status=400)
 
@@ -68,12 +70,13 @@ class GenerateTestAPIView(APIView):
         per_chapter = total_questions // chapter_count if chapter_count else 0
         questions_list = []
 
+
         for chapter in chapters:
             chapter_questions = Question.objects.filter(
                 topic__chapter=chapter,
                 level=level
             ).distinct()
-            print(chapter_questions)
+            
 
             if chapter_questions.exists():
                 count = min(per_chapter, chapter_questions.count())
