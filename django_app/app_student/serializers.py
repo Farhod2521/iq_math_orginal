@@ -65,7 +65,6 @@ class CustomQuestionSerializer(serializers.ModelSerializer):
                 data.pop("choices", None)
         return data
     
-
 class CheckAnswersSerializer(serializers.Serializer):
     question_id = serializers.IntegerField()
     answer = serializers.JSONField()
@@ -74,28 +73,29 @@ class CheckAnswersSerializer(serializers.Serializer):
         question = Question.objects.get(id=data['question_id'])
         answer = data['answer']
 
-        # Handle 'choice' type questions
         if question.question_type == "choice":
             correct_choices = Choice.objects.filter(question=question, is_correct=True)
             correct_answers = {choice.letter for choice in correct_choices}
             selected_choices = {ans['choice_id'] for ans in answer if ans.get('selected')}
 
-            # Check if selected answers match the correct answers
             if correct_answers != selected_choices:
                 raise serializers.ValidationError("Savolga to‘g‘ri javoblar mos kelmayapti.")
 
-        # Handle 'text' type questions
         elif question.question_type == "text":
-            if question.correct_text_answer != answer:
+            if isinstance(answer, list):
+                answer_text = answer[0]  # Assuming answer is a list, get the first item
+            else:
+                answer_text = answer
+
+            # Compare the text answer with the correct one
+            if question.correct_text_answer != answer_text:
                 raise serializers.ValidationError("Savolga to‘g‘ri javob kiritilmadi.")
 
-        # Handle 'composite' type questions
         elif question.question_type == "composite":
             sub_questions = CompositeSubQuestion.objects.filter(question=question)
             for sub_question in sub_questions:
                 correct_answer = sub_question.correct_answer
                 provided_answer = next((ans['answer'] for ans in answer if ans.get('sub_question_id') == sub_question.id), None)
-
                 if provided_answer != correct_answer:
                     raise serializers.ValidationError("Bir nechta savollardan biri xato.")
 
