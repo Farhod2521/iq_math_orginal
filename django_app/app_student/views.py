@@ -74,9 +74,8 @@ class GenerateTestAPIView(APIView):
 
         # Serialize va None bo‘lganlarni (composite with no sub) chiqarib tashlash
         serializer = CustomQuestionSerializer(questions_list, many=True, context={'request': request})
-        data = [q for q in serializer.data if q is not None]
-
-        return Response(data)
+        filtered_data = list(filter(None, serializer.data))  # None bo‘lganlarini olib tashlash
+        return Response(filtered_data)
 
 
 class CheckAnswersAPIView(APIView):
