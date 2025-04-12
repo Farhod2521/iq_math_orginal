@@ -93,7 +93,6 @@ class CheckAnswersAPIView(APIView):
         text_answers = serializer.validated_data['text_answers']
         composite_answers = serializer.validated_data['composite_answers']
         
-        # Initialize score and total question count
         score = 0
         total_questions = 0
         
@@ -117,7 +116,7 @@ class CheckAnswersAPIView(APIView):
             total_questions += 1
             question = Question.objects.get(id=answer['question_id'])
             if question.question_type == 'text':
-                correct_answer = question.correct_text_answer  # Assuming `correct_text_answer` field in `Question`
+                correct_answer = question.correct_text_answer
                 if answer['answer_text'] == correct_answer:
                     score += 1
 
