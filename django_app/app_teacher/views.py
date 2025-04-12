@@ -87,18 +87,18 @@ class QuestionAddCreateView(APIView):
                         # Avvalgi choicelarni o'chirish
                         question.choices.all().delete()
                         
-                        for choice_data in choices_data:
+                        for idx, choice_data in enumerate(choices_data):
+                            # Agar letter mavjud bo'lmasa, harflarni avtomatik belgilash
+                            if 'letter' not in choice_data or not choice_data['letter']:
+                                choice_data['letter'] = chr(65 + idx)  # 65 = 'A' ASCII kodi
+                            
                             choice_data['question'] = question.id
-                            # Rasmni request.FILES dan olish
-                            if 'image' in choice_data and isinstance(choice_data['image'], str):
-                                # Agar image string bo'lsa (base64 yoki URL), uni o'tkazib yuboramiz
-                                continue
                             choice_serializer = ChoiceSerializer(data=choice_data, context={'request': request})
                             if choice_serializer.is_valid():
                                 choice = choice_serializer.save()
                                 # Rasmni alohida saqlash
                                 if 'image' in request.FILES:
-                                    image_file = request.FILES.get(f'choices[{choices_data.index(choice_data)}].image')
+                                    image_file = request.FILES.get(f'choices[{idx}].image')
                                     if image_file:
                                         choice.image = image_file
                                         choice.save()

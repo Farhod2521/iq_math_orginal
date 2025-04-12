@@ -24,7 +24,6 @@ class MyTopicAddSerializer(serializers.ModelSerializer):
     class Meta:
         model =  Topic
         fields = "__all__"
-
 class ChoiceSerializer(serializers.ModelSerializer):
     question = serializers.PrimaryKeyRelatedField(
         queryset=Question.objects.all(),
@@ -32,6 +31,7 @@ class ChoiceSerializer(serializers.ModelSerializer):
         required=False
     )
     image = serializers.ImageField(required=False, allow_null=True)
+    letter = serializers.CharField(required=True)  # letter maydonini required=True qilib belgilang
     
     class Meta:
         model = Choice
