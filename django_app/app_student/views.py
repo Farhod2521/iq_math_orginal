@@ -82,6 +82,7 @@ class GenerateTestAPIView(APIView):
         return Response(filtered_data)
 
 
+
 class CheckAnswersAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -89,6 +90,7 @@ class CheckAnswersAPIView(APIView):
         # Assuming 'answers' is a list of questions and answers
         answers = request.data.get('answers', [])
         results = []
+        correct_count = 0
 
         # Process each answer
         for answer_data in answers:
@@ -101,21 +103,23 @@ class CheckAnswersAPIView(APIView):
                     answer = answer_data['answer']
 
                     # Check the answer validity
-                    # If it's valid, return success for this question
                     if question.question_type == "choice":
                         correct_choices = Choice.objects.filter(question=question, is_correct=True)
                         correct_answers = {choice.letter for choice in correct_choices}
                         selected_choices = {ans['choice_id'] for ans in answer if ans.get('selected')}
 
+                        correct = correct_answers == selected_choices
                         result = {
                             "question_id": question.id,
-                            "correct": correct_answers == selected_choices
+                            "correct": correct
                         }
 
                     elif question.question_type == "text":
+                        answer_text = answer[0] if isinstance(answer, list) else answer
+                        correct = question.correct_text_answer == answer_text
                         result = {
                             "question_id": question.id,
-                            "correct": question.correct_text_answer == answer
+                            "correct": correct
                         }
 
                     elif question.question_type == "composite":
@@ -123,12 +127,16 @@ class CheckAnswersAPIView(APIView):
                         correct_answers = {sub_question.correct_answer for sub_question in sub_questions}
                         provided_answers = {ans['answer'] for ans in answer if 'sub_question_id' in ans}
 
+                        correct = correct_answers == provided_answers
                         result = {
                             "question_id": question.id,
-                            "correct": correct_answers == provided_answers
+                            "correct": correct
                         }
 
                     results.append(result)
+                    
+                    if result['correct']:
+                        correct_count += 1
 
                 except Question.DoesNotExist:
                     return Response({"message": "Savol topilmadi."}, status=status.HTTP_404_NOT_FOUND)
@@ -136,5 +144,11 @@ class CheckAnswersAPIView(APIView):
             else:
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        # After processing all answers, return the results
-        return Response({"results": results}, status=status.HTTP_200_OK)
+        total_questions = len(answers)
+
+        # Return results with the number of correct answers
+        return Response({
+            "results": results,
+            "correct_count": correct_count,
+            "total_questions": total_questions
+        }, status=status.HTTP_200_OK)
