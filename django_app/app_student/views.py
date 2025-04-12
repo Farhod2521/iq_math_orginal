@@ -3,13 +3,13 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django_app.app_teacher.models import Subject, Topic, Question, Chapter, Subject_Category
 from django_app.app_user.models import Student, Class
-from .serializers import SubjectSerializer
+from .serializers import SubjectSerializer, QuestionSerializer
 import random
 from django.db.models import Q
 from collections import defaultdict
 from bs4 import BeautifulSoup  # HTML teglarini tozalash uchun
 from django.utils.html import strip_tags
-
+from random import sample
 class MySubjectsView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -30,117 +30,66 @@ class GenerateTestAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        # 1. Foydalanuvchi profili va sinfi mavjudligini tekshiramiz
+        # Step 1: Foydalanuvchi va sinfini tekshiramiz
         student = getattr(request.user, 'student_profile', None)
         if not student or not student.class_name:
             return Response({"message": "Foydalanuvchining sinfi topilmadi"}, status=400)
 
-        # 2. Level (qiyinlik darajasi) raqam ekanini tekshiramiz
+        # Step 2: 1 pog‘ona past sinfni aniqlaymiz
+        current_class = student.class_name
         try:
-            level = int(request.data.get("level", 0))
-        except (ValueError, TypeError):
-            return Response({"message": "Level noto‘g‘ri formatda yoki mavjud emas"}, status=400)
+            prev_class = Class.objects.get(name=str(int(current_class.name) - 1))
+        except (ValueError, Class.DoesNotExist):
+            return Response({"message": "Quyi sinf topilmadi"}, status=400)
 
-        # 3. Barcha sinflarni olib, raqam bo‘yicha sort qilamiz (3, 4, 5, 6 ...)
-        all_classes = list(Class.objects.all())
-        try:
-            all_classes.sort(key=lambda c: int(c.name))  # "3", "4", "5" → 3, 4, 5
-        except ValueError:
-            return Response({"message": "Sinf nomlari son bo‘lishi kerak"}, status=500)
-
-        # 4. O‘quvchining sinfi obyektini topamiz
-        try:
-            student_class_obj = Class.objects.get(name=student.class_name)
-        except Class.DoesNotExist:
-            return Response({"message": "Foydalanuvchining sinfi ro'yxatda yo‘q"}, status=400)
-
-        # 5. Joriy indeksni aniqlaymiz
-        try:
-            current_index = all_classes.index(student_class_obj)
-        except ValueError:
-            return Response({"message": "Sinf ro'yxatda topilmadi"}, status=400)
-
-        # 6. Quyi sinfni topamiz
-        if current_index == 0:
-            return Response({"message": "Quyi sinf mavjud emas"}, status=400)
-
-        target_class = all_classes[current_index - 1]
-
-        # 7. Matematika kategoriyasini topamiz
-        try:
-            math_category = Subject_Category.objects.get(name__iexact="matematika")
-        except Subject_Category.DoesNotExist:
-            return Response({"message": "Matematika kategoriyasi topilmadi"}, status=400)
-
-        # 8. Target sinfdagi matematika fanlarini topamiz
+        # Step 3: Matematika fani aniqlanadi
         subjects = Subject.objects.filter(
-            classes=target_class,
-            category=math_category
-        ).prefetch_related("chapters")
+            classes=prev_class, category__name__iexact="Matematika"
+        )
 
-        # 9. Savollarni yig'amiz
-        questions = []
+        if not subjects.exists():
+            return Response({"message": "Matematika fani topilmadi"}, status=400)
 
-        for subject in subjects:
-            chapters = Chapter.objects.filter(subject=subject)
-            chapter_count = chapters.count()
-            if chapter_count == 0:
-                continue
+        subject = subjects.first()  # faqat bittasini olamiz
 
-            per_chapter = max(1, 30 // chapter_count)
+        # Step 4: Fan boblari va savollar
+        chapters = subject.chapters.all()
+        chapter_count = chapters.count()
+        level = request.data.get("level")
+        if not level:
+            return Response({"message": "Level yuboring"}, status=400)
 
-            for chapter in chapters:
-                chapter_questions = list(
-                    Question.objects.filter(topic__chapter=chapter, level=level)
-                    .prefetch_related('choices', 'sub_questions')
-                )
-                if chapter_questions:
-                    questions.extend(random.sample(chapter_questions, min(per_chapter, len(chapter_questions))))
+        try:
+            level = int(level)
+        except ValueError:
+            return Response({"message": "Level noto‘g‘ri formatda"}, status=400)
 
-        # 10. 30 tadan ortiq bo‘lsa, tasodifiy 30 tasini tanlaymiz
-        questions = random.sample(questions, min(30, len(questions)))
+        total_questions = 30
+        per_chapter = total_questions // chapter_count if chapter_count else 0
+        questions_list = []
 
-        # 11. JSON formatga o‘tkazamiz
-        data = []
-        for q in questions:
-            q_data = {
-                "id": q.id,
-                "question_text": q.question_text,
-                "question_type": q.question_type,
-                "topic": q.topic.name,
-            }
+        for chapter in chapters:
+            chapter_questions = Question.objects.filter(
+                topic__chapter=chapter,
+                level=level
+            ).distinct()
 
-            if q.question_type == 'choice':
-                q_data["choices"] = [
-                    {
-                        "letter": choice.letter,
-                        "text": choice.text,
-                        "is_correct": choice.is_correct  # faqat adminlar uchun yashirish kerak bo‘lsa, bu yerda tekshir
-                    } for choice in q.choices.all()
-                ]
-            elif q.question_type == 'image_choice':
-                q_data["choices"] = [
-                    {
-                        "letter": choice.letter,
-                        "image_url": choice.image.url if choice.image else None,
-                        "is_correct": choice.is_correct
-                    } for choice in q.choices.all()
-                ]
-            elif q.question_type == 'text':
-                q_data["answer_type"] = "text"
-            elif q.question_type == 'composite':
-                q_data["sub_questions"] = [
-                    {
-                        "text1": sub.text1,
-                        "text2": sub.text2,
-                        "correct_answer": sub.correct_answer
-                    } for sub in q.sub_questions.all()
-                ]
+            if chapter_questions.exists():
+                count = min(per_chapter, chapter_questions.count())
+                questions_list += sample(list(chapter_questions), count)
 
-            data.append(q_data)
+        # Agar yetarli bo‘lmasa, boshqa boblardan to‘ldiramiz
+        if len(questions_list) < total_questions:
+            remaining = total_questions - len(questions_list)
+            all_other_questions = Question.objects.filter(
+                topic__chapter__in=chapters,
+                level=level
+            ).exclude(id__in=[q.id for q in questions_list])
+            if all_other_questions.exists():
+                questions_list += sample(list(all_other_questions), min(remaining, all_other_questions.count()))
 
-        return Response({"questions": data})
-
+        serializer = QuestionSerializer(questions_list, many=True, context={'request': request})
+        return Response(serializer.data)
 
 
 class CheckAnswersAPIView(APIView):
