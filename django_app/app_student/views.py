@@ -105,8 +105,11 @@ class CheckAnswersAPIView(APIView):
                 correct_choices = Choice.objects.filter(question_id=question.id, is_correct=True)
                 correct_choice_ids = [choice.id for choice in correct_choices]
                 
+                # Extract selected choice IDs from the provided choices
+                selected_choices = [choice['choice_id'] for choice in answer['choices'] if choice['selected']]
+                
                 # Compare the selected choices with the correct ones
-                if sorted(answer['selected_choices']) == sorted(correct_choice_ids):
+                if sorted(selected_choices) == sorted(correct_choice_ids):
                     score += 1
 
         # Check text answers

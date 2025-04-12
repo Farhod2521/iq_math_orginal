@@ -67,21 +67,24 @@ class CustomQuestionSerializer(serializers.ModelSerializer):
     
 
 # Serializer for choice answers
+
 class ChoiceAnswerSerializer(serializers.Serializer):
     question_id = serializers.IntegerField()
-    selected_choices = serializers.ListField(child=serializers.IntegerField())  # List of selected choice IDs
+    choices = serializers.ListField(
+        child=serializers.DictField(
+            child=serializers.BooleanField(),  # For selected flag
+            required=True
+        )
+    )
 
-# Serializer for text answers
 class TextAnswerSerializer(serializers.Serializer):
     question_id = serializers.IntegerField()
     answer_text = serializers.CharField()
 
-# Serializer for composite answers
 class CompositeAnswerSerializer(serializers.Serializer):
     question_id = serializers.IntegerField()
-    answers = serializers.ListField(child=serializers.CharField())  # List of answers for composite questions
+    answers = serializers.ListField(child=serializers.CharField())
 
-# Main serializer to check all answers
 class CheckAnswersSerializer(serializers.Serializer):
     choice_answers = ChoiceAnswerSerializer(many=True)
     text_answers = TextAnswerSerializer(many=True)
