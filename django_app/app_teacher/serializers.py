@@ -32,11 +32,19 @@ class ChoiceSerializer(serializers.ModelSerializer):
         write_only=True,
         required=False  # required=False dan required=True ga o'zgartirildi
     )
+    image = serializers.ImageField(required=False)  # Add image field for image upload
 
     class Meta:
         model = Choice
         fields = ['question', 'letter', 'text', 'image', 'is_correct']
 
+    def create(self, validated_data):
+        # Image can be handled with request.FILES during the save
+        image = validated_data.get('image', None)
+        if image:
+            validated_data['image'] = image
+
+        return super().create(validated_data)
 class CompositeSubQuestionSerializer(serializers.ModelSerializer):
     question = serializers.PrimaryKeyRelatedField(
         queryset=Question.objects.all(),

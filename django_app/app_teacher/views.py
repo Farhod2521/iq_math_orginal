@@ -72,7 +72,7 @@ class QuestionAddCreateView(APIView):
 
     def post(self, request):
         user = request.user
-        serializer = QuestionSerializer(data=request.data)
+        serializer = QuestionSerializer(data=request.data, context={'request': request})  # Passing request to context for handling files
         if serializer.is_valid():
             try:
                 with transaction.atomic():
@@ -89,7 +89,7 @@ class QuestionAddCreateView(APIView):
                         
                         for choice_data in choices_data:
                             choice_data['question'] = question.id
-                            choice_serializer = ChoiceSerializer(data=choice_data)
+                            choice_serializer = ChoiceSerializer(data=choice_data, context={'request': request})  # Pass request for image handling
                             if choice_serializer.is_valid():
                                 choice_serializer.save()
                             else:
@@ -116,7 +116,7 @@ class QuestionAddCreateView(APIView):
             except Exception as e:
                 return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST))
     
 
 class MyQuestionListView(APIView):
