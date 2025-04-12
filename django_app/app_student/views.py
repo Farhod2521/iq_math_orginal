@@ -73,6 +73,7 @@ class GenerateTestAPIView(APIView):
                 topic__chapter=chapter,
                 level=level
             ).distinct()
+            print(chapter_questions)
 
             if chapter_questions.exists():
                 count = min(per_chapter, chapter_questions.count())
