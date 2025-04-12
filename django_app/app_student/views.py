@@ -30,40 +30,55 @@ class GenerateTestAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        # 1. Foydalanuvchi profili va sinfi mavjudligini tekshiramiz
         student = getattr(request.user, 'student_profile', None)
         if not student or not student.class_name:
-            return Response({"message": "Sinf topilmadi"}, status=400)
+            return Response({"message": "Foydalanuvchining sinfi topilmadi"}, status=400)
 
+        # 2. Level (qiyinlik darajasi) raqam ekanini tekshiramiz
         try:
             level = int(request.data.get("level", 0))
         except (ValueError, TypeError):
             return Response({"message": "Level noto‘g‘ri formatda yoki mavjud emas"}, status=400)
 
+        # 3. Barcha sinflarni olib, raqam bo‘yicha sort qilamiz (3, 4, 5, 6 ...)
         all_classes = list(Class.objects.all())
-        all_classes.sort(key=lambda c: int(c.name))  # bu yerda string emas, int bilan sort qilinyapti
-
-        student_class = student.class_name
-
         try:
-            current_index = all_classes.index(student_class)
+            all_classes.sort(key=lambda c: int(c.name))  # "3", "4", "5" → 3, 4, 5
         except ValueError:
+            return Response({"message": "Sinf nomlari son bo‘lishi kerak"}, status=500)
+
+        # 4. O‘quvchining sinfi obyektini topamiz
+        try:
+            student_class_obj = Class.objects.get(name=student.class_name)
+        except Class.DoesNotExist:
             return Response({"message": "Foydalanuvchining sinfi ro'yxatda yo‘q"}, status=400)
 
-        # Agar eng pastgi sinf bo‘lsa (1-sinf), unda o‘zidan past sinf yo‘q
+        # 5. Joriy indeksni aniqlaymiz
+        try:
+            current_index = all_classes.index(student_class_obj)
+        except ValueError:
+            return Response({"message": "Sinf ro'yxatda topilmadi"}, status=400)
+
+        # 6. Quyi sinfni topamiz
         if current_index == 0:
-            return Response({"message": "Quyi sinf topilmadi"}, status=400)
+            return Response({"message": "Quyi sinf mavjud emas"}, status=400)
 
         target_class = all_classes[current_index - 1]
+
+        # 7. Matematika kategoriyasini topamiz
         try:
             math_category = Subject_Category.objects.get(name__iexact="matematika")
         except Subject_Category.DoesNotExist:
             return Response({"message": "Matematika kategoriyasi topilmadi"}, status=400)
 
+        # 8. Target sinfdagi matematika fanlarini topamiz
         subjects = Subject.objects.filter(
             classes=target_class,
             category=math_category
         ).prefetch_related("chapters")
 
+        # 9. Savollarni yig'amiz
         questions = []
 
         for subject in subjects:
@@ -82,8 +97,10 @@ class GenerateTestAPIView(APIView):
                 if chapter_questions:
                     questions.extend(random.sample(chapter_questions, min(per_chapter, len(chapter_questions))))
 
+        # 10. 30 tadan ortiq bo‘lsa, tasodifiy 30 tasini tanlaymiz
         questions = random.sample(questions, min(30, len(questions)))
 
+        # 11. JSON formatga o‘tkazamiz
         data = []
         for q in questions:
             q_data = {
@@ -98,7 +115,7 @@ class GenerateTestAPIView(APIView):
                     {
                         "letter": choice.letter,
                         "text": choice.text,
-                        "is_correct": choice.is_correct  # bu qatorni faqat adminlar uchun ko‘rsatish mumkin
+                        "is_correct": choice.is_correct  # faqat adminlar uchun yashirish kerak bo‘lsa, bu yerda tekshir
                     } for choice in q.choices.all()
                 ]
             elif q.question_type == 'image_choice':
@@ -110,7 +127,6 @@ class GenerateTestAPIView(APIView):
                     } for choice in q.choices.all()
                 ]
             elif q.question_type == 'text':
-                # Faqat savol, javobni yubormaymiz
                 q_data["answer_type"] = "text"
             elif q.question_type == 'composite':
                 q_data["sub_questions"] = [
