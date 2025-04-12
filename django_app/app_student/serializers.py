@@ -66,8 +66,6 @@ class CustomQuestionSerializer(serializers.ModelSerializer):
         return data
     
 
-# Serializer for choice answers
-
 class ChoiceAnswerSerializer(serializers.Serializer):
     question_id = serializers.IntegerField()
     choices = serializers.ListField(
