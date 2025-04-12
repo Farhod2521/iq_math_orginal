@@ -49,7 +49,6 @@ class GenerateTestAPIView(APIView):
 
         target_class = student_class if current_index == len(all_classes) - 1 else all_classes[current_index + 1]
 
-        # Faqat "Matematika" bo'limidagi fanlar
         try:
             math_category = Subject_Category.objects.get(name__iexact="matematika")
         except Subject_Category.DoesNotExist:
@@ -73,37 +72,53 @@ class GenerateTestAPIView(APIView):
             for chapter in chapters:
                 chapter_questions = list(
                     Question.objects.filter(topic__chapter=chapter, level=level)
+                    .prefetch_related('choices', 'sub_questions')
                 )
                 if chapter_questions:
                     questions.extend(random.sample(chapter_questions, min(per_chapter, len(chapter_questions))))
 
         questions = random.sample(questions, min(30, len(questions)))
 
-        data = [
-            {
+        data = []
+        for q in questions:
+            q_data = {
                 "id": q.id,
                 "question_text": q.question_text,
-                "question_text_uz": getattr(q, 'question_text_uz', ''),
-                "question_text_ru": getattr(q, 'question_text_ru', ''),
-                "correct_answer": q.correct_answer,
-                "correct_answer_uz": getattr(q, 'correct_answer_uz', ''),
-                "correct_answer_ru": getattr(q, 'correct_answer_ru', ''),
-                "topic": q.topic.name,
                 "question_type": q.question_type,
-                "choices": q.choices,
-                "images": [
-                    {
-                        "choice_letter": img.choice_letter,
-                        "image_url": img.image.url
-                    }
-                    for img in q.images.all()
-                ] if q.question_type == 'image_choice' else []
+                "topic": q.topic.name,
             }
-            for q in questions
-        ]
+
+            if q.question_type == 'choice':
+                q_data["choices"] = [
+                    {
+                        "letter": choice.letter,
+                        "text": choice.text,
+                        "is_correct": choice.is_correct  # bu qatorni faqat adminlar uchun ko‘rsatish mumkin
+                    } for choice in q.choices.all()
+                ]
+            elif q.question_type == 'image_choice':
+                q_data["choices"] = [
+                    {
+                        "letter": choice.letter,
+                        "image_url": choice.image.url if choice.image else None,
+                        "is_correct": choice.is_correct
+                    } for choice in q.choices.all()
+                ]
+            elif q.question_type == 'text':
+                # Faqat savol, javobni yubormaymiz
+                q_data["answer_type"] = "text"
+            elif q.question_type == 'composite':
+                q_data["sub_questions"] = [
+                    {
+                        "text1": sub.text1,
+                        "text2": sub.text2,
+                        "correct_answer": sub.correct_answer
+                    } for sub in q.sub_questions.all()
+                ]
+
+            data.append(q_data)
 
         return Response({"questions": data})
-
 
 
 
