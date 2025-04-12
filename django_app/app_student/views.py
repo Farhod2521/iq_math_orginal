@@ -46,7 +46,7 @@ class GenerateTestAPIView(APIView):
         subjects = Subject.objects.filter(
             classes=prev_class, category__name__iexact="Matematika"
         )
-
+        print(subject)
         if not subjects.exists():
             return Response({"message": "Matematika fani topilmadi"}, status=400)
 
