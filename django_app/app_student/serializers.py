@@ -64,3 +64,22 @@ class CustomQuestionSerializer(serializers.ModelSerializer):
                 data.pop("correct_text_answer_ru", None)
                 data.pop("choices", None)
         return data
+    
+
+
+class ChoiceAnswerSerializer(serializers.Serializer):
+    question_id = serializers.IntegerField()
+    selected_choices = serializers.ListField(child=serializers.IntegerField())
+
+class TextAnswerSerializer(serializers.Serializer):
+    question_id = serializers.IntegerField()
+    answer_text = serializers.CharField()
+
+class CompositeAnswerSerializer(serializers.Serializer):
+    question_id = serializers.IntegerField()
+    answers = serializers.ListField(child=serializers.CharField())
+    
+class CheckAnswersSerializer(serializers.Serializer):
+    choice_answers = ChoiceAnswerSerializer(many=True)
+    text_answers = TextAnswerSerializer(many=True)
+    composite_answers = CompositeAnswerSerializer(many=True)

@@ -1,9 +1,11 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from django_app.app_teacher.models import Subject, Topic, Question, Chapter, Subject_Category
+from django_app.app_teacher.models import Subject, Topic, Question, Chapter, Subject_Category, CompositeSubQuestion, Choice
 from django_app.app_user.models import Student, Class
-from .serializers import SubjectSerializer, CustomQuestionSerializer
+from .serializers import (
+    SubjectSerializer, CustomQuestionSerializer, CheckAnswersSerializer
+    )
 import random
 from django.db.models import Q
 from collections import defaultdict
@@ -82,38 +84,51 @@ class CheckAnswersAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        user_answers = request.data.get("answers", {})
-        if not user_answers:
-            return Response({"message": "Javoblar taqdim etilmagan"}, status=400)
+        # Deserialize the data
+        serializer = CheckAnswersSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=400)
+        
+        choice_answers = serializer.validated_data['choice_answers']
+        text_answers = serializer.validated_data['text_answers']
+        composite_answers = serializer.validated_data['composite_answers']
+        
+        # Check answers
+        score = 0
+        total_questions = 0
+        
+        # Check choice answers
+        for answer in choice_answers:
+            total_questions += 1
+            question = Question.objects.get(id=answer['question_id'])
+            if question.question_type == 'choice':
+                correct_choices = Choice.objects.filter(question_id=question.id, is_correct=True)
+                correct_choice_ids = [choice.id for choice in correct_choices]
+                if sorted(answer['selected_choices']) == sorted(correct_choice_ids):
+                    score += 1
 
-        question_ids = [int(qid) for qid in user_answers.keys() if str(qid).isdigit()]
-        questions = Question.objects.filter(id__in=question_ids).select_related("topic__chapter")
+        # Check text answers
+        for answer in text_answers:
+            total_questions += 1
+            question = Question.objects.get(id=answer['question_id'])
+            if question.question_type == 'text':
+                correct_answer = question.correct_text_answer
+                if answer['answer_text'] == correct_answer:
+                    score += 1
 
-        correct_count = 0
-        incorrect_count = 0
-        incorrect_topics = defaultdict(set)
+        # Check composite answers
+        for answer in composite_answers:
+            total_questions += 1
+            question = Question.objects.get(id=answer['question_id'])
+            if question.question_type == 'composite':
+                sub_questions = CompositeSubQuestion.objects.filter(question_id=question.id)
+                correct_answers = [sub_question.correct_answer for sub_question in sub_questions]
+                if sorted(answer['answers']) == sorted(correct_answers):
+                    score += 1
 
-        for question in questions:
-            user_answer = user_answers.get(str(question.id), "")
-            correct_answer = strip_tags(question.correct_answer or "").strip().lower()
-            given_answer = strip_tags(user_answer).strip().lower()
-
-            if correct_answer == given_answer:
-                correct_count += 1
-            else:
-                incorrect_count += 1
-                chapter_name = question.topic.chapter.name
-                topic_name = question.topic.name
-                incorrect_topics[chapter_name].add(topic_name)
-
-        # Xato qilingan bo‘lim va mavzular ro‘yxatini tayyorlaymiz
-        recommendations = [
-            {"chapter": chapter, "topics": sorted(list(topics))}
-            for chapter, topics in incorrect_topics.items()
-        ]
-
+        # Return the result
         return Response({
-            "correct": correct_count,
-            "incorrect": incorrect_count,
-            "recommendations": recommendations
+            'score': score,
+            'total_questions': total_questions,
+            'percentage': (score / total_questions) * 100 if total_questions else 0
         })
