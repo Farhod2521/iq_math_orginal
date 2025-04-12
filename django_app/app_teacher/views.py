@@ -120,6 +120,7 @@ class QuestionAddCreateView(APIView):
     
 
 class MyQuestionListView(APIView):
+    permission_classes = [IsAuthenticated]
     def get(self, request, id):
         try:
             topic = Topic.objects.get(id=id)
