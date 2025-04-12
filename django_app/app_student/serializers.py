@@ -66,24 +66,34 @@ class CustomQuestionSerializer(serializers.ModelSerializer):
         return data
     
 
-class ChoiceAnswerSerializer(serializers.Serializer):
-    question_id = serializers.IntegerField()
-    choices = serializers.ListField(
-        child=serializers.DictField(
-            child=serializers.BooleanField(),  # For selected flag
-            required=True
-        )
-    )
-
-class TextAnswerSerializer(serializers.Serializer):
-    question_id = serializers.IntegerField()
-    answer_text = serializers.CharField()
-
-class CompositeAnswerSerializer(serializers.Serializer):
-    question_id = serializers.IntegerField()
-    answers = serializers.ListField(child=serializers.CharField())
-
 class CheckAnswersSerializer(serializers.Serializer):
-    choice_answers = ChoiceAnswerSerializer(many=True)
-    text_answers = TextAnswerSerializer(many=True)
-    composite_answers = CompositeAnswerSerializer(many=True)
+    question_id = serializers.IntegerField()
+    answer = serializers.JSONField()
+
+    def validate(self, data):
+        question = Question.objects.get(id=data['question_id'])
+        answer = data['answer']
+
+        if question.question_type == "choice":
+            correct_choices = Choice.objects.filter(question=question, is_correct=True)
+            # Check if the answer contains only the correct choices
+            correct_answers = {choice.letter for choice in correct_choices}
+            provided_answers = {ans['letter'] for ans in answer if ans.get('is_correct')}
+            if correct_answers != provided_answers:
+                raise serializers.ValidationError("Savolga to‘g‘ri javoblar mos kelmayapti.")
+
+        elif question.question_type == "text":
+            # For 'text' type, check if the provided answer matches the correct text answer
+            if question.correct_text_answer != answer:
+                raise serializers.ValidationError("Savolga to‘g‘ri javob kiritilmadi.")
+
+        elif question.question_type == "composite":
+            # For composite type, check each sub-question's answer
+            sub_questions = CompositeSubQuestion.objects.filter(question=question)
+            for sub_question in sub_questions:
+                correct_answer = sub_question.correct_answer
+                provided_answer = next((ans['answer'] for ans in answer if ans['sub_question_id'] == sub_question.id), None)
+                if provided_answer != correct_answer:
+                    raise serializers.ValidationError("Bir nechta savollardan biri xato.")
+
+        return data
