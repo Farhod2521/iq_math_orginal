@@ -12,21 +12,55 @@ class SubjectSerializer(serializers.ModelSerializer):
 class ChoiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Choice
-        fields = ['id', 'letter', 'text', 'image', 'is_correct'] + get_translation_fields('text')
+        fields = ['id', 'letter', 'image'] + get_translation_fields('text')
+
 
 class CompositeSubQuestionSerializer(serializers.ModelSerializer):
     class Meta:
         model = CompositeSubQuestion
-        fields = ['id', 'text1', 'text2', 'correct_answer'] + \
-                 get_translation_fields('text1') + get_translation_fields('text2') + get_translation_fields('correct_answer')
+        fields = ['id', 'text1', 'text2'] + \
+                 get_translation_fields('text1') + get_translation_fields('text2')
 
-class QuestionSerializer(serializers.ModelSerializer):
-    choices = ChoiceSerializer(many=True, read_only=True)
-    sub_questions = CompositeSubQuestionSerializer(many=True, read_only=True)
+
+class CustomQuestionSerializer(serializers.ModelSerializer):
+    choices = serializers.SerializerMethodField()
+    sub_questions = serializers.SerializerMethodField()
 
     class Meta:
         model = Question
         fields = [
-            'id', 'question_text', 'question_type', 'level', 'correct_text_answer',
-            'choices', 'sub_questions'
-        ] + get_translation_fields('question_text') + get_translation_fields('correct_text_answer')
+            'id', 'question_text', 'question_type', 'level',
+            'question_text_uz', 'question_text_ru'
+        ]
+
+    def get_choices(self, obj):
+        if obj.question_type != 'choice':
+            return None
+
+        choices_qs = obj.choices.all()
+        return ChoiceSerializer(choices_qs, many=True).data if choices_qs else []
+
+    def get_sub_questions(self, obj):
+        if obj.question_type != 'composite':
+            return None
+
+        sub_qs = obj.sub_questions.all()
+        if not sub_qs.exists():
+            return None
+        return CompositeSubQuestionSerializer(sub_qs, many=True).data
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+
+        if instance.question_type == 'text':
+            data['correct_text_answer'] = instance.correct_text_answer
+        if instance.question_type == 'choice':
+            data['choices'] = self.get_choices(instance)
+        if instance.question_type == 'composite':
+            sub_questions = self.get_sub_questions(instance)
+            if sub_questions:
+                data['sub_questions'] = sub_questions
+            else:
+                return None  # sub_question yo'q bo‘lsa umuman APIdan chiqmasin
+
+        return data
