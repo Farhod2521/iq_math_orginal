@@ -30,13 +30,13 @@ class CustomQuestionSerializer(serializers.ModelSerializer):
         model = Question
         fields = [
             'id',
-            'question_text',
+            'question_text_uz',
+            'question_text_ru',
             'question_type',
             'level',
-            'correct_text_answer',
             'choices',
             'sub_questions',
-        ] + get_translation_fields('question_text') + get_translation_fields('correct_text_answer')
+        ] 
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -50,7 +50,6 @@ class CustomQuestionSerializer(serializers.ModelSerializer):
             for choice in data.get("choices", []):
                 choice.pop("is_correct", None)
                 choice.pop("text", None)
-            data.pop("correct_text_answer", None)
             data.pop("correct_text_answer_uz", None)
             data.pop("correct_text_answer_ru", None)
             data.pop("sub_questions", None)
@@ -60,7 +59,7 @@ class CustomQuestionSerializer(serializers.ModelSerializer):
                 return None
             else:
                 # sub_questions mavjud bo‘lsa ham correct_text_larni olib tashlaymiz
-                data.pop("correct_text_answer", None)
+
                 data.pop("correct_text_answer_uz", None)
                 data.pop("correct_text_answer_ru", None)
                 data.pop("choices", None)
