@@ -117,6 +117,20 @@ class QuestionAddCreateView(APIView):
                 return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+class MyQuestionListView(APIView):
+    def get(self, request, id):
+        try:
+            topic = Topic.objects.get(id=id)
+        except Topic.DoesNotExist:
+            return Response({"error": "Mavzu topilmadi."}, status=status.HTTP_404_NOT_FOUND)
+        
+        questions = Question.objects.filter(topic=topic).prefetch_related('sub_questions', 'choices')
+        serializer = QuestionSerializer(questions, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+
 class MyChapterListView(APIView):
     """Tizimga kirgan o‘qituvchining barcha bo‘limlarini olish"""
     permission_classes = [IsAuthenticated]
