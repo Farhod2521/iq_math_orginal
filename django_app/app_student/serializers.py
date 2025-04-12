@@ -74,25 +74,28 @@ class CheckAnswersSerializer(serializers.Serializer):
         question = Question.objects.get(id=data['question_id'])
         answer = data['answer']
 
+        # Handle 'choice' type questions
         if question.question_type == "choice":
             correct_choices = Choice.objects.filter(question=question, is_correct=True)
-            # Check if the answer contains only the correct choices
             correct_answers = {choice.letter for choice in correct_choices}
-            provided_answers = {ans['letter'] for ans in answer if ans.get('is_correct')}
-            if correct_answers != provided_answers:
+            selected_choices = {ans['choice_id'] for ans in answer if ans.get('selected')}
+
+            # Check if selected answers match the correct answers
+            if correct_answers != selected_choices:
                 raise serializers.ValidationError("Savolga to‘g‘ri javoblar mos kelmayapti.")
 
+        # Handle 'text' type questions
         elif question.question_type == "text":
-            # For 'text' type, check if the provided answer matches the correct text answer
             if question.correct_text_answer != answer:
                 raise serializers.ValidationError("Savolga to‘g‘ri javob kiritilmadi.")
 
+        # Handle 'composite' type questions
         elif question.question_type == "composite":
-            # For composite type, check each sub-question's answer
             sub_questions = CompositeSubQuestion.objects.filter(question=question)
             for sub_question in sub_questions:
                 correct_answer = sub_question.correct_answer
-                provided_answer = next((ans['answer'] for ans in answer if ans['sub_question_id'] == sub_question.id), None)
+                provided_answer = next((ans['answer'] for ans in answer if ans.get('sub_question_id') == sub_question.id), None)
+
                 if provided_answer != correct_answer:
                     raise serializers.ValidationError("Bir nechta savollardan biri xato.")
 
