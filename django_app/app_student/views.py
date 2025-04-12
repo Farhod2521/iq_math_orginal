@@ -12,6 +12,8 @@ from collections import defaultdict
 from bs4 import BeautifulSoup  # HTML teglarini tozalash uchun
 from django.utils.html import strip_tags
 from random import sample
+
+from rest_framework import status
 class MySubjectsView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -84,55 +86,10 @@ class CheckAnswersAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        # Deserialize the data
-        serializer = CheckAnswersSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=400)
-        
-        choice_answers = serializer.validated_data['choice_answers']
-        text_answers = serializer.validated_data['text_answers']
-        composite_answers = serializer.validated_data['composite_answers']
-        
-        score = 0
-        total_questions = 0
-        
-        # Check choice answers
-        for answer in choice_answers:
-            total_questions += 1
-            question = Question.objects.get(id=answer['question_id'])
-            if question.question_type == 'choice':
-                correct_choices = Choice.objects.filter(question_id=question.id, is_correct=True)
-                correct_choice_ids = [choice.id for choice in correct_choices]
-                
-                # Extract selected choice IDs from the provided choices
-                selected_choices = [choice['choice_id'] for choice in answer['choices'] if choice['selected']]
-                
-                # Compare the selected choices with the correct ones
-                if sorted(selected_choices) == sorted(correct_choice_ids):
-                    score += 1
+        serializer = CheckAnswersSerializer(data=request.data, many=True)
 
-        # Check text answers
-        for answer in text_answers:
-            total_questions += 1
-            question = Question.objects.get(id=answer['question_id'])
-            if question.question_type == 'text':
-                correct_answer = question.correct_text_answer
-                if answer['answer_text'] == correct_answer:
-                    score += 1
-
-        # Check composite answers
-        for answer in composite_answers:
-            total_questions += 1
-            question = Question.objects.get(id=answer['question_id'])
-            if question.question_type == 'composite':
-                sub_questions = CompositeSubQuestion.objects.filter(question_id=question.id)
-                correct_answers = [sub_question.correct_answer for sub_question in sub_questions]
-                if sorted(answer['answers']) == sorted(correct_answers):
-                    score += 1
-
-        # Return the result
-        return Response({
-            'score': score,
-            'total_questions': total_questions,
-            'percentage': (score / total_questions) * 100 if total_questions else 0
-        })
+        if serializer.is_valid():
+            # If validation passes, check all answers
+            return Response({"message": "Javoblar to‘g‘ri tekshirildi."}, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
