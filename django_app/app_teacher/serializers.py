@@ -25,26 +25,23 @@ class MyTopicAddSerializer(serializers.ModelSerializer):
         model =  Topic
         fields = "__all__"
 
-
 class ChoiceSerializer(serializers.ModelSerializer):
     question = serializers.PrimaryKeyRelatedField(
         queryset=Question.objects.all(),
         write_only=True,
-        required=False  # required=False dan required=True ga o'zgartirildi
+        required=False
     )
-    image = serializers.ImageField(required=False)  # Add image field for image upload
-
+    image = serializers.ImageField(required=False, allow_null=True)
+    
     class Meta:
         model = Choice
         fields = ['question', 'letter', 'text', 'image', 'is_correct']
-
-    def create(self, validated_data):
-        # Image can be handled with request.FILES during the save
-        image = validated_data.get('image', None)
-        if image:
-            validated_data['image'] = image
-
-        return super().create(validated_data)
+    
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        if instance.image:
+            representation['image'] = instance.image.url
+        return representation
 class CompositeSubQuestionSerializer(serializers.ModelSerializer):
     question = serializers.PrimaryKeyRelatedField(
         queryset=Question.objects.all(),

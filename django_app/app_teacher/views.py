@@ -72,7 +72,7 @@ class QuestionAddCreateView(APIView):
 
     def post(self, request):
         user = request.user
-        serializer = QuestionSerializer(data=request.data, context={'request': request})  # Passing request to context for handling files
+        serializer = QuestionSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             try:
                 with transaction.atomic():
@@ -89,9 +89,19 @@ class QuestionAddCreateView(APIView):
                         
                         for choice_data in choices_data:
                             choice_data['question'] = question.id
-                            choice_serializer = ChoiceSerializer(data=choice_data, context={'request': request})  # Pass request for image handling
+                            # Rasmni request.FILES dan olish
+                            if 'image' in choice_data and isinstance(choice_data['image'], str):
+                                # Agar image string bo'lsa (base64 yoki URL), uni o'tkazib yuboramiz
+                                continue
+                            choice_serializer = ChoiceSerializer(data=choice_data, context={'request': request})
                             if choice_serializer.is_valid():
-                                choice_serializer.save()
+                                choice = choice_serializer.save()
+                                # Rasmni alohida saqlash
+                                if 'image' in request.FILES:
+                                    image_file = request.FILES.get(f'choices[{choices_data.index(choice_data)}].image')
+                                    if image_file:
+                                        choice.image = image_file
+                                        choice.save()
                             else:
                                 raise ValueError(f"Variantdagi ma'lumotlar noto‘g‘ri: {choice_serializer.errors}")
 
@@ -112,7 +122,7 @@ class QuestionAddCreateView(APIView):
                             else:
                                 raise ValueError(f"Kichik savoldagi ma'lumotlar noto‘g‘ri: {sub_serializer.errors}")
 
-                return Response(QuestionSerializer(question).data, status=status.HTTP_201_CREATED)
+                return Response(QuestionSerializer(question, context={'request': request}).data, status=status.HTTP_201_CREATED)
             except Exception as e:
                 return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
