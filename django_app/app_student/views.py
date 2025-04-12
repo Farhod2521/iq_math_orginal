@@ -87,68 +87,52 @@ class CheckAnswersAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        # Assuming 'answers' is a list of questions and answers
-        answers = request.data.get('answers', [])
-        results = []
-        correct_count = 0
+        serializer = CheckAnswersSerializer(data=request.data)
 
-        # Process each answer
-        for answer_data in answers:
-            serializer = CheckAnswersSerializer(data=answer_data)
+        if not serializer.is_valid():
+            return Response({"message": "Noto‘g‘ri formatdagi ma'lumotlar."}, status=400)
 
-            if serializer.is_valid():
-                try:
-                    # Get the corresponding question
-                    question = Question.objects.get(id=answer_data['question_id'])
-                    answer = answer_data['answer']
+        correct_answers = 0
+        total_answers = 0
 
-                    # Check the answer validity
-                    if question.question_type == "choice":
-                        correct_choices = Choice.objects.filter(question=question, is_correct=True)
-                        correct_answers = {choice.letter for choice in correct_choices}
-                        selected_choices = {ans['choice_id'] for ans in answer if ans.get('selected')}
+        # Check Text Answers
+        if serializer.validated_data.get('text_answers'):
+            text_answers = serializer.validated_data['text_answers']
+            for answer in text_answers:
+                total_answers += 1
+                question = Question.objects.filter(id=answer['question_id'], question_type="text").first()
+                if question:
+                    if question.correct_text_answer == answer['answer']:
+                        correct_answers += 1
 
-                        correct = correct_answers == selected_choices
-                        result = {
-                            "question_id": question.id,
-                            "correct": correct
-                        }
+        # Check Choice Answers
+        if serializer.validated_data.get('choice_answers'):
+            choice_answers = serializer.validated_data['choice_answers']
+            for answer in choice_answers:
+                total_answers += 1
+                question = Question.objects.filter(id=answer['question_id'], question_type="choice").first()
+                if question:
+                    correct_choices = Choice.objects.filter(question=question, is_correct=True).values_list('id', flat=True)
+                    if set(answer['choices']) == set(correct_choices):
+                        correct_answers += 1
 
-                    elif question.question_type == "text":
-                        answer_text = answer[0] if isinstance(answer, list) else answer
-                        correct = question.correct_text_answer == answer_text
-                        result = {
-                            "question_id": question.id,
-                            "correct": correct
-                        }
+        # Check Composite Answers
+        if serializer.validated_data.get('composite_answers'):
+            composite_answers = serializer.validated_data['composite_answers']
+            for answer in composite_answers:
+                total_answers += 1
+                question = Question.objects.filter(id=answer['question_id'], question_type="composite").first()
+                if question:
+                    correct_answers_count = 0
+                    for sub_answer, sub_question in zip(answer['answers'], question.sub_questions.all()):
+                        if sub_answer == sub_question.correct_answer:
+                            correct_answers_count += 1
+                    if correct_answers_count == question.sub_questions.count():
+                        correct_answers += 1
 
-                    elif question.question_type == "composite":
-                        sub_questions = CompositeSubQuestion.objects.filter(question=question)
-                        correct_answers = {sub_question.correct_answer for sub_question in sub_questions}
-                        provided_answers = {ans['answer'] for ans in answer if 'sub_question_id' in ans}
-
-                        correct = correct_answers == provided_answers
-                        result = {
-                            "question_id": question.id,
-                            "correct": correct
-                        }
-
-                    results.append(result)
-                    
-                    if result['correct']:
-                        correct_count += 1
-
-                except Question.DoesNotExist:
-                    return Response({"message": "Savol topilmadi."}, status=status.HTTP_404_NOT_FOUND)
-
-            else:
-                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        total_questions = len(answers)
-
-        # Return results with the number of correct answers
+        # Return the response with score
         return Response({
-            "results": results,
-            "correct_count": correct_count,
-            "total_questions": total_questions
-        }, status=status.HTTP_200_OK)
+            "total_answers": total_answers,
+            "correct_answers": correct_answers,
+            "score": (correct_answers / total_answers) * 100 if total_answers > 0 else 0
+        })

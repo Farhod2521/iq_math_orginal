@@ -65,38 +65,24 @@ class CustomQuestionSerializer(serializers.ModelSerializer):
                 data.pop("choices", None)
         return data
     
-class CheckAnswersSerializer(serializers.Serializer):
+class CheckChoiceAnswerSerializer(serializers.Serializer):
     question_id = serializers.IntegerField()
-    answer = serializers.JSONField()
+    choices = serializers.ListField(
+        child=serializers.IntegerField(), allow_empty=False
+    )
 
-    def validate(self, data):
-        question = Question.objects.get(id=data['question_id'])
-        answer = data['answer']
 
-        if question.question_type == "choice":
-            correct_choices = Choice.objects.filter(question=question, is_correct=True)
-            correct_answers = {choice.letter for choice in correct_choices}
-            selected_choices = {ans['choice_id'] for ans in answer if ans.get('selected')}
+class CheckTextAnswerSerializer(serializers.Serializer):
+    question_id = serializers.IntegerField()
+    answer = serializers.CharField(max_length=1000)
 
-            if correct_answers != selected_choices:
-                raise serializers.ValidationError("Savolga to‘g‘ri javoblar mos kelmayapti.")
 
-        elif question.question_type == "text":
-            if isinstance(answer, list):
-                answer_text = answer[0]  # Assuming answer is a list, get the first item
-            else:
-                answer_text = answer
+class CheckCompositeAnswerSerializer(serializers.Serializer):
+    question_id = serializers.IntegerField()
+    answers = serializers.ListField(child=serializers.CharField(), allow_empty=False)
 
-            # Compare the text answer with the correct one
-            if question.correct_text_answer != answer_text:
-                raise serializers.ValidationError("Savolga to‘g‘ri javob kiritilmadi.")
 
-        elif question.question_type == "composite":
-            sub_questions = CompositeSubQuestion.objects.filter(question=question)
-            for sub_question in sub_questions:
-                correct_answer = sub_question.correct_answer
-                provided_answer = next((ans['answer'] for ans in answer if ans.get('sub_question_id') == sub_question.id), None)
-                if provided_answer != correct_answer:
-                    raise serializers.ValidationError("Bir nechta savollardan biri xato.")
-
-        return data
+class CheckAnswersSerializer(serializers.Serializer):
+    text_answers = CheckTextAnswerSerializer(many=True, required=False)
+    choice_answers = CheckChoiceAnswerSerializer(many=True, required=False)
+    composite_answers = CheckCompositeAnswerSerializer(many=True, required=False)
