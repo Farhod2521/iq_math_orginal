@@ -86,10 +86,55 @@ class CheckAnswersAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        serializer = CheckAnswersSerializer(data=request.data, many=True)
+        # Assuming 'answers' is a list of questions and answers
+        answers = request.data.get('answers', [])
+        results = []
 
-        if serializer.is_valid():
-            # If validation passes, check all answers
-            return Response({"message": "Javoblar to‘g‘ri tekshirildi."}, status=status.HTTP_200_OK)
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        # Process each answer
+        for answer_data in answers:
+            serializer = CheckAnswersSerializer(data=answer_data)
+
+            if serializer.is_valid():
+                try:
+                    # Get the corresponding question
+                    question = Question.objects.get(id=answer_data['question_id'])
+                    answer = answer_data['answer']
+
+                    # Check the answer validity
+                    # If it's valid, return success for this question
+                    if question.question_type == "choice":
+                        correct_choices = Choice.objects.filter(question=question, is_correct=True)
+                        correct_answers = {choice.letter for choice in correct_choices}
+                        selected_choices = {ans['choice_id'] for ans in answer if ans.get('selected')}
+
+                        result = {
+                            "question_id": question.id,
+                            "correct": correct_answers == selected_choices
+                        }
+
+                    elif question.question_type == "text":
+                        result = {
+                            "question_id": question.id,
+                            "correct": question.correct_text_answer == answer
+                        }
+
+                    elif question.question_type == "composite":
+                        sub_questions = CompositeSubQuestion.objects.filter(question=question)
+                        correct_answers = {sub_question.correct_answer for sub_question in sub_questions}
+                        provided_answers = {ans['answer'] for ans in answer if 'sub_question_id' in ans}
+
+                        result = {
+                            "question_id": question.id,
+                            "correct": correct_answers == provided_answers
+                        }
+
+                    results.append(result)
+
+                except Question.DoesNotExist:
+                    return Response({"message": "Savol topilmadi."}, status=status.HTTP_404_NOT_FOUND)
+
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        # After processing all answers, return the results
+        return Response({"results": results}, status=status.HTTP_200_OK)
