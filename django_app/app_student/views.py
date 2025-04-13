@@ -171,8 +171,9 @@ class CheckAnswersAPIView(APIView):
             if is_correct:
                 correct_answers += 1
             else:
-                if question.topic and question.topic.name:
-                    wrong_topics.add(question.topic.name)
+
+                wrong_topics.add(question.topic.name_uz)
+                wrong_topics.add(question.topic.name_ru)
 
             question_details.append({
                 "index": index,
@@ -199,8 +200,9 @@ class CheckAnswersAPIView(APIView):
             correct_answers += is_correct
 
             if not is_correct:
-                if question.topic and question.topic.name:
-                    wrong_topics.add(question.topic.name)
+                if question.topic:
+                    wrong_topics.add(question.topic.name_uz)
+                    wrong_topics.add(question.topic.name_ru)
 
             question_details.append({
                 "index": index,
@@ -230,8 +232,9 @@ class CheckAnswersAPIView(APIView):
             correct_answers += is_correct
 
             if not is_correct:
-                if question.topic and question.topic.name:
-                    wrong_topics.add(question.topic.name)
+                if question.topic:
+                    wrong_topics.add(question.topic.name_uz)
+                    wrong_topics.add(question.topic.name_ru)
 
             question_details.append({
                 "index": index,
