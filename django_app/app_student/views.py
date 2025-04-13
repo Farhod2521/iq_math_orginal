@@ -146,7 +146,7 @@ class CheckAnswersAPIView(APIView):
         if not serializer.is_valid():
             return Response({"message": "Noto‘g‘ri formatdagi ma'lumotlar."}, status=400)
 
-        student = request.user.student  # Assuming there's a one-to-one user-student relation
+        student = request.user  # Assuming there's a one-to-one user-student relation
 
         correct_answers = 0
         total_answers = 0
