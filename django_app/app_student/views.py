@@ -159,10 +159,13 @@ class CheckAnswersAPIView(APIView):
 
         # --- TEXT ANSWERS ---
         for answer in serializer.validated_data.get('text_answers', []):
+
             question = Question.objects.filter(id=answer['question_id'], question_type='text').first()
             if not question:
                 continue
-
+            print("ID:", question.id)
+            print("Topic:", question.topic)
+            print("Topic Name:", question.topic.name if question.topic else None)
             is_correct = (question.correct_text_answer == answer['answer'])
             total_answers += 1
             if is_correct:
@@ -185,7 +188,9 @@ class CheckAnswersAPIView(APIView):
             question = Question.objects.filter(id=answer['question_id'], question_type='choice').first()
             if not question:
                 continue
-
+            print("ID:", question.id)
+            print("Topic:", question.topic)
+            print("Topic Name:", question.topic.name if question.topic else None)
             correct_choices = set(Choice.objects.filter(question=question, is_correct=True).values_list('id', flat=True))
             selected_choices = set(answer['choices'])
             is_correct = (correct_choices == selected_choices)
@@ -211,7 +216,9 @@ class CheckAnswersAPIView(APIView):
             question = Question.objects.filter(id=answer['question_id'], question_type='composite').first()
             if not question:
                 continue
-
+            print("ID:", question.id)
+            print("Topic:", question.topic)
+            print("Topic Name:", question.topic.name if question.topic else None)
             correct_subs = question.sub_questions.all()
             is_correct = True
             for sub_answer, sub_question in zip(answer['answers'], correct_subs):
