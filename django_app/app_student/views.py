@@ -154,32 +154,32 @@ class CheckAnswersAPIView(APIView):
         correct_answers = 0
         total_answers = 0
         question_details = []
-        wrong_topics = set()
+        wrong_topics = {}  # Changed to a dictionary to track topics and their index
         index = 1
 
         # --- TEXT ANSWERS ---
         for answer in serializer.validated_data.get('text_answers', []):
-
             question = Question.objects.filter(id=answer['question_id'], question_type='text').first()
             if not question:
                 continue
-            print("ID:", question.id)
-            print("Topic:", question.topic)
-            print("Topic Name:", question.topic.name_ru if question.topic else None)
             is_correct = (question.correct_text_answer == answer['answer'])
             total_answers += 1
             if is_correct:
                 correct_answers += 1
             else:
-
-                wrong_topics.add(question.topic.name_uz)
-                wrong_topics.add(question.topic.name_ru)
+                if question.topic:
+                    if question.topic.name_uz not in wrong_topics:
+                        wrong_topics[question.topic.name_uz] = {
+                            'index': len(wrong_topics) + 1,
+                            'topic_name_ru': question.topic.name_ru,
+                            'topic_name_uz': question.topic.name_uz
+                        }
 
             question_details.append({
                 "index": index,
                 "question_id": question.id,
                 "question_uz": question.question_text_uz,
-                "question_ru": question.question_text_ru,  # qo‘shilishi mumkin
+                "question_ru": question.question_text_ru,
                 "answer": is_correct
             })
             index += 1
@@ -189,9 +189,6 @@ class CheckAnswersAPIView(APIView):
             question = Question.objects.filter(id=answer['question_id'], question_type='choice').first()
             if not question:
                 continue
-            print("ID:", question.id)
-            print("Topic:", question.topic)
-            print("Topic Name:", question.topic.name if question.topic else None)
             correct_choices = set(Choice.objects.filter(question=question, is_correct=True).values_list('id', flat=True))
             selected_choices = set(answer['choices'])
             is_correct = (correct_choices == selected_choices)
@@ -201,8 +198,12 @@ class CheckAnswersAPIView(APIView):
 
             if not is_correct:
                 if question.topic:
-                    wrong_topics.add(question.topic.name_uz)
-                    wrong_topics.add(question.topic.name_ru)
+                    if question.topic.name_uz not in wrong_topics:
+                        wrong_topics[question.topic.name_uz] = {
+                            'index': len(wrong_topics) + 1,
+                            'topic_name_ru': question.topic.name_ru,
+                            'topic_name_uz': question.topic.name_uz
+                        }
 
             question_details.append({
                 "index": index,
@@ -218,9 +219,6 @@ class CheckAnswersAPIView(APIView):
             question = Question.objects.filter(id=answer['question_id'], question_type='composite').first()
             if not question:
                 continue
-            print("ID:", question.id)
-            print("Topic:", question.topic)
-            print("Topic Name:", question.topic.name if question.topic else None)
             correct_subs = question.sub_questions.all()
             is_correct = True
             for sub_answer, sub_question in zip(answer['answers'], correct_subs):
@@ -233,8 +231,12 @@ class CheckAnswersAPIView(APIView):
 
             if not is_correct:
                 if question.topic:
-                    wrong_topics.add(question.topic.name_uz)
-                    wrong_topics.add(question.topic.name_ru)
+                    if question.topic.name_uz not in wrong_topics:
+                        wrong_topics[question.topic.name_uz] = {
+                            'index': len(wrong_topics) + 1,
+                            'topic_name_ru': question.topic.name_ru,
+                            'topic_name_uz': question.topic.name_uz
+                        }
 
             question_details.append({
                 "index": index,
@@ -249,7 +251,10 @@ class CheckAnswersAPIView(APIView):
 
         result_json = {
             "question": question_details,
-            "Topic": [{"topic_name": name} for name in wrong_topics],
+            "Topic": [{"index": topic_info['index'],
+                       "topic_name_uz": topic_info['topic_name_uz'],
+                       "topic_name_ru": topic_info['topic_name_ru']}
+                      for topic_info in wrong_topics.values()],
             "result": [{
                 "total_answers": total_answers,
                 "correct_answers": correct_answers,
