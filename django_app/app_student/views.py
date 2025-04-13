@@ -165,7 +165,7 @@ class CheckAnswersAPIView(APIView):
                 continue
             print("ID:", question.id)
             print("Topic:", question.topic)
-            print("Topic Name:", question.topic.name if question.topic else None)
+            print("Topic Name:", question.topic.name_ru if question.topic else None)
             is_correct = (question.correct_text_answer == answer['answer'])
             total_answers += 1
             if is_correct:
