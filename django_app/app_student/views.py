@@ -146,7 +146,10 @@ class CheckAnswersAPIView(APIView):
         if not serializer.is_valid():
             return Response({"message": "Noto‘g‘ri formatdagi ma'lumotlar."}, status=400)
 
-        student = request.user  # Assuming there's a one-to-one user-student relation
+        try:
+            student_instance = Student.objects.get(user=request.user)
+        except Student.DoesNotExist:
+            return Response({"message": "Student topilmadi"}, status=404)
 
         correct_answers = 0
         total_answers = 0
@@ -162,16 +165,16 @@ class CheckAnswersAPIView(APIView):
 
             is_correct = (question.correct_text_answer == answer['answer'])
             total_answers += 1
-            if is_correct:
-                correct_answers += 1
-            else:
+            correct_answers += is_correct
+
+            if not is_correct:
                 wrong_topics.add(question.topic.name)
 
             question_details.append({
                 "index": index,
                 "question_id": question.id,
                 "question_uz": question.question_text,
-                "question_ru": "",  # Add if multilingual support exists
+                "question_ru": "",  # qo‘shilishi mumkin
                 "answer": is_correct
             })
             index += 1
@@ -184,12 +187,12 @@ class CheckAnswersAPIView(APIView):
 
             correct_choices = set(Choice.objects.filter(question=question, is_correct=True).values_list('id', flat=True))
             selected_choices = set(answer['choices'])
-
             is_correct = (correct_choices == selected_choices)
+
             total_answers += 1
-            if is_correct:
-                correct_answers += 1
-            else:
+            correct_answers += is_correct
+
+            if not is_correct:
                 wrong_topics.add(question.topic.name)
 
             question_details.append({
@@ -215,9 +218,9 @@ class CheckAnswersAPIView(APIView):
                     break
 
             total_answers += 1
-            if is_correct:
-                correct_answers += 1
-            else:
+            correct_answers += is_correct
+
+            if not is_correct:
                 wrong_topics.add(question.topic.name)
 
             question_details.append({
@@ -229,10 +232,8 @@ class CheckAnswersAPIView(APIView):
             })
             index += 1
 
-        # Calculate score
         score = round((correct_answers / total_answers) * 100, 2) if total_answers else 0.0
 
-        # Prepare result JSON
         result_json = {
             "question": question_details,
             "Topic": [{"topic_name": name} for name in wrong_topics],
@@ -243,15 +244,9 @@ class CheckAnswersAPIView(APIView):
             }]
         }
 
-        # Save to Diagnost_Student
         Diagnost_Student.objects.create(
-            student=student,
+            student=student_instance,
             result=result_json
         )
 
-        # Return score response
-        return Response({
-            "total_answers": total_answers,
-            "correct_answers": correct_answers,
-            "score": score
-        })
+        return Response(result_json)
