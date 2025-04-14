@@ -19,9 +19,31 @@ class TeacherSubjectsAPIView(APIView):
     def get(self, request):
         teacher = request.user.teacher_profile  # Tizimga kirgan o‘qituvchini olish
         subjects = Subject.objects.filter(teachers=teacher)  # O‘qituvchiga bog‘langan fanlar
-
-        serializer = SubjectSerializer(subjects, many=True)  
+        serializer = SubjectSerializer(subjects, many=True)
         return Response(serializer.data)
+
+    def put(self, request, pk):
+        teacher = request.user.teacher_profile
+        try:
+            subject = Subject.objects.get(pk=pk, teachers=teacher)
+        except Subject.DoesNotExist:
+            return Response({"error": "Bu fan sizga tegishli emas yoki mavjud emas."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = SubjectSerializer(subject, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        teacher = request.user.teacher_profile
+        try:
+            subject = Subject.objects.get(pk=pk, teachers=teacher)
+        except Subject.DoesNotExist:
+            return Response({"error": "Bu fan sizga tegishli emas yoki mavjud emas."}, status=status.HTTP_404_NOT_FOUND)
+
+        subject.delete()
+        return Response({"message": "Fan o‘chirildi."}, status=status.HTTP_204_NO_CONTENT)
     
 class MyChapterAddCreateView(APIView):
     permission_classes = [IsAuthenticated]
