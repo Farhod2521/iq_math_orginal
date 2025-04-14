@@ -6,6 +6,7 @@ from .views import(
 )
 urlpatterns = [
     path("my-subjects/", TeacherSubjectsAPIView.as_view(), name="teacher-subjects"),
+    path("my-subjects/<int:pk>/", TeacherSubjectsAPIView.as_view(), name="teacher-subjects"),
     path('my-chapters/create/', MyChapterAddCreateView.as_view(), name='chapter-create'),
     path('my-topics/create/', MyTopicAddCreateView.as_view(), name='topic-create'),
     path('my-question/create/', QuestionAddCreateView.as_view(), name='question-create'),
