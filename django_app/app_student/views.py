@@ -81,63 +81,6 @@ class GenerateTestAPIView(APIView):
         filtered_data = list(filter(None, serializer.data))  # None bo‘lganlarini olib tashlash
         return Response(filtered_data)
 
-
-
-# class CheckAnswersAPIView(APIView):
-#     permission_classes = [IsAuthenticated]
-
-#     def post(self, request):
-#         serializer = CheckAnswersSerializer(data=request.data)
-
-#         if not serializer.is_valid():
-#             return Response({"message": "Noto‘g‘ri formatdagi ma'lumotlar."}, status=400)
-
-#         correct_answers = 0
-#         total_answers = 0
-
-#         # Check Text Answers
-#         if serializer.validated_data.get('text_answers'):
-#             text_answers = serializer.validated_data['text_answers']
-#             for answer in text_answers:
-#                 total_answers += 1
-#                 question = Question.objects.filter(id=answer['question_id'], question_type="text").first()
-#                 if question:
-#                     if question.correct_text_answer == answer['answer']:
-#                         correct_answers += 1
-
-#         # Check Choice Answers
-#         if serializer.validated_data.get('choice_answers'):
-#             choice_answers = serializer.validated_data['choice_answers']
-#             for answer in choice_answers:
-#                 total_answers += 1
-#                 question = Question.objects.filter(id=answer['question_id'], question_type="choice").first()
-#                 if question:
-#                     correct_choices = Choice.objects.filter(question=question, is_correct=True).values_list('id', flat=True)
-#                     if set(answer['choices']) == set(correct_choices):
-#                         correct_answers += 1
-
-#         # Check Composite Answers
-#         if serializer.validated_data.get('composite_answers'):
-#             composite_answers = serializer.validated_data['composite_answers']
-#             for answer in composite_answers:
-#                 total_answers += 1
-#                 question = Question.objects.filter(id=answer['question_id'], question_type="composite").first()
-#                 if question:
-#                     correct_answers_count = 0
-#                     for sub_answer, sub_question in zip(answer['answers'], question.sub_questions.all()):
-#                         if sub_answer == sub_question.correct_answer:
-#                             correct_answers_count += 1
-#                     if correct_answers_count == question.sub_questions.count():
-#                         correct_answers += 1
-
-#         # Return the response with score
-#         return Response({
-#             "total_answers": total_answers,
-#             "correct_answers": correct_answers,
-#             "score": (correct_answers / total_answers) * 100 if total_answers > 0 else 0
-#         })
-
-
 class CheckAnswersAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
