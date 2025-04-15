@@ -48,4 +48,4 @@ def import_docx_questions(docx_path, topic_name):
 
 # Foydalanish:
 if __name__ == "__main__":
-    import_docx_questions("path/to/your_file.docx", "Mening Mavzum")
+    import_docx_questions("/home/user/backend/iq_math_orginal/testdoc/5.docx", "Mening Mavzum")
