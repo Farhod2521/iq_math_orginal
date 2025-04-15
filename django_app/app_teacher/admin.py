@@ -33,7 +33,7 @@ class ChapterAdmin(TranslationAdmin):
 class QuestionInline(admin.TabularInline):  
     model = Question
     extra = 1  # 1 dona bo‘sh forma qo‘shiladi
-    fields = ('question_text', 'correct_answer', 'level')
+    fields = ('question_text', 'level')
 
 
 @admin.register(Topic)
