@@ -19,11 +19,13 @@ def import_docx_questions(docx_path, topic_name):
         print(f"Topic '{topic_name}' topilmadi.")
         return
 
-    # Topic dan chapter ni olish
     chapter = topic.chapter
     if not chapter:
         print(f"Topic '{topic_name}' uchun chapter mavjud emas.")
         return
+
+    image_counter = 0
+    image_map = list(doc.inline_shapes)  # Worddagi barcha rasm obyektlari
 
     for row in doc.tables[0].rows[1:]:
         uz_question = row.cells[1].text.strip()
@@ -31,27 +33,28 @@ def import_docx_questions(docx_path, topic_name):
         ru_question = row.cells[3].text.strip()
         ru_answer = row.cells[4].text.strip()
 
-        image_parts = [
-            rel.target_part.blob for rel in doc.part._rels.values()
-            if "image" in rel.target_ref
-        ]
         image_html = ""
-        if image_parts:
-            img_data = image_parts.pop(0)
+        # Har bir row uchun bittadan rasm bog‘laymiz (agar mavjud bo‘lsa)
+        if image_counter < len(image_map):
+            shape = image_map[image_counter]
+            image_blob = shape._inline.graphic.graphicData.pic.blipFill.blip.embed
+            image_part = doc.part.related_parts[image_blob]
+            image_data = image_part.blob
             image_name = f"{uuid.uuid4()}.png"
             media_dir = "media/imported"
             os.makedirs(media_dir, exist_ok=True)
             image_path = os.path.join(media_dir, image_name)
             with open(image_path, "wb") as f:
-                f.write(img_data)
+                f.write(image_data)
             image_html = f'<img src="/media/imported/{image_name}" alt="Image">'
+            image_counter += 1
 
         Question.objects.create(
             topic=topic,
             question_type="text",
             level=1,
-            correct_text_answer=uz_answer,  # correct_text_answer_uz emas!
-            question_text=f"<p>{uz_question}</p>{image_html}",  # question_text_uz emas!
+            correct_text_answer=uz_answer,
+            question_text=f"<p>{uz_question}</p>{image_html}",
         )
 
 # Foydalanish:
