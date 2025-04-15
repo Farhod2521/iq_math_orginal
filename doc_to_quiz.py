@@ -19,10 +19,10 @@ def import_docx_questions(docx_path, topic_name):
         print(f"Topic '{topic_name}' topilmadi.")
         return
 
-    # Shu Topic ga biriktirilgan Chapter ni topamiz
-    chapter = Chapter.objects.filter(topic=topic).first()
+    # Topic dan chapter ni olish
+    chapter = topic.chapter
     if not chapter:
-        print(f"Topic '{topic_name}' uchun chapter topilmadi.")
+        print(f"Topic '{topic_name}' uchun chapter mavjud emas.")
         return
 
     for row in doc.tables[0].rows[1:]:
@@ -31,7 +31,6 @@ def import_docx_questions(docx_path, topic_name):
         ru_question = row.cells[3].text.strip()
         ru_answer = row.cells[4].text.strip()
 
-        # Rasmni ajratib olish
         image_parts = [
             rel.target_part.blob for rel in doc.part._rels.values()
             if "image" in rel.target_ref
@@ -47,16 +46,12 @@ def import_docx_questions(docx_path, topic_name):
                 f.write(img_data)
             image_html = f'<img src="/media/imported/{image_name}" alt="Image">'
 
-        # Savolni bazaga saqlash
         Question.objects.create(
             topic=topic,
-            chapter=chapter,
             question_type="text",
             level=1,
-            correct_text_answer_uz=uz_answer,
-            correct_text_answer_ru=ru_answer,
-            question_text_uz=f"<p>{uz_question}</p>{image_html}",
-            question_text_ru=f"<p>{ru_question}</p>{image_html}",
+            correct_text_answer=uz_answer,  # correct_text_answer_uz emas!
+            question_text=f"<p>{uz_question}</p>{image_html}",  # question_text_uz emas!
         )
 
 # Foydalanish:
