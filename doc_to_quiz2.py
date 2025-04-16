@@ -1,10 +1,10 @@
 import os
 import django
-import zipfile
-import uuid
-import xml.etree.ElementTree as ET
 from docx import Document
 from django.core.files.base import ContentFile
+import uuid
+import re
+from bs4 import BeautifulSoup
 
 # Django muhitini yuklash
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.production")
@@ -13,34 +13,36 @@ django.setup()
 from django_app.app_teacher.models import Question, Topic
 
 
-# MathML formulani oddiy textga aylantirish (basic versiya)
-def extract_equations_from_docx(docx_path):
-    zipf = zipfile.ZipFile(docx_path)
-    equations = []
+def convert_math_fractions(text):
+    """
+    Word'dagi oddiy kasr formatlarini HTML/RichText formatiga o'girish
+    Masalan: 1/2 → <span class="math-fraction">1/2</span>
+    """
+    # Oddiy kasrlar uchun regex
+    pattern = r'(\d+)/(\d+)'
+    replacement = r'<span class="math-fraction">\1/\2</span>'
+    return re.sub(pattern, replacement, text)
 
-    for name in zipf.namelist():
-        if name.startswith("word/document") and name.endswith(".xml"):
-            xml_content = zipf.read(name)
-            root = ET.fromstring(xml_content)
-
-            # OMML namespace
-            namespaces = {
-                "w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main",
-                "m": "http://schemas.openxmlformats.org/officeDocument/2006/math",
-            }
-
-            for omath in root.findall(".//m:oMath", namespaces):
-                text_parts = []
-                for t in omath.findall(".//m:t", namespaces):
-                    text_parts.append(t.text)
-                if text_parts:
-                    equations.append("".join(text_parts))
-    return equations
-
+def process_docx_paragraphs(doc):
+    """
+    Word hujjatidagi paragraflarni qayta ishlash va HTML formatiga o'tkazish
+    """
+    html_content = ""
+    for para in doc.paragraphs:
+        text = para.text.strip()
+        if text:
+            # Kasrlarni konvert qilish
+            text = convert_math_fractions(text)
+            # Style'larni saqlab qolish
+            if para.style.name.startswith('Heading'):
+                level = int(para.style.name[-1])
+                html_content += f"<h{level}>{text}</h{level}>"
+            else:
+                html_content += f"<p>{text}</p>"
+    return html_content
 
 def import_docx_questions(docx_path, topic_name):
     doc = Document(docx_path)
-    formulas = extract_equations_from_docx(docx_path)
 
     try:
         topic = Topic.objects.get(name=topic_name)
@@ -53,6 +55,7 @@ def import_docx_questions(docx_path, topic_name):
         print(f"Topic '{topic_name}' uchun chapter mavjud emas.")
         return
 
+    # Word hujjatidagi barcha rasmlarni yig'amiz
     image_parts = [
         rel.target_part.blob
         for rel in doc.part._rels.values()
@@ -60,46 +63,24 @@ def import_docx_questions(docx_path, topic_name):
     ]
 
     image_index = 0
-    formula_index = 0
 
     for row in doc.tables[0].rows[1:]:
         cells = row.cells
         if len(cells) < 5:
-            continue
+            continue  # noto'g'ri satr
 
         try:
             level = int(cells[0].text.strip())
         except ValueError:
             level = 1
 
-        uz_question_raw = cells[1].text.strip()
-        uz_answer = cells[2].text.strip()
-        ru_question_raw = cells[3].text.strip()
-        ru_answer = cells[4].text.strip()
+        # Matnlarni qayta ishlash
+        uz_question = process_docx_paragraphs(cells[1])
+        uz_answer = convert_math_fractions(cells[2].text.strip())
+        ru_question = process_docx_paragraphs(cells[3])
+        ru_answer = convert_math_fractions(cells[4].text.strip())
 
-        def split_text(text):
-            lines = [line.strip() for line in text.strip().split("\n") if line.strip()]
-            if len(lines) >= 2:
-                return lines[0], " ".join(lines[1:])
-            elif len(lines) == 1:
-                return lines[0], ""
-            else:
-                return "", ""
-
-        uz_question, uz_extra = split_text(uz_question_raw)
-        ru_question, ru_extra = split_text(ru_question_raw)
-
-        if uz_extra:
-            uz_question += " " + uz_extra
-        if ru_extra:
-            ru_question += " " + ru_extra
-
-        # Agar formula mavjud bo‘lsa, uni qo‘shamiz
-        if formula_index < len(formulas):
-            uz_question += f"<br><b>Formula:</b> {formulas[formula_index]}"
-            formula_index += 1
-
-        # Rasmni biriktirish
+        # Rasmni biriktirish (agar mavjud bo'lsa)
         image_html = ""
         if image_index < len(image_parts):
             img_data = image_parts[image_index]
@@ -114,13 +95,13 @@ def import_docx_questions(docx_path, topic_name):
             image_html = f'<br><img src="/media/imported/{image_name}" alt="Image">'
             image_index += 1
 
-        # Bazaga saqlash
+        # Question yaratish
         Question.objects.create(
             topic=topic,
             question_type="text",
             level=level,
             correct_text_answer=uz_answer,
-            question_text_uz=f"{uz_question}{image_html}",
+            question_text=f"{uz_question}{image_html}",
             question_text_ru=ru_question
         )
 
@@ -128,4 +109,4 @@ def import_docx_questions(docx_path, topic_name):
 
 # Foydalanish:
 if __name__ == "__main__":
-    import_docx_questions("/home/user/backend/iq_math_orginal/testdoc/5.docx", "Kasrlarni bo‘lish")
+    import_docx_questions("/path/to/your/document.docx", "Kasrlarni bo'lish")
