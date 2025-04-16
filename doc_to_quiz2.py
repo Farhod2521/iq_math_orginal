@@ -109,4 +109,4 @@ def import_docx_questions(docx_path, topic_name):
 
 # Foydalanish:
 if __name__ == "__main__":
-    import_docx_questions("/path/to/your/document.docx", "Kasrlarni bo'lish")
+    import_docx_questions("/home/user/backend/iq_math_orginal/testdoc/5.docx", "Kasrlarni bo'lish")
