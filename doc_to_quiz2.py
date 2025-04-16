@@ -25,7 +25,7 @@ def import_docx_questions(docx_path, topic_name):
         print(f"Topic '{topic_name}' uchun chapter mavjud emas.")
         return
 
-    # Word hujjatidagi barcha rasmlarni yig‘ib olamiz
+    # Word hujjatidagi barcha rasmlarni yig‘amiz
     image_parts = [
         rel.target_part.blob
         for rel in doc.part._rels.values()
@@ -37,19 +37,37 @@ def import_docx_questions(docx_path, topic_name):
     for row in doc.tables[0].rows[1:]:
         cells = row.cells
         if len(cells) < 5:
-            continue  # noto‘liq satr bo‘lsa, o‘tkazib yuboramiz
+            continue  # noto‘liq satr bo‘lsa
 
         try:
             level = int(cells[0].text.strip())
         except ValueError:
-            level = 1  # default qiymat
+            level = 1
 
-        uz_question = cells[1].text.strip()
+        uz_question_raw = cells[1].text.strip()
         uz_answer = cells[2].text.strip()
-        ru_question = cells[3].text.strip()
+        ru_question_raw = cells[3].text.strip()
         ru_answer = cells[4].text.strip()
 
-        # Rasmni yuklash
+        # Ajratilgan holatda – ikkita til ketma-ket yozilgan bo‘lsa
+        def split_text(text):
+            lines = [line.strip() for line in text.strip().split("\n") if line.strip()]
+            if len(lines) >= 2:
+                return lines[0], " ".join(lines[1:])
+            elif len(lines) == 1:
+                return lines[0], ""
+            else:
+                return "", ""
+
+        uz_question, uz_extra = split_text(uz_question_raw)
+        ru_question, ru_extra = split_text(ru_question_raw)
+
+        if uz_extra:
+            uz_question += " " + uz_extra
+        if ru_extra:
+            ru_question += " " + ru_extra
+
+        # Rasmni biriktirish (agar mavjud bo‘lsa)
         image_html = ""
         if image_index < len(image_parts):
             img_data = image_parts[image_index]
@@ -64,19 +82,17 @@ def import_docx_questions(docx_path, topic_name):
             image_html = f'<br><img src="/media/imported/{image_name}" alt="Image">'
             image_index += 1
 
-        # Savolni HTML formatda saqlash (o‘zbek va rus tilidagi matnlar)
-        full_question = f"<p><b>UZ:</b> {uz_question}</p><p><b>RU:</b> {ru_question}</p>{image_html}"
-
-        # To‘g‘ri javob faqat o‘zbekcha yoziladi
+        # Question yaratish
         Question.objects.create(
             topic=topic,
             question_type="text",
             level=level,
             correct_text_answer=uz_answer,
-            question_text=full_question,
+            question_text_uz=f"{uz_question}{image_html}",
+            question_text_ru=ru_question
         )
 
-    print("Import tugadi.")
+    print("✅ Import tugadi.")
 
 # Foydalanish:
 if __name__ == "__main__":
