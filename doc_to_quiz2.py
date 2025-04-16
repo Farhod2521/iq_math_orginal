@@ -1,8 +1,10 @@
 import os
 import django
+import zipfile
+import uuid
+import xml.etree.ElementTree as ET
 from docx import Document
 from django.core.files.base import ContentFile
-import uuid
 
 # Django muhitini yuklash
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.production")
@@ -11,8 +13,34 @@ django.setup()
 from django_app.app_teacher.models import Question, Topic
 
 
+# MathML formulani oddiy textga aylantirish (basic versiya)
+def extract_equations_from_docx(docx_path):
+    zipf = zipfile.ZipFile(docx_path)
+    equations = []
+
+    for name in zipf.namelist():
+        if name.startswith("word/document") and name.endswith(".xml"):
+            xml_content = zipf.read(name)
+            root = ET.fromstring(xml_content)
+
+            # OMML namespace
+            namespaces = {
+                "w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main",
+                "m": "http://schemas.openxmlformats.org/officeDocument/2006/math",
+            }
+
+            for omath in root.findall(".//m:oMath", namespaces):
+                text_parts = []
+                for t in omath.findall(".//m:t", namespaces):
+                    text_parts.append(t.text)
+                if text_parts:
+                    equations.append("".join(text_parts))
+    return equations
+
+
 def import_docx_questions(docx_path, topic_name):
     doc = Document(docx_path)
+    formulas = extract_equations_from_docx(docx_path)
 
     try:
         topic = Topic.objects.get(name=topic_name)
@@ -25,7 +53,6 @@ def import_docx_questions(docx_path, topic_name):
         print(f"Topic '{topic_name}' uchun chapter mavjud emas.")
         return
 
-    # Word hujjatidagi barcha rasmlarni yig‘amiz
     image_parts = [
         rel.target_part.blob
         for rel in doc.part._rels.values()
@@ -33,11 +60,12 @@ def import_docx_questions(docx_path, topic_name):
     ]
 
     image_index = 0
+    formula_index = 0
 
     for row in doc.tables[0].rows[1:]:
         cells = row.cells
         if len(cells) < 5:
-            continue  # noto‘liq satr bo‘lsa
+            continue
 
         try:
             level = int(cells[0].text.strip())
@@ -49,7 +77,6 @@ def import_docx_questions(docx_path, topic_name):
         ru_question_raw = cells[3].text.strip()
         ru_answer = cells[4].text.strip()
 
-        # Ajratilgan holatda – ikkita til ketma-ket yozilgan bo‘lsa
         def split_text(text):
             lines = [line.strip() for line in text.strip().split("\n") if line.strip()]
             if len(lines) >= 2:
@@ -67,7 +94,12 @@ def import_docx_questions(docx_path, topic_name):
         if ru_extra:
             ru_question += " " + ru_extra
 
-        # Rasmni biriktirish (agar mavjud bo‘lsa)
+        # Agar formula mavjud bo‘lsa, uni qo‘shamiz
+        if formula_index < len(formulas):
+            uz_question += f"<br><b>Formula:</b> {formulas[formula_index]}"
+            formula_index += 1
+
+        # Rasmni biriktirish
         image_html = ""
         if image_index < len(image_parts):
             img_data = image_parts[image_index]
@@ -82,7 +114,7 @@ def import_docx_questions(docx_path, topic_name):
             image_html = f'<br><img src="/media/imported/{image_name}" alt="Image">'
             image_index += 1
 
-        # Question yaratish
+        # Bazaga saqlash
         Question.objects.create(
             topic=topic,
             question_type="text",
