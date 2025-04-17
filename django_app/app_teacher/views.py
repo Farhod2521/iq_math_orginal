@@ -159,7 +159,6 @@ class QuestionAddCreateView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        user = request.user
         serializer = QuestionSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             try:
@@ -231,7 +230,7 @@ class QuestionUpdateView(APIView):
     permission_classes = [IsAuthenticated]
 
     def put(self, request, pk):
-        question = get_object_or_404(Question, pk=pk, user=request.user)
+        question = get_object_or_404(Question, pk=pk)
         serializer = QuestionSerializer(question, data=request.data, partial=True, context={'request': request})
         
         if serializer.is_valid():
