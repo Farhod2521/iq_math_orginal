@@ -150,22 +150,22 @@ class TeacherRegisterSerializer(serializers.Serializer):
 ##############################################################
 class StudentRegisterSerializer(serializers.Serializer):
     full_name = serializers.CharField(required=True)
-    email = serializers.EmailField(required=True)
+    # email = serializers.EmailField(required=True)
     phone = serializers.CharField(required=True)
-    region = serializers.CharField(required=True)
-    districts = serializers.CharField(required=True)
-    address = serializers.CharField(required=True)
-    brithday = serializers.CharField(required=True)
-    academy_or_school = serializers.CharField(required=True)
-    academy_or_school_name = serializers.CharField(required=True)
+    # region = serializers.CharField(required=True)
+    # districts = serializers.CharField(required=True)
+    # address = serializers.CharField(required=True)
+    # brithday = serializers.CharField(required=True)
+    # academy_or_school = serializers.CharField(required=True)
+    # academy_or_school_name = serializers.CharField(required=True)
     class_name = serializers.SlugRelatedField(
     queryset=Class.objects.all(),
     slug_field='name', 
     required=True
     )
-    document_type = serializers.CharField(required=True)
-    type_of_education = serializers.CharField(required=True)
-    document = serializers.CharField(required=True)
+    # document_type = serializers.CharField(required=True)
+    # type_of_education = serializers.CharField(required=True)
+    # document = serializers.CharField(required=True)
 
     def validate_user_data(self, email, phone):
         """Foydalanuvchi ma'lumotlarini tekshirish"""
@@ -204,27 +204,27 @@ class StudentRegisterSerializer(serializers.Serializer):
 
     def create(self, validated_data):
         phone = validated_data['phone']
-        email = validated_data['email']
+        # email = validated_data['email']
         class_name = validated_data.pop('class_name')  # `PrimaryKeyRelatedField` ni olish
 
         student_data = {
             'full_name': validated_data.pop('full_name'),
-            'address': validated_data.pop('address'),
-            'brithday': validated_data.pop('brithday'),
-            'academy_or_school': validated_data.pop('academy_or_school'),
-            'academy_or_school_name': validated_data.pop('academy_or_school_name'),
+            # 'address': validated_data.pop('address'),
+            # 'brithday': validated_data.pop('brithday'),
+            # 'academy_or_school': validated_data.pop('academy_or_school'),
+            # 'academy_or_school_name': validated_data.pop('academy_or_school_name'),
             'class_name': class_name,  # ForeignKey sifatida berish
-            "region": validated_data.pop('region'),
-            "districts": validated_data.pop('districts'),
-            "document_type": validated_data.pop('document_type'),
-            "document": validated_data.pop('document'),
-            "type_of_education": validated_data.pop('type_of_education'),
+            # "region": validated_data.pop('region'),
+            # "districts": validated_data.pop('districts'),
+            # "document_type": validated_data.pop('document_type'),
+            # "document": validated_data.pop('document'),
+            # "type_of_education": validated_data.pop('type_of_education'),
             "status": False,
             "student_date": now()
         }
 
         # Yangi foydalanuvchi yaratish
-        user = User.objects.create(phone=phone, email=email, role='student')
+        user = User.objects.create(phone=phone, role='student')
 
         # SMS kod yaratish
         sms_code = str(random.randint(10000, 99999))
