@@ -221,7 +221,7 @@ class QuestionDeleteView(APIView):
     permission_classes = [IsAuthenticated]
 
     def delete(self, request, pk):
-        question = get_object_or_404(Question, pk=pk, user=request.user)
+        question = get_object_or_404(Question, pk=pk)
         question.delete()
         return Response({"message": "Savol muvaffaqiyatli o‘chirildi."}, status=status.HTTP_204_NO_CONTENT)
 
