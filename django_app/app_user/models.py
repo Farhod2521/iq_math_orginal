@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from datetime import timedelta
 from django.utils.timezone import now
-
+from django_app.app_teacher.models import Subject
 
 
 class UserManager(BaseUserManager):
