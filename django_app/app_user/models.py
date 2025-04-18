@@ -50,7 +50,7 @@ class User(AbstractUser):
         verbose_name_plural = "Foydalanuvchilar"
 
 
-class Class(models.Model):
+class SchoolClass(models.Model):
     name = models.CharField(max_length=20, unique=True, verbose_name="Sinf nomi")  # Masalan, "5", "6", "7"
 
     def __str__(self):
