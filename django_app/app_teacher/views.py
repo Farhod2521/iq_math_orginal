@@ -5,7 +5,7 @@ from rest_framework import status
 from .models import Subject, Chapter, Topic, Question
 from .serializers import(
     SubjectSerializer, MyChapterAddSerializer, MyTopicAddSerializer,
-    ChoiceSerializer, CompositeSubQuestionSerializer, QuestionSerializer
+    ChoiceSerializer, CompositeSubQuestionSerializer, QuestionSerializer, SubjectRegisterSerilzier
 )
 from django.shortcuts import get_object_or_404
 from rest_framework.generics import ListAPIView
@@ -13,8 +13,8 @@ from rest_framework.generics import ListAPIView
 
 class SubjectListAPIView(ListAPIView):
     queryset = Subject.objects.all()
-    serializer_class = SubjectSerializer
-    
+    serializer_class = SubjectRegisterSerilzier
+
 
 
 
