@@ -12,14 +12,23 @@ class SubjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subject
         fields = ["id", "name", "class_name", "teachers",  "image"]  # Kerakli maydonlar
-
 class SubjectRegisterSerilzier(serializers.ModelSerializer):
     class_name = serializers.CharField(source="classes.name")
+    class_uz = serializers.SerializerMethodField()
+    class_ru = serializers.SerializerMethodField()
+
     class Meta:
         model = Subject
-        fields =  ["id", "name_uz", "name_ru", "class_name"]
+        fields = ["id", "name_uz", "name_ru", "class_name", "class_uz", "class_ru"]
 
+    def get_class_uz(self, obj):
+        return f"{obj.classes.name}-sinf {obj.name_uz}"
 
+    def get_class_ru(self, obj):
+        return f"{obj.classes.name}-класс {obj.name_ru}"
+    
+
+    
 class MyChapterAddSerializer(serializers.ModelSerializer):
     class Meta:
         model =  Chapter
