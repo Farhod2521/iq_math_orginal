@@ -158,11 +158,7 @@ class StudentRegisterSerializer(serializers.Serializer):
     # brithday = serializers.CharField(required=True)
     # academy_or_school = serializers.CharField(required=True)
     # academy_or_school_name = serializers.CharField(required=True)
-    class_name = serializers.SlugRelatedField(
-    queryset=Class.objects.all(),
-    slug_field='name', 
-    required=True
-    )
+    class_name = serializers.CharField(required=True)
     # document_type = serializers.CharField(required=True)
     # type_of_education = serializers.CharField(required=True)
     # document = serializers.CharField(required=True)
