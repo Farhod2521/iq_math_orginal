@@ -90,7 +90,9 @@ class Student(models.Model):
         verbose_name = "O‘quvchi"
         verbose_name_plural = "O‘quvchilar"
 
-
+    def get_subject_name(self):
+        from django_app.app_teacher.models import Subject
+        return self.class_name.name if self.class_name else "Noma’lum"
 class Teacher(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='teacher_profile', verbose_name="Foydalanuvchi") 
     full_name = models.CharField(max_length=200, verbose_name="To‘liq ism")
