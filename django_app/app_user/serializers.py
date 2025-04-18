@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Student, UserSMSAttempt, SchoolClass, Teacher
+from .models import User, Student, UserSMSAttempt, Class, Teacher
 from django.core.cache import cache
 import random
 from .sms_service import send_sms, send_verification_email, send_login_parol_email# SMS sending function
@@ -243,7 +243,7 @@ class StudentRegisterSerializer(serializers.Serializer):
     
 class Class_Serializer(serializers.ModelSerializer):
     class Meta:
-        model = SchoolClass
+        model = Class
         fields = ['id', 'name']
 
 import random
