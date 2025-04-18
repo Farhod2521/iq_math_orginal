@@ -1,5 +1,5 @@
 from django.db import models
-from django_app.app_user.models import Class, Teacher
+from django_app.app_user.models import SchoolClass, Teacher
 from ckeditor.fields import RichTextField
 
 
@@ -16,7 +16,7 @@ class Subject(models.Model):
     name = models.CharField(max_length=200, verbose_name="Fan nomi")
     image = models.ImageField(upload_to="FILES/Subject", blank=True, null=True)
     teachers = models.ManyToManyField(Teacher, related_name="subjects", verbose_name="O‘qituvchilar")
-    classes = models.ForeignKey(Class, on_delete=models.SET_NULL, related_name="subjects", verbose_name="Sinf", null=True)
+    classes = models.ForeignKey(SchoolClass, on_delete=models.SET_NULL, related_name="subjects", verbose_name="Sinf", null=True)
     category = models.ForeignKey(Subject_Category, on_delete=models.SET_NULL, related_name="subjects", verbose_name="Fan bo'limi", null=True)
 
     def __str__(self):
