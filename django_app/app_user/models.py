@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from datetime import timedelta
 from django.utils.timezone import now
+from django_app.app_teacher.models import Subject
 
 
 
@@ -69,7 +70,7 @@ class Student(models.Model):
     brithday = models.CharField(max_length=20, verbose_name="Tug‘ilgan kun")
     academy_or_school = models.CharField(max_length=200, verbose_name="Akademiya yoki maktab")
     academy_or_school_name = models.CharField(max_length=500, verbose_name="Muassasa nomi")
-    class_name = models.ForeignKey(Class, on_delete=models.SET_NULL, null=True, related_name='students', verbose_name="Sinf")
+    class_name = models.ForeignKey(Subject, on_delete=models.SET_NULL, null=True, related_name='students', verbose_name="Sinf")
     document_type = models.CharField(max_length=50, verbose_name="Hujjat turi")
     document = models.CharField(max_length=20, verbose_name="Hujjat raqami")
     type_of_education = models.CharField(max_length=200, verbose_name="Ta’lim turi")
