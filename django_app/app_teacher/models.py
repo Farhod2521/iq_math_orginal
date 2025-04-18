@@ -15,16 +15,34 @@ class Subject_Category(models.Model):
 class Subject(models.Model):
     name = models.CharField(max_length=200, verbose_name="Fan nomi")
     image = models.ImageField(upload_to="FILES/Subject", blank=True, null=True)
-    teachers = models.ManyToManyField(Teacher, related_name="subjects", verbose_name="O‘qituvchilar")
-    classes = models.ForeignKey(SchoolClass, on_delete=models.SET_NULL, related_name="subjects", verbose_name="Sinf", null=True)
-    category = models.ForeignKey(Subject_Category, on_delete=models.SET_NULL, related_name="subjects", verbose_name="Fan bo'limi", null=True)
+    
+    teachers = models.ManyToManyField(
+        'app_user.Teacher',  # string ko'rinishida yozildi
+        related_name="subjects",
+        verbose_name="O‘qituvchilar"
+    )
+
+    classes = models.ForeignKey(
+        'app_user.SchoolClass',  # string ko'rinishida yozildi
+        on_delete=models.SET_NULL,
+        related_name="subjects",
+        verbose_name="Sinf",
+        null=True
+    )
+
+    category = models.ForeignKey(
+        Subject_Category,
+        on_delete=models.SET_NULL,
+        related_name="subjects",
+        verbose_name="Fan bo'limi",
+        null=True
+    )
 
     def __str__(self):
-        return f"{self.name} - {self.classes.name}"
+        return f"{self.name} - {self.classes.name if self.classes else ''}"
 
     class Meta:
         verbose_name = "Fan"
-        verbose_name_plural = "Fanlar"
 
 class Chapter(models.Model):
     name = models.CharField(max_length=500, verbose_name="Bob nomi")
