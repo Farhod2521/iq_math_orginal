@@ -19,7 +19,7 @@ class SubjectRegisterSerilzier(serializers.ModelSerializer):
 
     class Meta:
         model = Subject
-        fields = ["id",  "class_uz", "class_ru"]
+        fields = ["id", "name_uz", "name_ru", "class_name", "class_uz", "class_ru"]
 
     def get_class_uz(self, obj):
         return f"{obj.classes.name}-sinf {obj.name_uz}"
@@ -28,7 +28,7 @@ class SubjectRegisterSerilzier(serializers.ModelSerializer):
         return f"{obj.classes.name}-класс {obj.name_ru}"
     
 
-
+    
 class MyChapterAddSerializer(serializers.ModelSerializer):
     class Meta:
         model =  Chapter
