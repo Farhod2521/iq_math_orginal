@@ -8,7 +8,13 @@ from .serializers import(
     ChoiceSerializer, CompositeSubQuestionSerializer, QuestionSerializer
 )
 from django.shortcuts import get_object_or_404
+from rest_framework.generics import ListAPIView
 
+
+class SubjectListAPIView(ListAPIView):
+    queryset = Subject.objects.all()
+    serializer_class = SubjectSerializer
+    
 
 
 

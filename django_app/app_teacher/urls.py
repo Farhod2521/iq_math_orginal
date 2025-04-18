@@ -2,10 +2,11 @@ from django.urls import path
 from .views import(
      TeacherSubjectsAPIView, MyTopicAddCreateView,
        MyTopicListView, MyChapterAddCreateView, 
-       MyChapterListView, QuestionAddCreateView, MyQuestionListView, QuestionUpdateView, QuestionDeleteView
+       MyChapterListView, QuestionAddCreateView, MyQuestionListView, QuestionUpdateView, QuestionDeleteView, SubjectListAPIView
 )
 urlpatterns = [
     path("my-subjects/", TeacherSubjectsAPIView.as_view(), name="teacher-subjects"),
+    path("subject-list/", SubjectListAPIView.as_view(), name="teacher-subjects"),
     path("my-subjects/<int:pk>/", TeacherSubjectsAPIView.as_view(), name="teacher-subjects"),
     path('my-chapters/create/', MyChapterAddCreateView.as_view(), name='chapter-create'),
     path('my-topics/create/', MyTopicAddCreateView.as_view(), name='topic-create'),
