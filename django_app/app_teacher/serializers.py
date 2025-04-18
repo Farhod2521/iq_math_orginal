@@ -14,6 +14,7 @@ class SubjectSerializer(serializers.ModelSerializer):
         fields = ["id", "name", "class_name", "teachers",  "image"]  # Kerakli maydonlar
 
 class SubjectRegisterSerilzier(serializers.ModelSerializer):
+    class_name = serializers.CharField(source="classes.name")
     class Meta:
         model = Subject
         fields =  ["id", "name_uz", "name_ru", "class_name"]
