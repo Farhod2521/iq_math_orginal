@@ -43,6 +43,10 @@ class TopicSerializer(serializers.ModelSerializer):
         if obj.is_locked:
             return False
 
+        # Agar admin tomonidan ochilgan bo'lsa, unda is_open True bo'lishi kerak
+        if not obj.is_locked:
+            return True
+
         # Foydalanuvchini Student obyekti sifatida olish
         try:
             student_instance = Student.objects.get(user=user)  # Foydalanuvchi orqali Student olish
