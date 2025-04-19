@@ -251,16 +251,20 @@ class TopicListByChapterAPIView(APIView):
         except Chapter.DoesNotExist:
             return Response({"detail": "Chapter topilmadi"}, status=status.HTTP_404_NOT_FOUND)
         
-
 class QuestionListByTopicAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, topic_id):
+        level = request.query_params.get('level', None) 
+        
         try:
             topic = Topic.objects.get(id=topic_id)
-            questions = Question.objects.filter(topic=topic)
+            if level is not None:
+                questions = Question.objects.filter(topic=topic, level=level)
+            else:
+                questions = Question.objects.filter(topic=topic)
             serializer = CustomQuestionSerializer(questions, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
-        
+
         except Topic.DoesNotExist:
             return Response({"detail": "Mavzu topilmadi"}, status=status.HTTP_404_NOT_FOUND)
