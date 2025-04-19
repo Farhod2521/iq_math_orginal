@@ -23,61 +23,46 @@ class GenerateTestAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        student = Student.objects.filter(user=request.user).first()
+        student = Student.objects.get(user=request.user)
         if not student or not student.class_name:
             return Response({"message": "Foydalanuvchining sinfi topilmadi"}, status=400)
 
-        # class_name: "4-sinf Matematika" -> Extract class number and subject name
-        match = re.match(r"(\d+)-sinf\s+(.+)", student.class_name.strip())
-        if not match:
-            return Response({"message": "Sinf formati noto‘g‘ri, masalan: '4-sinf Matematika'"}, status=400)
+        # Get the class ID of the student
+        current_class = student.class_name.classes.id
+        
+        # Try to get the previous class (e.g., if current_class is 5, get 4)
+        try:
+            prev_class = Class.objects.get(name=str(int(current_class) - 1))
+        except (ValueError, Class.DoesNotExist):
+            return Response({"message": "Quyi sinf topilmadi"}, status=400)
 
-        current_class_num = int(match.group(1))
-        subject_name = match.group(2).strip()
+        # Get all subjects related to the previous class for "Matematika"
+        subjects = Subject.objects.filter(
+            classes=prev_class, category__name__iexact="Matematika"
+        )
+        if not subjects.exists():
+            return Response({"message": "Matematika fani topilmadi"}, status=400)
 
-        prev_class_num = current_class_num - 1
-        if prev_class_num < 1:
-            return Response({"message": "Quyi sinf mavjud emas"}, status=400)
-
-        # Subject nomini normalize qilish
-        expected_name = f"{prev_class_num}-sinf {subject_name}".strip().lower().replace(" ", "")
-
-        # Subjectni sinf va nomi bo‘yicha qidiramiz
-        matched_subject = None
-        for subject in Subject.objects.all():
-            class_uz = f"{subject.classes.name}-sinf {subject.name_uz}".strip().lower().replace(" ", "")
-            if class_uz == expected_name:
-                matched_subject = subject
-                break
-
-        if not matched_subject:
-            all_available = [
-                f"{subj.classes.name}-sinf {subj.name_uz}" for subj in Subject.objects.all()
-            ]
-            return Response({
-                "message": f"{prev_class_num}-sinf '{subject_name}' fani topilmadi",
-                "available_subjects": all_available
-            }, status=400)
-
-        chapters = matched_subject.chapters.all()
-        if not chapters.exists():
-            return Response({"message": "Bo‘limlar topilmadi"}, status=400)
-
+        subject = subjects.first()
+        chapters = subject.chapters.all()
         level = request.data.get("level")
+
         try:
             level = int(level)
         except (TypeError, ValueError):
-            return Response({"message": "Level noto‘g‘ri formatda, butun son bo‘lishi kerak"}, status=400)
+            return Response({"message": "Level noto‘g‘ri formatda"}, status=400)
 
         total_questions = 30
-        per_chapter = total_questions // chapters.count()
+        per_chapter = total_questions // chapters.count() if chapters.exists() else 0
         questions_list = []
 
+        # Generate questions for each chapter
         for chapter in chapters:
             chapter_questions = Question.objects.filter(topic__chapter=chapter, level=level).distinct()
             count = min(per_chapter, chapter_questions.count())
             questions_list += sample(list(chapter_questions), count)
 
+        # If there are not enough questions, add more from the same chapters
         if len(questions_list) < total_questions:
             remaining = total_questions - len(questions_list)
             extra_qs = Question.objects.filter(
@@ -86,8 +71,10 @@ class GenerateTestAPIView(APIView):
             ).exclude(id__in=[q.id for q in questions_list])
             questions_list += sample(list(extra_qs), min(remaining, extra_qs.count()))
 
+        # Serialize the data and filter out None values
         serializer = CustomQuestionSerializer(questions_list, many=True, context={'request': request})
-        filtered_data = list(filter(None, serializer.data))
+        filtered_data = list(filter(None, serializer.data))  # Remove None values
+        
         return Response(filtered_data)
 
 
@@ -232,9 +219,6 @@ class StudentSubjectListAPIView(APIView):
             student = Student.objects.get(user=request.user)
             student_class_name = student.class_name.id
             sub =  Subject.objects.filter(id=student_class_name)
-
-
-
             serializer = SubjectSerializer(sub, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
 
