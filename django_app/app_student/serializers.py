@@ -1,10 +1,20 @@
 from rest_framework import serializers
 from django_app.app_teacher.models import Subject, Chapter, Choice, CompositeSubQuestion, Question
 from modeltranslation.utils import get_translation_fields
+
+
+
 class SubjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subject
-        fields = ['id', 'name', 'teachers', "image"]
+        fields = ['id', 'name_uz', 'name_ru','teachers', "image"]
+
+
+class ChapterSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Chapter
+        fields = ['id', 'name_uz', 'name_ru','subject']
+
 
 
 

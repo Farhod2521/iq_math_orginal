@@ -4,7 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from django_app.app_teacher.models import Subject, Topic, Question, Chapter, Subject_Category, CompositeSubQuestion, Choice
 from django_app.app_user.models import Student, Class
 from .serializers import (
-    SubjectSerializer, CustomQuestionSerializer, CheckAnswersSerializer
+    SubjectSerializer, CustomQuestionSerializer, CheckAnswersSerializer, ChapterSerializer
     )
 import random
 from django.db.models import Q
@@ -227,5 +227,21 @@ class StudentSubjectListAPIView(APIView):
             return Response({"detail": "Student topilmadi"}, status=status.HTTP_404_NOT_FOUND)
 
 
+class ChapterListBySubjectAPIView(APIView):
+    permission_classes = [IsAuthenticated]
 
+    def get(self, request, subject_id):
+        try:
+            # 1. Subject obyektini olish
+            subject = Subject.objects.get(id=subject_id)
+
+            # 2. Shu subjectga tegishli barcha chapterlarni olish
+            chapters = Chapter.objects.filter(subject=subject)
+
+            # 3. Serialize qilish
+            serializer = ChapterSerializer(chapters, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
+        except Subject.DoesNotExist:
+            return Response({"detail": "Subject topilmadi"}, status=status.HTTP_404_NOT_FOUND)
 
