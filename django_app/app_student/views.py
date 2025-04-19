@@ -22,18 +22,27 @@ class GenerateTestAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        student = getattr(request.user, 'student_profile', None)
+        student = Student.objects.filter(user=request.user).first()
         if not student or not student.class_name:
             return Response({"message": "Foydalanuvchining sinfi topilmadi"}, status=400)
 
-        current_class = student.class_name
+        # 4-sinf Matematika -> 4
+        import re
+        match = re.match(r"(\d+)", student.class_name)
+        if not match:
+            return Response({"message": "Sinf raqami noto‘g‘ri formatda"}, status=400)
+
+        current_class_num = int(match.group(1))
+        prev_class_num = current_class_num - 1
+
         try:
-            prev_class = Class.objects.get(name=str(int(current_class.name) - 1))
-        except (ValueError, Class.DoesNotExist):
-            return Response({"message": "Quyi sinf topilmadi"}, status=400)
+            prev_class = Class.objects.get(name=str(prev_class_num))
+        except Class.DoesNotExist:
+            return Response({"message": f"{prev_class_num}-sinf topilmadi"}, status=400)
 
         subjects = Subject.objects.filter(
-            classes=prev_class, category__name__iexact="Matematika"
+            classes=prev_class,
+            category__name__iexact="Matematika"
         )
         if not subjects.exists():
             return Response({"message": "Matematika fani topilmadi"}, status=400)
@@ -64,7 +73,6 @@ class GenerateTestAPIView(APIView):
             ).exclude(id__in=[q.id for q in questions_list])
             questions_list += sample(list(extra_qs), min(remaining, extra_qs.count()))
 
-        # Serialize va None bo‘lganlarni (composite with no sub) chiqarib tashlash
         serializer = CustomQuestionSerializer(questions_list, many=True, context={'request': request})
         filtered_data = list(filter(None, serializer.data))  # None bo‘lganlarini olib tashlash
         return Response(filtered_data)
