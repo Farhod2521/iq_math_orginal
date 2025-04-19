@@ -10,6 +10,9 @@ class  Diagnost_Student(models.Model):
         return str(self.student.full_name)
     
 
+
+
+
 class TopicProgress(models.Model):
     user = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='topic_progress')
     topic = models.ForeignKey(Topic, on_delete=models.CASCADE, related_name='progress')
