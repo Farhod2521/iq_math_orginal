@@ -29,7 +29,7 @@ class GenerateTestAPIView(APIView):
         # class_name: "4-sinf Matematika" -> Extract class number and subject name
         match = re.match(r"(\d+)-sinf\s+(.+)", student.class_name.strip())
         if not match:
-            return Response({"message": "Sinf formati noto‘g‘ri"}, status=400)
+            return Response({"message": "Sinf formati noto‘g‘ri, masalan: '4-sinf Matematika'"}, status=400)
 
         current_class_num = int(match.group(1))
         subject_name = match.group(2).strip()
@@ -38,27 +38,38 @@ class GenerateTestAPIView(APIView):
         if prev_class_num < 1:
             return Response({"message": "Quyi sinf mavjud emas"}, status=400)
 
-        # Endi biz Subject obyektlarini sinf raqami va subject_name bo‘yicha filter qilamiz
+        # Subject nomini normalize qilish
+        expected_name = f"{prev_class_num}-sinf {subject_name}".strip().lower().replace(" ", "")
+
+        # Subjectni sinf va nomi bo‘yicha qidiramiz
         matched_subject = None
         for subject in Subject.objects.all():
-            class_uz = f"{subject.classes.name}-sinf {subject.name_uz}".strip()
-            if class_uz == f"{prev_class_num}-sinf {subject_name}":
+            class_uz = f"{subject.classes.name}-sinf {subject.name_uz}".strip().lower().replace(" ", "")
+            if class_uz == expected_name:
                 matched_subject = subject
                 break
 
         if not matched_subject:
-            return Response({"message": f"{prev_class_num}-sinf {subject_name} fani topilmadi"}, status=400)
+            all_available = [
+                f"{subj.classes.name}-sinf {subj.name_uz}" for subj in Subject.objects.all()
+            ]
+            return Response({
+                "message": f"{prev_class_num}-sinf '{subject_name}' fani topilmadi",
+                "available_subjects": all_available
+            }, status=400)
 
         chapters = matched_subject.chapters.all()
-        level = request.data.get("level")
+        if not chapters.exists():
+            return Response({"message": "Bo‘limlar topilmadi"}, status=400)
 
+        level = request.data.get("level")
         try:
             level = int(level)
         except (TypeError, ValueError):
-            return Response({"message": "Level noto‘g‘ri formatda"}, status=400)
+            return Response({"message": "Level noto‘g‘ri formatda, butun son bo‘lishi kerak"}, status=400)
 
         total_questions = 30
-        per_chapter = total_questions // chapters.count() if chapters.exists() else 0
+        per_chapter = total_questions // chapters.count()
         questions_list = []
 
         for chapter in chapters:
