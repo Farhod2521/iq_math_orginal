@@ -3,11 +3,11 @@ from modeltranslation.admin import TranslationAdmin, TranslationTabularInline
 from django.utils.safestring import mark_safe
 
 from .models import (
-    Subject, Topic, Question,
-                      Chapter, Subject_Category, Choice, CompositeSubQuestion
+    Topic, Question,
+                      Chapter,  Choice, CompositeSubQuestion
                       )
 
-
+from django_app.app_user.models import  Subject, Subject_Category
 @admin.register(Subject_Category)
 class SubjectCategoryAdmin(admin.ModelAdmin):
     list_display = ('name',)

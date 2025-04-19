@@ -1,9 +1,9 @@
 from rest_framework import serializers
 from .models import (
-    Subject, Chapter, Topic, Question,Choice, CompositeSubQuestion
+    Chapter, Topic, Question,Choice, CompositeSubQuestion
     
 )
-
+from django_app.app_user.models import  Subject
 
 class SubjectSerializer(serializers.ModelSerializer):
     class_name = serializers.CharField(source="classes.name")  # Sinf nomini olish

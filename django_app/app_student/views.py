@@ -1,7 +1,8 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from django_app.app_teacher.models import Subject, Topic, Question, Chapter, Subject_Category, CompositeSubQuestion, Choice
+from django_app.app_teacher.models import  Topic, Question, Chapter, Subject_Category, CompositeSubQuestion, Choice
+from django_app.app_user.models import  Subject
 from django_app.app_user.models import Student, Class
 from .serializers import (
     SubjectSerializer, CustomQuestionSerializer, CheckAnswersSerializer, ChapterSerializer
