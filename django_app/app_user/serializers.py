@@ -65,12 +65,7 @@ class TeacherRegisterSerializer(serializers.Serializer):
     full_name = serializers.CharField(required=True)
     email = serializers.EmailField(required=True)
     phone = serializers.CharField(required=True)
-    region = serializers.CharField(required=True)
-    districts = serializers.CharField(required=True)
-    address = serializers.CharField(required=True)
-    brithday = serializers.CharField(required=True)
-    document_type = serializers.CharField(required=True)
-    document = serializers.CharField(required=True)
+
 
 
     def validate_user_data(self, email, phone):
@@ -114,12 +109,6 @@ class TeacherRegisterSerializer(serializers.Serializer):
 
         teacher_data = {
             "full_name": validated_data.pop("full_name"),
-            "address": validated_data.pop("address"),
-            "brithday": validated_data.pop("brithday"),
-            "region": validated_data.pop("region"),
-            "districts": validated_data.pop("districts"),
-            "document_type": validated_data.pop("document_type"),
-            "document": validated_data.pop("document"),
             "status": False,
             "teacher_date": now()
         }
