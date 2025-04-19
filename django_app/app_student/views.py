@@ -211,3 +211,33 @@ class CheckAnswersAPIView(APIView):
         )
 
         return Response(result_json)
+
+
+class StudentSubjectListAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            # 1. Studentni user orqali olish
+            student = Student.objects.get(user=request.user)
+            student_class_name = student.class_name.strip()
+
+            # 2. Subject querysetni olib, filter qilamiz
+            matched_subjects = []
+
+            for subject in Subject.objects.all():
+                class_uz = f"{subject.classes.name}-sinf {subject.name_uz}"
+                class_ru = f"{subject.classes.name}-класс {subject.name_ru}"
+                
+                if student_class_name in [class_uz, class_ru]:
+                    matched_subjects.append(subject)
+
+            serializer = SubjectSerializer(matched_subjects, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        except Student.DoesNotExist:
+            return Response({"detail": "Student topilmadi"}, status=status.HTTP_404_NOT_FOUND)
+
+
+
+
