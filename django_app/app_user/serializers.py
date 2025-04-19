@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Student, UserSMSAttempt, Class, Teacher
+from .models import User, Student, UserSMSAttempt, Class, Teacher, Subject
 from django.core.cache import cache
 import random
 from .sms_service import send_sms, send_verification_email, send_login_parol_email# SMS sending function
@@ -150,21 +150,10 @@ class TeacherRegisterSerializer(serializers.Serializer):
 ##############################################################
 class StudentRegisterSerializer(serializers.Serializer):
     full_name = serializers.CharField(required=True)
-    # email = serializers.EmailField(required=True)
     phone = serializers.CharField(required=True)
-    # region = serializers.CharField(required=True)
-    # districts = serializers.CharField(required=True)
-    # address = serializers.CharField(required=True)
-    # brithday = serializers.CharField(required=True)
-    # academy_or_school = serializers.CharField(required=True)
-    # academy_or_school_name = serializers.CharField(required=True)
-    class_name = serializers.CharField(required=True)
-    # document_type = serializers.CharField(required=True)
-    # type_of_education = serializers.CharField(required=True)
-    # document = serializers.CharField(required=True)
+    class_name = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all(), required=True)  # ForeignKey uchun
 
     def validate_user_data(self, email, phone):
-        """Foydalanuvchi ma'lumotlarini tekshirish"""
         user = User.objects.filter(phone=phone).first()
         if user:
             student = getattr(user, "student_profile", None)
@@ -200,21 +189,11 @@ class StudentRegisterSerializer(serializers.Serializer):
 
     def create(self, validated_data):
         phone = validated_data['phone']
-        # email = validated_data['email']
         class_name = validated_data.pop('class_name')  # `PrimaryKeyRelatedField` ni olish
 
         student_data = {
             'full_name': validated_data.pop('full_name'),
-            # 'address': validated_data.pop('address'),
-            # 'brithday': validated_data.pop('brithday'),
-            # 'academy_or_school': validated_data.pop('academy_or_school'),
-            # 'academy_or_school_name': validated_data.pop('academy_or_school_name'),
             'class_name': class_name,  # ForeignKey sifatida berish
-            # "region": validated_data.pop('region'),
-            # "districts": validated_data.pop('districts'),
-            # "document_type": validated_data.pop('document_type'),
-            # "document": validated_data.pop('document'),
-            # "type_of_education": validated_data.pop('type_of_education'),
             "status": False,
             "student_date": now()
         }
