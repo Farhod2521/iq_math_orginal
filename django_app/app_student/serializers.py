@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django_app.app_teacher.models import Chapter, Choice, CompositeSubQuestion, Question, Topic
 from modeltranslation.utils import get_translation_fields
 
-from django_app.app_user.models import  Subject
+from django_app.app_user.models import  Subject, Student
 from .models import TopicProgress
 class SubjectSerializer(serializers.ModelSerializer):
     class_name = serializers.CharField(source="classes.name")
@@ -33,7 +33,7 @@ class TopicSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Topic
-        fields = ['id', 'name_uz', 'name_ru','chapter',  "video_url","content_uz", "content_ru", "is_locked", "is_open"]
+        fields = ['id', 'name_uz', 'name_ru', 'chapter', "video_url", "content_uz", "content_ru", "is_locked", "is_open"]
 
     def get_is_open(self, obj):
         request = self.context.get('request')
@@ -43,11 +43,12 @@ class TopicSerializer(serializers.ModelSerializer):
         if obj.is_locked:
             return False
 
-        # Agar o‘quvchi uchun is_unlocked bo‘lsa → ochiq
+        # Foydalanuvchini Student obyekti sifatida olish
         try:
-            progress = TopicProgress.objects.get(user=user, topic=obj)
+            student_instance = Student.objects.get(user=user)  # Foydalanuvchi orqali Student olish
+            progress = TopicProgress.objects.get(user=student_instance, topic=obj)
             return progress.is_unlocked
-        except TopicProgress.DoesNotExist:
+        except (TopicProgress.DoesNotExist, Student.DoesNotExist):
             return False
 class ChoiceSerializer(serializers.ModelSerializer):
     class Meta:
