@@ -2,11 +2,12 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
-from .models import Subject, Chapter, Topic, Question
+from .models import  Chapter, Topic, Question
 from .serializers import(
     SubjectSerializer, MyChapterAddSerializer, MyTopicAddSerializer,
     ChoiceSerializer, CompositeSubQuestionSerializer, QuestionSerializer, SubjectRegisterSerilzier
 )
+from django_app.app_user.models import  Subject
 from django.shortcuts import get_object_or_404
 from rest_framework.generics import ListAPIView
 

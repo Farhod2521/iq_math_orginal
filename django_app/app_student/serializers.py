@@ -1,8 +1,8 @@
 from rest_framework import serializers
-from django_app.app_teacher.models import Subject, Chapter, Choice, CompositeSubQuestion, Question
+from django_app.app_teacher.models import Chapter, Choice, CompositeSubQuestion, Question
 from modeltranslation.utils import get_translation_fields
 
-
+from django_app.app_user.models import  Subject
 
 class SubjectSerializer(serializers.ModelSerializer):
     class_name = serializers.CharField(source="classes.name")
