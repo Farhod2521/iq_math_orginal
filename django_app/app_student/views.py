@@ -5,7 +5,8 @@ from django_app.app_teacher.models import  Topic, Question, Chapter, CompositeSu
 from django_app.app_user.models import  Subject, Subject_Category
 from django_app.app_user.models import Student, Class
 from .serializers import (
-    SubjectSerializer, CustomQuestionSerializer, CheckAnswersSerializer, ChapterSerializer
+    SubjectSerializer, CustomQuestionSerializer, CheckAnswersSerializer, ChapterSerializer, 
+    TopicSerializer
     )
 import random
 from django.db.models import Q
@@ -27,17 +28,14 @@ class GenerateTestAPIView(APIView):
         if not student or not student.class_name:
             return Response({"message": "Foydalanuvchining sinfi topilmadi"}, status=400)
 
-        # Get the class ID of the student
+
         current_class = student.class_name.classes.name
         
-        # Try to get the previous class (e.g., if current_class is 5, get 4)
         try:
             prev_class = Class.objects.get(name=str(int(current_class) - 1))
             
         except (ValueError, Class.DoesNotExist):
             return Response({"message": "Quyi sinf topilmadi"}, status=400)
-
-        # Get all subjects related to the previous class for "Matematika"
         subjects = Subject.objects.filter(
             classes__name=prev_class, category__name__iexact="Matematika"
         )
@@ -232,16 +230,37 @@ class ChapterListBySubjectAPIView(APIView):
 
     def get(self, request, subject_id):
         try:
-            # 1. Subject obyektini olish
             subject = Subject.objects.get(id=subject_id)
-
-            # 2. Shu subjectga tegishli barcha chapterlarni olish
             chapters = Chapter.objects.filter(subject=subject)
-
-            # 3. Serialize qilish
             serializer = ChapterSerializer(chapters, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
         
         except Subject.DoesNotExist:
             return Response({"detail": "Subject topilmadi"}, status=status.HTTP_404_NOT_FOUND)
 
+class TopicListByChapterAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, chapter_id):
+        try:
+            chapter = Chapter.objects.get(id=chapter_id)
+            topics = Topic.objects.filter(chapter=chapter)
+            serializer = TopicSerializer(topics, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
+        except Chapter.DoesNotExist:
+            return Response({"detail": "Chapter topilmadi"}, status=status.HTTP_404_NOT_FOUND)
+        
+
+class QuestionListByTopicAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, topic_id):
+        try:
+            topic = Topic.objects.get(id=topic_id)
+            questions = Question.objects.filter(topic=topic)
+            serializer = CustomQuestionSerializer(questions, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
+        except Topic.DoesNotExist:
+            return Response({"detail": "Mavzu topilmadi"}, status=status.HTTP_404_NOT_FOUND)
