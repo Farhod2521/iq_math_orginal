@@ -245,7 +245,7 @@ class TopicListByChapterAPIView(APIView):
         try:
             chapter = Chapter.objects.get(id=chapter_id)
             topics = Topic.objects.filter(chapter=chapter)
-            serializer = TopicSerializer(topics, many=True)
+            serializer = TopicSerializer(topics, many=True, context={'request': request})
             return Response(serializer.data, status=status.HTTP_200_OK)
         
         except Chapter.DoesNotExist:
