@@ -14,9 +14,9 @@ from collections import defaultdict
 from bs4 import BeautifulSoup  # HTML teglarini tozalash uchun
 from django.utils.html import strip_tags
 from random import sample
-from .models import Diagnost_Student
+from .models import Diagnost_Student, TopicProgress
 from rest_framework import status
-
+from django.utils import timezone
 import re
 ###################################   TIZIMGA KIRGAN O"QUVCHI BILIM DARAJASINI TEKSHIRISH #####################
 
@@ -287,8 +287,8 @@ class CheckAnswersAPIView(APIView):
         correct_answers = 0
         total_answers = 0
         question_details = []
-        wrong_topics = {}  # Changed to a dictionary to track topics and their index
         index = 1
+        last_question_topic = None  # keyin foydalanish uchun
 
         # --- TEXT ANSWERS ---
         for answer in serializer.validated_data.get('text_answers', []):
@@ -299,14 +299,7 @@ class CheckAnswersAPIView(APIView):
             total_answers += 1
             if is_correct:
                 correct_answers += 1
-            else:
-                if question.topic:
-                    if question.topic.name_uz not in wrong_topics:
-                        wrong_topics[question.topic.name_uz] = {
-                            'index': len(wrong_topics) + 1,
-                            'topic_name_ru': question.topic.name_ru,
-                            'topic_name_uz': question.topic.name_uz
-                        }
+            last_question_topic = question.topic
 
             question_details.append({
                 "index": index,
@@ -328,15 +321,7 @@ class CheckAnswersAPIView(APIView):
 
             total_answers += 1
             correct_answers += is_correct
-
-            if not is_correct:
-                if question.topic:
-                    if question.topic.name_uz not in wrong_topics:
-                        wrong_topics[question.topic.name_uz] = {
-                            'index': len(wrong_topics) + 1,
-                            'topic_name_ru': question.topic.name_ru,
-                            'topic_name_uz': question.topic.name_uz
-                        }
+            last_question_topic = question.topic
 
             question_details.append({
                 "index": index,
@@ -361,15 +346,7 @@ class CheckAnswersAPIView(APIView):
 
             total_answers += 1
             correct_answers += is_correct
-
-            if not is_correct:
-                if question.topic:
-                    if question.topic.name_uz not in wrong_topics:
-                        wrong_topics[question.topic.name_uz] = {
-                            'index': len(wrong_topics) + 1,
-                            'topic_name_ru': question.topic.name_ru,
-                            'topic_name_uz': question.topic.name_uz
-                        }
+            last_question_topic = question.topic
 
             question_details.append({
                 "index": index,
@@ -382,12 +359,40 @@ class CheckAnswersAPIView(APIView):
 
         score = round((correct_answers / total_answers) * 100, 2) if total_answers else 0.0
 
+        if last_question_topic and score >= 80:
+            # O'zining progressini yangilaymiz
+            topic_progress, _ = TopicProgress.objects.get_or_create(
+                user=student_instance,
+                topic=last_question_topic
+            )
+            topic_progress.is_unlocked = True
+            topic_progress.score = score
+            topic_progress.completed_at = timezone.now()
+            topic_progress.save()
+
+            # Navbatdagi mavzuni unlock qilamiz faqat shu student uchun
+            all_topics = Topic.objects.filter(chapter=last_question_topic.chapter, is_locked=False).order_by('id')
+            topic_ids = list(all_topics.values_list('id', flat=True))
+
+            try:
+                current_index = topic_ids.index(last_question_topic.id)
+                next_topic_id = topic_ids[current_index + 1]
+                next_topic = Topic.objects.get(id=next_topic_id)
+
+                # faqat agar studentda mavjud bo‘lmasa qo‘shamiz
+                next_progress, created = TopicProgress.objects.get_or_create(
+                    user=student_instance,
+                    topic=next_topic
+                )
+                if created:
+                    next_progress.is_unlocked = True
+                    next_progress.save()
+
+            except (IndexError, Topic.DoesNotExist):
+                pass  # oxirgi mavzu bo‘lishi mumkin
+
         result_json = {
             "question": question_details,
-            "Topic": [{"index": topic_info['index'],
-                       "topic_name_uz": topic_info['topic_name_uz'],
-                       "topic_name_ru": topic_info['topic_name_ru']}
-                      for topic_info in wrong_topics.values()],
             "result": [{
                 "total_answers": total_answers,
                 "correct_answers": correct_answers,
