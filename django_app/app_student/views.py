@@ -33,7 +33,7 @@ class GenerateTestAPIView(APIView):
         # Try to get the previous class (e.g., if current_class is 5, get 4)
         try:
             prev_class = Class.objects.get(name=str(int(current_class) - 1))
-            print(prev_class)
+            print(prev_class.id)
         except (ValueError, Class.DoesNotExist):
             return Response({"message": "Quyi sinf topilmadi"}, status=400)
 
