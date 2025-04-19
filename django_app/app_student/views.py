@@ -39,7 +39,7 @@ class GenerateTestAPIView(APIView):
 
         # Get all subjects related to the previous class for "Matematika"
         subjects = Subject.objects.filter(
-            classes_name=prev_class, category__name__iexact="Matematika"
+            classes__name=prev_class, category__name__iexact="Matematika"
         )
         if not subjects.exists():
             return Response({"message": "Matematika fani topilmadi"}, status=400)
