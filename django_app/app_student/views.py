@@ -15,7 +15,7 @@ from random import sample
 from .models import Diagnost_Student
 from rest_framework import status
 
-
+import re
 ###################################   TIZIMGA KIRGAN O"QUVCHI BILIM DARAJASINI TEKSHIRISH #####################
 
 class GenerateTestAPIView(APIView):
@@ -26,29 +26,30 @@ class GenerateTestAPIView(APIView):
         if not student or not student.class_name:
             return Response({"message": "Foydalanuvchining sinfi topilmadi"}, status=400)
 
-        # 4-sinf Matematika -> 4
-        import re
-        match = re.match(r"(\d+)", student.class_name)
+        # class_name: "4-sinf Matematika" -> Extract class number and subject name
+        match = re.match(r"(\d+)-sinf\s+(.+)", student.class_name.strip())
         if not match:
-            return Response({"message": "Sinf raqami noto‘g‘ri formatda"}, status=400)
+            return Response({"message": "Sinf formati noto‘g‘ri"}, status=400)
 
         current_class_num = int(match.group(1))
+        subject_name = match.group(2).strip()
+
         prev_class_num = current_class_num - 1
+        if prev_class_num < 1:
+            return Response({"message": "Quyi sinf mavjud emas"}, status=400)
 
-        try:
-            prev_class = Class.objects.get(name=str(prev_class_num))
-        except Class.DoesNotExist:
-            return Response({"message": f"{prev_class_num}-sinf topilmadi"}, status=400)
+        # Endi biz Subject obyektlarini sinf raqami va subject_name bo‘yicha filter qilamiz
+        matched_subject = None
+        for subject in Subject.objects.all():
+            class_uz = f"{subject.classes.name}-sinf {subject.name_uz}".strip()
+            if class_uz == f"{prev_class_num}-sinf {subject_name}":
+                matched_subject = subject
+                break
 
-        subjects = Subject.objects.filter(
-            classes=prev_class,
-            category__name__iexact="Matematika"
-        )
-        if not subjects.exists():
-            return Response({"message": "Matematika fani topilmadi"}, status=400)
+        if not matched_subject:
+            return Response({"message": f"{prev_class_num}-sinf {subject_name} fani topilmadi"}, status=400)
 
-        subject = subjects.first()
-        chapters = subject.chapters.all()
+        chapters = matched_subject.chapters.all()
         level = request.data.get("level")
 
         try:
@@ -74,8 +75,9 @@ class GenerateTestAPIView(APIView):
             questions_list += sample(list(extra_qs), min(remaining, extra_qs.count()))
 
         serializer = CustomQuestionSerializer(questions_list, many=True, context={'request': request})
-        filtered_data = list(filter(None, serializer.data))  # None bo‘lganlarini olib tashlash
+        filtered_data = list(filter(None, serializer.data))
         return Response(filtered_data)
+
 
 class CheckAnswersAPIView(APIView):
     permission_classes = [IsAuthenticated]
