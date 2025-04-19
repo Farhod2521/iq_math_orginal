@@ -11,7 +11,7 @@ class SubjectSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Subject
-        fields = ["id", "name", "class_name", "teachers",  "image"]  # Kerakli maydonlar
+        fields = ["id", "name_uz", "name_ru", "class_name", "teachers",  "image"]  # Kerakli maydonlar
 class SubjectRegisterSerilzier(serializers.ModelSerializer):
     class_name = serializers.CharField(source="classes.name")
     class_uz = serializers.SerializerMethodField()
@@ -49,7 +49,7 @@ class ChoiceSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Choice
-        fields = ['question', 'letter', 'text', 'image', 'is_correct']
+        fields = ['question', 'letter', 'text_uz','text_ru', 'image', 'is_correct']
     
     def to_representation(self, instance):
         representation = super().to_representation(instance)
@@ -65,14 +65,14 @@ class CompositeSubQuestionSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = CompositeSubQuestion
-        fields = ["question", 'text1', 'correct_answer', 'text2']
+        fields = ["question", 'text1_uz','text1_ru', 'correct_answer_ru',"correct_answer_uz", 'text2_uz', 'text2_ru']
 class QuestionSerializer(serializers.ModelSerializer):
     choices = ChoiceSerializer(many=True, required=False)
     sub_questions = CompositeSubQuestionSerializer(many=True, required=False)
 
     class Meta:
         model = Question
-        fields = ['id', 'topic', 'question_text', 'question_type', 'level',"video_file", "video_url", 'correct_text_answer', 'choices', 'sub_questions']
+        fields = ['id', 'topic', 'question_text_uz', 'question_text_ru','question_type', 'level',"video_file", "video_url", 'correct_text_answer_ru', 'correct_text_answer_uz','choices', 'sub_questions']
 
     def create(self, validated_data):
         choices_data = validated_data.pop('choices', [])
