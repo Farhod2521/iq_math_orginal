@@ -32,7 +32,7 @@ class SubjectRegisterSerilzier(serializers.ModelSerializer):
 class MyChapterAddSerializer(serializers.ModelSerializer):
     class Meta:
         model =  Chapter
-        fields = "__all__"
+        fields = ["id", "name_uz", "name_ru", "subject"]
 
 class MyTopicAddSerializer(serializers.ModelSerializer):
     class Meta:
