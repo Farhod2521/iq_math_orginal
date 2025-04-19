@@ -36,7 +36,7 @@ class TopicSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Topic
-        fields = ['id', 'name_uz', 'name_ru','chapter',  "video_url","content_uz", "content_ru", "is_locked" ]
+        fields = ['id', 'name_uz', 'name_ru','chapter',  "video_url","content_uz", "content_ru", "is_locked", "is_open"]
 
     def get_is_open(self, obj):
         request = self.context.get('request')
