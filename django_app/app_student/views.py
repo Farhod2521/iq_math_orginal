@@ -230,19 +230,12 @@ class StudentSubjectListAPIView(APIView):
         try:
             # 1. Studentni user orqali olish
             student = Student.objects.get(user=request.user)
-            student_class_name = student.class_name.strip()
+            student_class_name = student.class_name.id
+            sub =  Subject.objects.filter(id=student_class_name)
 
-            # 2. Subject querysetni olib, filter qilamiz
-            matched_subjects = []
 
-            for subject in Subject.objects.all():
-                class_uz = f"{subject.classes.name}-sinf {subject.name_uz}"
-                class_ru = f"{subject.classes.name}-класс {subject.name_ru}"
-                
-                if student_class_name in [class_uz, class_ru]:
-                    matched_subjects.append(subject)
 
-            serializer = SubjectSerializer(matched_subjects, many=True)
+            serializer = SubjectSerializer(sub, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
 
         except Student.DoesNotExist:
