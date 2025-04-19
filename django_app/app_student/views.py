@@ -33,13 +33,13 @@ class GenerateTestAPIView(APIView):
         # Try to get the previous class (e.g., if current_class is 5, get 4)
         try:
             prev_class = Class.objects.get(name=str(int(current_class) - 1))
-            print(prev_class.id)
+            
         except (ValueError, Class.DoesNotExist):
             return Response({"message": "Quyi sinf topilmadi"}, status=400)
 
         # Get all subjects related to the previous class for "Matematika"
         subjects = Subject.objects.filter(
-            classes=prev_class.id, category__name__iexact="Matematika"
+            classes_name=prev_class, category__name__iexact="Matematika"
         )
         if not subjects.exists():
             return Response({"message": "Matematika fani topilmadi"}, status=400)
