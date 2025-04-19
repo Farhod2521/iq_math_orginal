@@ -77,7 +77,7 @@ class GenerateTestAPIView(APIView):
         return Response(filtered_data)
 
 
-class CheckAnswersAPIView(APIView):
+class GenerateCheckAnswersAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -268,3 +268,131 @@ class QuestionListByTopicAPIView(APIView):
 
         except Topic.DoesNotExist:
             return Response({"detail": "Mavzu topilmadi"}, status=status.HTTP_404_NOT_FOUND)
+        
+
+
+class CheckAnswersAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = CheckAnswersSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response({"message": "Noto‘g‘ri formatdagi ma'lumotlar."}, status=400)
+
+        try:
+            student_instance = Student.objects.get(user=request.user)
+        except Student.DoesNotExist:
+            return Response({"message": "Student topilmadi"}, status=404)
+
+        correct_answers = 0
+        total_answers = 0
+        question_details = []
+        wrong_topics = {}  # Changed to a dictionary to track topics and their index
+        index = 1
+
+        # --- TEXT ANSWERS ---
+        for answer in serializer.validated_data.get('text_answers', []):
+            question = Question.objects.filter(id=answer['question_id'], question_type='text').first()
+            if not question:
+                continue
+            is_correct = (question.correct_text_answer == answer['answer'])
+            total_answers += 1
+            if is_correct:
+                correct_answers += 1
+            else:
+                if question.topic:
+                    if question.topic.name_uz not in wrong_topics:
+                        wrong_topics[question.topic.name_uz] = {
+                            'index': len(wrong_topics) + 1,
+                            'topic_name_ru': question.topic.name_ru,
+                            'topic_name_uz': question.topic.name_uz
+                        }
+
+            question_details.append({
+                "index": index,
+                "question_id": question.id,
+                "question_uz": question.question_text_uz,
+                "question_ru": question.question_text_ru,
+                "answer": is_correct
+            })
+            index += 1
+
+        # --- CHOICE ANSWERS ---
+        for answer in serializer.validated_data.get('choice_answers', []):
+            question = Question.objects.filter(id=answer['question_id'], question_type='choice').first()
+            if not question:
+                continue
+            correct_choices = set(Choice.objects.filter(question=question, is_correct=True).values_list('id', flat=True))
+            selected_choices = set(answer['choices'])
+            is_correct = (correct_choices == selected_choices)
+
+            total_answers += 1
+            correct_answers += is_correct
+
+            if not is_correct:
+                if question.topic:
+                    if question.topic.name_uz not in wrong_topics:
+                        wrong_topics[question.topic.name_uz] = {
+                            'index': len(wrong_topics) + 1,
+                            'topic_name_ru': question.topic.name_ru,
+                            'topic_name_uz': question.topic.name_uz
+                        }
+
+            question_details.append({
+                "index": index,
+                "question_id": question.id,
+                "question_uz": question.question_text_uz,
+                "question_ru": question.question_text_ru,
+                "answer": is_correct
+            })
+            index += 1
+
+        # --- COMPOSITE ANSWERS ---
+        for answer in serializer.validated_data.get('composite_answers', []):
+            question = Question.objects.filter(id=answer['question_id'], question_type='composite').first()
+            if not question:
+                continue
+            correct_subs = question.sub_questions.all()
+            is_correct = True
+            for sub_answer, sub_question in zip(answer['answers'], correct_subs):
+                if sub_answer != sub_question.correct_answer:
+                    is_correct = False
+                    break
+
+            total_answers += 1
+            correct_answers += is_correct
+
+            if not is_correct:
+                if question.topic:
+                    if question.topic.name_uz not in wrong_topics:
+                        wrong_topics[question.topic.name_uz] = {
+                            'index': len(wrong_topics) + 1,
+                            'topic_name_ru': question.topic.name_ru,
+                            'topic_name_uz': question.topic.name_uz
+                        }
+
+            question_details.append({
+                "index": index,
+                "question_id": question.id,
+                "question_uz": question.question_text_uz,
+                "question_ru": question.question_text_ru,
+                "answer": is_correct
+            })
+            index += 1
+
+        score = round((correct_answers / total_answers) * 100, 2) if total_answers else 0.0
+
+        result_json = {
+            "question": question_details,
+            "Topic": [{"index": topic_info['index'],
+                       "topic_name_uz": topic_info['topic_name_uz'],
+                       "topic_name_ru": topic_info['topic_name_ru']}
+                      for topic_info in wrong_topics.values()],
+            "result": [{
+                "total_answers": total_answers,
+                "correct_answers": correct_answers,
+                "score": score
+            }]
+        }
+
+        return Response(result_json)
