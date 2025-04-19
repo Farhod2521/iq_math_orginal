@@ -539,41 +539,10 @@ class LoginAPIView(APIView):
                 student = Student.objects.get(user=user)
             except Student.DoesNotExist:
                 return Response({"detail": "Student profile not found."}, status=status.HTTP_404_NOT_FOUND)
-
-            # # # Qurilma va brauzer ma'lumotlarini olish
-            # user_agent = request.META.get("HTTP_USER_AGENT", "")
-            # device_info = parse(user_agent)
-            # device_name = f"{device_info.device.brand} {device_info.device.family}"
-            # browser_name = f"{device_info.browser.family} {device_info.browser.version_string}"
-            # ip_address = request.META.get("REMOTE_ADDR")
-
-            # # Foydalanuvchining avvalgi sessiyasini tekshirish
-            # existing_session = UserSession.objects.filter(user=user).first()
-
-            # if existing_session:
-            #     # Agar foydalanuvchi boshqa qurilmadan kirsa, xabar qaytariladi
-            #     if existing_session.device != device_name or existing_session.browser != browser_name:
-            #         return Response({"detail": "Siz allaqachon boshqa qurilmadan tizimga kirgansiz!"}, 
-            #                         status=status.HTTP_403_FORBIDDEN)
-
-            #     # Eski tokenni o‘chirish
-            #     existing_session.delete()
-
-            # Yangi sessiya uchun token yaratish
             refresh = RefreshToken.for_user(user)
             access_token = refresh.access_token
             access_token.set_exp(lifetime=timedelta(hours=13))
             access_token['student_id'] = student.id
-
-            # Yangi sessiyani bazaga yozish
-            # with transaction.atomic():
-            #     user_session = UserSession.objects.create(
-            #         user=user,
-            #         device=device_name,
-            #         browser=browser_name,
-            #         ip_address=ip_address,
-            #         token=str(access_token)
-            #     )
 
             expires_in = timedelta(hours=13).total_seconds()
 
@@ -581,14 +550,14 @@ class LoginAPIView(APIView):
             student_data = {
                 "id": student.id,
                 "full_name": student.full_name,
-                "email": user.email,
+                # "email": user.email,
                 "phone": user.phone,
-                "region": student.region,
-                "districts": student.districts,
-                "address": student.address,
-                "brithday": student.brithday,
-                "academy_or_school": student.academy_or_school,
-                "class_name": student.class_name.name,
+                # "region": student.region,
+                # "districts": student.districts,
+                # "address": student.address,
+                # "brithday": student.brithday,
+                # "academy_or_school": student.academy_or_school,
+                # "class_name": student.class_name.name,
                 "role": user.role,
                 "status": student.status,
                 "access_token": str(access_token),
