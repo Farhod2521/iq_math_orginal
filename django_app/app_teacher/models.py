@@ -20,7 +20,7 @@ class Topic(models.Model):
     chapter = models.ForeignKey(Chapter, on_delete=models.CASCADE, related_name="topics", verbose_name="Tegishli bob")
     video_url = models.URLField(blank=True, null=True, verbose_name="Mavzu videosi")
     content = RichTextField(verbose_name="Mavzu matni", blank=True, null=True)
-    is_locked = models.BooleanField(default=True, verbose_name="Qulflangan")
+    is_locked = models.BooleanField(default=False, verbose_name="Qulflangan")
 
     def __str__(self):
         return self.name
