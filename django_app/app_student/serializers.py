@@ -27,6 +27,10 @@ class ChapterSerializer(serializers.ModelSerializer):
 
 
 
+class TopicSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Chapter
+        fields = ['id', 'name_uz', 'name_ru','chapter',  "video_url","content_uz", "content_ru", "is_locked" ]
 
 class ChoiceSerializer(serializers.ModelSerializer):
     class Meta:
