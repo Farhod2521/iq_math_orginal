@@ -27,10 +27,7 @@ class ChapterSerializer(serializers.ModelSerializer):
 
 
 
-class TopicSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Topic
-        fields = ['id', 'name_uz', 'name_ru','chapter',  "video_url","content_uz", "content_ru", "is_locked" ]
+
 class TopicSerializer(serializers.ModelSerializer):
     is_open = serializers.SerializerMethodField()
 
