@@ -28,7 +28,7 @@ class GenerateTestAPIView(APIView):
             return Response({"message": "Foydalanuvchining sinfi topilmadi"}, status=400)
 
         # Get the class ID of the student
-        current_class = student.class_name.classes.id
+        current_class = student.class_name.classes.name
         
         # Try to get the previous class (e.g., if current_class is 5, get 4)
         try:
