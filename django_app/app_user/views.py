@@ -416,7 +416,7 @@ class ResendSMSCodeView(APIView):
             "message": "Yangi SMS kodi yuborildi. Iltimos, uni tekshirib ko'ring."
         }, status=status.HTTP_200_OK)
 
-class StudentProfileAPIView(APIView):
+class StudentProfileAPIView(APIView): 
 
     def get(self, request, *args, **kwargs):
         token_header = request.headers.get('Authorization', '')
@@ -430,43 +430,42 @@ class StudentProfileAPIView(APIView):
         except jwt.DecodeError:
             return Response({"error": "Failed to decode token"}, status=status.HTTP_401_UNAUTHORIZED)
 
-   
         student_id = decoded_token.get('student_id')
-      
         if not student_id:
             raise AuthenticationFailed('Student ID not found in token')
-
 
         try:
             student = Student.objects.get(id=student_id)
         except Student.DoesNotExist:
             return Response({"error": "Student profile not found"}, status=404)
-        student_datetime = student.student_date  # Studentning vaqt maydoni
+
+        # Vaqt zonasi
+        student_datetime = student.student_date
         ashgabat_tz = pytz.timezone("Asia/Ashgabat") 
         if student_datetime:
             student_datetime = student_datetime.astimezone(ashgabat_tz)
-            student_date = student_datetime.strftime('%Y-%m-%d')  # YYYY-MM-DD
-            student_time = student_datetime.strftime('%H:%M:%S')  # HH:MM:SS
+            student_date = student_datetime.strftime('%Y-%m-%d')
+            student_time = student_datetime.strftime('%H:%M:%S')
         else:
             student_date = None
             student_time = None
+
         data = {
-                'full_name': student.full_name,
-                'phone': student.user.phone if hasattr(student.user, 'phone') else None,
-                'email': student.user.email if hasattr(student.user, 'email') else None,
-                'region': student.region,
-                'districts': student.districts,
-                'address': student.address,
-                'brithday': student.brithday,
-                'academy_or_school': student.academy_or_school,
-                'academy_or_school_name': student.academy_or_school_name,
-                'class_name': student.class_name,
-                'address': student.address,
-                'document_type': student.document_type,
-                'document': student.document,
-                'type_of_education': student.type_of_education,
-                'student_date': student_date,  # YYYY-MM-DD (UTC+5)
-                'student_time': student_time,  # HH:MM:SS (UTC+5)
+            'full_name': student.full_name,
+            'phone': getattr(student.user, 'phone', None),
+            'email': getattr(student.user, 'email', None),
+            'region': student.region,
+            'districts': student.districts,
+            'address': student.address,
+            'brithday': student.brithday,
+            'academy_or_school': student.academy_or_school,
+            'academy_or_school_name': student.academy_or_school_name,
+            'class_name': student.class_name.name if student.class_name else None,
+            'document_type': student.document_type,
+            'document': student.document,
+            'type_of_education': student.type_of_education,
+            'student_date': student_date,
+            'student_time': student_time,
         }
 
         return Response(data)
