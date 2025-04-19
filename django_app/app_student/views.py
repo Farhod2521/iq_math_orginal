@@ -14,19 +14,7 @@ from django.utils.html import strip_tags
 from random import sample
 from .models import Diagnost_Student
 from rest_framework import status
-class MySubjectsView(APIView):
-    permission_classes = [IsAuthenticated]
 
-    def get(self, request):
-        student = Student.objects.filter(user=request.user).first()
-        if not student or not student.class_name:
-            return Response({"message": "Sinfga tegishli emas yoki profil topilmadi"}, status=404)
-
-        subjects = Subject.objects.filter(classes=student.class_name)
-        serializer = SubjectSerializer(subjects, many=True)
-
-        return Response(serializer.data)
-    
 
 ###################################   TIZIMGA KIRGAN O"QUVCHI BILIM DARAJASINI TEKSHIRISH #####################
 
