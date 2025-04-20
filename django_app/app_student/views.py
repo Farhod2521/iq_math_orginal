@@ -422,3 +422,33 @@ class CheckAnswersAPIView(APIView):
         }
 
         return Response(result_json)
+
+
+
+
+
+
+#############################   STUDENT BALL ###############################
+
+class StudentScoreAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            student = Student.objects.get(user=request.user)
+        except Student.DoesNotExist:
+            return Response({"detail": "Talaba topilmadi."}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            score_obj = StudentScore.objects.get(student=student)
+            return Response({
+                "student": student.user.username,
+                "score": score_obj.score,
+                "created_at": score_obj.created_at
+            })
+        except StudentScore.DoesNotExist:
+            return Response({
+                "student": student.user.username,
+                "score": 0,
+                "message": "Hozircha sizga hech qanday ball biriktirilmagan."
+            })

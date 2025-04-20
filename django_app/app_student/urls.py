@@ -2,7 +2,7 @@ from django.urls import path
 from .views import (
      GenerateTestAPIView, CheckAnswersAPIView, 
      StudentSubjectListAPIView, ChapterListBySubjectAPIView,QuestionListByTopicAPIView,
-     TopicListByChapterAPIView, GenerateCheckAnswersAPIView
+     TopicListByChapterAPIView, GenerateCheckAnswersAPIView, StudentScoreAPIView
 )
 
 urlpatterns = [
@@ -13,5 +13,6 @@ urlpatterns = [
     path('my-generate-test/', GenerateTestAPIView.as_view(), name='generate-test'),
     path('my-generate-check-answer/', GenerateCheckAnswersAPIView.as_view(), name='my-check-answer'),
     path('my-check-answer/', CheckAnswersAPIView.as_view(), name='my-check-answer'),
+    path('my-score/', StudentScoreAPIView.as_view(), name='student-score'),
 
 ]
