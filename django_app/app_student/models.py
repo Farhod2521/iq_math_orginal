@@ -22,7 +22,12 @@ class TopicProgress(models.Model):
 
     def __str__(self):
         return f"{self.user} - {self.topic.name} - {self.score}%"
-    
+
+    class Meta:
+        verbose_name = "Mavzu bo‘yicha yutuq"
+        verbose_name_plural = "Mavzular bo‘yicha yutuqlar"
+        ordering = ['-completed_at']
+
 
 class StudentScore(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
@@ -31,9 +36,13 @@ class StudentScore(models.Model):
 
     class Meta:
         unique_together = ('student',)
+        verbose_name = "Talaba bali"
+        verbose_name_plural = "Talabalar ballari"
+        ordering = ['-score']
 
     def __str__(self):
         return f"{self.student.user.username} - {self.score} ball"
+
 
 class StudentScoreLog(models.Model):
     student_score = models.ForeignKey(StudentScore, on_delete=models.CASCADE)
@@ -42,6 +51,9 @@ class StudentScoreLog(models.Model):
 
     class Meta:
         unique_together = ('student_score', 'question')  # Bir savolga bir marta ball beriladi
+        verbose_name = "Ball olish tarixi"
+        verbose_name_plural = "Ballar olish tarixi"
+        ordering = ['-awarded_at']
 
     def __str__(self):
         return f"{self.student_score.student} - {self.question.id}"
