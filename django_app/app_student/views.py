@@ -14,7 +14,7 @@ from collections import defaultdict
 from bs4 import BeautifulSoup  # HTML teglarini tozalash uchun
 from django.utils.html import strip_tags
 from random import sample
-from .models import Diagnost_Student, TopicProgress
+from .models import Diagnost_Student, TopicProgress, StudentScoreLog, StudentScore
 from rest_framework import status
 from django.utils import timezone
 import re
@@ -288,7 +288,15 @@ class CheckAnswersAPIView(APIView):
         total_answers = 0
         question_details = []
         index = 1
-        last_question_topic = None  # keyin foydalanish uchun
+        last_question_topic = None
+
+        # studentga tegishli score modelini olib kelamiz yoki yaratamiz
+        student_score, created = StudentScore.objects.get_or_create(student=student_instance)
+
+        # Avval bu student qaysi savollarga ball olganini aniqlaymiz
+        awarded_questions = set(
+            StudentScoreLog.objects.filter(student_score=student_score).values_list('question_id', flat=True)
+        )
 
         # --- TEXT ANSWERS ---
         for answer in serializer.validated_data.get('text_answers', []):
@@ -297,10 +305,13 @@ class CheckAnswersAPIView(APIView):
                 continue
             is_correct = (question.correct_text_answer == answer['answer'])
             total_answers += 1
-            if is_correct:
+            if is_correct and question.id not in awarded_questions:
                 correct_answers += 1
-            last_question_topic = question.topic
+                student_score.score += 1
+                awarded_questions.add(question.id)
+                StudentScoreLog.objects.create(student_score=student_score, question=question)
 
+            last_question_topic = question.topic
             question_details.append({
                 "index": index,
                 "question_id": question.id,
@@ -320,9 +331,13 @@ class CheckAnswersAPIView(APIView):
             is_correct = (correct_choices == selected_choices)
 
             total_answers += 1
-            correct_answers += is_correct
-            last_question_topic = question.topic
+            if is_correct and question.id not in awarded_questions:
+                correct_answers += 1
+                student_score.score += 1
+                awarded_questions.add(question.id)
+                StudentScoreLog.objects.create(student_score=student_score, question=question)
 
+            last_question_topic = question.topic
             question_details.append({
                 "index": index,
                 "question_id": question.id,
@@ -345,9 +360,13 @@ class CheckAnswersAPIView(APIView):
                     break
 
             total_answers += 1
-            correct_answers += is_correct
-            last_question_topic = question.topic
+            if is_correct and question.id not in awarded_questions:
+                correct_answers += 1
+                student_score.score += 1
+                awarded_questions.add(question.id)
+                StudentScoreLog.objects.create(student_score=student_score, question=question)
 
+            last_question_topic = question.topic
             question_details.append({
                 "index": index,
                 "question_id": question.id,
@@ -357,10 +376,13 @@ class CheckAnswersAPIView(APIView):
             })
             index += 1
 
+        # student_score modelini saqlaymiz
+        student_score.save()
+
+        # Progressni yangilash (agar score 80 dan yuqori bo‘lsa)
         score = round((correct_answers / total_answers) * 100, 2) if total_answers else 0.0
 
         if last_question_topic and score >= 80:
-            # O'zining progressini yangilaymiz
             topic_progress, _ = TopicProgress.objects.get_or_create(
                 user=student_instance,
                 topic=last_question_topic
@@ -370,7 +392,7 @@ class CheckAnswersAPIView(APIView):
             topic_progress.completed_at = timezone.now()
             topic_progress.save()
 
-            # Navbatdagi mavzuni unlock qilamiz faqat shu student uchun
+            # Keyingi mavzuni ochish
             all_topics = Topic.objects.filter(chapter=last_question_topic.chapter, is_locked=False).order_by('id')
             topic_ids = list(all_topics.values_list('id', flat=True))
 
@@ -379,7 +401,6 @@ class CheckAnswersAPIView(APIView):
                 next_topic_id = topic_ids[current_index + 1]
                 next_topic = Topic.objects.get(id=next_topic_id)
 
-                # faqat agar studentda mavjud bo‘lmasa qo‘shamiz
                 next_progress, created = TopicProgress.objects.get_or_create(
                     user=student_instance,
                     topic=next_topic
@@ -389,7 +410,7 @@ class CheckAnswersAPIView(APIView):
                     next_progress.save()
 
             except (IndexError, Topic.DoesNotExist):
-                pass  # oxirgi mavzu bo‘lishi mumkin
+                pass
 
         result_json = {
             "question": question_details,
