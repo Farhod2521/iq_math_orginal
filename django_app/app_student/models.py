@@ -1,6 +1,6 @@
 from django.db import models
 from django_app.app_user.models import Student
-from django_app.app_teacher.models import Topic
+from django_app.app_teacher.models import Topic, Question
 
 class  Diagnost_Student(models.Model):
     student =  models.ForeignKey(Student, on_delete=models.CASCADE)
@@ -22,3 +22,26 @@ class TopicProgress(models.Model):
 
     def __str__(self):
         return f"{self.user} - {self.topic.name} - {self.score}%"
+    
+
+class StudentScore(models.Model):
+    student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    score = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('student',)
+
+    def __str__(self):
+        return f"{self.student.user.username} - {self.score} ball"
+
+class StudentScoreLog(models.Model):
+    student_score = models.ForeignKey(StudentScore, on_delete=models.CASCADE)
+    question = models.ForeignKey(Question, on_delete=models.CASCADE)
+    awarded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('student_score', 'question')  # Bir savolga bir marta ball beriladi
+
+    def __str__(self):
+        return f"{self.student_score.student} - {self.question.id}"
