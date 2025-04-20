@@ -448,7 +448,7 @@ class StudentScoreAPIView(APIView):
             })
         except StudentScore.DoesNotExist:
             return Response({
-                "student": student.user.get_full_name,
+                "student": student.full_name,
                 "score": 0,
                 "message": "Hozircha sizga hech qanday ball biriktirilmagan."
             })
