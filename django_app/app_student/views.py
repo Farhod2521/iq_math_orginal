@@ -316,10 +316,7 @@ class CheckAnswersAPIView(APIView):
             elif 'answer_ru' in answer:
                 student_answer = answer['answer_ru']
                 correct_answer = question.correct_text_answer_ru
-            elif 'answer' in answer:
-                # Fallback to generic 'answer' field
-                student_answer = answer['answer']
-                correct_answer = question.correct_text_answer
+
 
             if student_answer is None or correct_answer is None:
                 continue  # Skip if no valid answer found
@@ -331,6 +328,9 @@ class CheckAnswersAPIView(APIView):
             # Check if the answer is correct (after stripping HTML)
             is_correct = (correct_answer_plain == student_answer_plain)
             total_answers += 1
+            if is_correct:
+                correct_answers += 1
+
             if is_correct and question.id not in awarded_questions:
                 correct_answers += 1
                 student_score.score += 1
@@ -357,12 +357,14 @@ class CheckAnswersAPIView(APIView):
             is_correct = (correct_choices == selected_choices)
 
             total_answers += 1
+            if is_correct:
+                correct_answers += 1
+
             if is_correct and question.id not in awarded_questions:
                 correct_answers += 1
                 student_score.score += 1
                 awarded_questions.add(question.id)
                 StudentScoreLog.objects.create(student_score=student_score, question=question)
-
             last_question_topic = question.topic
             question_details.append({
                 "index": index,
@@ -386,12 +388,13 @@ class CheckAnswersAPIView(APIView):
                     break
 
             total_answers += 1
+            if is_correct:
+                correct_answers += 1
             if is_correct and question.id not in awarded_questions:
                 correct_answers += 1
                 student_score.score += 1
                 awarded_questions.add(question.id)
                 StudentScoreLog.objects.create(student_score=student_score, question=question)
-
             last_question_topic = question.topic
             question_details.append({
                 "index": index,
