@@ -97,23 +97,40 @@ class GenerateCheckAnswersAPIView(APIView):
         index = 1
 
         # --- TEXT ANSWERS ---
+        # --- TEXT ANSWERS ---
         for answer in serializer.validated_data.get('text_answers', []):
             question = Question.objects.filter(id=answer['question_id'], question_type='text').first()
             if not question:
                 continue
-            is_correct = (question.correct_text_answer == answer['answer'])
+
+            # Handle answer based on available language fields
+            student_answer = None
+            correct_answer = None
+
+            # Check for 'answer_uz' and 'answer_ru'
+            if 'answer_uz' in answer:
+                student_answer = answer['answer_uz']
+                correct_answer = question.correct_text_answer_uz
+            elif 'answer_ru' in answer:
+                student_answer = answer['answer_ru']
+                correct_answer = question.correct_text_answer_ru
+
+
+            if student_answer is None or correct_answer is None:
+                continue  # Skip if no valid answer found
+
+            # Strip HTML tags to get plain text for comparison
+            student_answer_plain = strip_tags(student_answer).strip()
+            correct_answer_plain = strip_tags(correct_answer).strip()
+
+            # Check if the answer is correct (after stripping HTML)
+            is_correct = (correct_answer_plain == student_answer_plain)
             total_answers += 1
             if is_correct:
                 correct_answers += 1
-            else:
-                if question.topic:
-                    if question.topic.name_uz not in wrong_topics:
-                        wrong_topics[question.topic.name_uz] = {
-                            'index': len(wrong_topics) + 1,
-                            'topic_name_ru': question.topic.name_ru,
-                            'topic_name_uz': question.topic.name_uz
-                        }
 
+
+            last_question_topic = question.topic
             question_details.append({
                 "index": index,
                 "question_id": question.id,
