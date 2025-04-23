@@ -5,6 +5,7 @@ from django_app.app_teacher.models import Topic, Question, Chapter
 class  Diagnost_Student(models.Model):
     student =  models.ForeignKey(Student, on_delete=models.CASCADE)
     topic =  models.ManyToManyField(Topic, null=True)
+    level = models.PositiveIntegerField()
     result   = models.JSONField()
 
     def __str__(self):
