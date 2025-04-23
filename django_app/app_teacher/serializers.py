@@ -72,7 +72,7 @@ class QuestionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Question
-        fields = ['id', 'topic', 'question_text_uz', 'question_text_ru','question_type', 'level',"video_file", "video_url", 'correct_text_answer_ru', 'correct_text_answer_uz','choices', 'sub_questions']
+        fields = ['id', 'topic', 'question_text_uz', 'question_text_ru','question_type', 'level',"video_file_uz", "video_file_ru","video_url_uz","video_url_ru", 'correct_text_answer_ru', 'correct_text_answer_uz','choices', 'sub_questions']
 
     def create(self, validated_data):
         choices_data = validated_data.pop('choices', [])
