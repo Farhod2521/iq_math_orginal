@@ -424,22 +424,16 @@ class CheckAnswersAPIView(APIView):
             all_topics = Topic.objects.filter(chapter=last_question_topic.chapter, is_locked=False).order_by('id')
             topic_ids = list(all_topics.values_list('id', flat=True))
 
-            try:
+            if last_question_topic.id in topic_ids:
                 current_index = topic_ids.index(last_question_topic.id)
-                if current_index + 1 < len(topic_ids):  # Ensure next topic exists
-                    next_topic_id = topic_ids[current_index + 1]
-                    next_topic = Topic.objects.get(id=next_topic_id)
-
+                if current_index + 1 < len(topic_ids):
+                    next_topic = Topic.objects.get(id=topic_ids[current_index + 1])
                     next_progress, created = TopicProgress.objects.get_or_create(
-                        user=student_instance,
-                        topic=next_topic
+                        user=student_instance, topic=next_topic
                     )
                     if created:
                         next_progress.is_unlocked = True
                         next_progress.save()
-
-            except (IndexError, Topic.DoesNotExist):
-                pass
 
         # Return the result JSON
         result_json = {
