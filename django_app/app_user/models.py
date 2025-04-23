@@ -101,7 +101,8 @@ class Subject_Category(models.Model):
 
 class Subject(models.Model):
     name = models.CharField(max_length=200, verbose_name="Fan nomi")
-    image = models.ImageField(upload_to="FILES/Subject", blank=True, null=True)
+    image_uz = models.ImageField(upload_to="FILES/SubjectUZ", blank=True, null=True)
+    image_ru = models.ImageField(upload_to="FILES/SubjectRU", blank=True, null=True)
     teachers = models.ManyToManyField(Teacher, related_name="subjects", verbose_name="O‘qituvchilar")
     classes = models.ForeignKey(Class, on_delete=models.SET_NULL, related_name="subjects", verbose_name="Sinf", null=True)
     category = models.ForeignKey(Subject_Category, on_delete=models.SET_NULL, related_name="subjects", verbose_name="Fan bo'limi", null=True)
@@ -122,7 +123,7 @@ class Student(models.Model):
     brithday = models.CharField(max_length=20, verbose_name="Tug‘ilgan kun")
     academy_or_school = models.CharField(max_length=200, verbose_name="Akademiya yoki maktab")
     academy_or_school_name = models.CharField(max_length=500, verbose_name="Muassasa nomi")
-    class_name = models.ForeignKey(Subject, on_delete=models.SET_NULL, null=True)
+    class_name = models.ManyToManyField(Subject, blank=True)
     document_type = models.CharField(max_length=50, verbose_name="Hujjat turi")
     document = models.CharField(max_length=20, verbose_name="Hujjat raqami")
     type_of_education = models.CharField(max_length=200, verbose_name="Ta’lim turi")

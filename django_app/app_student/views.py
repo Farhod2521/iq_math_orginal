@@ -442,7 +442,7 @@ class StudentScoreAPIView(APIView):
         try:
             score_obj = StudentScore.objects.get(student=student)
             return Response({
-                "student": student.user.username,
+                "student": student.full_name,
                 "score": score_obj.score,
                 "created_at": score_obj.created_at
             })
