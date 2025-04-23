@@ -275,6 +275,7 @@ class CheckAnswersAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        # Deserialize the request data using CheckAnswersSerializer
         serializer = CheckAnswersSerializer(data=request.data)
         if not serializer.is_valid():
             return Response({"message": "Noto‘g‘ri formatdagi ma'lumotlar."}, status=400)
@@ -287,7 +288,6 @@ class CheckAnswersAPIView(APIView):
         correct_answers = 0
         total_answers = 0
         awarded_questions = set()
-        index = 1
         last_question_topic = None
 
         # Get or create the student's score model
@@ -303,6 +303,7 @@ class CheckAnswersAPIView(APIView):
             student_answer = None
             correct_answer = None
 
+            # Check if 'answer_uz' or 'answer_ru' is available
             if 'answer_uz' in answer:
                 student_answer = answer['answer_uz']
                 correct_answer = question.correct_text_answer_uz
@@ -398,6 +399,7 @@ class CheckAnswersAPIView(APIView):
             except (IndexError, Topic.DoesNotExist):
                 pass
 
+        # Return the result JSON
         result_json = {
             "question": awarded_questions,
             "result": [{
@@ -408,6 +410,7 @@ class CheckAnswersAPIView(APIView):
         }
 
         return Response(result_json)
+
 
 
 
