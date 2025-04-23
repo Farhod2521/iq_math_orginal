@@ -14,7 +14,7 @@ from collections import defaultdict
 from bs4 import BeautifulSoup  # HTML teglarini tozalash uchun
 from django.utils.html import strip_tags
 from random import sample
-from .models import Diagnost_Student, TopicProgress, StudentScoreLog, StudentScore
+from .models import Diagnost_Student, TopicProgress, StudentScoreLog, StudentScore, ChapterProgress
 from rest_framework import status
 from django.utils import timezone
 import re
@@ -286,17 +286,12 @@ class CheckAnswersAPIView(APIView):
 
         correct_answers = 0
         total_answers = 0
-        question_details = []
+        awarded_questions = set()
         index = 1
         last_question_topic = None
 
-        # studentga tegishli score modelini olib kelamiz yoki yaratamiz
+        # Get or create the student's score model
         student_score, created = StudentScore.objects.get_or_create(student=student_instance)
-
-        # Avval bu student qaysi savollarga ball olganini aniqlaymiz
-        awarded_questions = set(
-            StudentScoreLog.objects.filter(student_score=student_score).values_list('question_id', flat=True)
-        )
 
         # --- TEXT ANSWERS ---
         for answer in serializer.validated_data.get('text_answers', []):
@@ -312,14 +307,6 @@ class CheckAnswersAPIView(APIView):
                 StudentScoreLog.objects.create(student_score=student_score, question=question)
 
             last_question_topic = question.topic
-            question_details.append({
-                "index": index,
-                "question_id": question.id,
-                "question_uz": question.question_text_uz,
-                "question_ru": question.question_text_ru,
-                "answer": is_correct
-            })
-            index += 1
 
         # --- CHOICE ANSWERS ---
         for answer in serializer.validated_data.get('choice_answers', []):
@@ -338,14 +325,6 @@ class CheckAnswersAPIView(APIView):
                 StudentScoreLog.objects.create(student_score=student_score, question=question)
 
             last_question_topic = question.topic
-            question_details.append({
-                "index": index,
-                "question_id": question.id,
-                "question_uz": question.question_text_uz,
-                "question_ru": question.question_text_ru,
-                "answer": is_correct
-            })
-            index += 1
 
         # --- COMPOSITE ANSWERS ---
         for answer in serializer.validated_data.get('composite_answers', []):
@@ -367,32 +346,23 @@ class CheckAnswersAPIView(APIView):
                 StudentScoreLog.objects.create(student_score=student_score, question=question)
 
             last_question_topic = question.topic
-            question_details.append({
-                "index": index,
-                "question_id": question.id,
-                "question_uz": question.question_text_uz,
-                "question_ru": question.question_text_ru,
-                "answer": is_correct
-            })
-            index += 1
 
-        # student_score modelini saqlaymiz
+        # Save the student's score model
         student_score.save()
 
-        # Progressni yangilash (agar score 80 dan yuqori bo‘lsa)
+        # Calculate progress score
         score = round((correct_answers / total_answers) * 100, 2) if total_answers else 0.0
 
+        # Check for ChapterProgress and update
         if last_question_topic and score >= 80:
-            topic_progress, _ = TopicProgress.objects.get_or_create(
+            chapter_progress, created = ChapterProgress.objects.get_or_create(
                 user=student_instance,
-                topic=last_question_topic
+                chapter=last_question_topic.chapter
             )
-            topic_progress.is_unlocked = True
-            topic_progress.score = score
-            topic_progress.completed_at = timezone.now()
-            topic_progress.save()
+            chapter_progress.progress_percentage = score
+            chapter_progress.save()
 
-            # Keyingi mavzuni ochish
+            # Unlock next topic in the chapter
             all_topics = Topic.objects.filter(chapter=last_question_topic.chapter, is_locked=False).order_by('id')
             topic_ids = list(all_topics.values_list('id', flat=True))
 
@@ -413,7 +383,7 @@ class CheckAnswersAPIView(APIView):
                 pass
 
         result_json = {
-            "question": question_details,
+            "question": awarded_questions,
             "result": [{
                 "total_answers": total_answers,
                 "correct_answers": correct_answers,
