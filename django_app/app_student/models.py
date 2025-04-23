@@ -50,7 +50,7 @@ class StudentScoreLog(models.Model):
     awarded_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ('student_score', 'question')  # Bir savolga bir marta ball beriladi
+        unique_together = ('student_score', 'question')  
         verbose_name = "Ball olish tarixi"
         verbose_name_plural = "Ballar olish tarixi"
         ordering = ['-awarded_at']
