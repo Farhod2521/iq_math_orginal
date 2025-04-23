@@ -20,6 +20,8 @@ from django.utils import timezone
 import re
 ###################################   TIZIMGA KIRGAN O"QUVCHI BILIM DARAJASINI TEKSHIRISH #####################
 
+from random import sample
+
 class GenerateTestAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -28,52 +30,44 @@ class GenerateTestAPIView(APIView):
         if not student or not student.class_name:
             return Response({"message": "Foydalanuvchining sinfi topilmadi"}, status=400)
 
-
-        current_class = student.class_name.classes.name
-        
-        try:
-            prev_class = Class.objects.get(name=str(int(current_class) - 1))
-            
-        except (ValueError, Class.DoesNotExist):
-            return Response({"message": "Quyi sinf topilmadi"}, status=400)
-        subjects = Subject.objects.filter(
-            classes__name=prev_class, category__name__iexact="Matematika"
-        )
-        if not subjects.exists():
-            return Response({"message": "Matematika fani topilmadi"}, status=400)
-
-        subject = subjects.first()
-        chapters = subject.chapters.all()
-        level = request.data.get("level")
+        current_class_name = student.class_name.classes.name
 
         try:
-            level = int(level)
+            current_class = Class.objects.get(name=current_class_name)
+        except Class.DoesNotExist:
+            return Response({"message": "Joriy sinf topilmadi"}, status=400)
+
+        try:
+            level = int(request.data.get("level"))
         except (TypeError, ValueError):
             return Response({"message": "Level noto‘g‘ri formatda"}, status=400)
 
-        total_questions = 30
-        per_chapter = total_questions // chapters.count() if chapters.exists() else 0
-        questions_list = []
+        def get_questions_by_class(cls, count):
+            subjects = Subject.objects.filter(classes=cls, category__name__iexact="Matematika")
+            if not subjects.exists():
+                return []
+            subject = subjects.first()
+            chapters = subject.chapters.all()
+            questions = Question.objects.filter(topic__chapter__in=chapters, level=level).distinct()
+            return sample(list(questions), min(count, questions.count()))
 
-        # Generate questions for each chapter
-        for chapter in chapters:
-            chapter_questions = Question.objects.filter(topic__chapter=chapter, level=level).distinct()
-            count = min(per_chapter, chapter_questions.count())
-            questions_list += sample(list(chapter_questions), count)
+        if current_class_name == "5":
+            # faqat 5-sinfdan 30 ta
+            questions_list = get_questions_by_class(current_class, 30)
+        else:
+            # 15 ta joriy sinf, 15 ta quyi sinf
+            try:
+                prev_class = Class.objects.get(name=str(int(current_class_name) - 1))
+            except (ValueError, Class.DoesNotExist):
+                return Response({"message": "Quyi sinf topilmadi"}, status=400)
 
-        # If there are not enough questions, add more from the same chapters
-        if len(questions_list) < total_questions:
-            remaining = total_questions - len(questions_list)
-            extra_qs = Question.objects.filter(
-                topic__chapter__in=chapters,
-                level=level
-            ).exclude(id__in=[q.id for q in questions_list])
-            questions_list += sample(list(extra_qs), min(remaining, extra_qs.count()))
+            current_qs = get_questions_by_class(current_class, 15)
+            prev_qs = get_questions_by_class(prev_class, 15)
+            questions_list = current_qs + prev_qs
 
-        # Serialize the data and filter out None values
         serializer = CustomQuestionSerializer(questions_list, many=True, context={'request': request})
-        filtered_data = list(filter(None, serializer.data))  # Remove None values
-        
+        filtered_data = list(filter(None, serializer.data))
+
         return Response(filtered_data)
 
 
