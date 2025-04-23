@@ -270,7 +270,7 @@ class QuestionListByTopicAPIView(APIView):
             return Response({"detail": "Mavzu topilmadi"}, status=status.HTTP_404_NOT_FOUND)
         
 
-
+from django.utils.html import strip_tags
 class CheckAnswersAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -323,8 +323,12 @@ class CheckAnswersAPIView(APIView):
             if student_answer is None or correct_answer is None:
                 continue  # Skip if no valid answer found
 
-            # Check if the answer is correct
-            is_correct = (correct_answer == student_answer)
+            # Strip HTML tags to get plain text for comparison
+            student_answer_plain = strip_tags(student_answer)
+            correct_answer_plain = strip_tags(correct_answer)
+
+            # Check if the answer is correct (after stripping HTML)
+            is_correct = (correct_answer_plain.strip() == student_answer_plain.strip())
             total_answers += 1
             if is_correct and question.id not in awarded_questions:
                 correct_answers += 1
