@@ -3,7 +3,7 @@ from django_app.app_teacher.models import Chapter, Choice, CompositeSubQuestion,
 from modeltranslation.utils import get_translation_fields
 
 from django_app.app_user.models import  Subject, Student
-from .models import TopicProgress
+from .models import TopicProgress, ChapterProgress
 class SubjectSerializer(serializers.ModelSerializer):
     class_name = serializers.CharField(source="classes.name")
     class_uz = serializers.SerializerMethodField()
@@ -28,7 +28,7 @@ class ChapterSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         user = request.user
 
-        from .models import ChapterProgress  # model nomi mos bo‘lsin
+        
 
         try:
             progress = ChapterProgress.objects.get(user=user, chapter=chapter)
