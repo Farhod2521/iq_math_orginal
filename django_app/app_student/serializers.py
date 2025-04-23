@@ -31,7 +31,8 @@ class ChapterSerializer(serializers.ModelSerializer):
         user = request.user
 
         try:
-            progress = ChapterProgress.objects.get(user=user, chapter=chapter)
+            student_instance = Student.objects.get(user=user)
+            progress = ChapterProgress.objects.get(user=student_instance, chapter=chapter)
             return round(progress.progress_percentage, 2)
         except ChapterProgress.DoesNotExist:
             return 0.0
