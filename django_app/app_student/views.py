@@ -94,15 +94,19 @@ class GenerateCheckAnswersAPIView(APIView):
         total_answers = 0
         question_details = []
         wrong_topics = {}
+        wrong_topic_instances = set()  # <- faqat xato mavzular uchun
+
         index = 1
 
         def add_wrong_topic(question):
-            if question.topic and question.topic.name_uz not in wrong_topics:
-                wrong_topics[question.topic.name_uz] = {
-                    'index': len(wrong_topics) + 1,
-                    'topic_name_ru': question.topic.name_ru,
-                    'topic_name_uz': question.topic.name_uz
-                }
+            if question.topic:
+                wrong_topic_instances.add(question.topic)
+                if question.topic.name_uz not in wrong_topics:
+                    wrong_topics[question.topic.name_uz] = {
+                        'index': len(wrong_topics) + 1,
+                        'topic_name_ru': question.topic.name_ru,
+                        'topic_name_uz': question.topic.name_uz
+                    }
 
         # TEXT QUESTIONS
         for answer in serializer.validated_data.get('text_answers', []):
@@ -146,9 +150,9 @@ class GenerateCheckAnswersAPIView(APIView):
             is_correct = (correct_choices == selected_choices)
 
             total_answers += 1
-            correct_answers += is_correct
-
-            if not is_correct:
+            if is_correct:
+                correct_answers += 1
+            else:
                 add_wrong_topic(question)
 
             question_details.append({
@@ -174,9 +178,9 @@ class GenerateCheckAnswersAPIView(APIView):
                     break
 
             total_answers += 1
-            correct_answers += is_correct
-
-            if not is_correct:
+            if is_correct:
+                correct_answers += 1
+            else:
                 add_wrong_topic(question)
 
             question_details.append({
@@ -203,20 +207,17 @@ class GenerateCheckAnswersAPIView(APIView):
         first_question_id = question_details[0]['question_id'] if question_details else None
         level = Question.objects.filter(id=first_question_id).first().level if first_question_id else None
 
-        topics = list({
-            Question.objects.get(id=detail['question_id']).topic
-            for detail in question_details
-            if Question.objects.get(id=detail['question_id']).topic
-        })
-
         diagnost = Diagnost_Student.objects.create(
             student=student_instance,
             level=level,
             result=result_json
         )
-        diagnost.topic.set(topics)
+
+        # faqat xato qilingan savollarning topiclarini biriktiramiz
+        diagnost.topic.set(wrong_topic_instances)
 
         return Response(result_json)
+
 
 
 class StudentSubjectListAPIView(APIView):
