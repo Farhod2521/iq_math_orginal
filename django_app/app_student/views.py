@@ -516,7 +516,8 @@ class DiagnostLevelDetailAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        student = request.user.student
+        user = request.user
+        student = Student.objects.get(user=user)
         level = request.query_params.get('level')
 
         if not level:
