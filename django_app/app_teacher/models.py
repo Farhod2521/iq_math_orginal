@@ -18,7 +18,8 @@ class Chapter(models.Model):
 class Topic(models.Model):
     name = models.CharField(max_length=200, verbose_name="Mavzu nomi")
     chapter = models.ForeignKey(Chapter, on_delete=models.CASCADE, related_name="topics", verbose_name="Tegishli bob")
-    video_url = models.URLField(blank=True, null=True, verbose_name="Mavzu videosi")
+    video_url_uz = models.URLField(blank=True, null=True, verbose_name="Mavzu videosi")
+    video_url_ru = models.URLField(blank=True, null=True, verbose_name="Mavzu videosi")
     content = RichTextField(verbose_name="Mavzu matni", blank=True, null=True)
     is_locked = models.BooleanField(default=True, verbose_name="Qulflangan")
 

@@ -37,7 +37,7 @@ class MyChapterAddSerializer(serializers.ModelSerializer):
 class MyTopicAddSerializer(serializers.ModelSerializer):
     class Meta:
         model =  Topic
-        fields = ["id", "name_uz", "name_ru", "video_url", "chapter", "content_uz", "content_ru"]
+        fields = ["id", "name_uz", "name_ru", "video_url_uz","video_url_ru", "chapter", "content_uz", "content_ru"]
 class ChoiceSerializer(serializers.ModelSerializer):
     question = serializers.PrimaryKeyRelatedField(
         queryset=Question.objects.all(),
