@@ -332,7 +332,7 @@ class CheckAnswersAPIView(APIView):
                 correct_answers += 1
 
             if is_correct and question.id not in awarded_questions:
-                correct_answers += 1
+
                 student_score.score += 1
                 awarded_questions.add(question.id)
                 StudentScoreLog.objects.create(student_score=student_score, question=question)
@@ -361,7 +361,7 @@ class CheckAnswersAPIView(APIView):
                 correct_answers += 1
 
             if is_correct and question.id not in awarded_questions:
-                correct_answers += 1
+
                 student_score.score += 1
                 awarded_questions.add(question.id)
                 StudentScoreLog.objects.create(student_score=student_score, question=question)
@@ -391,7 +391,6 @@ class CheckAnswersAPIView(APIView):
             if is_correct:
                 correct_answers += 1
             if is_correct and question.id not in awarded_questions:
-                correct_answers += 1
                 student_score.score += 1
                 awarded_questions.add(question.id)
                 StudentScoreLog.objects.create(student_score=student_score, question=question)
