@@ -11,7 +11,7 @@ class SubjectSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Subject
-        fields = ["id", "name_uz", "name_ru", "class_name", "class_uz", "class_ru"]
+        fields = ["id", "name_uz", "name_ru", "class_name", "class_uz", "class_ru", "image_uz", "image_ru"]
 
     def get_class_uz(self, obj):
         return f"{obj.classes.name}-sinf {obj.name_uz}"
