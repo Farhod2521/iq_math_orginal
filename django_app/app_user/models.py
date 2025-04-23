@@ -123,7 +123,7 @@ class Student(models.Model):
     brithday = models.CharField(max_length=20, verbose_name="Tug‘ilgan kun")
     academy_or_school = models.CharField(max_length=200, verbose_name="Akademiya yoki maktab")
     academy_or_school_name = models.CharField(max_length=500, verbose_name="Muassasa nomi")
-    class_name = models.ManyToManyField(Subject, blank=True)
+    class_name = models.ForeignKey(Subject, on_delete=models.SET_NULL, null=True)
     document_type = models.CharField(max_length=50, verbose_name="Hujjat turi")
     document = models.CharField(max_length=20, verbose_name="Hujjat raqami")
     type_of_education = models.CharField(max_length=200, verbose_name="Ta’lim turi")
