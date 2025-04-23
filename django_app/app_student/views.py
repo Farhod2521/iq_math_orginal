@@ -484,3 +484,59 @@ class StudentScoreAPIView(APIView):
                 "score": 0,
                 "message": "Hozircha sizga hech qanday ball biriktirilmagan."
             })
+        
+
+class DiagnostLevelOverviewAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        student = request.user.student
+        levels = [1, 2, 3]
+        data = []
+
+        for lvl in levels:
+            diagnost = Diagnost_Student.objects.filter(student=student, level=lvl).order_by('-id').first()
+            if diagnost:
+                score = diagnost.result['result'][0]['score']
+                data.append({
+                    "level": lvl,
+                    "score": score
+                })
+            else:
+                data.append({
+                    "level": lvl,
+                    "score": None,
+                    "message": "Bu level uchun hali test topshirilmagan"
+                })
+
+        return Response(data)
+    
+class DiagnostLevelDetailAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        student = request.user.student
+        level = request.query_params.get('level')
+
+        if not level:
+            return Response({"error": "Level parametrini yuboring"}, status=400)
+
+        try:
+            level = int(level)
+        except ValueError:
+            return Response({"error": "Level butun son bo'lishi kerak"}, status=400)
+
+        diagnost = Diagnost_Student.objects.filter(student=student, level=level).order_by('-id').first()
+        if not diagnost:
+            return Response({"message": "Bu level uchun hali test topshirilmagan"}, status=404)
+
+        topics = diagnost.topic.all()
+        topic_list = [
+            {"id": topic.id, "name_uz": topic.name_uz, "name_ru": topic.name_ru}
+            for topic in topics
+        ]
+
+        return Response({
+            "level": level,
+            "topics": topic_list
+        })
