@@ -57,3 +57,5 @@ class StudentScoreLog(models.Model):
 
     def __str__(self):
         return f"{self.student_score.student} - {self.question.id}"
+
+
