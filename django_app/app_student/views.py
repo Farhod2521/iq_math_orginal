@@ -93,44 +93,39 @@ class GenerateCheckAnswersAPIView(APIView):
         correct_answers = 0
         total_answers = 0
         question_details = []
-        wrong_topics = {}  # Changed to a dictionary to track topics and their index
+        wrong_topics = {}
         index = 1
 
-        # --- TEXT ANSWERS ---
-        # --- TEXT ANSWERS ---
+        def add_wrong_topic(question):
+            if question.topic and question.topic.name_uz not in wrong_topics:
+                wrong_topics[question.topic.name_uz] = {
+                    'index': len(wrong_topics) + 1,
+                    'topic_name_ru': question.topic.name_ru,
+                    'topic_name_uz': question.topic.name_uz
+                }
+
+        # TEXT QUESTIONS
         for answer in serializer.validated_data.get('text_answers', []):
             question = Question.objects.filter(id=answer['question_id'], question_type='text').first()
             if not question:
                 continue
 
-            # Handle answer based on available language fields
-            student_answer = None
-            correct_answer = None
-
-            # Check for 'answer_uz' and 'answer_ru'
-            if 'answer_uz' in answer:
-                student_answer = answer['answer_uz']
-                correct_answer = question.correct_text_answer_uz
-            elif 'answer_ru' in answer:
-                student_answer = answer['answer_ru']
-                correct_answer = question.correct_text_answer_ru
-
+            student_answer = answer.get('answer_uz') or answer.get('answer_ru')
+            correct_answer = question.correct_text_answer_uz if 'answer_uz' in answer else question.correct_text_answer_ru
 
             if student_answer is None or correct_answer is None:
-                continue  # Skip if no valid answer found
+                continue
 
-            # Strip HTML tags to get plain text for comparison
             student_answer_plain = strip_tags(student_answer).strip()
             correct_answer_plain = strip_tags(correct_answer).strip()
+            is_correct = (student_answer_plain == correct_answer_plain)
 
-            # Check if the answer is correct (after stripping HTML)
-            is_correct = (correct_answer_plain == student_answer_plain)
             total_answers += 1
             if is_correct:
                 correct_answers += 1
+            else:
+                add_wrong_topic(question)
 
-
-            last_question_topic = question.topic
             question_details.append({
                 "index": index,
                 "question_id": question.id,
@@ -140,11 +135,12 @@ class GenerateCheckAnswersAPIView(APIView):
             })
             index += 1
 
-        # --- CHOICE ANSWERS ---
+        # CHOICE QUESTIONS
         for answer in serializer.validated_data.get('choice_answers', []):
             question = Question.objects.filter(id=answer['question_id'], question_type='choice').first()
             if not question:
                 continue
+
             correct_choices = set(Choice.objects.filter(question=question, is_correct=True).values_list('id', flat=True))
             selected_choices = set(answer['choices'])
             is_correct = (correct_choices == selected_choices)
@@ -153,13 +149,7 @@ class GenerateCheckAnswersAPIView(APIView):
             correct_answers += is_correct
 
             if not is_correct:
-                if question.topic:
-                    if question.topic.name_uz not in wrong_topics:
-                        wrong_topics[question.topic.name_uz] = {
-                            'index': len(wrong_topics) + 1,
-                            'topic_name_ru': question.topic.name_ru,
-                            'topic_name_uz': question.topic.name_uz
-                        }
+                add_wrong_topic(question)
 
             question_details.append({
                 "index": index,
@@ -170,11 +160,12 @@ class GenerateCheckAnswersAPIView(APIView):
             })
             index += 1
 
-        # --- COMPOSITE ANSWERS ---
+        # COMPOSITE QUESTIONS
         for answer in serializer.validated_data.get('composite_answers', []):
             question = Question.objects.filter(id=answer['question_id'], question_type='composite').first()
             if not question:
                 continue
+
             correct_subs = question.sub_questions.all()
             is_correct = True
             for sub_answer, sub_question in zip(answer['answers'], correct_subs):
@@ -186,13 +177,7 @@ class GenerateCheckAnswersAPIView(APIView):
             correct_answers += is_correct
 
             if not is_correct:
-                if question.topic:
-                    if question.topic.name_uz not in wrong_topics:
-                        wrong_topics[question.topic.name_uz] = {
-                            'index': len(wrong_topics) + 1,
-                            'topic_name_ru': question.topic.name_ru,
-                            'topic_name_uz': question.topic.name_uz
-                        }
+                add_wrong_topic(question)
 
             question_details.append({
                 "index": index,
@@ -207,10 +192,7 @@ class GenerateCheckAnswersAPIView(APIView):
 
         result_json = {
             "question": question_details,
-            "Topic": [{"index": topic_info['index'],
-                       "topic_name_uz": topic_info['topic_name_uz'],
-                       "topic_name_ru": topic_info['topic_name_ru']}
-                      for topic_info in wrong_topics.values()],
+            "Topic": list(wrong_topics.values()),
             "result": [{
                 "total_answers": total_answers,
                 "correct_answers": correct_answers,
@@ -219,16 +201,14 @@ class GenerateCheckAnswersAPIView(APIView):
         }
 
         first_question_id = question_details[0]['question_id'] if question_details else None
-        level = None
-        if first_question_id:
-            first_question = Question.objects.filter(id=first_question_id).first()
-            if first_question:
-                level = first_question.level
+        level = Question.objects.filter(id=first_question_id).first().level if first_question_id else None
 
-        # Topic larni yig'amiz (bir nechta bo'lishi mumkin)
-        topics = list({Question.objects.get(id=detail['question_id']).topic for detail in question_details if Question.objects.get(id=detail['question_id']).topic})
+        topics = list({
+            Question.objects.get(id=detail['question_id']).topic
+            for detail in question_details
+            if Question.objects.get(id=detail['question_id']).topic
+        })
 
-        # Diagnost_Student obyektini yaratamiz
         diagnost = Diagnost_Student.objects.create(
             student=student_instance,
             level=level,
