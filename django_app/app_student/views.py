@@ -490,7 +490,8 @@ class DiagnostLevelOverviewAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        student = request.user.student
+        user = request.user
+        student = Student.objects.get(user=user)
         levels = [1, 2, 3]
         data = []
 
