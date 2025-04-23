@@ -1,9 +1,23 @@
 from django.contrib import admin
-from .models import Diagnost_Student, TopicProgress, StudentScore, StudentScoreLog
+from .models import Diagnost_Student, TopicProgress, StudentScore, StudentScoreLog, ChapterProgress
 
 
 admin.site.register(Diagnost_Student)
 # Register your models here.
+
+
+
+
+
+
+@admin.register(ChapterProgress)
+class ChapterProgressAdmin(admin.ModelAdmin):
+    list_display = ('user', 'chapter', 'progress_percentage', 'updated_at')
+    list_filter = ('chapter', 'updated_at')
+    search_fields = ('user__full_name', 'chapter__name')  # Student modelda full_name bo‘lsa
+    ordering = ('-updated_at',)
+
+
 @admin.register(TopicProgress)
 class TopicProgressAdmin(admin.ModelAdmin):
     list_display = ('user', 'topic', 'score', 'is_unlocked', 'completed_at')
