@@ -2,7 +2,8 @@ from django.urls import path
 from .views import (
      GenerateTestAPIView, CheckAnswersAPIView, 
      StudentSubjectListAPIView, ChapterListBySubjectAPIView,QuestionListByTopicAPIView,
-     TopicListByChapterAPIView, GenerateCheckAnswersAPIView, StudentScoreAPIView
+     TopicListByChapterAPIView, GenerateCheckAnswersAPIView, StudentScoreAPIView, DiagnostLevelOverviewAPIView,
+     DiagnostLevelDetailAPIView
 )
 
 urlpatterns = [
@@ -14,5 +15,7 @@ urlpatterns = [
     path('my-generate-check-answer/', GenerateCheckAnswersAPIView.as_view(), name='my-check-answer'),
     path('my-check-answer/', CheckAnswersAPIView.as_view(), name='my-check-answer'),
     path('my-score/', StudentScoreAPIView.as_view(), name='student-score'),
+    path('my-diagnost-level/', DiagnostLevelOverviewAPIView.as_view(), name='my-diagnost-level'),
+    path('my-diagnost-detail/', DiagnostLevelDetailAPIView.as_view(), name='my-diagnost-level'),
 
 ]
