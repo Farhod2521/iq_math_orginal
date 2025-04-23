@@ -218,10 +218,23 @@ class GenerateCheckAnswersAPIView(APIView):
             }]
         }
 
-        Diagnost_Student.objects.create(
+        first_question_id = question_details[0]['question_id'] if question_details else None
+        level = None
+        if first_question_id:
+            first_question = Question.objects.filter(id=first_question_id).first()
+            if first_question:
+                level = first_question.level
+
+        # Topic larni yig'amiz (bir nechta bo'lishi mumkin)
+        topics = list({Question.objects.get(id=detail['question_id']).topic for detail in question_details if Question.objects.get(id=detail['question_id']).topic})
+
+        # Diagnost_Student obyektini yaratamiz
+        diagnost = Diagnost_Student.objects.create(
             student=student_instance,
+            level=level,
             result=result_json
         )
+        diagnost.topic.set(topics)
 
         return Response(result_json)
 
