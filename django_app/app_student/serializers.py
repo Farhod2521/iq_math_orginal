@@ -135,7 +135,8 @@ class CheckChoiceAnswerSerializer(serializers.Serializer):
 
 class CheckTextAnswerSerializer(serializers.Serializer):
     question_id = serializers.IntegerField()
-    answer = serializers.CharField(max_length=1000)
+    answer_uz = serializers.CharField(max_length=1000)
+    answer_ru = serializers.CharField(max_length=1000)
 
 
 class CheckCompositeAnswerSerializer(serializers.Serializer):
