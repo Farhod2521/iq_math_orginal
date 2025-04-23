@@ -1,9 +1,10 @@
 from django.db import models
 from django_app.app_user.models import Student
-from django_app.app_teacher.models import Topic, Question
+from django_app.app_teacher.models import Topic, Question, Chapter
 
 class  Diagnost_Student(models.Model):
     student =  models.ForeignKey(Student, on_delete=models.CASCADE)
+    topic =  models.ManyToManyField(Topic, null=True)
     result   = models.JSONField()
 
     def __str__(self):
@@ -11,7 +12,20 @@ class  Diagnost_Student(models.Model):
     
 
 
+class ChapterProgress(models.Model):
+    user = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='chapter_progress')
+    chapter = models.ForeignKey(Chapter, on_delete=models.CASCADE, related_name='progress')
+    progress_percentage = models.FloatField(default=0.0)  # 0 - 100
 
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('user', 'chapter')
+        verbose_name = "Bob bo‘yicha yutuq"
+        verbose_name_plural = "Boblar bo‘yicha yutuqlar"
+
+    def __str__(self):
+        return f"{self.user} - {self.chapter.name} - {self.progress_percentage}%"
 
 class TopicProgress(models.Model):
     user = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='topic_progress')
@@ -27,6 +41,8 @@ class TopicProgress(models.Model):
         verbose_name = "Mavzu bo‘yicha yutuq"
         verbose_name_plural = "Mavzular bo‘yicha yutuqlar"
         ordering = ['-completed_at']
+
+
 
 
 class StudentScore(models.Model):

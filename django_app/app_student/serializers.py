@@ -20,10 +20,21 @@ class SubjectSerializer(serializers.ModelSerializer):
         return f"{obj.classes.name}-класс {obj.name_ru}"
     
 class ChapterSerializer(serializers.ModelSerializer):
+    progress = serializers.SerializerMethodField()
     class Meta:
         model = Chapter
         fields = ['id', 'name_uz', 'name_ru','subject']
+    def get_progress(self, chapter):
+        request = self.context.get('request')
+        user = request.user
 
+        from .models import ChapterProgress  # model nomi mos bo‘lsin
+
+        try:
+            progress = ChapterProgress.objects.get(user=user, chapter=chapter)
+            return round(progress.progress_percentage, 2)
+        except ChapterProgress.DoesNotExist:
+            return 0.0
 
 
 
