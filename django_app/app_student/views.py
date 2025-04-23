@@ -275,6 +275,7 @@ class CheckAnswersAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        # Validate the incoming data
         serializer = CheckAnswersSerializer(data=request.data)
         if not serializer.is_valid():
             return Response({"message": "Noto‘g‘ri formatdagi ma'lumotlar."}, status=400)
@@ -290,10 +291,10 @@ class CheckAnswersAPIView(APIView):
         index = 1
         last_question_topic = None
 
-        # studentga tegishli score modelini olib kelamiz yoki yaratamiz
+        # Retrieve or create a StudentScore instance
         student_score, created = StudentScore.objects.get_or_create(student=student_instance)
 
-        # Avval bu student qaysi savollarga ball olganini aniqlaymiz
+        # Get a set of already awarded questions to avoid double scoring
         awarded_questions = set(
             StudentScoreLog.objects.filter(student_score=student_score).values_list('question_id', flat=True)
         )
@@ -401,10 +402,10 @@ class CheckAnswersAPIView(APIView):
             })
             index += 1
 
-        # student_score modelini saqlaymiz
+        # Save the student score
         student_score.save()
 
-        # Progressni yangilash (agar score 80 dan yuqori bo‘lsa)
+        # Update progress if score is >= 80
         score = round((correct_answers / total_answers) * 100, 2) if total_answers else 0.0
 
         if last_question_topic and score >= 80:
@@ -417,26 +418,28 @@ class CheckAnswersAPIView(APIView):
             topic_progress.completed_at = timezone.now()
             topic_progress.save()
 
-            # Keyingi mavzuni ochish
+            # Unlock next topic if any
             all_topics = Topic.objects.filter(chapter=last_question_topic.chapter, is_locked=False).order_by('id')
             topic_ids = list(all_topics.values_list('id', flat=True))
 
             try:
                 current_index = topic_ids.index(last_question_topic.id)
-                next_topic_id = topic_ids[current_index + 1]
-                next_topic = Topic.objects.get(id=next_topic_id)
+                if current_index + 1 < len(topic_ids):  # Ensure next topic exists
+                    next_topic_id = topic_ids[current_index + 1]
+                    next_topic = Topic.objects.get(id=next_topic_id)
 
-                next_progress, created = TopicProgress.objects.get_or_create(
-                    user=student_instance,
-                    topic=next_topic
-                )
-                if created:
-                    next_progress.is_unlocked = True
-                    next_progress.save()
+                    next_progress, created = TopicProgress.objects.get_or_create(
+                        user=student_instance,
+                        topic=next_topic
+                    )
+                    if created:
+                        next_progress.is_unlocked = True
+                        next_progress.save()
 
             except (IndexError, Topic.DoesNotExist):
                 pass
 
+        # Return the result JSON
         result_json = {
             "question": question_details,
             "result": [{
@@ -447,7 +450,6 @@ class CheckAnswersAPIView(APIView):
         }
 
         return Response(result_json)
-
 
 
 
