@@ -275,7 +275,6 @@ class CheckAnswersAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        # Deserialize the request data using CheckAnswersSerializer
         serializer = CheckAnswersSerializer(data=request.data)
         if not serializer.is_valid():
             return Response({"message": "Noto‘g‘ri formatdagi ma'lumotlar."}, status=400)
@@ -288,6 +287,7 @@ class CheckAnswersAPIView(APIView):
         correct_answers = 0
         total_answers = 0
         awarded_questions = set()
+        index = 1
         last_question_topic = None
 
         # Get or create the student's score model
@@ -298,12 +298,8 @@ class CheckAnswersAPIView(APIView):
             question = Question.objects.filter(id=answer['question_id'], question_type='text').first()
             if not question:
                 continue
-
-            # Handle answer based on available language fields
-            student_answer = None
-            correct_answer = None
-
-            # Check if 'answer_uz' or 'answer_ru' is available
+            
+            # Determine which answer field to use (Uzbek or Russian)
             if 'answer_uz' in answer:
                 student_answer = answer['answer_uz']
                 correct_answer = question.correct_text_answer_uz
@@ -311,9 +307,9 @@ class CheckAnswersAPIView(APIView):
                 student_answer = answer['answer_ru']
                 correct_answer = question.correct_text_answer_ru
             else:
-                # If neither is present, skip this question
+                # If neither `answer_uz` nor `answer_ru` is provided, skip this question
                 continue
-
+            
             # Check if the answer is correct
             is_correct = (correct_answer == student_answer)
             total_answers += 1
@@ -324,7 +320,6 @@ class CheckAnswersAPIView(APIView):
                 StudentScoreLog.objects.create(student_score=student_score, question=question)
 
             last_question_topic = question.topic
-
         # --- CHOICE ANSWERS ---
         for answer in serializer.validated_data.get('choice_answers', []):
             question = Question.objects.filter(id=answer['question_id'], question_type='choice').first()
@@ -399,7 +394,6 @@ class CheckAnswersAPIView(APIView):
             except (IndexError, Topic.DoesNotExist):
                 pass
 
-        # Return the result JSON
         result_json = {
             "question": awarded_questions,
             "result": [{
@@ -410,7 +404,6 @@ class CheckAnswersAPIView(APIView):
         }
 
         return Response(result_json)
-
 
 
 
