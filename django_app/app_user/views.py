@@ -470,7 +470,30 @@ class StudentProfileAPIView(APIView):
 
         return Response(data)
 
+class UpdateStudentFieldAPIView(APIView):
+    def post(self, request, *args, **kwargs):
+        student_id = request.data.get('student_id')
+        if not student_id:
+            return Response({"error": "student_id is required"}, status=400)
 
+        try:
+            student = Student.objects.get(id=student_id)
+        except Student.DoesNotExist:
+            return Response({"error": "Student not found"}, status=404)
+
+        # Telefon, email, class_name ni o‘zgartirish mumkin emas
+        protected_fields = ['phone', 'email', 'class_name']
+
+        for field, value in request.data.items():
+            if field == 'student_id':
+                continue
+            if field in protected_fields:
+                return Response({"error": f"Field '{field}' cannot be updated"}, status=403)
+            if hasattr(student, field):
+                setattr(student, field, value)
+
+        student.save()
+        return Response({"message": "Field(s) updated successfully"})
 from django.utils.timezone import localtime
 import pytz
 from rest_framework.permissions import IsAuthenticated
