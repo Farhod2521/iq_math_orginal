@@ -325,11 +325,11 @@ class CheckAnswersAPIView(APIView):
                 continue  # Skip if no valid answer found
 
             # Strip HTML tags to get plain text for comparison
-            student_answer_plain = strip_tags(student_answer)
-            correct_answer_plain = strip_tags(correct_answer)
+            student_answer_plain = strip_tags(student_answer).strip()
+            correct_answer_plain = strip_tags(correct_answer).strip()
 
             # Check if the answer is correct (after stripping HTML)
-            is_correct = (correct_answer_plain.strip() == student_answer_plain.strip())
+            is_correct = (correct_answer_plain == student_answer_plain)
             total_answers += 1
             if is_correct and question.id not in awarded_questions:
                 correct_answers += 1
@@ -450,8 +450,6 @@ class CheckAnswersAPIView(APIView):
         }
 
         return Response(result_json)
-
-
 
 
 
