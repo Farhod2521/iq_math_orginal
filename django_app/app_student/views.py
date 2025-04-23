@@ -298,8 +298,11 @@ class CheckAnswersAPIView(APIView):
             question = Question.objects.filter(id=answer['question_id'], question_type='text').first()
             if not question:
                 continue
-            
-            # Determine which answer field to use (Uzbek or Russian)
+
+            # Handle answer based on available language fields
+            student_answer = None
+            correct_answer = None
+
             if 'answer_uz' in answer:
                 student_answer = answer['answer_uz']
                 correct_answer = question.correct_text_answer_uz
@@ -307,9 +310,9 @@ class CheckAnswersAPIView(APIView):
                 student_answer = answer['answer_ru']
                 correct_answer = question.correct_text_answer_ru
             else:
-                # If neither `answer_uz` nor `answer_ru` is provided, skip this question
+                # If neither is present, skip this question
                 continue
-            
+
             # Check if the answer is correct
             is_correct = (correct_answer == student_answer)
             total_answers += 1
@@ -320,6 +323,7 @@ class CheckAnswersAPIView(APIView):
                 StudentScoreLog.objects.create(student_score=student_score, question=question)
 
             last_question_topic = question.topic
+
         # --- CHOICE ANSWERS ---
         for answer in serializer.validated_data.get('choice_answers', []):
             question = Question.objects.filter(id=answer['question_id'], question_type='choice').first()
