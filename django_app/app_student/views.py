@@ -14,7 +14,7 @@ from collections import defaultdict
 from bs4 import BeautifulSoup  # HTML teglarini tozalash uchun
 from django.utils.html import strip_tags
 from random import sample
-from .models import Diagnost_Student, TopicProgress, StudentScoreLog, StudentScore, ChapterProgress
+from .models import Diagnost_Student, TopicProgress, StudentScoreLog, StudentScore
 from rest_framework import status
 from django.utils import timezone
 import re
@@ -286,30 +286,43 @@ class CheckAnswersAPIView(APIView):
 
         correct_answers = 0
         total_answers = 0
-        awarded_questions = set()
+        question_details = []
         index = 1
         last_question_topic = None
 
-        # Get or create the student's score model
+        # studentga tegishli score modelini olib kelamiz yoki yaratamiz
         student_score, created = StudentScore.objects.get_or_create(student=student_instance)
+
+        # Avval bu student qaysi savollarga ball olganini aniqlaymiz
+        awarded_questions = set(
+            StudentScoreLog.objects.filter(student_score=student_score).values_list('question_id', flat=True)
+        )
 
         # --- TEXT ANSWERS ---
         for answer in serializer.validated_data.get('text_answers', []):
             question = Question.objects.filter(id=answer['question_id'], question_type='text').first()
             if not question:
                 continue
-            
-            # Determine which answer field to use (Uzbek or Russian)
+
+            # Handle answer based on available language fields
+            student_answer = None
+            correct_answer = None
+
+            # Check for 'answer_uz' and 'answer_ru'
             if 'answer_uz' in answer:
                 student_answer = answer['answer_uz']
                 correct_answer = question.correct_text_answer_uz
             elif 'answer_ru' in answer:
                 student_answer = answer['answer_ru']
                 correct_answer = question.correct_text_answer_ru
-            else:
-                # If neither `answer_uz` nor `answer_ru` is provided, skip this question
-                continue
-            
+            elif 'answer' in answer:
+                # Fallback to generic 'answer' field
+                student_answer = answer['answer']
+                correct_answer = question.correct_text_answer
+
+            if student_answer is None or correct_answer is None:
+                continue  # Skip if no valid answer found
+
             # Check if the answer is correct
             is_correct = (correct_answer == student_answer)
             total_answers += 1
@@ -320,6 +333,15 @@ class CheckAnswersAPIView(APIView):
                 StudentScoreLog.objects.create(student_score=student_score, question=question)
 
             last_question_topic = question.topic
+            question_details.append({
+                "index": index,
+                "question_id": question.id,
+                "question_uz": question.question_text_uz,
+                "question_ru": question.question_text_ru,
+                "answer": is_correct
+            })
+            index += 1
+
         # --- CHOICE ANSWERS ---
         for answer in serializer.validated_data.get('choice_answers', []):
             question = Question.objects.filter(id=answer['question_id'], question_type='choice').first()
@@ -337,6 +359,14 @@ class CheckAnswersAPIView(APIView):
                 StudentScoreLog.objects.create(student_score=student_score, question=question)
 
             last_question_topic = question.topic
+            question_details.append({
+                "index": index,
+                "question_id": question.id,
+                "question_uz": question.question_text_uz,
+                "question_ru": question.question_text_ru,
+                "answer": is_correct
+            })
+            index += 1
 
         # --- COMPOSITE ANSWERS ---
         for answer in serializer.validated_data.get('composite_answers', []):
@@ -358,23 +388,32 @@ class CheckAnswersAPIView(APIView):
                 StudentScoreLog.objects.create(student_score=student_score, question=question)
 
             last_question_topic = question.topic
+            question_details.append({
+                "index": index,
+                "question_id": question.id,
+                "question_uz": question.question_text_uz,
+                "question_ru": question.question_text_ru,
+                "answer": is_correct
+            })
+            index += 1
 
-        # Save the student's score model
+        # student_score modelini saqlaymiz
         student_score.save()
 
-        # Calculate progress score
+        # Progressni yangilash (agar score 80 dan yuqori bo‘lsa)
         score = round((correct_answers / total_answers) * 100, 2) if total_answers else 0.0
 
-        # Check for ChapterProgress and update
         if last_question_topic and score >= 80:
-            chapter_progress, created = ChapterProgress.objects.get_or_create(
+            topic_progress, _ = TopicProgress.objects.get_or_create(
                 user=student_instance,
-                chapter=last_question_topic.chapter
+                topic=last_question_topic
             )
-            chapter_progress.progress_percentage = score
-            chapter_progress.save()
+            topic_progress.is_unlocked = True
+            topic_progress.score = score
+            topic_progress.completed_at = timezone.now()
+            topic_progress.save()
 
-            # Unlock next topic in the chapter
+            # Keyingi mavzuni ochish
             all_topics = Topic.objects.filter(chapter=last_question_topic.chapter, is_locked=False).order_by('id')
             topic_ids = list(all_topics.values_list('id', flat=True))
 
@@ -395,7 +434,7 @@ class CheckAnswersAPIView(APIView):
                 pass
 
         result_json = {
-            "question": awarded_questions,
+            "question": question_details,
             "result": [{
                 "total_answers": total_answers,
                 "correct_answers": correct_answers,
