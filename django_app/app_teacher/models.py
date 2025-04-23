@@ -48,8 +48,10 @@ class Question(models.Model):
     
     # Faqat text turi uchun
     correct_text_answer = RichTextField(blank=True, null=True)
-    video_file = models.FileField(upload_to="Video_darsliklar/", null=True, blank=True)
-    video_url  = models.URLField(null=True, blank=True)
+    video_file_uz = models.FileField(upload_to="Video_darsliklar/", null=True, blank=True)
+    video_file_ru = models.FileField(upload_to="Video_darsliklar/", null=True, blank=True)
+    video_url_uz  = models.URLField(null=True, blank=True)
+    video_url_ru  = models.URLField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.question_text[:30]}..."
