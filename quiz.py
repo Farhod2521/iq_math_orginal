@@ -23,13 +23,17 @@ def import_questions_from_excel(file_path):
 
         question = Question(
             topic=topic,
-            question_text=row['question_text_uz'],
             question_type='text',
             level=row['level'],
-            correct_text_answer=row['answer_text_uz'],
+
+            # Multilingual maydonlar
+            question_text_uz=row['question_text_uz'],
+            question_text_ru=row['question_text_ru'],
+            correct_text_answer_uz=row['answer_text_uz'],
+            correct_text_answer_ru=row['answer_text_ru'],
         )
         question.save()
-        print(f"Savol yaratildi: {question.question_text[:50]}...")
+        print(f"Savol yaratildi: {question.question_text_uz[:50]}...")
 
 if __name__ == '__main__':
     file_path = 'misollar.xlsx'  # Excel faylingizning nomi va joylashuvi
