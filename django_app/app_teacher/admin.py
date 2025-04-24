@@ -53,8 +53,7 @@ class CompositeSubQuestionInline(TranslationTabularInline):
     model = CompositeSubQuestion
     extra = 1
 
-
-from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 
 @admin.register(Question)
 class QuestionAdmin(TranslationAdmin):
@@ -64,7 +63,7 @@ class QuestionAdmin(TranslationAdmin):
     inlines = [ChoiceInline, CompositeSubQuestionInline]
 
     def formatted_question_text(self, obj):
-        return format_html(obj.question_text)
+        return mark_safe(obj.question_text)
     formatted_question_text.short_description = "Savol"
 
 
