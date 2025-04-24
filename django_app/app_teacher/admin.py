@@ -55,16 +55,21 @@ class CompositeSubQuestionInline(TranslationTabularInline):
 
 from django.utils.safestring import mark_safe
 
-@admin.register(Question)
 class QuestionAdmin(TranslationAdmin):
-    list_display = ('formatted_question_text', 'question_type', 'level')
+    list_display = ('rendered_question_text', 'question_type', 'level')
     list_filter = ('question_type', 'level')
     search_fields = ('question_text',)
     inlines = [ChoiceInline, CompositeSubQuestionInline]
 
-    def formatted_question_text(self, obj):
+    def rendered_question_text(self, obj):
         return mark_safe(obj.question_text)
-    formatted_question_text.short_description = "Savol"
+    rendered_question_text.short_description = "Savol"
+
+    class Media:
+        js = (
+            'https://polyfill.io/v3/polyfill.min.js?features=es6',
+            'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js',
+        )
 
 
 @admin.register(Choice)
