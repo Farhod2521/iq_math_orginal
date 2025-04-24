@@ -1,0 +1,133 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\usepackage{amsmath,amssymb}
+\usepackage{lmodern}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\usepackage{longtable,booktabs,array}
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same} % disable monospaced font for URLs
+\hypersetup{
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\author{}
+\date{}
+
+\begin{document}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.0854}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.3049}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.1463}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.3536}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.1098}}@{}}
+\toprule()
+\multicolumn{3}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.5366} + 4\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+TOPIC\_NAME: Kasrlarni bo`lish.
+\end{minipage}}  \begin{minipage}[b]{\linewidth}\raggedright
+\end{minipage}  \begin{minipage}[b]{\linewidth}\raggedright
+\end{minipage} \\
+\midrule()
+\endhead
+\textbf{level}  \textbf{question\_text\_uz} 
+\textbf{correct\_text\_answer\_uz}  \textbf{question\_text\_ru} 
+\textbf{correct\_text\_answer\_ru} \\
+1  \(\frac{3}{7}\) sonining teskari sonini toping.  \(\frac{7}{3}\) 
+Укажите обратное числу: \(\frac{3}{7}\)  \(\frac{7}{3}\) \\
+1  Bo`ling. \(\frac{5}{8}:\frac{4}{7}\)  \(1\frac{3}{32}\) 
+Разделите: \(\frac{5}{8}:\frac{4}{7}\)  \(1\frac{3}{32}\) \\
+1  \(2\frac{1}{4}\) ni \(\frac{9}{10}\) ga bo`ling.  \(2\frac{1}{2}\)
+ Разделите \(2\frac{1}{4}\) на \(\frac{9}{10}\) .  \(2\frac{1}{2}\) \\
+1  Ali do`kondan 4 dona qalam sotib oldi. Qalamlarning barchasi bir xil
+narxda edi. Agar Ali qalam uchun \(1\frac{1}{3}\) dollar to`lagan
+bo`lsa, bir dona qalam narxi qancha bo`lgan?  \(\frac{1}{3}\)  Али
+купил в магазине 4 карандаша. Все карандаши стоили одинаково. Если бы
+Али заплатил за карандаш \(1\frac{1}{3}\) доллара, какова была бы цена
+одного карандаша?  \(\frac{1}{3}\) цента \\
+1  \(\frac{7}{12}\) ni \(\frac{2}{5}\) ga bo`ling.  1\(\frac{11}{24}\)
+ Разделите \(\frac{7}{12}\) на \(\frac{2}{5}\) . 
+1\(\frac{11}{24}\) \\
+1  \(\frac{9}{16}\) sonining teskari sonini toping.  \(\frac{16}{9}\)
+ Укажите обратное числу: \(\frac{9}{16}\)  \(\frac{16}{9}\) \\
+7  Bir laganda \(3\frac{1}{2}\) kilogram shirinlik bor edi. Shirinlik
+har biri \(\frac{7}{8}\) kilogramm bo`lgan bo`lakchalarga bo`lindi.
+Shirinlik jami nechta bo`lakka bo`lindi?  4  В одном лотке было
+\(3\frac{1}{2}\) килограмма сладостей. Десерт был порезан на куски по
+\(\frac{7}{8}\) килограммов каждый. На сколько частей был разделен
+десерт?  4 \\
+8  \(\frac{11}{14}\) ni \(1\frac{4}{7}\) ga bo`ling.  \(\frac{1}{2}\)
+ Разделите \(\frac{11}{14}\) на \(1\frac{4}{7}\) .  \(\frac{1}{2}\) \\
+9  \(\frac{8}{15}\) ni \(\frac{6}{5}\) ga bo`ling.  \(\frac{4}{9}\) 
+Разделите \(\frac{8}{15}\) на \(\frac{6}{5}\) .  \(\frac{4}{9}\) \\
+10  \(\frac{17}{25}\) sonining teskari sonini toping. 
+\(\frac{25}{17}\)  Укажите обратное числу: \(\frac{17}{25}\) 
+\(\frac{25}{17}\) \\
+11  \(\frac{20}{21}\) ni \(\frac{4}{7}\) ga bo`ling.  \(1\frac{2}{3}\)
+ Разделите \(\frac{20}{21}\) на \(\frac{4}{7}\) .  \(1\frac{2}{3}\) \\
+12  Velosipedchining tezligi \(11\frac{2}{5}\) km/soat. U 19 km ni
+necha soatda bosib o`tadi?  \(\frac{5}{3}\)  Скорость велосипедиста
+\(11\frac{2}{5}\) км/ч. За сколько часов он проедет 19 км? 
+\(\frac{5}{3}\) \\
+13  Bo`ling. 15:25  \(\frac{3}{5}\)  Разделите: 15:25 
+\(\frac{3}{5}\) \\
+14  Bir shisha \(1\frac{1}{3}\) litr sutga ega. Har bir stakan
+\(\frac{2}{3}\) litrga teng bo`lsa, shishadagi sut bilan nechta stakan
+to`ldirsa bo`ladi?  2  Бутылка вмещает \(1\frac{1}{3}\) литра молока.
+Сколько стаканов можно наполнить бутылкой молока, если каждый стакан
+\(\frac{2}{3}\) литра?  2 \\
+15  \(2\frac{3}{4}\ \)\emph{va}\(1\frac{3}{10}\)\emph{sonlarining
+ayirmasiga teskari son yozing.}  \(\frac{20}{49}\)  Укажите обратное
+числу: произведение \(2\frac{3}{4}\ и\ 1\frac{3}{10}\ \). 
+\(\frac{20}{49}\) \\
+\bottomrule()
+\end{longtable}
+
+\end{document}
