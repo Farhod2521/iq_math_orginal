@@ -55,6 +55,7 @@ class CompositeSubQuestionInline(TranslationTabularInline):
 
 from django.utils.safestring import mark_safe
 
+@admin.register(Question)
 class QuestionAdmin(TranslationAdmin):
     list_display = ('rendered_question_text', 'question_type', 'level')
     list_filter = ('question_type', 'level')
