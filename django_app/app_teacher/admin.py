@@ -54,12 +54,18 @@ class CompositeSubQuestionInline(TranslationTabularInline):
     extra = 1
 
 
+from django.utils.html import format_html
+
 @admin.register(Question)
 class QuestionAdmin(TranslationAdmin):
-    list_display = ('question_text', 'question_type', 'level')
+    list_display = ('formatted_question_text', 'question_type', 'level')
     list_filter = ('question_type', 'level')
     search_fields = ('question_text',)
     inlines = [ChoiceInline, CompositeSubQuestionInline]
+
+    def formatted_question_text(self, obj):
+        return format_html(obj.question_text)
+    formatted_question_text.short_description = "Savol"
 
 
 @admin.register(Choice)
