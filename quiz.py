@@ -36,5 +36,5 @@ def import_questions_from_excel(file_path):
         print(f"Savol yaratildi: {question.question_text_uz[:50]}...")
 
 if __name__ == '__main__':
-    file_path = 'misollar.xlsx'  # Excel faylingizning nomi va joylashuvi
+    file_path = 'misollar.xlsx'
     import_questions_from_excel(file_path)
