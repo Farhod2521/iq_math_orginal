@@ -289,3 +289,39 @@ class QuestionUpdateView(APIView):
                 return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+from openpyxl import load_workbook
+from openpyxl.writer.excel import save_virtual_workbook
+from django.http import HttpResponse
+import os
+class QuestionToXlsxImport(APIView):
+    def post(self, request):
+        topic_id = request.data.get("topic_id")
+        topic_name_uz = request.data.get("topic_name_uz")
+
+        if not topic_id or not topic_name_uz:
+            return Response({"error": "topic_id and topic_name_uz are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Fayl manzili
+        template_path = '/home/user/backend/iq_math_original/shablon.xlsx'
+        
+        if not os.path.exists(template_path):
+            return Response({"error": "shablon.xlsx topilmadi"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Faylni ochamiz
+        workbook = load_workbook(template_path)
+        sheet = workbook.active
+
+        # Maʼlumotlarni birinchi bo'sh qatordan boshlab yozamiz (2-qator)
+        next_row = sheet.max_row + 1
+        sheet.cell(row=next_row, column=1, value=topic_id)
+        sheet.cell(row=next_row, column=2, value=topic_name_uz)
+
+        # Excel faylni virtual xotirada saqlaymiz
+        response = HttpResponse(
+            content=save_virtual_workbook(workbook),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = 'attachment; filename=shablon_yangilangan.xlsx'
+        return response

@@ -1,0 +1,114 @@
+1)savol_uz:
+1-daraja
+
+
+1)javob_uz:
+
+
+
+1)savol_ru:
+
+
+
+1)javob_ru:
+\end{minipage} \\
+
+
+2)savol_uz:
+1 Yig`indini hisoblang
+1) 2frac{1}{4}+3frac{1}{4}
+2) 6frac{2}{5} + 3frac{1}{5}
+3) 7frac{7}{8} + 5frac{5}{8}
+
+2)javob_uz:
+\begin{enumerate}
+1) 6
+2) 9frac{3}{5}
+3) 13frac{1}{2}
+
+2)savol_ru:
+\begin{enumerate}
+1) Вычислите сумму:
+2) 2frac{1}{4}+3frac{1}{4}
+3) 6frac{2}{5} + 3frac{1}{5}
+4) 7frac{7}{8} + 5frac{5}{8}
+
+2)javob_ru:
+\begin{enumerate}
+1) 6
+2) 9frac{3}{5}
+3) 13frac{1}{2}
+
+3)savol_uz:
+2 Ayirmaning hisoblang
+1) 10frac{1}{4} - 8frac{1}{3}
+2) 9frac{2}{3} - 6frac{3}{4}
+3) 8frac{3}{8}-6frac{1}{12}
+
+3)javob_uz:
+\begin{enumerate}
+1) 1frac{11}{12}
+2) 2frac{11}{12}
+3) 2frac{7}{24}
+
+3)savol_ru:
+\begin{enumerate}
+1) Вычислите разность:
+2) 10frac{1}{4} - 8frac{1}{3}
+3) 9frac{2}{3} - 6frac{3}{4}
+4) 8frac{3}{8}-6frac{1}{12}
+
+3)javob_ru:
+\begin{enumerate}
+1) 1frac{11}{12}
+2) 2frac{11}{12}
+3) 2frac{7}{24}
+
+4)savol_uz:
+3 Ifodaning qiymatini toping
+1) 4frac{3}{5} + 2frac{5}{7} + 6frac{9}{35}
+2) 9frac{2}{11} + 7frac{3}{22} - 15frac{7}{33}
+3) 1frac{1}{3} + frac{5}{6} - 1frac{23}{30}
+4) 5frac{13}{42} - 2frac{13}{28} - 1frac{5}{28}
+
+4)javob_uz:
+\begin{enumerate}
+1) 13frac{4}{7}
+2) 1frac{7}{66}
+
+4)savol_ru:
+\begin{enumerate}
+1) Найдите значение выражения:
+2) 4frac{3}{5} + 2frac{5}{7} + 6frac{9}{35}
+3) 9frac{2}{11} + 7frac{3}{22} - 15frac{7}{33}
+4) 1frac{1}{3} + frac{5}{6} - 1frac{23}{30}
+5) 5frac{13}{42} - 2frac{13}{28} - 1frac{5}{28}
+
+4)javob_ru:
+\begin{enumerate}
+1) 13frac{4}{7}
+2) 1frac{7}{66}
+
+5)savol_uz:
+4 masala
+1) Yorqin bog`dan 5frac{3}{5} kg uzum va 4frac{3}{10} kg gilos
+2) Jasur sovg`alarni tayyorlash uchun 5frac{1}{3} m yashil va
+3) Do`konga keltirilgan 3frac{1}{5} tonna undan 1frac{3}{7}
+
+5)javob_uz:
+\begin{enumerate}
+1) 9frac{9}{10} kg
+2) 9frac{7}{12}
+3) 1frac{17}{35} tonna
+
+5)savol_ru:
+4 -задачи:
+1) Ёркин собрал в саду 5frac{3}{5} кг винограда и va
+2) В качестве подарков Жасур принес 5frac{1}{3} м зеленой и
+3) Из 3frac{1}{5} тонн муки, доставленных в магазин, было продано
+
+5)javob_ru:
+\begin{enumerate}
+1) 9frac{9}{10} кг
+2) 9frac{7}{12} м
+3) 1frac{17}{35} т
