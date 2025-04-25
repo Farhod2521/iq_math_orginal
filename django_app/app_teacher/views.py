@@ -295,6 +295,7 @@ from openpyxl import load_workbook
 from io import BytesIO
 from django.http import HttpResponse
 import os
+import pandas as pd
 class QuestionToXlsxImport(APIView):
     def post(self, request):
         topic_id = request.data.get("topic_id")
@@ -325,3 +326,51 @@ class QuestionToXlsxImport(APIView):
         )
         response['Content-Disposition'] = 'attachment; filename=shablon_yangilangan.xlsx'
         return response
+    
+
+class QuestionImportFromXlsx(APIView):
+    def post(self, request):
+        file = request.FILES.get('file')
+
+        if not file:
+            return Response({"error": "Fayl yuborilmadi"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            df = pd.read_excel(BytesIO(file.read()))
+        except Exception as e:
+            return Response({"error": f"Excel faylni o'qishda xatolik: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+
+        created_count = 0
+        skipped = []
+
+        for index, row in df.iterrows():
+            topic_id = row.get('topic_id')
+            if not topic_id:
+                skipped.append(f"{index + 2}-qator: topic_id yo'q")
+                continue
+
+            try:
+                topic = Topic.objects.get(id=topic_id)
+            except Topic.DoesNotExist:
+                skipped.append(f"{index + 2}-qator: Topic ID {topic_id} topilmadi")
+                continue
+
+            question = Question.objects.create(
+                topic=topic,
+                question_type='text',  # Agar boshqa type bo‘lsa, excelga qo‘shib o‘zgartirish mumkin
+                level=row.get('level') or 1,
+                question_text_uz=row.get('question_text_uz', ''),
+                question_text_ru=row.get('question_text_ru', ''),
+                correct_text_answer_uz=row.get('answer_text_uz', ''),
+                correct_text_answer_ru=row.get('answer_text_ru', ''),
+                video_url_uz=row.get('video_url_uz', ''),
+                video_url_ru=row.get('video_url_ru', '')
+            )
+
+            created_count += 1
+
+        return Response({
+            "success": True,
+            "created": created_count,
+            "skipped": skipped
+        }, status=status.HTTP_201_CREATED)
