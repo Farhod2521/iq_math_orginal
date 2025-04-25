@@ -1,274 +1,54 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="uz">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rasmli Test Qo'shish</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .form-group {
-            margin-bottom: 15px;
-        }
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-        input[type="text"], 
-        input[type="number"],
-        select,
-        textarea {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-        .choice-item {
-            border: 1px solid #eee;
-            padding: 15px;
-            margin-bottom: 15px;
-            border-radius: 5px;
-            background-color: #f9f9f9;
-        }
-        .choice-item h4 {
-            margin-top: 0;
-        }
-        button {
-            background-color: #4CAF50;
-            color: white;
-            padding: 10px 15px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-        button:hover {
-            background-color: #45a049;
-        }
-        #add-choice {
-            background-color: #2196F3;
-            margin-bottom: 20px;
-        }
-        #add-choice:hover {
-            background-color: #0b7dda;
-        }
-        #response-message {
-            margin-top: 20px;
-            padding: 10px;
-            border-radius: 4px;
-            display: none;
-        }
-        .success {
-            background-color: #dff0d8;
-            color: #3c763d;
-            display: block !important;
-        }
-        .error {
-            background-color: #f2dede;
-            color: #a94442;
-            display: block !important;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>Excel Yuklash</title>
 </head>
 <body>
-    <h1>Yangi Test Qo'shish</h1>
-    
-    <div class="form-group">
-        <label for="topic">Mavzu ID:</label>
-        <input type="number" id="topic" required>
-    </div>
-    
-    <div class="form-group">
-        <label for="question_text">Savol matni:</label>
-        <textarea id="question_text" rows="3" required></textarea>
-    </div>
-    
-    <div class="form-group">
-        <label for="question_type">Savol turi:</label>
-        <select id="question_type" required>
-            <option value="text">Matnli javob</option>
-            <option value="choice">Variant tanlash</option>
-            <option value="image_choice" selected>Rasmli variant</option>
-            <option value="composite">Bir nechta inputli savol</option>
-        </select>
-    </div>
-    
-    <div class="form-group">
-        <label for="level">Daraja (1-10):</label>
-        <input type="number" id="level" min="1" max="10" value="1" required>
-    </div>
-    
-    <h3>Variantlar</h3>
-    <button type="button" id="add-choice">Variant qo'shish</button>
-    <div id="choices-container">
-        <!-- Variantlar shu yerga qo'shiladi -->
-    </div>
-    
-    <button type="button" id="submit-btn">Testni Saqlash</button>
-    
-    <div id="response-message"></div>
-    
-    <script>
-        // Token
-        const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ0NTEyOTMzLCJpYXQiOjE3NDQ0NjYxMzMsImp0aSI6IjcxZmIxYjhkOWM4ZDRkYmI4ZDEwMmVlZjFjZmI1ZjMzIiwidXNlcl9pZCI6MTIsInRlYWNoZXJfaWQiOjR9.NTyLR-K0bUXgjcu99-qyUHuDwvmSgS3QA_vz23qvXKk";
-        
-        // Harflar ro'yxati
-        const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
-        let choiceCount = 0;
-        
-        // Variant qo'shish funksiyasi
-        document.getElementById('add-choice').addEventListener('click', function() {
-            if (choiceCount >= letters.length) {
-                alert(`Maksimum ${letters.length} ta variant qo'shish mumkin`);
-                return;
-            }
-            
-            const container = document.getElementById('choices-container');
-            const choiceDiv = document.createElement('div');
-            choiceDiv.className = 'choice-item';
-            choiceDiv.innerHTML = `
-                <h4>Variant ${letters[choiceCount]}</h4>
-                <div class="form-group">
-                    <label for="choice-letter-${choiceCount}">Harfli belgi:</label>
-                    <input type="text" id="choice-letter-${choiceCount}" value="${letters[choiceCount]}" readonly>
-                </div>
-                <div class="form-group">
-                    <label for="choice-text-${choiceCount}">Matn (ixtiyoriy):</label>
-                    <input type="text" id="choice-text-${choiceCount}">
-                </div>
-                <div class="form-group">
-                    <label for="choice-image-${choiceCount}">Rasm:</label>
-                    <input type="file" id="choice-image-${choiceCount}" accept="image/*">
-                </div>
-                <div class="form-group">
-                    <label for="choice-correct-${choiceCount}">
-                        <input type="radio" name="correct-choice" id="choice-correct-${choiceCount}" value="${choiceCount}">
-                        To'g'ri javob
-                    </label>
-                </div>
-                <button type="button" class="remove-choice" data-index="${choiceCount}">O'chirish</button>
-            `;
-            
-            container.appendChild(choiceDiv);
-            choiceCount++;
+  <h2>Excel faylga yozish va yuklab olish</h2>
+
+  <form id="download-form">
+    <label for="topic_id">Topic ID:</label>
+    <input type="text" name="topic_id" id="topic_id" required><br><br>
+
+    <label for="topic_name_uz">Topic Name (UZ):</label>
+    <input type="text" name="topic_name_uz" id="topic_name_uz" required><br><br>
+
+    <button type="submit">Yuklab olish</button>
+  </form>
+
+  <script>
+    document.getElementById('download-form').addEventListener('submit', async function (e) {
+      e.preventDefault();
+
+      const form = e.target;
+      const formData = new FormData(form);
+
+      try {
+        const response = await fetch("https://backend.iq-math.uz/api/v1/func_teacher/xlsx-import/", {
+          method: "POST",
+          body: formData
         });
-        
-        // Variantni o'chirish
-        document.addEventListener('click', function(e) {
-            if (e.target.classList.contains('remove-choice')) {
-                const index = e.target.getAttribute('data-index');
-                const choiceDiv = document.querySelector(`.choice-item button[data-index="${index}"]`).parentNode;
-                choiceDiv.remove();
-                choiceCount--;
-                
-                // Qolgan variantlarni qayta tartiblash
-                const choices = document.querySelectorAll('.choice-item');
-                choices.forEach((choice, i) => {
-                    const letterInput = choice.querySelector('input[type="text"][readonly]');
-                    letterInput.value = letters[i];
-                    choice.querySelector('h4').textContent = `Variant ${letters[i]}`;
-                    choice.querySelector('.remove-choice').setAttribute('data-index', i);
-                });
-            }
-        });
-        
-        // Formani yuborish
-        document.getElementById('submit-btn').addEventListener('click', function() {
-            const topic = document.getElementById('topic').value;
-            const questionText = document.getElementById('question_text').value;
-            const questionType = document.getElementById('question_type').value;
-            const level = document.getElementById('level').value;
-            
-            // FormData yaratish
-            const formData = new FormData();
-            formData.append('topic', topic);
-            formData.append('question_text', questionText);
-            formData.append('question_type', questionType);
-            formData.append('level', level);
-            
-            // Variantlarni qo'shish
-            const choices = document.querySelectorAll('.choice-item');
-            if (choices.length === 0 && questionType !== 'text') {
-                showMessage('Kamida bitta variant qo\'shishingiz kerak', 'error');
-                return;
-            }
-            
-            let hasCorrectAnswer = false;
-            choices.forEach((choice, index) => {
-                const letter = choice.querySelector('input[type="text"][readonly]').value;
-                const text = choice.querySelector('input[type="text"]:not([readonly])').value;
-                const imageFile = choice.querySelector('input[type="file"]').files[0];
-                const isCorrect = choice.querySelector('input[type="radio"]:checked') !== null;
-                
-                if (isCorrect) hasCorrectAnswer = true;
-                
-                formData.append(`choices[${index}][letter]`, letter);
-                formData.append(`choices[${index}][text]`, text);
-                formData.append(`choices[${index}][is_correct]`, isCorrect);
-                if (imageFile) {
-                    formData.append(`choices[${index}][image]`, imageFile);
-                }
-            });
-            
-            if (!hasCorrectAnswer && questionType !== 'text') {
-                showMessage('Kamida bitta to\'g\'ri javobni belgilashingiz kerak', 'error');
-                return;
-            }
-            
-            // API ga so'rov yuborish
-            fetch('https://backend.iq-math.uz/api/v1/func_teacher/my-question/create/', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                },
-                body: formData
-            })
-            .then(response => {
-                if (!response.ok) {
-                    return response.json().then(err => { throw err; });
-                }
-                return response.json();
-            })
-            .then(data => {
-                showMessage('Test muvaffaqiyatli qo\'shildi!', 'success');
-                console.log('Success:', data);
-                // Formani tozalash
-                document.querySelector('form').reset();
-                document.getElementById('choices-container').innerHTML = '';
-                choiceCount = 0;
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                let errorMessage = 'Xatolik yuz berdi';
-                if (error.detail) {
-                    errorMessage = error.detail;
-                } else if (error.message) {
-                    errorMessage = error.message;
-                } else if (typeof error === 'string') {
-                    errorMessage = error;
-                }
-                showMessage(errorMessage, 'error');
-            });
-        });
-        
-        // Xabarlarni ko'rsatish funksiyasi
-        function showMessage(message, type) {
-            const messageDiv = document.getElementById('response-message');
-            messageDiv.textContent = message;
-            messageDiv.className = type;
-            setTimeout(() => {
-                messageDiv.style.display = 'none';
-            }, 5000);
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error("Xatolik: " + errorText);
         }
-        
-        // Dastlabki 2 ta variant qo'shish
-        document.getElementById('add-choice').click();
-        document.getElementById('add-choice').click();
-    </script>
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = "shablon_yangilangan.xlsx";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+      } catch (error) {
+        alert("Xatolik yuz berdi: " + error.message);
+        console.error(error);
+      }
+    });
+  </script>
 </body>
 </html>

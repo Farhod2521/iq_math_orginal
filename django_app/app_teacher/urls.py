@@ -1,7 +1,7 @@
 from django.urls import path
 from .views import(
      TeacherSubjectsAPIView, MyTopicAddCreateView,
-       MyTopicListView, MyChapterAddCreateView, QuestionToXlsxImport,
+       MyTopicListView, MyChapterAddCreateView, QuestionToXlsxImport,QuestionImportFromXlsx,
        MyChapterListView, QuestionAddCreateView, MyQuestionListView, QuestionUpdateView, QuestionDeleteView, SubjectListAPIView
 )
 urlpatterns = [
@@ -17,7 +17,8 @@ urlpatterns = [
 
     path('my-chapters/list/<int:id>/', MyChapterListView.as_view(), name='my-chapters'),
     path('my-topics/list/<int:id>/', MyTopicListView.as_view(), name='my-topics'),
-    path('xlsx-import/', QuestionToXlsxImport.as_view(), name='my-topics'),
+    path('xlsx-export/', QuestionToXlsxImport.as_view(), name='my-topics'),
+    path('xlsx-import/', QuestionImportFromXlsx.as_view(), name='my-topics'),
  
 
 ]
