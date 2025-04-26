@@ -1,8 +1,9 @@
 from django.urls import path
 from .views import(
      TeacherSubjectsAPIView, MyTopicAddCreateView,
-       MyTopicListView, MyChapterAddCreateView, QuestionToXlsxImport,QuestionImportFromXlsx,
-       MyChapterListView, QuestionAddCreateView, MyQuestionListView, QuestionUpdateView, QuestionDeleteView, SubjectListAPIView
+       MyTopicListView, MyChapterAddCreateView, TextQuestionToXlsxImport,QuestionImportFromXlsx,
+       MyChapterListView, QuestionAddCreateView, MyQuestionListView, QuestionUpdateView, QuestionDeleteView, SubjectListAPIView,
+       ChoiceQuestionToXlsxImport, CompenQuestionToXlsxImport
 )
 urlpatterns = [
     path("my-subjects/", TeacherSubjectsAPIView.as_view(), name="teacher-subjects"),
@@ -17,7 +18,9 @@ urlpatterns = [
 
     path('my-chapters/list/<int:id>/', MyChapterListView.as_view(), name='my-chapters'),
     path('my-topics/list/<int:id>/', MyTopicListView.as_view(), name='my-topics'),
-    path('xlsx-export/', QuestionToXlsxImport.as_view(), name='my-topics'),
+    path('text-export/', TextQuestionToXlsxImport.as_view(), name='my-topics'),
+    path('choice-export/', ChoiceQuestionToXlsxImport.as_view(), name='my-topics'),
+    path('composite-export/', CompenQuestionToXlsxImport.as_view(), name='my-topics'),
     path('xlsx-import/', QuestionImportFromXlsx.as_view(), name='my-topics'),
  
 
