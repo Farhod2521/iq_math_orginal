@@ -305,7 +305,7 @@ class TextQuestionToXlsxImport(APIView):
         if not topic_id or not topic_name_uz:
             return Response({"error": "topic_id and topic_name_uz are required"}, status=status.HTTP_400_BAD_REQUEST)
 
-        template_path = 'shablon.xlsx'
+        template_path = '/home/user/backend/iq_math_orginal/shablon.xlsx'
         if not os.path.exists(template_path):
             return Response({"error": "shablon.xlsx topilmadi"}, status=status.HTTP_404_NOT_FOUND)
 
@@ -338,7 +338,7 @@ class ChoiceQuestionToXlsxImport(APIView):
         if not topic_id or not topic_name_uz:
             return Response({"error": "topic_id and topic_name_uz are required"}, status=status.HTTP_400_BAD_REQUEST)
 
-        template_path = 'choice.xlsx'
+        template_path = '/home/user/backend/iq_math_orginal/choice.xlsx'
         if not os.path.exists(template_path):
             return Response({"error": "choice.xlsx topilmadi"}, status=status.HTTP_404_NOT_FOUND)
 
@@ -371,7 +371,7 @@ class CompenQuestionToXlsxImport(APIView):
         if not topic_id or not topic_name_uz:
             return Response({"error": "topic_id and topic_name_uz are required"}, status=status.HTTP_400_BAD_REQUEST)
 
-        template_path = 'composite.xlsx'
+        template_path = '/home/user/backend/iq_math_orginal/composite.xlsx'
         if not os.path.exists(template_path):
             return Response({"error": "composite.xlsx topilmadi"}, status=status.HTTP_404_NOT_FOUND)
 
