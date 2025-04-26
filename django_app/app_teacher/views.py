@@ -303,7 +303,7 @@ class TextQuestionToXlsxImport(APIView):
         question_type = request.data.get("question_type")
 
         if not topic_id or not topic_name_uz:
-            return Response({"error": "topic_id and topic_name_uz are required"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "topic_id ,  topic_name_uz question_type and are required"}, status=status.HTTP_400_BAD_REQUEST)
 
         template_path = '/home/user/backend/iq_math_orginal/shablon.xlsx'
         if not os.path.exists(template_path):
@@ -336,7 +336,7 @@ class ChoiceQuestionToXlsxImport(APIView):
         question_type = request.data.get("question_type")
 
         if not topic_id or not topic_name_uz:
-            return Response({"error": "topic_id and topic_name_uz are required"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "topic_id ,  topic_name_uz question_type and are required"}, status=status.HTTP_400_BAD_REQUEST)
 
         template_path = '/home/user/backend/iq_math_orginal/choice.xlsx'
         if not os.path.exists(template_path):
@@ -369,7 +369,7 @@ class CompenQuestionToXlsxImport(APIView):
         question_type = request.data.get("question_type")
 
         if not topic_id or not topic_name_uz:
-            return Response({"error": "topic_id and topic_name_uz are required"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "topic_id ,  topic_name_uz question_type and are required"}, status=status.HTTP_400_BAD_REQUEST)
 
         template_path = '/home/user/backend/iq_math_orginal/composite.xlsx'
         if not os.path.exists(template_path):
