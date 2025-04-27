@@ -298,12 +298,7 @@ import os
 import pandas as pd
 class TextQuestionToXlsxImport(APIView):
     def post(self, request):
-        topic_id = request.data.get("topic_id")
-        topic_name_uz = request.data.get("topic_name_uz")
         question_type = request.data.get("question_type")
-
-        if not topic_id or not topic_name_uz:
-            return Response({"error": "topic_id ,  topic_name_uz question_type and are required"}, status=status.HTTP_400_BAD_REQUEST)
 
         template_path = '/home/user/backend/iq_math_orginal/shablon.xlsx'
         if not os.path.exists(template_path):
@@ -313,9 +308,8 @@ class TextQuestionToXlsxImport(APIView):
         sheet = workbook.active
 
         next_row = sheet.max_row + 1
-        sheet.cell(row=next_row, column=1, value=topic_id)
-        sheet.cell(row=next_row, column=2, value=topic_name_uz)
-        sheet.cell(row=next_row, column=3, value=question_type)
+
+        sheet.cell(row=next_row, column=1, value=question_type)
 
         # BytesIO bilan faylni virtual tarzda saqlash
         output = BytesIO()
@@ -331,12 +325,7 @@ class TextQuestionToXlsxImport(APIView):
     
 class ChoiceQuestionToXlsxImport(APIView):
     def post(self, request):
-        topic_id = request.data.get("topic_id")
-        topic_name_uz = request.data.get("topic_name_uz")
         question_type = request.data.get("question_type")
-
-        if not topic_id or not topic_name_uz:
-            return Response({"error": "topic_id ,  topic_name_uz question_type and are required"}, status=status.HTTP_400_BAD_REQUEST)
 
         template_path = '/home/user/backend/iq_math_orginal/choice.xlsx'
         if not os.path.exists(template_path):
@@ -346,9 +335,7 @@ class ChoiceQuestionToXlsxImport(APIView):
         sheet = workbook.active
 
         next_row = sheet.max_row + 1
-        sheet.cell(row=next_row, column=1, value=topic_id)
-        sheet.cell(row=next_row, column=2, value=topic_name_uz)
-        sheet.cell(row=next_row, column=3, value=question_type)
+        sheet.cell(row=next_row, column=1, value=question_type)
 
         # BytesIO bilan faylni virtual tarzda saqlash
         output = BytesIO()
@@ -364,12 +351,7 @@ class ChoiceQuestionToXlsxImport(APIView):
     
 class CompenQuestionToXlsxImport(APIView):
     def post(self, request):
-        topic_id = request.data.get("topic_id")
-        topic_name_uz = request.data.get("topic_name_uz")
         question_type = request.data.get("question_type")
-
-        if not topic_id or not topic_name_uz:
-            return Response({"error": "topic_id ,  topic_name_uz question_type and are required"}, status=status.HTTP_400_BAD_REQUEST)
 
         template_path = '/home/user/backend/iq_math_orginal/composite.xlsx'
         if not os.path.exists(template_path):
@@ -379,9 +361,7 @@ class CompenQuestionToXlsxImport(APIView):
         sheet = workbook.active
 
         next_row = sheet.max_row + 1
-        sheet.cell(row=next_row, column=1, value=topic_id)
-        sheet.cell(row=next_row, column=2, value=topic_name_uz)
-        sheet.cell(row=next_row, column=3, value=question_type)
+        sheet.cell(row=next_row, column=1, value=question_type)
 
         # BytesIO bilan faylni virtual tarzda saqlash
         output = BytesIO()
@@ -447,9 +427,18 @@ class CompenQuestionToXlsxImport(APIView):
 class QuestionImportFromXlsx(APIView):
     def post(self, request):
         file = request.FILES.get('file')
+        topic_id = request.data.get('topic_id')
 
         if not file:
             return Response({"error": "Fayl yuborilmadi"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not topic_id:
+            return Response({"error": "Topic ID yuborilmadi"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            topic = Topic.objects.get(id=topic_id)
+        except Topic.DoesNotExist:
+            return Response({"error": f"Topic ID {topic_id} topilmadi"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             df = pd.read_excel(BytesIO(file.read()))
@@ -460,17 +449,10 @@ class QuestionImportFromXlsx(APIView):
         skipped = []
 
         for index, row in df.iterrows():
-            topic_id = row.get('topic_id')
             question_type = row.get('question_type')
 
-            if not topic_id or not question_type:
-                skipped.append(f"{index + 2}-qator: topic_id yoki question_type yo'q")
-                continue
-
-            try:
-                topic = Topic.objects.get(id=topic_id)
-            except Topic.DoesNotExist:
-                skipped.append(f"{index + 2}-qator: Topic ID {topic_id} topilmadi")
+            if not question_type:
+                skipped.append(f"{index + 2}-qator: question_type yo'q")
                 continue
 
             # Asosiy savolni yaratish
@@ -487,16 +469,17 @@ class QuestionImportFromXlsx(APIView):
             )
 
             if question_type == 'choice':
-                # Choice variantlarni yaratish
+                # Choice variantlarini yaratish
                 Choice.objects.create(
                     question=question,
                     letter=row.get('letter', ''),
-                    text_uz=row.get('text_uz', ''),  
-                    text_ru=row.get('text_ru', ''),  
+                    text_uz=row.get('text_uz', ''),
+                    text_ru=row.get('text_ru', ''),
                     is_correct=row.get('is_correct', False)
                 )
 
             elif question_type == 'composite':
+                # CompositeSubQuestion variantlarini yaratish
                 CompositeSubQuestion.objects.create(
                     question=question,
                     text1_uz=row.get('text1_uz', ''),
