@@ -569,36 +569,3 @@ class UploadQuestionsAPIView(APIView):
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
 
-import openai
-from dotenv import load_dotenv
-class TextProcessingAPIView(APIView):
-
-    def post(self, request, *args, **kwargs):
-        # POST so'rovidan matnni olish
-        text = request.data.get('text', None)
-
-        if not text:
-            return Response({"error": "Matn taqdim etilmagan!"}, status=status.HTTP_400_BAD_REQUEST)
-
-        # OpenAI API orqali matnni qayta ishlash (bunda OpenAI API kalitini ishlatamiz)
-        openai_api_key = load_dotenv('OPENAI_API_KEY')
-
-        # OpenAI API'ga matnni yuborish va javob olish
-        response = openai.Completion.create(
-            model="gpt-3.5-turbo",
-            prompt=text,
-            max_tokens=1000  # Kerakli token limitini belgilang
-        )
-
-        # OpenAI javobini olish
-        processed_text = response.choices[0].text.strip()
-
-        # JSON formatida javobni qaytarish
-        result = {
-            "savol_uz": processed_text,  # Uzbekcha savol
-            "javob_uz": processed_text,  # Uzbekcha javob
-            "savol_ru": processed_text,  # Ruscha savol
-            "javob_ru": processed_text   # Ruscha javob
-        }
-
-        return Response(result, status=status.HTTP_200_OK)
