@@ -513,30 +513,55 @@ class UploadQuestionsAPIView(APIView):
         if not all([topic_id, question_type, level, file]):
             return Response({"error": "Missing fields"}, status=status.HTTP_400_BAD_REQUEST)
 
-        topic = Topic.objects.get(id=topic_id)
+        try:
+            topic = Topic.objects.get(id=topic_id)
+        except Topic.DoesNotExist:
+            return Response({"error": "Topic not found"}, status=status.HTTP_404_NOT_FOUND)
 
         content = file.read().decode('utf-8')
 
-        # Misollar va javoblar qismiga ajratamiz
         try:
-            uz_savollar = re.findall(r'\\item\s+(.*?)\n', content)
-            uz_javoblar = re.findall(r'\\begin{enumerate}.*?\\item\s+(.*?)\n.*?\\end{enumerate}', content, re.DOTALL)
+            # 1. Hamma bloklarni topib olamiz (to'rt qismli: uz_savol, uz_javob, ru_savol, ru_javob)
+            pattern = re.compile(
+                r'\\begin\{minipage\}.*?\\centering\s*(.*?)\\begin\{enumerate\}(.*?)\\end\{enumerate\}.*?'
+                r'\\begin\{enumerate\}(.*?)\\end\{enumerate\}.*?'
+                r'\\begin\{minipage\}.*?\\centering\s*\\begin\{enumerate\}.*?\\item\s*(.*?)\\end\{enumerate\}.*?'
+                r'\\begin\{enumerate\}(.*?)\\end\{enumerate\}',
+                re.DOTALL
+            )
 
-            ru_savollar = re.findall(r'Примеры:(.*?)Ответы:', content, re.DOTALL)
-            ru_javoblar = re.findall(r'Ответы:(.*?)\\end{longtable}', content, re.DOTALL)
+            matches = pattern.findall(content)
 
-            if not (uz_savollar and ru_savollar):
-                return Response({"error": "Savollar va javoblar topilmadi"}, status=status.HTTP_400_BAD_REQUEST)
+            if not matches:
+                return Response({"error": "No questions found"}, status=status.HTTP_400_BAD_REQUEST)
 
-            for idx, uz_savol in enumerate(uz_savollar):
-                question = Question(
-                    topic=topic,
-                    question_text=uz_savol.strip(),
-                    correct_text_answer=uz_javoblar[idx].strip() if idx < len(uz_javoblar) else '',
-                    question_type=question_type,
-                    level=level,
-                )
-                question.save()
+            for match in matches:
+                uz_question_title = match[0].strip()
+                uz_question_body = match[1].strip()
+                uz_answers = match[2].strip()
+                ru_question_title = match[3].strip()
+                ru_answers = match[4].strip()
+
+                # Har bir `item` (ya'ni bitta savol) bo'yicha ajratamiz
+                uz_savollar = re.findall(r'\\item\s*(.+)', uz_question_body)
+                uz_javoblar = re.findall(r'\\item\s*(.+)', uz_answers)
+                ru_savollar = re.findall(r'\\item\s*(.+)', ru_question_title)  # Eslatma: ru_savollar aslida bitta "Vychislite..." degan sarlavha bo'ladi
+                ru_javoblar = re.findall(r'\\item\s*(.+)', ru_answers)
+
+                # Agar savol ru_savollar topilmasa, umumiy sarlavhani savol sifatida olamiz
+                ru_question_title_text = ru_savollar[0] if ru_savollar else ''
+
+                for i in range(len(uz_savollar)):
+                    question = Question(
+                        topic=topic,
+                        question_text_uz=uz_savollar[i].strip(),
+                        correct_text_answer_uz=uz_javoblar[i].strip() if i < len(uz_javoblar) else '',
+                        question_text_ru=uz_savollar[i].strip(),  # O'zbekcha savolni ruschasiga vaqtincha o'zbekcha yozamiz
+                        correct_text_answer_ru=ru_javoblar[i].strip() if i < len(ru_javoblar) else '',
+                        question_type=question_type,
+                        level=level,
+                    )
+                    question.save()
 
             return Response({"message": "Savollar muvaffaqiyatli yuklandi"}, status=status.HTTP_201_CREATED)
 
