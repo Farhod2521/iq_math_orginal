@@ -3,7 +3,7 @@ from .views import(
      TeacherSubjectsAPIView, MyTopicAddCreateView,
        MyTopicListView, MyChapterAddCreateView, TextQuestionToXlsxImport,QuestionImportFromXlsx,
        MyChapterListView, QuestionAddCreateView, MyQuestionListView, QuestionUpdateView, QuestionDeleteView, SubjectListAPIView,
-       ChoiceQuestionToXlsxImport, CompenQuestionToXlsxImport
+       ChoiceQuestionToXlsxImport, CompenQuestionToXlsxImport, UploadQuestionsAPIView
 )
 urlpatterns = [
     path("my-subjects/", TeacherSubjectsAPIView.as_view(), name="teacher-subjects"),
@@ -22,6 +22,7 @@ urlpatterns = [
     path('choice-export/', ChoiceQuestionToXlsxImport.as_view(), name='my-topics'),
     path('composite-export/', CompenQuestionToXlsxImport.as_view(), name='my-topics'),
     path('xlsx-import/', QuestionImportFromXlsx.as_view(), name='my-topics'),
+    path('word-import/', UploadQuestionsAPIView.as_view(), name='my-topics'),
  
 
 ]
