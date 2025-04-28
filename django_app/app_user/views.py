@@ -451,6 +451,7 @@ class StudentProfileAPIView(APIView):
             student_time = None
 
         data = {
+            "id":student.id, 
             'full_name': student.full_name,
             'phone': getattr(student.user, 'phone', None),
             'email': getattr(student.user, 'email', None),
