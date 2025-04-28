@@ -498,3 +498,47 @@ class QuestionImportFromXlsx(APIView):
             "created": created_count,
             "skipped": skipped
         }, status=status.HTTP_201_CREATED)
+    
+import re
+from rest_framework.parsers import MultiPartParser
+class UploadQuestionsAPIView(APIView):
+    parser_classes = [MultiPartParser]
+
+    def post(self, request, *args, **kwargs):
+        topic_id = request.data.get('topic_id')
+        question_type = request.data.get('question_type')
+        level = request.data.get('level')
+        file = request.data.get('file')
+
+        if not all([topic_id, question_type, level, file]):
+            return Response({"error": "Missing fields"}, status=status.HTTP_400_BAD_REQUEST)
+
+        topic = Topic.objects.get(id=topic_id)
+
+        content = file.read().decode('utf-8')
+
+        # Misollar va javoblar qismiga ajratamiz
+        try:
+            uz_savollar = re.findall(r'\\item\s+(.*?)\n', content)
+            uz_javoblar = re.findall(r'\\begin{enumerate}.*?\\item\s+(.*?)\n.*?\\end{enumerate}', content, re.DOTALL)
+
+            ru_savollar = re.findall(r'Примеры:(.*?)Ответы:', content, re.DOTALL)
+            ru_javoblar = re.findall(r'Ответы:(.*?)\\end{longtable}', content, re.DOTALL)
+
+            if not (uz_savollar and ru_savollar):
+                return Response({"error": "Savollar va javoblar topilmadi"}, status=status.HTTP_400_BAD_REQUEST)
+
+            for idx, uz_savol in enumerate(uz_savollar):
+                question = Question(
+                    topic=topic,
+                    question_text=uz_savol.strip(),
+                    correct_text_answer=uz_javoblar[idx].strip() if idx < len(uz_javoblar) else '',
+                    question_type=question_type,
+                    level=level,
+                )
+                question.save()
+
+            return Response({"message": "Savollar muvaffaqiyatli yuklandi"}, status=status.HTTP_201_CREATED)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
