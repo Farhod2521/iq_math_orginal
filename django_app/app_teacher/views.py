@@ -570,7 +570,7 @@ class UploadQuestionsAPIView(APIView):
         
 
 import openai
-
+from dotenv import load_dotenv
 class TextProcessingAPIView(APIView):
 
     def post(self, request, *args, **kwargs):
@@ -581,7 +581,7 @@ class TextProcessingAPIView(APIView):
             return Response({"error": "Matn taqdim etilmagan!"}, status=status.HTTP_400_BAD_REQUEST)
 
         # OpenAI API orqali matnni qayta ishlash (bunda OpenAI API kalitini ishlatamiz)
-        openai_api_key = os.getenv('OPENAI_API_KEY')
+        openai_api_key = load_dotenv('OPENAI_API_KEY')
 
         # OpenAI API'ga matnni yuborish va javob olish
         response = openai.Completion.create(
