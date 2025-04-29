@@ -1,20 +1,4 @@
-\begin{longtable}[]{@{}
-  >{\centering\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.3060}}
-  >{\centering\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2693}}
-  >{\centering\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2395}}
-  >{\centering\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.1852}}@{}}
-\toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\centering
-1-daraja
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\end{minipage} \\
-\midrule\noalign{}
-\endhead
-\bottomrule\noalign{}
-\endlastfoot
-Misollar & Javoblari & Примеры: & Ответы: \\
+
 \begin{minipage}[t]{\linewidth}\centering
 1 Yig`indini hisoblang
 
