@@ -1,54 +1,181 @@
 <!DOCTYPE html>
-<html lang="uz">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Excel Yuklash</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forex & NASDAQ Position Size Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .calculator {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e9f7ef;
+            border-radius: 4px;
+            display: none;
+        }
+    </style>
 </head>
 <body>
-  <h2>Excel faylga yozish va yuklab olish</h2>
+    <h1>Position Size Calculator</h1>
+    <div class="calculator">
+        <div class="form-group">
+            <label for="instrument">Instrument:</label>
+            <select id="instrument">
+                <option value="EURUSD">EUR/USD</option>
+                <option value="GBPUSD">GBP/USD</option>
+                <option value="NAS100">NASDAQ100</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="entry">Entry Price:</label>
+            <input type="number" id="entry" step="0.00001" placeholder="e.g. 1.10500">
+        </div>
+        
+        <div class="form-group">
+            <label for="sl">Stop Loss Price:</label>
+            <input type="number" id="sl" step="0.00001" placeholder="e.g. 1.10000">
+        </div>
+        
+        <div class="form-group">
+            <label for="risk">Risk Amount ($):</label>
+            <input type="number" id="risk" placeholder="e.g. 100">
+        </div>
+        
+        <div class="form-group">
+            <label for="account-currency">Account Currency:</label>
+            <select id="account-currency">
+                <option value="USD">USD</option>
+                <option value="EUR">EUR</option>
+                <option value="GBP">GBP</option>
+            </select>
+        </div>
+        
+        <button onclick="calculateLotSize()">Calculate Position Size</button>
+        
+        <div id="result" class="result"></div>
+    </div>
 
-  <form id="download-form">
-    <label for="topic_id">Topic ID:</label>
-    <input type="text" name="topic_id" id="topic_id" required><br><br>
-
-    <label for="topic_name_uz">Topic Name (UZ):</label>
-    <input type="text" name="topic_name_uz" id="topic_name_uz" required><br><br>
-
-    <button type="submit">Yuklab olish</button>
-  </form>
-
-  <script>
-    document.getElementById('download-form').addEventListener('submit', async function (e) {
-      e.preventDefault();
-
-      const form = e.target;
-      const formData = new FormData(form);
-
-      try {
-        const response = await fetch("https://backend.iq-math.uz/api/v1/func_teacher/xlsx-import/", {
-          method: "POST",
-          body: formData
-        });
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error("Xatolik: " + errorText);
+    <script>
+        function calculateLotSize() {
+            // Get input values
+            const instrument = document.getElementById('instrument').value;
+            const entry = parseFloat(document.getElementById('entry').value);
+            const sl = parseFloat(document.getElementById('sl').value);
+            const risk = parseFloat(document.getElementById('risk').value);
+            const accountCurrency = document.getElementById('account-currency').value;
+            
+            // Validate inputs
+            if (isNaN(entry) || isNaN(sl) || isNaN(risk) || entry <= 0 || sl <= 0 || risk <= 0) {
+                alert("Please enter valid positive numbers for all fields");
+                return;
+            }
+            
+            // Calculate pips/points difference
+            let difference, pipValue, lotSize;
+            
+            if (instrument === 'EURUSD' || instrument === 'GBPUSD') {
+                // Forex pairs (pips)
+                difference = Math.abs(entry - sl) * 10000; // 1 pip = 0.0001
+                
+                // Calculate pip value based on account currency
+                if (accountCurrency === 'USD') {
+                    if (instrument === 'EURUSD') {
+                        pipValue = 10; // $10 per lot for EURUSD
+                    } else { // GBPUSD
+                        pipValue = 10; // $10 per lot for GBPUSD
+                    }
+                } else if (accountCurrency === 'EUR') {
+                    if (instrument === 'EURUSD') {
+                        pipValue = 10 / entry; // EUR equivalent
+                    } else { // GBPUSD
+                        pipValue = 10 * (1/entry); // EUR equivalent
+                    }
+                } else { // GBP
+                    if (instrument === 'EURUSD') {
+                        pipValue = 10 * (1.33 / entry); // GBP equivalent (using EURGBP rate approx)
+                    } else { // GBPUSD
+                        pipValue = 10 / entry; // GBP equivalent
+                    }
+                }
+                
+                lotSize = risk / (difference * pipValue);
+                
+            } else { // NASDAQ100 (points)
+                difference = Math.abs(entry - sl); // points difference
+                // NASDAQ100 CFD typically has $1 per point per lot
+                // Adjust for account currency if needed
+                if (accountCurrency === 'USD') {
+                    lotSize = risk / difference;
+                } else if (accountCurrency === 'EUR') {
+                    lotSize = risk / (difference * (1/entry));
+                } else { // GBP
+                    lotSize = risk / (difference * (1.33/entry)); // Using GBPUSD rate approx
+                }
+            }
+            
+            // Display result
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            
+            if (instrument === 'EURUSD' || instrument === 'GBPUSD') {
+                resultDiv.innerHTML = `
+                    <p><strong>Pips Difference:</strong> ${difference.toFixed(1)} pips</p>
+                    <p><strong>Recommended Lot Size:</strong> ${lotSize.toFixed(2)} lots</p>
+                    <p><strong>Position Size:</strong> ${(lotSize * 100000).toFixed(0)} units</p>
+                `;
+            } else {
+                resultDiv.innerHTML = `
+                    <p><strong>Points Difference:</strong> ${difference.toFixed(1)} points</p>
+                    <p><strong>Recommended Lot Size:</strong> ${lotSize.toFixed(2)} lots</p>
+                    <p><strong>Position Size:</strong> ${(lotSize * 1).toFixed(2)} contracts</p>
+                `;
+            }
         }
-
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = "shablon_yangilangan.xlsx";
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        window.URL.revokeObjectURL(url);
-      } catch (error) {
-        alert("Xatolik yuz berdi: " + error.message);
-        console.error(error);
-      }
-    });
-  </script>
+    </script>
 </body>
 </html>
