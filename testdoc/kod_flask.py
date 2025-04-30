@@ -6,8 +6,12 @@ app = Flask(__name__)
 
 client = OpenAI(
     base_url="https://openrouter.ai/api/v1",
-    api_key="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",
+    api_key="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",
 )
+# client = OpenAI(
+#     base_url="https://openrouter.ai/api/v1",
+#     api_key="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",
+# )
 
 @app.route('/process', methods=['POST'])
 def process_text():
@@ -21,6 +25,7 @@ def process_text():
         # OpenAI API ga so'rov yuborish
         completion = client.chat.completions.create(
             model="deepseek/deepseek-r1:free",
+            # model="openai/gpt-4o",
             messages=[
                 {
                     "role": "user",
@@ -38,7 +43,7 @@ def process_text():
             return jsonify({'result': result_data})
         except json.JSONDecodeError:
             # Agar JSON formatida bo'lmasa, oddiy matn sifatida qaytarish
-            return jsonify({'result': [{'savol_uz': input_text, 'javob_uz': result_content}]})
+            return jsonify({'result': result_content})
             
     except Exception as e:
         return jsonify({'error': str(e)}), 500
