@@ -219,16 +219,25 @@ class StudentSubjectListAPIView(APIView):
 
     def get(self, request):
         try:
-            # 1. Studentni user orqali olish
+            # Studentni olish
             student = Student.objects.get(user=request.user)
-            student_class_name = student.class_name.id
-            sub =  Subject.objects.filter(id=student_class_name)
-            serializer = SubjectSerializer(sub, many=True)
+            student_class_id = student.class_name.id
+
+            # Hamma fanlarni olish
+            all_subjects = Subject.objects.all()
+
+            # Har bir fan uchun is_open ni qo‘shish
+            for subject in all_subjects:
+                if subject.classes.id == student_class_id:
+                    subject.is_open = True
+                else:
+                    subject.is_open = False
+
+            serializer = SubjectSerializer(all_subjects, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
 
         except Student.DoesNotExist:
             return Response({"detail": "Student topilmadi"}, status=status.HTTP_404_NOT_FOUND)
-
 
 class ChapterListBySubjectAPIView(APIView):
     permission_classes = [IsAuthenticated]
