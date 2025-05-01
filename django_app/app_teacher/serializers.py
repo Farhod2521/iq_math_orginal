@@ -65,7 +65,7 @@ class CompositeSubQuestionSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = CompositeSubQuestion
-        fields = ["question", 'text1_uz','text1_ru', 'correct_answer_ru',"correct_answer_uz", 'text2_uz', 'text2_ru']
+        fields = ["question", 'text1_uz','text1_ru', 'correct_answer', 'text2_uz', 'text2_ru']
 class QuestionSerializer(serializers.ModelSerializer):
     choices = ChoiceSerializer(many=True, required=False)
     sub_questions = CompositeSubQuestionSerializer(many=True, required=False)
