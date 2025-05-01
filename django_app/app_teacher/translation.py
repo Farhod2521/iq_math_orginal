@@ -24,7 +24,7 @@ class QuestionTranslationOptions(TranslationOptions):
 translator.register(Question, QuestionTranslationOptions)
 
 class CompositeSubQuestionTranslationOptions(TranslationOptions):
-    fields = ('text1', 'correct_answer', "text2")
+    fields = ('text1', "text2")
 
 translator.register(CompositeSubQuestion, CompositeSubQuestionTranslationOptions)
 
