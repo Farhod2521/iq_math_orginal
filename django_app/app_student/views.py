@@ -224,7 +224,7 @@ class StudentSubjectListAPIView(APIView):
             student_class_name = student.class_name.id
             all_subjects = Subject.objects.all()
             for subject in all_subjects:
-                if subject.classes.id == student_class_name:
+                if subject.id == student_class_name:
                     subject.is_open = True
                 else:
                     subject.is_open = False
