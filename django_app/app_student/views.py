@@ -222,9 +222,18 @@ class StudentSubjectListAPIView(APIView):
             # 1. Studentni user orqali olish
             student = Student.objects.get(user=request.user)
             student_class_name = student.class_name.id
-            sub =  Subject.objects.filter(id=student_class_name)
-            serializer = SubjectSerializer(sub, many=True)
+            all_subjects = Subject.objects.all()
+            for subject in all_subjects:
+                if subject.classes.id == student_class_name:
+                    subject.is_open = True
+                else:
+                    subject.is_open = False
+
+            serializer = SubjectSerializer(all_subjects, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
+            # sub =  Subject.objects.filter(id=student_class_name)
+            # serializer = SubjectSerializer(sub, many=True)
+            # return Response(serializer.data, status=status.HTTP_200_OK)
 
         except Student.DoesNotExist:
             return Response({"detail": "Student topilmadi"}, status=status.HTTP_404_NOT_FOUND)
