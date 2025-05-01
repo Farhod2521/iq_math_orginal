@@ -6,7 +6,7 @@ app = Flask(__name__)
 
 client = OpenAI(
     base_url="https://openrouter.ai/api/v1",
-    api_key="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",
+    api_key="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",
 )
 # client = OpenAI(
 #     base_url="https://openrouter.ai/api/v1",
@@ -24,14 +24,13 @@ def process_text():
         
         # OpenAI API ga so'rov yuborish
         completion = client.chat.completions.create(
-            model="deepseek/deepseek-r1:free",
-            # model="openai/gpt-4o",
+            # model="deepseek/deepseek-r1:free",
+            model="openai/gpt-4.1",
             messages=[
                 {
                     "role": "user",
                     "content": "Savol matnini va javoblarini savol_uz, javob_uz, savol_ru, javob_ru nomlari bilan "
-                               "JSON formatida yozmoqchiman; har bir savolda sarlavha va bir nechta misol bo'ladi, "
-                               "javoblar ham mos tartibda bo'ladi:\n\n" + input_text
+                               "JSON formatida yozmoqchiman;\n\n" + input_text
                 }
             ]
         )
