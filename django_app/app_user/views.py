@@ -558,36 +558,42 @@ class LoginAPIView(APIView):
         if serializer.is_valid():
             user = serializer.validated_data["user"]
 
-            try:
-                student = Student.objects.get(user=user)
-            except Student.DoesNotExist:
-                return Response({"detail": "Student profile not found."}, status=status.HTTP_404_NOT_FOUND)
+            # Student yoki Teacher profillarni aniqlash
+            profile_data = {}
             refresh = RefreshToken.for_user(user)
             access_token = refresh.access_token
             access_token.set_exp(lifetime=timedelta(hours=13))
-            access_token['student_id'] = student.id
-
             expires_in = timedelta(hours=13).total_seconds()
 
-            # Foydalanuvchining sessiya ma'lumotlarini qaytarish
-            student_data = {
-                "id": student.id,
-                "full_name": student.full_name,
-                # "email": user.email,
-                "phone": user.phone,
-                # "region": student.region,
-                # "districts": student.districts,
-                # "address": student.address,
-                # "brithday": student.brithday,
-                # "academy_or_school": student.academy_or_school,
-                # "class_name": student.class_name.name,
-                "role": user.role,
-                "status": student.status,
-                "access_token": str(access_token),
-                "expires_in": expires_in,
-            }
+            try:
+                student = Student.objects.get(user=user)
+                access_token['student_id'] = student.id
+                profile_data = {
+                    "id": student.id,
+                    "full_name": student.full_name,
+                    "phone": user.phone,
+                    "role": user.role,
+                    "status": student.status,
+                    "access_token": str(access_token),
+                    "expires_in": expires_in,
+                }
+            except Student.DoesNotExist:
+                try:
+                    teacher = Teacher.objects.get(user=user)
+                    access_token['teacher_id'] = teacher.id
+                    profile_data = {
+                        "id": teacher.id,
+                        "full_name": teacher.full_name,
+                        "phone": user.phone,
+                        "role": user.role,
+                        "status": teacher.status,
+                        "access_token": str(access_token),
+                        "expires_in": expires_in,
+                    }
+                except Teacher.DoesNotExist:
+                    return Response({"detail": "Profile not found."}, status=status.HTTP_404_NOT_FOUND)
 
-            return Response(student_data, status=status.HTTP_200_OK)
+            return Response(profile_data, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
