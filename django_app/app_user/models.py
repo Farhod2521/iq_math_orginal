@@ -184,3 +184,19 @@ class UserSMSAttempt(models.Model):
             attempt.wrong_attempts += 1
             attempt.save()
 
+
+
+class StudentSubjectAccess(models.Model):
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='subject_access')
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+    is_active = models.BooleanField(default=False)
+    access_start = models.DateTimeField(null=True, blank=True)
+    access_end = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.student.full_name} - {self.subject.name} ({'ochiq' if self.is_active else 'yopiq'})"
+
+    class Meta:
+        verbose_name = "Fan kirish huquqi"
+        verbose_name_plural = "Fan kirish huquqlari"
+        unique_together = ('student', 'subject')
