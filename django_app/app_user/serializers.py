@@ -6,9 +6,10 @@ from .sms_service import send_sms, send_verification_email, send_login_parol_ema
 from django.contrib.auth import get_user_model
 from django.contrib.auth import authenticate
 from django.utils.timezone import now
+from django_app.app_payments.models import Subscription, SubscriptionSetting
 User = get_user_model()
 
-
+from datetime import timedelta
 
 
 class StudentProfileSerializer(serializers.Serializer):
@@ -178,29 +179,35 @@ class StudentRegisterSerializer(serializers.Serializer):
 
     def create(self, validated_data):
         phone = validated_data['phone']
-        class_name = validated_data.pop('class_name')  # `PrimaryKeyRelatedField` ni olish
+        class_name = validated_data.pop('class_name')
 
         student_data = {
             'full_name': validated_data.pop('full_name'),
-            'class_name': class_name,  # ForeignKey sifatida berish
+            'class_name': class_name,
             "status": False,
             "student_date": now()
         }
 
-        # Yangi foydalanuvchi yaratish
+        # 1. Foydalanuvchi yaratish
         user = User.objects.create(phone=phone, role='student')
 
-        # SMS kod yaratish
+        # 2. SMS kod yuborish
         sms_code = str(random.randint(10000, 99999))
         user.sms_code = sms_code
         user.set_unusable_password()
         user.save()
 
-        # Student ma'lumotlarini saqlash
+        # 3. Student yaratish
         student_data['user'] = user
-        Student.objects.create(**student_data)
+        student = Student.objects.create(**student_data)
 
-        # SMS yuborish
+        # ✅ 4. Tekin obuna muddatini olish va saqlash
+        free_days = SubscriptionSetting.objects.first().free_trial_days  # Default 7
+        start_date = now()
+        end_date = start_date + timedelta(days=free_days)
+        Subscription.objects.create(student=student, start_date=start_date, end_date=end_date, is_paid=False)
+
+        # 5. SMS yuborish
         send_sms(phone, sms_code)
 
         return user
