@@ -3,9 +3,9 @@ from .models import SubscriptionSetting, Subscription, Payment
 
 @admin.register(SubscriptionSetting)
 class SubscriptionSettingAdmin(admin.ModelAdmin):
-    list_display = ("free_trial_days",)
+    list_display = ("id", "free_trial_days",)
+    list_display_links = ("id",)  # bu yerda id ni link qilib belgilaymiz
     list_editable = ("free_trial_days",)
-    verbose_name = "Obuna sozlamasi"
 
 @admin.register(Subscription)
 class SubscriptionAdmin(admin.ModelAdmin):
