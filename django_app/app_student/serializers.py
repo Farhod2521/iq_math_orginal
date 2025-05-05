@@ -38,6 +38,12 @@ class ChapterSerializer(serializers.ModelSerializer):
         except ChapterProgress.DoesNotExist:
             return 0.0
 
+class TopicSerializer1(serializers.ModelSerializer):
+
+
+    class Meta:
+        model = Topic
+        fields = ['id', 'name_uz', 'name_ru', 'chapter', "video_url_uz", "video_url_ru","content_uz", "content_ru", "is_locked"]
 
 
 class TopicSerializer(serializers.ModelSerializer):
