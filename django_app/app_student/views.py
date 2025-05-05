@@ -6,7 +6,7 @@ from django_app.app_user.models import  Subject, Subject_Category
 from django_app.app_user.models import Student, Class
 from .serializers import (
     SubjectSerializer, CustomQuestionSerializer, CheckAnswersSerializer, ChapterSerializer, 
-    TopicSerializer
+    TopicSerializer, TopicSerializer1
     )
 import random
 from django.db.models import Q
@@ -551,5 +551,5 @@ class DiagnostLevelDetailAPIView(APIView):
 class Diagnostika_TopicDetailAPIView(APIView):
     def get(self, request, id):
         topic = get_object_or_404(Topic, id=id)
-        serializer = TopicSerializer(topic)
+        serializer = TopicSerializer1(topic)
         return Response(serializer.data, status=status.HTTP_200_OK)
