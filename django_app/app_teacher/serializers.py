@@ -72,7 +72,11 @@ class QuestionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Question
-        fields = ['id', 'topic', 'question_text_uz', 'question_text_ru','question_type', 'level',"video_file_uz", "video_file_ru","video_url_uz","video_url_ru", 'correct_text_answer_ru', 'correct_text_answer_uz','choices', 'sub_questions']
+        fields = [
+            'id', 'topic', 'question_text_uz', 'question_text_ru', 'question_type', 'level',
+            "video_file_uz", "video_file_ru", "video_url_uz", "video_url_ru",
+            'correct_text_answer_ru', 'correct_text_answer_uz', 'choices', 'sub_questions'
+        ]
 
     def create(self, validated_data):
         choices_data = validated_data.pop('choices', [])
@@ -86,3 +90,23 @@ class QuestionSerializer(serializers.ModelSerializer):
             CompositeSubQuestion.objects.create(question=question, **sub_question_data)
 
         return question
+
+    def update(self, instance, validated_data):
+        choices_data = validated_data.pop('choices', None)
+        sub_questions_data = validated_data.pop('sub_questions', None)
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        if choices_data is not None:
+            instance.choices.all().delete()
+            for choice in choices_data:
+                Choice.objects.create(question=instance, **choice)
+
+        if sub_questions_data is not None:
+            instance.sub_questions.all().delete()
+            for sub_q in sub_questions_data:
+                CompositeSubQuestion.objects.create(question=instance, **sub_q)
+
+        return instance
