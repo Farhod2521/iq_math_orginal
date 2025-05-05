@@ -3,7 +3,7 @@ from .views import (
      GenerateTestAPIView, CheckAnswersAPIView, 
      StudentSubjectListAPIView, ChapterListBySubjectAPIView,QuestionListByTopicAPIView,
      TopicListByChapterAPIView, GenerateCheckAnswersAPIView, StudentScoreAPIView, DiagnostLevelOverviewAPIView,
-     DiagnostLevelDetailAPIView
+     DiagnostLevelDetailAPIView, Diagnostika_TopicDetailAPIView
 )
 
 urlpatterns = [
@@ -17,5 +17,6 @@ urlpatterns = [
     path('my-score/', StudentScoreAPIView.as_view(), name='student-score'),
     path('my-diagnost-level/', DiagnostLevelOverviewAPIView.as_view(), name='my-diagnost-level'),
     path('my-diagnost-detail/', DiagnostLevelDetailAPIView.as_view(), name='my-diagnost-level'),
+    path('my-diagnost-topic-detail/<int:id>/', Diagnostika_TopicDetailAPIView.as_view(), name='my-diagnost-level'),
 
 ]
