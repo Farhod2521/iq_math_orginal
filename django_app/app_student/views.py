@@ -18,6 +18,7 @@ from .models import Diagnost_Student, TopicProgress, StudentScoreLog, StudentSco
 from rest_framework import status
 from django.utils import timezone
 import re
+from django.shortcuts import get_object_or_404
 ###################################   TIZIMGA KIRGAN O"QUVCHI BILIM DARAJASINI TEKSHIRISH #####################
 
 from random import sample
@@ -545,3 +546,10 @@ class DiagnostLevelDetailAPIView(APIView):
             "level": level,
             "topics": topic_list
         })
+    
+
+class Diagnostika_TopicDetailAPIView(APIView):
+    def get(self, request, id):
+        topic = get_object_or_404(Topic, id=id)
+        serializer = TopicSerializer(topic)
+        return Response(serializer.data, status=status.HTTP_200_OK)
