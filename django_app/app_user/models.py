@@ -117,7 +117,7 @@ from django.utils.timezone import now
 
 def generate_daily_user_id():
     today = now().strftime("%Y%m%d")  # Masalan: '20250507'
-    today_users = Student.objects.filter(created_at__date=now().date()).count() + 1
+    today_users = Student.objects.filter(student_date__date=now().date()).count() + 1
     return f"{today}{today_users:04d}"  # Masalan: '202505070001'
 class Student(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='student_profile', verbose_name="Foydalanuvchi")
