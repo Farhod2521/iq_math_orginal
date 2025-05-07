@@ -113,9 +113,15 @@ class Subject(models.Model):
     class Meta:
         verbose_name = "Fan"
         verbose_name_plural = "Fanlar"
+from django.utils.timezone import now
 
+def generate_daily_user_id():
+    today = now().strftime("%Y%m%d")  # Masalan: '20250507'
+    today_users = Student.objects.filter(created_at__date=now().date()).count() + 1
+    return f"{today}{today_users:04d}"  # Masalan: '202505070001'
 class Student(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='student_profile', verbose_name="Foydalanuvchi")
+    userID = models.CharField(max_length=20, unique=True, default=generate_daily_user_id)
     full_name = models.CharField(max_length=200, verbose_name="To‘liq ism")
     region = models.CharField(max_length=200, verbose_name="Viloyat")
     districts = models.CharField(max_length=200, verbose_name="Tuman")
