@@ -452,6 +452,7 @@ class StudentProfileAPIView(APIView):
 
         data = {
             "id":student.id, 
+            "identification":student.identification, 
             'full_name': student.full_name,
             'phone': getattr(student.user, 'phone', None),
             'email': getattr(student.user, 'email', None),
