@@ -3,7 +3,7 @@ from .views import(
      TeacherSubjectsAPIView, MyTopicAddCreateView,
        MyTopicListView, MyChapterAddCreateView, TextQuestionToXlsxImport,QuestionImportFromXlsx,
        MyChapterListView, QuestionAddCreateView, MyQuestionListView, QuestionUpdateView, QuestionDeleteView, SubjectListAPIView,
-       ChoiceQuestionToXlsxImport, CompenQuestionToXlsxImport, UploadQuestionsAPIView, OpenAIQuestionListView
+       ChoiceQuestionToXlsxImport, CompenQuestionToXlsxImport, UploadQuestionsAPIView, OpenAIQuestionListView, OpenAIProcessAPIView
 )
 urlpatterns = [
     path("my-subjects/", TeacherSubjectsAPIView.as_view(), name="teacher-subjects"),
@@ -26,6 +26,6 @@ urlpatterns = [
 
 
     path('openai/questions/', OpenAIQuestionListView.as_view(), name='openai-question-list'),
- 
+    path('openai/process/', OpenAIProcessAPIView.as_view(), name='openai-process'),
 
 ]
