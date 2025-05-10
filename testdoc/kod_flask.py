@@ -6,7 +6,7 @@ app = Flask(__name__)
 
 client = OpenAI(
     base_url="https://openrouter.ai/api/v1",
-    api_key="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",
+    api_key="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",
 )
 # client = OpenAI(
 #     base_url="https://openrouter.ai/api/v1",
