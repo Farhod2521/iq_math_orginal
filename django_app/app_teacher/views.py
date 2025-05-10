@@ -592,3 +592,40 @@ class OpenAIQuestionListView(ListAPIView):
     queryset = Question.objects.all().order_by('id')
     serializer_class = OpenAIQuestionSerializer
     pagination_class = OpenAIStandardResultsSetPagination
+
+
+from openai import OpenAI
+import json
+client = OpenAI(
+    base_url="https://openrouter.ai/api/v1",
+    api_key="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",
+)
+
+class OpenAIProcessAPIView(APIView):
+    def post(self, request, *args, **kwargs):
+        input_text = request.data.get('text', '')
+
+        if not input_text:
+            return Response({'error': 'Matn kiritilmagan'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            completion = client.chat.completions.create(
+                model="deepseek/deepseek-r1:free",
+                messages=[
+                    {
+                        "role": "user",
+                        "content": "Savol ishlanish yo'li bilan ihlab ber ketma ketlikda qisqa lo'nda aniq javob ber " + input_text
+                    }
+                ]
+            )
+
+            result_content = completion.choices[0].message.content
+
+            try:
+                result_data = json.loads(result_content)
+                return Response({'result': result_data})
+            except json.JSONDecodeError:
+                return Response({'result': result_content})
+
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
