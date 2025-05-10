@@ -1,5 +1,5 @@
 from django.db import models
-
+from ckeditor.fields import RichTextField
 # Create your models here.
 from django.db import models
 
@@ -24,3 +24,19 @@ class SystemSettings(models.Model):
     class Meta:
         verbose_name = "Tizim Sozlamasi"
         verbose_name_plural = "Tizim Sozlamalari"
+
+
+
+
+class FAQ(models.Model):
+    question = models.CharField(max_length=500, verbose_name="Savol")
+    answer = RichTextField(verbose_name="Javob")
+
+    class Meta:
+        verbose_name = "TSS"  # "Tez-tez so'raladigan savollar"
+        verbose_name_plural = "Tez-tez so‘raladigan savollar"
+        ordering = ["id"]
+
+    def __str__(self):
+        return self.question  
+    
