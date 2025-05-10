@@ -598,7 +598,7 @@ from openai import OpenAI
 import json
 client = OpenAI(
     base_url="https://openrouter.ai/api/v1",
-    api_key="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",
+    api_key="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",
 )
 
 class OpenAIProcessAPIView(APIView):
