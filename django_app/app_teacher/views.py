@@ -5,7 +5,7 @@ from rest_framework import status
 from .models import  Chapter, Topic, Question, Choice, CompositeSubQuestion
 from .serializers import(
     SubjectSerializer, MyChapterAddSerializer, MyTopicAddSerializer,
-    ChoiceSerializer, CompositeSubQuestionSerializer, QuestionSerializer, SubjectRegisterSerilzier
+    ChoiceSerializer, CompositeSubQuestionSerializer, QuestionSerializer, SubjectRegisterSerilzier, OpenAIQuestionSerializer
 )
 from django_app.app_user.models import  Subject
 from django.shortcuts import get_object_or_404
@@ -569,3 +569,26 @@ class UploadQuestionsAPIView(APIView):
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
 
+
+
+
+
+
+
+
+
+
+
+from rest_framework.pagination import PageNumberPagination
+
+
+
+class OpenAIStandardResultsSetPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+class OpenAIQuestionListView(ListAPIView):
+    queryset = Question.objects.all().order_by('id')
+    serializer_class = OpenAIQuestionSerializer
+    pagination_class = OpenAIStandardResultsSetPagination

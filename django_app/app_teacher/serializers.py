@@ -110,3 +110,51 @@ class QuestionSerializer(serializers.ModelSerializer):
                 CompositeSubQuestion.objects.create(question=instance, **sub_q)
 
         return instance
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class OpenAIChoiceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Choice
+        fields = ['id', 'letter', 'text', 'image', 'is_correct']
+
+class OpenAICompositeSubQuestionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CompositeSubQuestion
+        fields = ['id', 'text1', 'correct_answer', 'text2']
+
+class OpenAIQuestionSerializer(serializers.ModelSerializer):
+    choices = OpenAIChoiceSerializer(many=True, read_only=True)
+    sub_questions = OpenAICompositeSubQuestionSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Question
+        fields = [
+            'id',
+            'topic',
+            'question_text',
+            'question_type',
+            'level',
+            'correct_text_answer',
+            'video_file_uz',
+            'video_file_ru',
+            'video_url_uz',
+            'video_url_ru',
+            'choices',
+            'sub_questions',
+        ]
