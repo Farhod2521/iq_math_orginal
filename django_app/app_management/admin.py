@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import SystemSettings, FAQ
+from .models import SystemSettings, FAQ, Product
 
 @admin.register(SystemSettings)
 class SystemSettingsAdmin(admin.ModelAdmin):
@@ -28,3 +28,10 @@ class SystemSettingsAdmin(admin.ModelAdmin):
 class FAQAdmin(admin.ModelAdmin):
     list_display = ['question']
     search_fields = ['question', 'answer']
+
+
+
+@admin.register(Product)
+class ProductAdmin(admin.ModelAdmin):
+    list_display = ['name', 'ball']
+    search_fields = ['name']

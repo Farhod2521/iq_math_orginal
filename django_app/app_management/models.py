@@ -40,3 +40,17 @@ class FAQ(models.Model):
     def __str__(self):
         return self.question  
     
+
+
+
+class Product(models.Model):
+    name = models.CharField(max_length=255, verbose_name="Mahsulot nomi")
+    image = models.ImageField(upload_to='products/', verbose_name="Mahsulot rasmi")
+    ball = models.PositiveIntegerField(verbose_name="Kerakli ball")
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = "Mahsulot"
+        verbose_name_plural = "Mahsulotlar"
