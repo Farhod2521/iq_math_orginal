@@ -147,10 +147,10 @@ class OpenAIQuestionSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'topic',
-            'question_text',
+            'question_text_uz',
             'question_type',
             'level',
-            'correct_text_answer',
+            'correct_text_answer_uz',
             'video_file_uz',
             'video_file_ru',
             'video_url_uz',
