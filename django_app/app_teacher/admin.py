@@ -10,24 +10,24 @@ from .models import (
 from django_app.app_user.models import  Subject, Subject_Category
 @admin.register(Subject_Category)
 class SubjectCategoryAdmin(admin.ModelAdmin):
-    list_display = ('name',)
+    list_display = ('name_uz','name_ru')
     search_fields = ('name',)
 
 
 @admin.register(Subject)
 class SubjectAdmin(TranslationAdmin):
-    list_display = ('name', 'classes', 'category')
+    list_display = ('name_uz','name_ru', 'classes', 'category')
     list_filter = ('category', 'classes')
-    search_fields = ('name',)
+    search_fields = ('name_uz','name_ru',)
     raw_id_fields = ('teachers',)
     prepopulated_fields = {'name': ('category',)}  # Avtomatik nom yaratish
 
 
 @admin.register(Chapter)
 class ChapterAdmin(TranslationAdmin):
-    list_display = ('name', 'subject')
+    list_display = ('name_uz','name_ru', 'subject')
     list_filter = ('subject',)
-    search_fields = ('name',)
+    search_fields = ('name_uz','name_ru',)
 
 
 class QuestionInline(admin.TabularInline):  
@@ -38,9 +38,9 @@ class QuestionInline(admin.TabularInline):
 
 @admin.register(Topic)
 class TopicAdmin(TranslationAdmin):
-    list_display = ('name', 'chapter')
+    list_display = ('name_uz','name_ru', 'chapter')
     list_filter = ('chapter',)
-    search_fields = ('name',)
+    search_fields = ('name_uz','name_ru',)
     inlines = [QuestionInline]  # `Question` qo‘shishni osonlashtiradi
 
 
