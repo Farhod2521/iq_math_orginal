@@ -10,7 +10,7 @@ from .models import (
 from django_app.app_user.models import  Subject, Subject_Category
 @admin.register(Subject_Category)
 class SubjectCategoryAdmin(admin.ModelAdmin):
-    list_display = ('name_uz','name_ru')
+    list_display = ('name')
     search_fields = ('name',)
 
 
