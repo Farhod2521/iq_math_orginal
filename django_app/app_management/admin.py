@@ -1,5 +1,7 @@
 from django.contrib import admin
 from .models import SystemSettings, FAQ, Product
+from modeltranslation.admin import TranslationAdmin
+from django.utils.html import format_html
 
 @admin.register(SystemSettings)
 class SystemSettingsAdmin(admin.ModelAdmin):
@@ -32,6 +34,13 @@ class FAQAdmin(admin.ModelAdmin):
 
 
 @admin.register(Product)
-class ProductAdmin(admin.ModelAdmin):
-    list_display = ['name', 'ball']
-    search_fields = ['name']
+class ProductAdmin(TranslationAdmin):  # model.ModelAdmin o'rniga TranslationAdmin ishlatiladi
+    list_display = ['name_uz','name_ru', 'ball', 'image_tag']
+    search_fields = ['name_uz','name_ru']
+    readonly_fields = ['image_tag']
+
+    def image_tag(self, obj):
+        if obj.image:
+            return format_html('<img src="{}" width="50" height="50" style="object-fit: cover;" />', obj.image.url)
+        return "-"
+    image_tag.short_description = 'Rasm'
