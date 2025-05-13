@@ -17,6 +17,8 @@ class Subscription(models.Model):
     student = models.OneToOneField(Student, on_delete=models.CASCADE, related_name='subscription')
     start_date = models.DateTimeField(auto_now_add=True)
     end_date = models.DateTimeField()
+    next_payment_date = models.DateTimeField(null=True, blank=True, verbose_name="Keyingi to‘lov muddati")
+
     is_paid = models.BooleanField(default=False, verbose_name="To‘langanmi")
 
     def __str__(self):
@@ -38,6 +40,9 @@ class Payment(models.Model):
         ("success", "Muvaffaqiyatli"),
         ("failed", "Muvaffaqiyatsiz")
     ], default="pending", verbose_name="Holat")
+    payment_gateway = models.CharField(max_length=50, null=True, blank=True, verbose_name="To‘lov tizimi")
+    receipt_url = models.URLField(null=True, blank=True, verbose_name="To‘lov chek havolasi")
+
 
     def __str__(self):
         return f"{self.student.full_name} - {self.amount} - {self.status}"
