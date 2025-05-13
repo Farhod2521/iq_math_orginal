@@ -52,7 +52,7 @@ class InitiatePaymentAPIView(APIView):
                     "vat": 12,
                     "price": amount_in_tiyin,
                     "qty": 1,
-                    "name": "O'quv platformasi",
+                    "name": "IQMATH.UZ oylik to'lov",
                     "package_code": "1508099",
                     "mxik": "10202001002000000",
                     "total": amount_in_tiyin
