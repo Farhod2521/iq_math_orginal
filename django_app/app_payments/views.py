@@ -33,27 +33,43 @@ class InitiatePaymentAPIView(APIView):
             return Response({"error": "Talaba topilmadi"}, status=404)
 
         token = get_multicard_token()
-
         transaction_id = str(uuid.uuid4())
 
         headers = {
             "Authorization": f"Bearer {token}"
         }
 
+        amount_in_tiyin = int(float(amount) * 100)
+
         data = {
-            "amount": int(float(amount) * 100),  # So'm => tiyin
             "store_id": 6,
-            "transaction_id": transaction_id,
-            "return_url": "https://yourdomain.uz/payment/return/", 
-            "callback_url": "https://yourdomain.uz/api/payment/callback/"
+            "amount": amount_in_tiyin,
+            "invoice_id": transaction_id,
+            "return_url": "https://yourdomain.uz/payment/return/",
+            "callback_url": "https://yourdomain.uz/api/payment/callback/",
+            "ofd": [
+                {
+                    "vat": 12,
+                    "price": amount_in_tiyin,
+                    "qty": 1,
+                    "name": "O'quv platformasi",
+                    "package_code": "1508099",
+                    "mxik": "10202001002000000",
+                    "total": amount_in_tiyin
+                }
+            ]
         }
 
-        response = requests.post("https://dev-mesh.multicard.uz/invoice/create", headers=headers, json=data)
+        response = requests.post(
+            "https://dev-mesh.multicard.uz/invoice/create",
+            headers=headers,
+            json=data
+        )
 
         if response.status_code != 200:
-            return Response({"error": "To‘lov yaratilishda xatolik"}, status=500)
+            return Response({"error": "To‘lov yaratilishda xatolik", "details": response.text}, status=500)
 
-        # Payment saqlash
+        # Payment yozuvi saqlash
         Payment.objects.create(
             student=student,
             amount=amount,
@@ -62,9 +78,7 @@ class InitiatePaymentAPIView(APIView):
             payment_gateway="multicard"
         )
 
-        invoice_data = response.json()
-        return Response(invoice_data)
-
+        return Response(response.json())
 
 
 class PaymentCallbackAPIView(APIView):
