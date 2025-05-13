@@ -224,28 +224,25 @@ class StudentSubjectListAPIView(APIView):
     def get(self, request):
         try:
             student = Student.objects.get(user=request.user)
-            student_class = student.class_name.classes  # Bu Class modeli (sinf)
 
             # Obunani tekshirish
             try:
                 subscription = student.subscription
                 now_time = now()
-
-                if subscription.is_paid and subscription.start_date <= now_time <= subscription.end_date:
-                    is_subjects_open = True
-                else:
-                    is_subjects_open = False
+                is_subscription_valid = (
+                    subscription.is_paid and
+                    subscription.start_date <= now_time <= subscription.end_date
+                )
             except Subscription.DoesNotExist:
-                is_subjects_open = False
+                is_subscription_valid = False
 
-            # Faqat o‘quvchining sinfiga tegishli barcha fanlar
-            all_subjects = Subject.objects.filter(classes=student_class)
+            # 🔥 Hamma fanlar
+            all_subjects = Subject.objects.all()
 
-            # Har bir subject uchun `is_open` qo‘shamiz
             result = []
             for subject in all_subjects:
                 serialized = SubjectSerializer(subject).data
-                serialized["is_open"] = is_subjects_open
+                serialized["is_open"] = is_subscription_valid
                 result.append(serialized)
 
             return Response(result, status=status.HTTP_200_OK)
