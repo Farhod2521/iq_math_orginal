@@ -7,6 +7,63 @@ from django.conf import settings
 from .models import Payment, Subscription
 from datetime import timedelta
 import hashlib
+from .utils import get_multicard_token 
+from django_app.app_user.models import Student
+import requests
+import uuid
+
+
+
+
+
+
+
+class InitiatePaymentAPIView(APIView):
+    def post(self, request):
+        student_id = request.data.get("student_id")
+        amount = request.data.get("amount")
+
+        if not student_id or not amount:
+            return Response({"error": "student_id va amount kerak"}, status=400)
+
+        try:
+            student = Student.objects.get(id=student_id)
+        except Student.DoesNotExist:
+            return Response({"error": "Talaba topilmadi"}, status=404)
+
+        token = get_multicard_token()
+
+        transaction_id = str(uuid.uuid4())
+
+        headers = {
+            "Authorization": f"Bearer {token}"
+        }
+
+        data = {
+            "amount": int(float(amount) * 100),  # So'm => tiyin
+            "store_id": 6,
+            "transaction_id": transaction_id,
+            "return_url": "https://yourdomain.uz/payment/return/",
+            "callback_url": "https://yourdomain.uz/api/payment/callback/"
+        }
+
+        response = requests.post("https://dev-mesh.multicard.uz/invoice/create", headers=headers, json=data)
+
+        if response.status_code != 200:
+            return Response({"error": "To‘lov yaratilishda xatolik"}, status=500)
+
+        # Payment saqlash
+        Payment.objects.create(
+            student=student,
+            amount=amount,
+            transaction_id=transaction_id,
+            status="pending",
+            payment_gateway="multicard"
+        )
+
+        invoice_data = response.json()
+        return Response(invoice_data)
+
 
 
 class PaymentCallbackAPIView(APIView):
@@ -26,7 +83,7 @@ class PaymentCallbackAPIView(APIView):
         received_sign = data.get("sign")
 
         # Sizning secret keyingiz
-        SECRET_KEY = "your_secret_key"
+        SECRET_KEY = "Pw18axeBFo8V7NamKHXX"
         EXPECTED_SIGN = self.generate_sign(store_id, invoice_id, amount, SECRET_KEY)
 
         if received_sign != EXPECTED_SIGN:
