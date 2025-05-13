@@ -20,7 +20,7 @@ from django.utils import timezone
 import re
 from django.shortcuts import get_object_or_404
 ###################################   TIZIMGA KIRGAN O"QUVCHI BILIM DARAJASINI TEKSHIRISH #####################
-from datetime import datetime
+from django.utils.timezone import now
 from django_app.app_payments.models import Subscription
 from random import sample
 
@@ -227,7 +227,7 @@ class StudentSubjectListAPIView(APIView):
             # Obunani tekshirish
             try:
                 subscription = student.subscription
-                now_time = datetime.now()
+                now_time  = now() 
 
                 if subscription.is_paid and subscription.start_date <= now_time <= subscription.end_date:
                     is_subjects_open = True
