@@ -8,7 +8,7 @@ class SubjectSerializer(serializers.ModelSerializer):
     class_name = serializers.CharField(source="classes.name")
     class_uz = serializers.SerializerMethodField()
     class_ru = serializers.SerializerMethodField()
-    is_open = serializers.BooleanField()
+    is_open = serializers.SerializerMethodField()
 
     class Meta:
         model = Subject
@@ -19,6 +19,11 @@ class SubjectSerializer(serializers.ModelSerializer):
 
     def get_class_ru(self, obj):
         return f"{obj.classes.name}-класс {obj.name_ru}"
+
+    def get_is_open(self, obj):
+        # context orqali is_open qiymatini olish
+        return getattr(obj, 'is_open', False)
+
     
 class ChapterSerializer(serializers.ModelSerializer):
     progress = serializers.SerializerMethodField()

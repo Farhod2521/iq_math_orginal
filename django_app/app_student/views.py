@@ -20,7 +20,8 @@ from django.utils import timezone
 import re
 from django.shortcuts import get_object_or_404
 ###################################   TIZIMGA KIRGAN O"QUVCHI BILIM DARAJASINI TEKSHIRISH #####################
-
+from datetime import datetime
+from django_app.app_payments.models import Subscription
 from random import sample
 
 class GenerateTestAPIView(APIView):
@@ -220,25 +221,32 @@ class StudentSubjectListAPIView(APIView):
 
     def get(self, request):
         try:
-            # 1. Studentni user orqali olish
             student = Student.objects.get(user=request.user)
-            student_class_name = student.class_name.id
-            all_subjects = Subject.objects.all()
-            for subject in all_subjects:
-                if subject.id == student_class_name:
-                    subject.is_open = True
-                else:
-                    subject.is_open = False
+            all_subjects = Subject.objects.filter(classes=student.class_name.classes)
 
-            serializer = SubjectSerializer(all_subjects, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-            # sub =  Subject.objects.filter(id=student_class_name)
-            # serializer = SubjectSerializer(sub, many=True)
-            # return Response(serializer.data, status=status.HTTP_200_OK)
+            # Obunani tekshirish
+            try:
+                subscription = student.subscription
+                now_time = datetime.now()
+
+                if subscription.is_paid and subscription.start_date <= now_time <= subscription.end_date:
+                    is_subjects_open = True
+                else:
+                    is_subjects_open = False
+            except Subscription.DoesNotExist:
+                is_subjects_open = False
+
+            # Har bir subjectga is_open ni qo‘shamiz
+            result = []
+            for subject in all_subjects:
+                item = SubjectSerializer(subject).data
+                item['is_open'] = is_subjects_open
+                result.append(item)
+
+            return Response(result, status=status.HTTP_200_OK)
 
         except Student.DoesNotExist:
             return Response({"detail": "Student topilmadi"}, status=status.HTTP_404_NOT_FOUND)
-
 
 class ChapterListBySubjectAPIView(APIView):
     permission_classes = [IsAuthenticated]
