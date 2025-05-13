@@ -13,7 +13,7 @@ import requests
 import uuid
 from rest_framework.permissions import IsAuthenticated
 from datetime import datetime
-
+from dateutil.relativedelta import relativedelta
 
 
 
@@ -131,7 +131,7 @@ class PaymentCallbackAPIView(APIView):
         # Subscription yangilash yoki yaratish
         subscription, created = Subscription.objects.get_or_create(student=payment.student)
         subscription.start_date = timezone.now()
-        subscription.end_date = subscription.start_date + timedelta(days=30)
+        subscription.end_date = subscription.start_date + relativedelta(months=1)
         subscription.next_payment_date = subscription.end_date
         subscription.is_paid = True
         subscription.save()
