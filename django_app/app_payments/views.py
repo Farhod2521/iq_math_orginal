@@ -4,14 +4,15 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.utils import timezone
 from django.conf import settings
-from .models import Payment, Subscription
+from .models import Payment, Subscription, SubscriptionSetting
 from datetime import timedelta
 import hashlib
 from .utils import get_multicard_token 
 from django_app.app_user.models import Student
 import requests
 import uuid
-
+from rest_framework.permissions import IsAuthenticated
+from datetime import datetime
 
 
 
@@ -43,7 +44,7 @@ class InitiatePaymentAPIView(APIView):
             "amount": int(float(amount) * 100),  # So'm => tiyin
             "store_id": 6,
             "transaction_id": transaction_id,
-            "return_url": "https://yourdomain.uz/payment/return/",
+            "return_url": "https://yourdomain.uz/payment/return/", 
             "callback_url": "https://yourdomain.uz/api/payment/callback/"
         }
 
@@ -108,3 +109,35 @@ class PaymentCallbackAPIView(APIView):
         subscription.save()
 
         return Response({"status": "ok"}, status=status.HTTP_200_OK)
+
+
+
+class SubscriptionTrialDaysAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        # Foydalanuvchining obuna ma'lumotlarini olish
+        try:
+            subscription = Subscription.objects.get(student=request.user.student)
+        except Subscription.DoesNotExist:
+            return Response(
+                {"detail": "Obuna topilmadi."}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Tekin muddatni olish
+        trial_days = SubscriptionSetting.objects.first().free_trial_days
+        
+        # Obuna muddati va hozirgi vaqtni taqqoslash
+        now = datetime.now()
+        if now < subscription.end_date:
+            remaining_days = (subscription.end_date - now).days
+            return Response(
+                {"remaining_trial_days": remaining_days},
+                status=status.HTTP_200_OK
+            )
+        
+        # Agar tekin muddat tugagan bo'lsa
+        return Response(
+            {"remaining_trial_days": trial_days},
+            status=status.HTTP_200_OK
+        )
