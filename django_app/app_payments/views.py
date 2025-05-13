@@ -81,6 +81,7 @@ class InitiatePaymentAPIView(APIView):
         return Response(response.json())
 
 
+
 class PaymentCallbackAPIView(APIView):
     authentication_classes = []  # Multicard tashqi server bo‘lganligi uchun
     permission_classes = []
@@ -92,18 +93,26 @@ class PaymentCallbackAPIView(APIView):
     def post(self, request):
         data = request.data
 
+        # Kelgan ma'lumotlarni olish
         store_id = str(data.get("store_id"))
         invoice_id = str(data.get("invoice_id"))
         amount = str(data.get("amount"))
         received_sign = data.get("sign")
+        payment_time = data.get("payment_time")
+        uuid = data.get("uuid")
+        invoice_uuid = data.get("invoice_uuid")
+        billing_id = data.get("billing_id")  # Null bo'lishi mumkin
+        sign = data.get("sign")
 
         # Sizning secret keyingiz
         SECRET_KEY = "Pw18axeBFo8V7NamKHXX"
         EXPECTED_SIGN = self.generate_sign(store_id, invoice_id, amount, SECRET_KEY)
 
+        # Imzo tekshirish
         if received_sign != EXPECTED_SIGN:
             return Response({"error": "Invalid sign"}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Payment topish
         try:
             payment = Payment.objects.get(transaction_id=invoice_id)
         except Payment.DoesNotExist:
@@ -112,6 +121,11 @@ class PaymentCallbackAPIView(APIView):
         # Payment yangilash
         payment.status = "success"
         payment.payment_date = timezone.now()
+        payment.payment_time = payment_time  # Agar kerak bo'lsa, vaqtni ham saqlash
+        payment.uuid = uuid
+        payment.invoice_uuid = invoice_uuid
+        payment.billing_id = billing_id  # Null bo'lishi mumkin
+        payment.sign = sign
         payment.save()
 
         # Subscription yangilash yoki yaratish
@@ -123,6 +137,7 @@ class PaymentCallbackAPIView(APIView):
         subscription.save()
 
         return Response({"status": "ok"}, status=status.HTTP_200_OK)
+
 
 
 
