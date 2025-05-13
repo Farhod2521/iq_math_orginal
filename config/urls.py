@@ -14,7 +14,7 @@ schema_view = get_schema_view(
       default_version='v1',
       description="API documentation for the student registration and login system",
       terms_of_service="https://www.google.com/policies/terms/",
-      contact=openapi.Contact(email="your-email@example.com"),
+      contact=openapi.Contact(email="iqmathuzbekiston@gmail.com"),
       license=openapi.License(name="MIT License"),
    ),
    public=True,
@@ -27,6 +27,7 @@ urlpatterns = [
     path('api/v1/func_teacher/', include("django_app.app_teacher.urls")),
     path('api/v1/func_student/', include("django_app.app_student.urls")),
     path('api/v1/management/', include("django_app.app_management.urls")),
+    path('api/v1/payments/', include("django_app.app_payments.urls")),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='swagger-docs'),
 ]
 
