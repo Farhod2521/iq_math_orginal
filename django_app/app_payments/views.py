@@ -8,7 +8,7 @@ from .models import Payment, Subscription, SubscriptionSetting
 from datetime import timedelta
 import hashlib
 from .utils import get_multicard_token 
-from django_app.app_user.models import Student
+from django_app.app_user.models import Student, User
 import requests
 import uuid
 from rest_framework.permissions import IsAuthenticated
@@ -116,28 +116,23 @@ class SubscriptionTrialDaysAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        # Foydalanuvchining obuna ma'lumotlarini olish
         try:
-            subscription = Subscription.objects.get(student=request.user.student)
-        except Subscription.DoesNotExist:
+            subscription = request.user.student_profile.subscription
+        except (Student.DoesNotExist, Subscription.DoesNotExist):
             return Response(
-                {"detail": "Obuna topilmadi."}, status=status.HTTP_404_NOT_FOUND
+                {"detail": "Obuna topilmadi."},
+                status=status.HTTP_404_NOT_FOUND
             )
 
-        # Tekin muddatni olish
         trial_days = SubscriptionSetting.objects.first().free_trial_days
-        
-        # Obuna muddati va hozirgi vaqtni taqqoslash
-        now = datetime.now()
+        now = timezone.now()
+
         if now < subscription.end_date:
             remaining_days = (subscription.end_date - now).days
-            return Response(
-                {"remaining_trial_days": remaining_days},
-                status=status.HTTP_200_OK
-            )
-        
-        # Agar tekin muddat tugagan bo'lsa
+        else:
+            remaining_days = 0
+
         return Response(
-            {"remaining_trial_days": trial_days},
+            {"remaining_trial_days": remaining_days},
             status=status.HTTP_200_OK
         )
