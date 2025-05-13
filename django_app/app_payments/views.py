@@ -112,6 +112,7 @@ class PaymentCallbackAPIView(APIView):
 
 
 
+
 class SubscriptionTrialDaysAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -133,6 +134,10 @@ class SubscriptionTrialDaysAPIView(APIView):
             remaining_days = 0
 
         return Response(
-            {"remaining_trial_days": remaining_days},
+            {
+                "remaining_trial_days": remaining_days,
+                "end_date": subscription.end_date.strftime("%Y-%m-%d"),
+            },
             status=status.HTTP_200_OK
         )
+
