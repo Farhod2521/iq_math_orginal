@@ -224,36 +224,26 @@ class StudentSubjectListAPIView(APIView):
     def get(self, request):
         try:
             student = Student.objects.get(user=request.user)
-            student_class = student.class_name.classes  # O'quvchi tanlagan sinf
+            student_class = student.class_name.classes  
 
             now_time = now()
             is_subscription_valid = False
             is_free_trial_active = False
-
-            # Obuna bor-yo'qligini va holatini tekshiramiz
             try:
                 subscription = student.subscription
-
-                # To'lov qilingan bo'lsa, barcha fanlar ochiq
                 if subscription.is_paid and subscription.start_date <= now_time <= subscription.end_date:
                     is_subscription_valid = True
-                # Aks holda, tekin 10 kunlik muddatni tekshiramiz
                 elif not subscription.is_paid and subscription.start_date <= now_time <= subscription.end_date:
                     is_free_trial_active = True
             except Subscription.DoesNotExist:
-                pass  # Obuna yo'q bo‘lsa, hamma fanlar yopiq bo‘ladi
-
-            # 🔥 Hamma fanlar
+                pass 
             all_subjects = Subject.objects.all()
 
             result = []
             for subject in all_subjects:
                 serialized = SubjectSerializer(subject).data
-
-                # To‘lov qilingan bo‘lsa → barcha fanlar ochiq
                 if is_subscription_valid:
                     serialized["is_open"] = True
-                # Tekin muddat bo‘lsa → faqat o‘zining sinfidagi fan ochiq
                 elif is_free_trial_active and subject.classes == student_class:
                     serialized["is_open"] = True
                 else:

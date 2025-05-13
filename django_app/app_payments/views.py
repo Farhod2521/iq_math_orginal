@@ -20,25 +20,31 @@ from dateutil.relativedelta import relativedelta
 
 
 class InitiatePaymentAPIView(APIView):
-    def post(self, request):
-        student_id = request.data.get("student_id")
-        amount = request.data.get("amount")
+    permission_classes = [IsAuthenticated]
 
-        if not student_id or not amount:
-            return Response({"error": "student_id va amount kerak"}, status=400)
+    def post(self, request):
+        amount = 499000
+
+        if not amount:
+            return Response({"error": "amount kerak"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            student = Student.objects.get(id=student_id)
+            student = Student.objects.get(user=request.user)
         except Student.DoesNotExist:
-            return Response({"error": "Talaba topilmadi"}, status=404)
+            return Response({"error": "Talaba topilmadi"}, status=status.HTTP_404_NOT_FOUND)
 
-        token = get_multicard_token()
+        # Multicard token olish
+        try:
+            token = get_multicard_token()
+        except Exception as e:
+            return Response({"error": "Token olishda xatolik", "details": str(e)}, status=500)
+
         transaction_id = str(uuid.uuid4())
-
         headers = {
             "Authorization": f"Bearer {token}"
         }
 
+        # So‘mni tiyin formatiga o‘tkazish
         amount_in_tiyin = int(float(amount) * 100)
 
         data = {
@@ -60,16 +66,19 @@ class InitiatePaymentAPIView(APIView):
             ]
         }
 
-        response = requests.post(
-            "https://dev-mesh.multicard.uz/payment/invoice",
-            headers=headers,
-            json=data
-        )
+        try:
+            response = requests.post(
+                "https://dev-mesh.multicard.uz/payment/invoice",
+                headers=headers,
+                json=data
+            )
+        except requests.exceptions.RequestException as e:
+            return Response({"error": "Multicard bilan bog‘lanishda xatolik", "details": str(e)}, status=500)
 
         if response.status_code != 200:
             return Response({"error": "To‘lov yaratilishda xatolik", "details": response.text}, status=500)
 
-        # Payment yozuvi saqlash
+        # Bazaga to‘lovni yozib qo‘yamiz
         Payment.objects.create(
             student=student,
             amount=amount,
@@ -78,8 +87,7 @@ class InitiatePaymentAPIView(APIView):
             payment_gateway="multicard"
         )
 
-        return Response(response.json())
-
+        return Response(response.json(), status=200)
 
 
 class PaymentCallbackAPIView(APIView):
