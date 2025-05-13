@@ -61,7 +61,7 @@ class InitiatePaymentAPIView(APIView):
         }
 
         response = requests.post(
-            "https://dev-mesh.multicard.uz/invoice/create",
+            "https://dev-mesh.multicard.uz/payment/invoice",
             headers=headers,
             json=data
         )
