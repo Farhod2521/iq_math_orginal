@@ -114,7 +114,6 @@ class CustomQuestionSerializer(serializers.ModelSerializer):
             data.pop("sub_questions", None)
 
         elif instance.question_type == "choice":
-            # To‘g‘ri javoblar soniga qarab question_category ni qo‘shamiz
             correct_count = instance.choices.filter(is_correct=True).count()
             data["question_category"] = "checkbox" if correct_count > 1 else "radio_button"
 
@@ -134,8 +133,12 @@ class CustomQuestionSerializer(serializers.ModelSerializer):
                 data.pop("correct_text_answer_ru", None)
                 data.pop("choices", None)
 
-        return data
+                # Bu yerda "undefined" ni "" ga o'zgartiramiz
+                for sub_question in data.get("sub_questions", []):
+                    if sub_question.get("text2") == "undefined":
+                        sub_question["text2"] = ""
 
+        return data
 
     
 class CheckChoiceAnswerSerializer(serializers.Serializer):
