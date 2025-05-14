@@ -178,7 +178,7 @@ class MyPaymentsAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        student = request.user.student  # Agar Student modelida OneToOneField bo'lsa
+        student = request.user.student_profile    # Agar Student modelida OneToOneField bo'lsa
         payments = Payment.objects.filter(student=student)
         serializer = PaymentSerializer(payments, many=True)
         return Response(serializer.data)
