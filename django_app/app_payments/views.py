@@ -22,7 +22,7 @@ from .serializers import PaymentSerializer
 class InitiatePaymentAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def post(self, request):
+    def get(self, request):
         amount = 499000
 
         if not amount:
