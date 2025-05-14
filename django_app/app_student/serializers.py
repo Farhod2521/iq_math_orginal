@@ -136,9 +136,9 @@ class CustomQuestionSerializer(serializers.ModelSerializer):
                 # Bu yerda "undefined" ni "" ga o'zgartiramiz
                 for sub_question in data.get("sub_questions", []):
                     if sub_question.get("text2_uz") == "undefined":
-                        sub_question["text2"] = ""
+                        sub_question["text2_uz"] = ""
                     if sub_question.get("text2_ru") == "undefined":
-                        sub_question["text2"] = ""
+                        sub_question["text2_ru"] = ""
 
         return data
 
