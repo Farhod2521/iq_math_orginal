@@ -14,7 +14,7 @@ import uuid
 from rest_framework.permissions import IsAuthenticated
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
-
+from .serializers import PaymentSerializer
 
 
 
@@ -119,14 +119,10 @@ class PaymentCallbackAPIView(APIView):
         # Imzo tekshirish
         if received_sign != EXPECTED_SIGN:
             return Response({"error": "Invalid sign"}, status=status.HTTP_400_BAD_REQUEST)
-
-        # Payment topish
         try:
             payment = Payment.objects.get(transaction_id=invoice_id)
         except Payment.DoesNotExist:
             return Response({"error": "Payment not found"}, status=status.HTTP_404_NOT_FOUND)
-
-        # Payment yangilash
         payment.status = "success"
         payment.payment_date = timezone.now()
         payment.payment_time = payment_time  # Agar kerak bo'lsa, vaqtni ham saqlash
@@ -135,8 +131,6 @@ class PaymentCallbackAPIView(APIView):
         payment.billing_id = billing_id  # Null bo'lishi mumkin
         payment.sign = sign
         payment.save()
-
-        # Subscription yangilash yoki yaratish
         subscription, created = Subscription.objects.get_or_create(student=payment.student)
         subscription.start_date = timezone.now()
         subscription.end_date = subscription.start_date + relativedelta(months=1)
@@ -178,3 +172,13 @@ class SubscriptionTrialDaysAPIView(APIView):
             status=status.HTTP_200_OK
         )
 
+
+
+class MyPaymentsAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        student = request.user.student  # Agar Student modelida OneToOneField bo'lsa
+        payments = Payment.objects.filter(student=student)
+        serializer = PaymentSerializer(payments, many=True)
+        return Response(serializer.data)
