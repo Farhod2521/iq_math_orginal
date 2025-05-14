@@ -85,7 +85,6 @@ class InitiatePaymentAPIView(APIView):
             transaction_id=transaction_id,
             status="pending",
             payment_gateway="multicard",
-            receipt_url= f"https://dev-checkout.multicard.uz/invoice/{transaction_id}"
         )
 
         return Response(response.json(), status=200)
@@ -125,12 +124,14 @@ class PaymentCallbackAPIView(APIView):
         except Payment.DoesNotExist:
             return Response({"error": "Payment not found"}, status=status.HTTP_404_NOT_FOUND)
         payment.status = "success"
+        
         payment.payment_date = timezone.now()
         payment.payment_time = payment_time  # Agar kerak bo'lsa, vaqtni ham saqlash
         payment.uuid = uuid
         payment.invoice_uuid = invoice_uuid
         payment.billing_id = billing_id  # Null bo'lishi mumkin
         payment.sign = sign
+        payment.receipt_url = f"https://dev-checkout.multicard.uz/invoice/{uuid}"
         payment.save()
         subscription, created = Subscription.objects.get_or_create(student=payment.student)
         subscription.start_date = timezone.now()
