@@ -86,8 +86,7 @@ class ChoiceSerializer(serializers.ModelSerializer):
 class CompositeSubQuestionSerializer(serializers.ModelSerializer):
     class Meta:
         model = CompositeSubQuestion
-        fields = ['id', 'text1', 'text2'] + \
-                 get_translation_fields('text1') + get_translation_fields('text2')
+        fields = ['id', 'text1_uz', 'text2_ru']
 
 
 class CustomQuestionSerializer(serializers.ModelSerializer):
