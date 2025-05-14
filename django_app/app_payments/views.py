@@ -84,7 +84,8 @@ class InitiatePaymentAPIView(APIView):
             amount=amount,
             transaction_id=transaction_id,
             status="pending",
-            payment_gateway="multicard"
+            payment_gateway="multicard",
+            receipt_url= f"https://dev-checkout.multicard.uz/invoice/{transaction_id}"
         )
 
         return Response(response.json(), status=200)
