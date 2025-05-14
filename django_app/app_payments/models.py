@@ -31,12 +31,12 @@ class Subscription(models.Model):
 
 
 class Payment(models.Model):
-    store_id = models.CharField(max_length=50, null=True, blank=True, verbose_name="Multicard ID raqami")
+    store_id = models.CharField(max_length=100, null=True, blank=True, verbose_name="Multicard ID raqami")
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name="payments")
-    invoice_uuid = models.CharField(max_length=50, null=True, blank=True, verbose_name="Invoys ID raqami")
-    uuid = models.CharField(max_length=50, null=True, blank=True, verbose_name="To‘lov tranzaksiyasining  ID raqami")
-    billing_id = models.CharField(max_length=50, null=True, blank=True, verbose_name="Hamkor billing tizimidagi tranzaksiyaning  ID raqami")
-    sign = models.CharField(max_length=50, null=True, blank=True, verbose_name="MD5 HASH")
+    invoice_uuid = models.CharField(max_length=100, null=True, blank=True, verbose_name="Invoys ID raqami")
+    uuid = models.CharField(max_length=100, null=True, blank=True, verbose_name="To‘lov tranzaksiyasining  ID raqami")
+    billing_id = models.CharField(max_length=100, null=True, blank=True, verbose_name="Hamkor billing tizimidagi tranzaksiyaning  ID raqami")
+    sign = models.CharField(max_length=100, null=True, blank=True, verbose_name="MD5 HASH")
     amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="To‘lov summasi")
     payment_date = models.DateTimeField(auto_now_add=True)
     transaction_id = models.CharField(max_length=100, verbose_name="Tranzaksiya ID")
