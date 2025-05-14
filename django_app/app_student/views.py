@@ -272,12 +272,25 @@ class TopicListByChapterAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, chapter_id):
+        student = getattr(request.user, 'student_profile', None)
+
+        if not student:
+            return Response({"detail": "Foydalanuvchi uchun student profili topilmadi"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            subscription = student.subscription
+        except Subscription.DoesNotExist:
+            return Response({"detail": "Obuna mavjud emas. To‘lovni amalga oshiring"}, status=status.HTTP_403_FORBIDDEN)
+
+        if subscription.end_date < timezone.now():
+            return Response({"detail": "Obuna muddati tugagan. Iltimos, to‘lovni amalga oshiring."}, status=status.HTTP_403_FORBIDDEN)
+
         try:
             chapter = Chapter.objects.get(id=chapter_id)
             topics = Topic.objects.filter(chapter=chapter)
             serializer = TopicSerializer(topics, many=True, context={'request': request})
             return Response(serializer.data, status=status.HTTP_200_OK)
-        
+
         except Chapter.DoesNotExist:
             return Response({"detail": "Chapter topilmadi"}, status=status.HTTP_404_NOT_FOUND)
         
