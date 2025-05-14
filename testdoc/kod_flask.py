@@ -6,7 +6,7 @@ app = Flask(__name__)
 
 client = OpenAI(
     base_url="https://openrouter.ai/api/v1",
-    api_key="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",
+    api_key="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",
 )
 # client = OpenAI(
 #     base_url="https://openrouter.ai/api/v1",
@@ -23,17 +23,20 @@ def process_text():
             return jsonify({'error': 'Matn kiritilmagan'}), 400
         
         # OpenAI API ga so'rov yuborish
-        completion = client.chat.completions.create(
-            model="deepseek/deepseek-r1:free",
-            # model="openai/gpt-4.1",
-            messages=[
-                {
-                    "role": "user",
-                    "content": "Savol ishlanish yo'li bilan ihlab ber ketma ketlikda qisqa lo'nda aniq javob ber " + input_text
-                }
-            ]
-        )
-        
+        try:
+            completion = client.chat.completions.create(
+                model="deepseek/deepseek-r1:free",
+                messages=[
+                    {
+                        "role": "user",
+                        "content": "Savol ishlanish yo'li bilan ishlab ber ketma ketlikda qisqa lo'nda aniq javob ber " + input_text
+                    }
+                ]
+            )
+        except Exception as e:
+            print("OpenAI chaqiruvida xatolik:", e)
+            return jsonify({'error': 'AI bilan bog‘lanishda xatolik: ' + str(e)}), 500
+                
         # JSON javobini o'qish
         result_content = completion.choices[0].message.content
         try:
