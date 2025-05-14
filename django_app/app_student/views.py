@@ -224,11 +224,11 @@ class StudentSubjectListAPIView(APIView):
     def get(self, request):
         try:
             student = Student.objects.get(user=request.user)
-            student_class = student.class_name.classes  
-
             now_time = now()
+
             is_subscription_valid = False
             is_free_trial_active = False
+
             try:
                 subscription = student.subscription
                 if subscription.is_paid and subscription.start_date <= now_time <= subscription.end_date:
@@ -236,15 +236,16 @@ class StudentSubjectListAPIView(APIView):
                 elif not subscription.is_paid and subscription.start_date <= now_time <= subscription.end_date:
                     is_free_trial_active = True
             except Subscription.DoesNotExist:
-                pass 
-            all_subjects = Subject.objects.all()
+                pass
 
+            all_subjects = Subject.objects.all()
             result = []
+
             for subject in all_subjects:
                 serialized = SubjectSerializer(subject).data
                 if is_subscription_valid:
                     serialized["is_open"] = True
-                elif is_free_trial_active and subject.classes == student_class:
+                elif is_free_trial_active:
                     serialized["is_open"] = True
                 else:
                     serialized["is_open"] = False
@@ -255,6 +256,7 @@ class StudentSubjectListAPIView(APIView):
 
         except Student.DoesNotExist:
             return Response({"detail": "Student topilmadi"}, status=status.HTTP_404_NOT_FOUND)
+
 class ChapterListBySubjectAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
