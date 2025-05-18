@@ -415,6 +415,204 @@ class ResendSMSCodeView(APIView):
         return Response({
             "message": "Yangi SMS kodi yuborildi. Iltimos, uni tekshirib ko'ring."
         }, status=status.HTTP_200_OK)
+class UserProfileAPIView(APIView):
+
+    def get(self, request, *args, **kwargs):
+        token_header = request.headers.get('Authorization', '')
+        if not token_header or not token_header.startswith('Bearer '):
+            return Response({"error": "Authorization token missing or invalid"}, status=status.HTTP_401_UNAUTHORIZED)
+
+        token = token_header.split(' ')[1]
+
+        try:
+            decoded_token = jwt.decode(token, options={"verify_signature": False})
+        except jwt.DecodeError:
+            return Response({"error": "Failed to decode token"}, status=status.HTTP_401_UNAUTHORIZED)
+
+        user_id = decoded_token.get('user_id')
+        if not user_id:
+            raise AuthenticationFailed('User ID not found in token')
+
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response({"error": "User not found"}, status=404)
+
+        # Student profile
+        if user.role == 'student':
+            try:
+                student = user.student_profile
+            except Student.DoesNotExist:
+                return Response({"error": "Student profile not found"}, status=404)
+
+            student_datetime = student.student_date
+            ashgabat_tz = pytz.timezone("Asia/Ashgabat")
+            if student_datetime:
+                student_datetime = student_datetime.astimezone(ashgabat_tz)
+                student_date = student_datetime.strftime('%Y-%m-%d')
+                student_time = student_datetime.strftime('%H:%M:%S')
+            else:
+                student_date = None
+                student_time = None
+
+            data = {
+                "role": "student",
+                "id": student.id,
+                "identification": student.identification,
+                'full_name': student.full_name,
+                'phone': user.phone,
+                'email': user.email,
+                'region': student.region,
+                'districts': student.districts,
+                'address': student.address,
+                'brithday': student.brithday,
+                'academy_or_school': student.academy_or_school,
+                'academy_or_school_name': student.academy_or_school_name,
+                'class_name': student.class_name.name if student.class_name else None,
+                'document_type': student.document_type,
+                'document': student.document,
+                'type_of_education': student.type_of_education,
+                'student_date': student_date,
+                'student_time': student_time,
+            }
+
+        # Teacher profile
+        elif user.role == 'teacher':
+            try:
+                teacher = user.teacher_profile
+            except Teacher.DoesNotExist:
+                return Response({"error": "Teacher profile not found"}, status=404)
+
+            teacher_datetime = teacher.teacher_date
+            ashgabat_tz = pytz.timezone("Asia/Ashgabat")
+            if teacher_datetime:
+                teacher_datetime = teacher_datetime.astimezone(ashgabat_tz)
+                teacher_date = teacher_datetime.strftime('%Y-%m-%d')
+                teacher_time = teacher_datetime.strftime('%H:%M:%S')
+            else:
+                teacher_date = None
+                teacher_time = None
+
+            data = {
+                "role": "teacher",
+                "id": teacher.id,
+                'full_name': teacher.full_name,
+                'phone': user.phone,
+                'email': user.email,
+                'region': teacher.region,
+                'districts': teacher.districts,
+                'address': teacher.address,
+                'brithday': teacher.brithday,
+                'document_type': teacher.document_type,
+                'document': teacher.document,
+                'is_verified_teacher': teacher.is_verified_teacher,
+                'teacher_date': teacher_date,
+                'teacher_time': teacher_time,
+            }
+
+        else:
+            return Response({"error": "Only student and teacher roles are supported"}, status=403)
+
+        return Response(data)
+class UserProfileAPIView(APIView):
+
+    def get(self, request, *args, **kwargs):
+        token_header = request.headers.get('Authorization', '')
+        if not token_header or not token_header.startswith('Bearer '):
+            return Response({"error": "Authorization token missing or invalid"}, status=status.HTTP_401_UNAUTHORIZED)
+
+        token = token_header.split(' ')[1]
+
+        try:
+            decoded_token = jwt.decode(token, options={"verify_signature": False})
+        except jwt.DecodeError:
+            return Response({"error": "Failed to decode token"}, status=status.HTTP_401_UNAUTHORIZED)
+
+        user_id = decoded_token.get('user_id')
+        if not user_id:
+            raise AuthenticationFailed('User ID not found in token')
+
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response({"error": "User not found"}, status=404)
+
+        # Student profile
+        if user.role == 'student':
+            try:
+                student = user.student_profile
+            except Student.DoesNotExist:
+                return Response({"error": "Student profile not found"}, status=404)
+
+            student_datetime = student.student_date
+            ashgabat_tz = pytz.timezone("Asia/Ashgabat")
+            if student_datetime:
+                student_datetime = student_datetime.astimezone(ashgabat_tz)
+                student_date = student_datetime.strftime('%Y-%m-%d')
+                student_time = student_datetime.strftime('%H:%M:%S')
+            else:
+                student_date = None
+                student_time = None
+
+            data = {
+                "role": "student",
+                "id": student.id,
+                "identification": student.identification,
+                'full_name': student.full_name,
+                'phone': user.phone,
+                'email': user.email,
+                'region': student.region,
+                'districts': student.districts,
+                'address': student.address,
+                'brithday': student.brithday,
+                'academy_or_school': student.academy_or_school,
+                'academy_or_school_name': student.academy_or_school_name,
+                'class_name': student.class_name.name if student.class_name else None,
+                'document_type': student.document_type,
+                'document': student.document,
+                'type_of_education': student.type_of_education,
+                'student_date': student_date,
+                'student_time': student_time,
+            }
+
+        # Teacher profile
+        elif user.role == 'teacher':
+            try:
+                teacher = user.teacher_profile
+            except Teacher.DoesNotExist:
+                return Response({"error": "Teacher profile not found"}, status=404)
+
+            teacher_datetime = teacher.teacher_date
+            ashgabat_tz = pytz.timezone("Asia/Ashgabat")
+            if teacher_datetime:
+                teacher_datetime = teacher_datetime.astimezone(ashgabat_tz)
+                teacher_date = teacher_datetime.strftime('%Y-%m-%d')
+                teacher_time = teacher_datetime.strftime('%H:%M:%S')
+            else:
+                teacher_date = None
+                teacher_time = None
+
+            data = {
+                "role": "teacher",
+                "id": teacher.id,
+                'full_name': teacher.full_name,
+                'phone': user.phone,
+                'email': user.email,
+                'region': teacher.region,
+                'districts': teacher.districts,
+                'address': teacher.address,
+                'brithday': teacher.brithday,
+                'document_type': teacher.document_type,
+                'document': teacher.document,
+                'is_verified_teacher': teacher.is_verified_teacher,
+                'teacher_date': teacher_date,
+                'teacher_time': teacher_time,
+            }
+
+        else:
+            return Response({"error": "Only student and teacher roles are supported"}, status=403)
+
+        return Response(data)
 
 class StudentProfileAPIView(APIView): 
 
