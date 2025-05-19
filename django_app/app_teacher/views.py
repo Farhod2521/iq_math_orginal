@@ -597,35 +597,34 @@ class OpenAIQuestionListView(ListAPIView):
 from openai import OpenAI
 import json
 client = OpenAI(
-    base_url="https://openrouter.ai/api/v1",
-    api_key="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",
+    api_key="#####"
 )
 
 class OpenAIProcessAPIView(APIView):
     def post(self, request, *args, **kwargs):
-        input_text = request.data.get('text', '')
+        input_text = request.data.get('text', '').strip()
 
         if not input_text:
             return Response({'error': 'Matn kiritilmagan'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             completion = client.chat.completions.create(
-                model="deepseek/deepseek-r1:free",
+                model="gpt-4o-mini",
                 messages=[
                     {
                         "role": "user",
-                        "content": "Savol ishlanish yo'li bilan ihlab ber ketma ketlikda qisqa lo'nda aniq javob ber " + input_text
+                        "content": "Savol ishlanish yo'li bilan ishlab ber ketma ketlikda qisqa lo'nda aniq javob ber: " + input_text
                     }
                 ]
             )
-
-            result_content = completion.choices[0].message.content
-
-            try:
-                result_data = json.loads(result_content)
-                return Response({'result': result_data})
-            except json.JSONDecodeError:
-                return Response({'result': result_content})
-
         except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({'error': f'AI bilan bog‘lanishda xatolik: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        result_content = completion.choices[0].message.content
+
+        # Natijani JSON formatda qaytarishga harakat qilamiz, agar bo'lmasa matn sifatida qaytariladi
+        try:
+            result_data = json.loads(result_content)
+            return Response({'result': result_data})
+        except json.JSONDecodeError:
+            return Response({'result': result_content})
