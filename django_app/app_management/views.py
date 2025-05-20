@@ -29,15 +29,14 @@ class StatisticsAPIView(APIView):
         total_teachers = Teacher.objects.count()
         total_students = Student.objects.count()
 
-        # Bugungi sana va 5 kundan keyingi sana
         today = timezone.now()
         five_days_later = today + timedelta(days=5)
 
-        # 5 kun ichida to'lov qilishi kerak bo'lgan studentlar
+        # end_date bo‘yicha 5 kun yoki kam qolganlar va hali to‘lamaganlar
         due_soon_subscriptions = Subscription.objects.filter(
             is_paid=False,
-            next_payment_date__lte=five_days_later,
-            next_payment_date__gte=today
+            end_date__lte=five_days_later,
+            end_date__gte=today
         ).count()
 
         data = {
