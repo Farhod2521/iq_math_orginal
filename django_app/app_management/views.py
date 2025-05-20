@@ -1,7 +1,7 @@
 from rest_framework.generics import ListAPIView
 from .models import SystemSettings, FAQ, Product
 from .serializers import SystemSettingsSerializer, FAQSerializer, ProductSerializer
-from app_user.models import User, Teacher, Student
+from django_app.app_user.models import User, Teacher, Student
 from rest_framework.views import APIView
 from rest_framework.response import Response
 class SystemSettingsListView(ListAPIView):
