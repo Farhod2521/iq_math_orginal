@@ -123,20 +123,31 @@ class PaymentCallbackAPIView(APIView):
             payment = Payment.objects.get(transaction_id=invoice_id)
         except Payment.DoesNotExist:
             return Response({"error": "Payment not found"}, status=status.HTTP_404_NOT_FOUND)
-        payment.status = "success"
-        
         payment.payment_date = timezone.now()
-        payment.payment_time = payment_time  # Agar kerak bo'lsa, vaqtni ham saqlash
+        payment.payment_time = payment_time
         payment.uuid = uuid
         payment.invoice_uuid = invoice_uuid
-        payment.billing_id = billing_id  # Null bo'lishi mumkin
+        payment.billing_id = billing_id
         payment.sign = sign
         payment.receipt_url = f"https://dev-checkout.multicard.uz/invoice/{uuid}"
         payment.save()
+
+        # Obunani olish yoki yaratish
         subscription, created = Subscription.objects.get_or_create(student=payment.student)
-        subscription.start_date = timezone.now()
-        subscription.end_date = subscription.start_date + relativedelta(months=1)
-        subscription.next_payment_date = subscription.end_date
+
+        now = timezone.now()
+
+        if subscription.next_payment_date and subscription.next_payment_date > now:
+            # Tekin muddat hali tugamagan — unga 1 oy qo‘shamiz
+            subscription.start_date = subscription.next_payment_date
+            subscription.end_date = subscription.start_date + relativedelta(months=1)
+            subscription.next_payment_date = subscription.end_date
+        else:
+            # Tekin muddat tugagan yoki yo‘q — hozirgi kundan 1 oy
+            subscription.start_date = now
+            subscription.end_date = now + relativedelta(months=1)
+            subscription.next_payment_date = subscription.end_date
+
         subscription.is_paid = True
         subscription.save()
 
@@ -168,9 +179,9 @@ class SubscriptionTrialDaysAPIView(APIView):
 
         return Response(
             {
-                "remaining_trial_days": remaining_days,
-                "end_date": subscription.end_date.strftime("%Y-%m-%d"),
-                "payment_amount": 499000
+            "remaining_trial_days": remaining_days,
+            "end_date": subscription.end_date.strftime("%Y-%m-%d"),
+            "payment_amount": 499000
 
             },
             status=status.HTTP_200_OK
