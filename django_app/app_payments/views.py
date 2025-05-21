@@ -124,19 +124,35 @@ class PaymentCallbackAPIView(APIView):
         except Payment.DoesNotExist:
             return Response({"error": "Payment not found"}, status=status.HTTP_404_NOT_FOUND)
         payment.status = "success"
-        
         payment.payment_date = timezone.now()
-        payment.payment_time = payment_time  # Agar kerak bo'lsa, vaqtni ham saqlash
+        payment.payment_time = payment_time
         payment.uuid = uuid
         payment.invoice_uuid = invoice_uuid
-        payment.billing_id = billing_id  # Null bo'lishi mumkin
+        payment.billing_id = billing_id
         payment.sign = sign
         payment.receipt_url = f"https://dev-checkout.multicard.uz/invoice/{uuid}"
         payment.save()
+
+        # Obunani yaratish yoki olish
         subscription, created = Subscription.objects.get_or_create(student=payment.student)
-        subscription.start_date = timezone.now()
-        subscription.end_date = subscription.start_date + relativedelta(months=1)
-        subscription.next_payment_date = subscription.end_date
+
+        now = timezone.now()
+
+        if created:
+            # Agar yangi bo‘lsa, hozirgi vaqtdan boshlab 1 oy qo‘shiladi
+            subscription.start_date = now
+            subscription.end_date = now + relativedelta(months=1)
+        else:
+            # Agar mavjud bo‘lsa, end_date tekshiriladi
+            if subscription.end_date > now:
+                # Obuna muddati hali tugamagan bo‘lsa, end_date ga 1 oy qo‘shiladi
+                subscription.end_date += relativedelta(months=1)
+            else:
+                # Obuna muddati tugagan bo‘lsa, hozirgi vaqtdan boshlab 1 oy belgilanadi
+                subscription.end_date = now + relativedelta(months=1)
+
+        # next_payment_date yangi end_date ga 1 oy qo‘shib belgilanadi
+        subscription.next_payment_date = subscription.end_date + relativedelta(months=1)
         subscription.is_paid = True
         subscription.save()
 
