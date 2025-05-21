@@ -56,3 +56,10 @@ class StatisticsAPIView(APIView):
         }
 
         return Response(data)
+
+
+
+
+
+
+
