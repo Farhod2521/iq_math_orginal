@@ -174,39 +174,24 @@ class SubscriptionTrialDaysAPIView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        now = timezone.now()
         trial_days = SubscriptionSetting.objects.first().free_trial_days
+        now = timezone.now()
 
-        if subscription.is_paid:
-            # To'langan foydalanuvchi uchun
-            if subscription.next_payment_date and now < subscription.next_payment_date:
-                days_until_next_payment = (subscription.next_payment_date - now).days
-            else:
-                days_until_next_payment = 0
-
-            return Response(
-                {
-                    "days_until_next_payment": days_until_next_payment,
-                    "next_payment_date": subscription.next_payment_date.strftime("%Y-%m-%d") if subscription.next_payment_date else None,
-                    "payment_amount": 499000
-                },
-                status=status.HTTP_200_OK
-            )
+        if now < subscription.end_date:
+            remaining_days = (subscription.end_date - now).days
         else:
-            # Tekin foydalanuvchi uchun
-            if now < subscription.end_date:
-                remaining_days = (subscription.end_date - now).days
-            else:
-                remaining_days = 0
+            remaining_days = 0
 
-            return Response(
-                {
-                    "remaining_trial_days": remaining_days,
-                    "end_date": subscription.end_date.strftime("%Y-%m-%d"),
-                    "payment_amount": 499000
-                },
-                status=status.HTTP_200_OK
-            )
+        return Response(
+            {
+            "days_until_next_payment": remaining_days,
+            "end_date": subscription.end_date.strftime("%Y-%m-%d"),
+            "payment_amount": 499000, 
+            "is_paid": subscription.is_paid
+
+            },
+            status=status.HTTP_200_OK
+        )
 
 
 
