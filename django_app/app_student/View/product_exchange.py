@@ -63,3 +63,43 @@ class ProductExchangeView(APIView):
             'exchange_id': exchange.id,
             'status': exchange.status,
         })
+
+
+
+class ProductExchangeListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        if user.role != 'student':
+            return Response({
+                'error_uz': 'Faqat talaba roliga ruxsat berilgan.',
+                'error_ru': 'Доступ разрешен только студентам.'
+            }, status=403)
+
+        try:
+            student = user.student_profile
+        except Student.DoesNotExist:
+            return Response({
+                'error_uz': 'Talaba profili topilmadi.',
+                'error_ru': 'Профиль студента не найден.'
+            }, status=404)
+
+        exchanges = student.product_exchanges.all().order_by('-created_at')
+
+        data = []
+        for exchange in exchanges:
+            data.append({
+                'product_name': exchange.product.name,
+                'used_score': exchange.used_score,
+                'status': exchange.status,
+                'status_uz': dict(ProductExchange.STATUS_CHOICES).get(exchange.status, ''),
+                'created_at': exchange.created_at.strftime('%Y-%m-%d %H:%M'),
+            })
+
+        return Response({
+            'message_uz': 'Mahsulotlar almashinuvi ro‘yxati.',
+            'message_ru': 'Список обменов товарами.',
+            'exchanges': data
+        })
