@@ -50,7 +50,11 @@ class ReferralAndCouponSettings(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"SystemSettings (updated: {self.updated_at.date()})"
+        return f"Sozlamalar (yangilangan: {self.updated_at.date()})"
+
+    class Meta:
+        verbose_name = "Referal va kupon sozlamasi"
+        verbose_name_plural = "Referal va kupon sozlamalari"
 
 
 class Product(models.Model):
