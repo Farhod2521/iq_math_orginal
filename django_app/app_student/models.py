@@ -1,7 +1,7 @@
 from django.db import models
 from django_app.app_user.models import Student
 from django_app.app_teacher.models import Topic, Question, Chapter
-
+from django_app.app_management.models import Product
 class  Diagnost_Student(models.Model):
     student =  models.ForeignKey(Student, on_delete=models.CASCADE)
     topic =  models.ManyToManyField(Topic, null=True)
@@ -76,3 +76,22 @@ class StudentScoreLog(models.Model):
         return f"{self.student_score.student} - {self.question.id}"
 
 
+class ProductExchange(models.Model):
+    STATUS_CHOICES = (
+        ('pending', 'Kutilmoqda'),
+        ('approved', 'Tasdiqlangan'),
+        ('rejected', 'Rad etilgan'),
+    )
+
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='product_exchanges')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    used_score = models.PositiveIntegerField()
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Mahsulotga almashtirish"
+        verbose_name_plural = "Mahsulotga almashtirishlar"
+
+    def __str__(self):
+        return f"{self.student.full_name} → {self.product.name} ({self.used_score} ball)"
