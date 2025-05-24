@@ -94,12 +94,9 @@ class ProductExchangeListView(APIView):
                 'product_name': exchange.product.name,
                 'used_score': exchange.used_score,
                 'status': exchange.status,
-                'status_uz': dict(ProductExchange.STATUS_CHOICES).get(exchange.status, ''),
                 'created_at': exchange.created_at.strftime('%Y-%m-%d %H:%M'),
             })
 
         return Response({
-            'message_uz': 'Mahsulotlar almashinuvi ro‘yxati.',
-            'message_ru': 'Список обменов товарами.',
             'exchanges': data
         })
