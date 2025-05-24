@@ -12,14 +12,12 @@ class ProductExchangeView(APIView):
     def post(self, request, product_id):
         user = request.user
 
-        # faqat student
         if user.role != 'student':
             return Response({
                 'error_uz': 'Faqat talaba roliga ruxsat berilgan.',
                 'error_ru': 'Доступ разрешен только студентам.'
             }, status=403)
 
-        # student profile va score topiladi
         try:
             student = user.student_profile
         except Student.DoesNotExist:
@@ -31,38 +29,46 @@ class ProductExchangeView(APIView):
         student_score = StudentScore.objects.filter(student=student).first()
         if not student_score:
             return Response({
-                'error_uz': 'Sizda ball mavjud emas.',
-                'error_ru': 'У вас нет баллов.'
+                'error_uz': 'Sizda coin mavjud emas.',
+                'error_ru': 'У вас нет монет.'
             }, status=404)
 
-        # mahsulot topiladi
         product = get_object_or_404(Product, id=product_id)
 
-        # ball yetarlimi
-        if student_score.score < product.ball:
+        if student_score.coin < product.coin:
             return Response({
-                'error_uz': f"Sizda yetarli ball yo'q. Kerakli: {product.ball}, Sizda: {student_score.score}",
-                'error_ru': f"У вас недостаточно баллов. Необходимо: {product.ball}, У вас: {student_score.score}"
+                'error_uz': f"Sizda yetarli coin yo'q. Kerakli: {product.coin}, Sizda: {student_score.coin}",
+                'error_ru': f"У вас недостаточно монет. Необходимо: {product.coin}, У вас: {student_score.coin}"
             }, status=400)
 
-        # ballni ayirish va yozib qo‘yish
-        student_score.score -= product.ball
+        student_score.coin -= product.coin
         student_score.save()
 
         exchange = ProductExchange.objects.create(
             student=student,
             product=product,
-            used_score=product.ball,
+            used_score=product.coin,  # modelda hali used_score deb turgan bo‘lsa, nomi o‘zgartirilmagan
             status='approved'
         )
 
         return Response({
             'message_uz': f"{product.name} mahsuloti muvaffaqiyatli olindi.",
             'message_ru': f"Товар {product.name} успешно получен.",
-            'remaining_score': student_score.score,
+            'remaining_coin': student_score.coin,
             'exchange_id': exchange.id,
             'status': exchange.status,
         })
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -91,13 +97,14 @@ class ProductExchangeListView(APIView):
         data = []
         for exchange in exchanges:
             data.append({
-                'product_name_uz': exchange.product.name_uz,
-                'product_name_ru': exchange.product.name_ru,
-                'used_score': exchange.used_score,
+                'product_name': exchange.product.name,
+                'used_coin': exchange.used_score,  # modeldagi field nomi hali used_score deb turgan bo‘lsa
                 'status': exchange.status,
                 'created_at': exchange.created_at.strftime('%Y-%m-%d %H:%M'),
             })
 
         return Response({
+            'message_uz': 'Siz almashtirgan mahsulotlar ro‘yxati.',
+            'message_ru': 'Список обменянных вами товаров.',
             'exchanges': data
         })

@@ -49,6 +49,7 @@ class TopicProgress(models.Model):
 class StudentScore(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
     score = models.PositiveIntegerField(default=0)
+    coin = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -85,7 +86,7 @@ class ProductExchange(models.Model):
 
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='product_exchanges')
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    used_score = models.PositiveIntegerField()
+    used_coin  = models.PositiveIntegerField()
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
 
