@@ -39,26 +39,7 @@ class ReferralAndCouponSettingsAdmin(admin.ModelAdmin):
         'coupon_valid_days',
         'updated_at',
     )
-    readonly_fields = ('created_at', 'updated_at')
-    fieldsets = (
-        (None, {
-            'fields': (
-                'referral_bonus_points',
-                'coupon_discount_percent',
-                'coupon_valid_days',
-            )
-        }),
-        ('Timestamps', {
-            'fields': ('created_at', 'updated_at'),
-            'classes': ('collapse',),
-        }),
-    )
 
-    def has_add_permission(self, request):
-        # Faqat bitta sozlama bo'lishini istasangiz — singleton tarzida
-        if ReferralAndCouponSettings.objects.exists():
-            return False
-        return True
 
 
 @admin.register(Product)
