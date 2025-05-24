@@ -42,6 +42,16 @@ class FAQ(models.Model):
     
 
 
+class ReferralAndCouponSettings(models.Model):
+    referral_bonus_points = models.PositiveIntegerField(default=0, help_text="Referal orqali foydalanuvchi taklif qilganda beriladigan ball miqdori")
+    coupon_discount_percent = models.PositiveIntegerField(default=0, help_text="Kupon kodi orqali beriladigan chegirma foizi")
+    coupon_valid_days = models.PositiveIntegerField(default=30, help_text="Kupon kodi amal qilish muddati (kunlarda)")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"SystemSettings (updated: {self.updated_at.date()})"
+
 
 class Product(models.Model):
     name = models.CharField(max_length=255, verbose_name="Mahsulot nomi")
