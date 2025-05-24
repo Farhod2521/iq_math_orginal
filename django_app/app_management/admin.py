@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import SystemSettings, FAQ, Product
+from .models import SystemSettings, FAQ, Product, ReferralAndCouponSettings
 from modeltranslation.admin import TranslationAdmin
 from django.utils.html import format_html
 
@@ -31,6 +31,34 @@ class FAQAdmin(admin.ModelAdmin):
     list_display = ['question']
     search_fields = ['question', 'answer']
 
+@admin.register(ReferralAndCouponSettings)
+class ReferralAndCouponSettingsAdmin(admin.ModelAdmin):
+    list_display = (
+        'referral_bonus_points',
+        'coupon_discount_percent',
+        'coupon_valid_days',
+        'updated_at',
+    )
+    readonly_fields = ('created_at', 'updated_at')
+    fieldsets = (
+        (None, {
+            'fields': (
+                'referral_bonus_points',
+                'coupon_discount_percent',
+                'coupon_valid_days',
+            )
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',),
+        }),
+    )
+
+    def has_add_permission(self, request):
+        # Faqat bitta sozlama bo'lishini istasangiz — singleton tarzida
+        if ReferralAndCouponSettings.objects.exists():
+            return False
+        return True
 
 
 @admin.register(Product)
