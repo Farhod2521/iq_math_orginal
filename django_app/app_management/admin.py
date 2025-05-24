@@ -35,7 +35,7 @@ class FAQAdmin(admin.ModelAdmin):
 
 @admin.register(Product)
 class ProductAdmin(TranslationAdmin):  # model.ModelAdmin o'rniga TranslationAdmin ishlatiladi
-    list_display = ['name_uz','name_ru', 'ball', 'image_tag']
+    list_display = ['name_uz','name_ru', 'coin', 'image_tag']
     search_fields = ['name_uz','name_ru']
     readonly_fields = ['image_tag']
 
