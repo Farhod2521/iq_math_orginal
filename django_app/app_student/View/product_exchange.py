@@ -91,7 +91,8 @@ class ProductExchangeListView(APIView):
         data = []
         for exchange in exchanges:
             data.append({
-                'product_name': exchange.product.name,
+                'product_name_uz': exchange.product.name_uz,
+                'product_name_ru': exchange.product.name_ru,
                 'used_score': exchange.used_score,
                 'status': exchange.status,
                 'created_at': exchange.created_at.strftime('%Y-%m-%d %H:%M'),
