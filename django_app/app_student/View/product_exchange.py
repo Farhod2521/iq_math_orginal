@@ -14,24 +14,36 @@ class ProductExchangeView(APIView):
 
         # faqat student
         if user.role != 'student':
-            return Response({'error': 'Faqat talaba roliga ruxsat berilgan.'}, status=403)
+            return Response({
+                'error_uz': 'Faqat talaba roliga ruxsat berilgan.',
+                'error_ru': 'Доступ разрешен только студентам.'
+            }, status=403)
 
         # student profile va score topiladi
         try:
             student = user.student_profile
         except Student.DoesNotExist:
-            return Response({'error': 'Student topilmadi.'}, status=404)
+            return Response({
+                'error_uz': 'Talaba profili topilmadi.',
+                'error_ru': 'Профиль студента не найден.'
+            }, status=404)
 
         student_score = StudentScore.objects.filter(student=student).first()
         if not student_score:
-            return Response({'error': 'Ball mavjud emas.'}, status=404)
+            return Response({
+                'error_uz': 'Sizda ball mavjud emas.',
+                'error_ru': 'У вас нет баллов.'
+            }, status=404)
 
         # mahsulot topiladi
         product = get_object_or_404(Product, id=product_id)
 
         # ball yetarlimi
         if student_score.score < product.ball:
-            return Response({'error': f"Sizda yetarli ball yo'q. Kerakli: {product.ball}, Sizda: {student_score.score}"}, status=400)
+            return Response({
+                'error_uz': f"Sizda yetarli ball yo'q. Kerakli: {product.ball}, Sizda: {student_score.score}",
+                'error_ru': f"У вас недостаточно баллов. Необходимо: {product.ball}, У вас: {student_score.score}"
+            }, status=400)
 
         # ballni ayirish va yozib qo‘yish
         student_score.score -= product.ball
@@ -41,11 +53,12 @@ class ProductExchangeView(APIView):
             student=student,
             product=product,
             used_score=product.ball,
-            status='approved'  # yoki 'pending', agar admin tasdiqlash kerak bo‘lsa
+            status='approved'
         )
 
         return Response({
-            'message': f"{product.name} mahsuloti muvaffaqiyatli olindi.",
+            'message_uz': f"{product.name} mahsuloti muvaffaqiyatli olindi.",
+            'message_ru': f"Товар {product.name} успешно получен.",
             'remaining_score': student_score.score,
             'exchange_id': exchange.id,
             'status': exchange.status,
