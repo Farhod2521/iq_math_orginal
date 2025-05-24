@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Student, UserSMSAttempt, Class, Teacher, Subject
+from .models import User, Student, UserSMSAttempt, Class, Teacher, Subject, Referral
 from django.core.cache import cache
 import random
 from .sms_service import send_sms, send_verification_email, send_login_parol_email# SMS sending function
@@ -7,6 +7,8 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth import authenticate
 from django.utils.timezone import now
 from django_app.app_payments.models import Subscription, SubscriptionSetting
+from django_app.app_student.models import  StudentScore
+from django_app.app_management.models import  ReferralAndCouponSettings
 User = get_user_model()
 
 from datetime import timedelta
@@ -142,7 +144,7 @@ class StudentRegisterSerializer(serializers.Serializer):
     full_name = serializers.CharField(required=True)
     phone = serializers.CharField(required=True)
     class_name = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all(), required=True)  # ForeignKey uchun
-
+    referral_code = serializers.CharField(required=False, allow_blank=True)
     def validate_user_data(self, email, phone):
         user = User.objects.filter(phone=phone).first()
         if user:
@@ -180,6 +182,7 @@ class StudentRegisterSerializer(serializers.Serializer):
     def create(self, validated_data):
         phone = validated_data['phone']
         class_name = validated_data.pop('class_name')
+        referral_code = validated_data.pop('referral_code', None)
 
         student_data = {
             'full_name': validated_data.pop('full_name'),
@@ -201,17 +204,33 @@ class StudentRegisterSerializer(serializers.Serializer):
         student_data['user'] = user
         student = Student.objects.create(**student_data)
 
-        # ✅ 4. Tekin obuna muddatini olish va saqlash
-        free_days = SubscriptionSetting.objects.first().free_trial_days  # Default 7
+        # 4. Tekin obuna
+        free_days = SubscriptionSetting.objects.first().free_trial_days
         start_date = now()
         end_date = start_date + timedelta(days=free_days)
         Subscription.objects.create(student=student, start_date=start_date, end_date=end_date, is_paid=False)
 
-        # 5. SMS yuborish
+        # 5. Agar referral bor bo‘lsa
+        if referral_code:
+            try:
+                referrer_student = Student.objects.get(identification=referral_code)
+
+                # Referral yozuvi yaratish
+                Referral.objects.create(referrer=referrer_student, referred=student)
+
+                # Referral ball olish
+                bonus_points = ReferralAndCouponSettings.objects.first().referral_bonus_points
+                score_obj, created = StudentScore.objects.get_or_create(student=referrer_student)
+                score_obj.score += bonus_points
+                score_obj.save()
+            except Student.DoesNotExist:
+                pass  # noto‘g‘ri kod bo‘lsa, e'tibor berilmaydi
+
+        # 6. SMS yuborish
         send_sms(phone, sms_code)
 
         return user
-    
+        
 class Class_Serializer(serializers.ModelSerializer):
     class Meta:
         model = Class

@@ -206,3 +206,17 @@ class StudentSubjectAccess(models.Model):
         verbose_name = "Fan kirish huquqi"
         verbose_name_plural = "Fan kirish huquqlari"
         unique_together = ('student', 'subject')
+
+
+
+class Referral(models.Model):
+    referrer = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='referrals_made', verbose_name="Taklif qilgan")
+    referred = models.OneToOneField(Student, on_delete=models.CASCADE, related_name='referral_info', verbose_name="Taklif qilingan")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Yaratilgan vaqti")
+
+    def __str__(self):
+        return f"{self.referrer.full_name} -> {self.referred.full_name}"
+
+    class Meta:
+        verbose_name = "Referal"
+        verbose_name_plural = "Referallar"

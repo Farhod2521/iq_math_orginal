@@ -1,6 +1,6 @@
 from django.contrib import admin
 from modeltranslation.admin import TranslationAdmin
-from .models import Student, User, UserSMSAttempt, Class,Teacher
+from .models import Student, User, UserSMSAttempt, Class,Teacher, Referral
 from django.contrib.admin.models import LogEntry
 
 
@@ -45,3 +45,19 @@ class LogEntryAdmin(admin.ModelAdmin):
 
 # admin.site.register(UserSMSAttempt)
 admin.site.register(Class)
+
+
+
+@admin.register(Referral)
+class ReferralAdmin(admin.ModelAdmin):
+    list_display = ('referrer_full_name', 'referred_full_name', 'created_at')
+    search_fields = ('referrer__full_name', 'referred__full_name')
+    list_filter = ('created_at',)
+
+    def referrer_full_name(self, obj):
+        return obj.referrer.full_name
+    referrer_full_name.short_description = "Taklif qilgan"
+
+    def referred_full_name(self, obj):
+        return obj.referred.full_name
+    referred_full_name.short_description = "Taklif qilingan"
