@@ -475,6 +475,7 @@ class UserProfileAPIView(APIView):
                 'type_of_education': student.type_of_education,
                 'student_date': student_date,
                 'student_time': student_time,
+                "referal_link": f"https://iqmath.uz/referal?code={student.identification}"
             }
 
         # Teacher profile
@@ -568,6 +569,7 @@ class StudentProfileAPIView(APIView):
             'type_of_education': student.type_of_education,
             'student_date': student_date,
             'student_time': student_time,
+            "referal_link": f"https://iqmath.uz/referal?code={student.identification}"
         }
 
         return Response(data)
