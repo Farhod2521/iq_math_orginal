@@ -10,12 +10,26 @@ def detect_variables(expr):
         return []
 
 def clean_latex(expr):
+    # Birinchi: \left va \right ni olib tashlash
+    expr = re.sub(r'\\left', '', expr)
+    expr = re.sub(r'\\right', '', expr)
+
+    # \frac ni (a)/(b) ko'rinishiga o'tkazish
     expr = re.sub(r'\\frac\{([^}]+)\}\{([^}]+)\}', r'(\1)/(\2)', expr)
+
+    # \sqrt ni sqrt() ko'rinishiga o'tkazish
     expr = re.sub(r'\\sqrt\{([^}]+)\}', r'sqrt(\1)', expr)
-    expr = expr.replace('\\', '').replace(' ', '')
-    # Remove \( \) if present
-    expr = re.sub(r'^\(\s*', '', expr)
-    expr = re.sub(r'\s*\)$', '', expr)
+
+    # \( ... \) yoki \[ ... \] o'ramlarini olib tashlash
+    expr = re.sub(r'\\\(|\\\)', '', expr)  # remove \( and \)
+    expr = re.sub(r'\\\[|\\\]', '', expr) # remove \[ and \]
+
+    # Qolgan barcha \ belgilarini olib tashlash
+    expr = expr.replace('\\', '')
+
+    # Bo'sh joylarni olib tashlash
+    expr = expr.replace(' ', '')
+
     return expr
 
 def insert_multiplication(expr):
