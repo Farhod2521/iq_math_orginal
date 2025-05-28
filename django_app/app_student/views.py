@@ -334,11 +334,19 @@ def check_math_expression(student_answer, correct_answer):
     except (SympifyError, TypeError, AttributeError):
         # Tahlil qilib bo'lmasa, oddiy matn sifatida solishtiramiz
         return student_answer.strip().lower() == correct_answer.strip().lower()
+def check_answer(student_answer, correct_answer, is_math=False):
+    """
+    Javoblarni tekshirish uchun universal funksiya
+    """
+    if is_math:
+        return check_math_expression(student_answer, correct_answer)
+    return student_answer.strip().lower() == correct_answer.strip().lower()
+
 class CheckAnswersAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        # Kiruvchi ma'lumotlarni tekshirish
+        # Validate the incoming data
         serializer = CheckAnswersSerializer(data=request.data)
         if not serializer.is_valid():
             return Response({"message": "Noto'g'ri formatdagi ma'lumotlar."}, status=400)
@@ -354,23 +362,23 @@ class CheckAnswersAPIView(APIView):
         index = 1
         last_question_topic = None
 
-        # StudentScore obyektini olish yoki yaratish
+        # Retrieve or create a StudentScore instance
         student_score, created = StudentScore.objects.get_or_create(student=student_instance)
 
-        # Avvalgidan ball olgan savollarni yig'amiz
+        # Get already awarded questions
         awarded_questions = set(
             StudentScoreLog.objects.filter(student_score=student_score).values_list('question_id', flat=True)
         )
 
-        # 1. MATNLI JAVOBLARNI TEKSHIRISH
+        # TEXT ANSWERS CHECK
         for answer in serializer.validated_data.get('text_answers', []):
             question = Question.objects.filter(id=answer['question_id'], question_type='text').first()
             if not question:
                 continue
 
-            # Tilga qarab javobni olish
             student_answer = None
             correct_answer = None
+            is_math = answer.get('is_math', False)
 
             if 'answer_uz' in answer:
                 student_answer = answer['answer_uz']
@@ -382,12 +390,12 @@ class CheckAnswersAPIView(APIView):
             if student_answer is None or correct_answer is None:
                 continue
 
-            # HTML teglardan tozalash
             student_answer_plain = strip_tags(student_answer).strip()
             correct_answer_plain = strip_tags(correct_answer).strip()
 
-            # Javobni tekshirish
-            is_correct = (correct_answer_plain.lower() == student_answer_plain.lower())
+            # Use our new checking function
+            is_correct = check_answer(student_answer_plain, correct_answer_plain, is_math)
+            
             total_answers += 1
             if is_correct:
                 correct_answers += 1
