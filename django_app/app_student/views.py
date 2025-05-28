@@ -349,35 +349,47 @@ class CheckAnswersAPIView(APIView):
             if not question:
                 continue
 
-            # Bu yerda math_answer_check funksiyasini qo'llaymiz
             student_answer = None
             correct_answer = None
+            is_math_question = False  # Matematik savolmi
 
-            # Siz o'z tilingizga qarab javobni olish
             if 'answer_uz' in answer:
                 student_answer = answer['answer_uz']
-                correct_answer = question.correct_text_answer_uz
+                # Agar matematika uchun alohida maydon bo'lsa
+                if question.correct_math_answer_uz:
+                    correct_answer = question.correct_math_answer_uz
+                    is_math_question = True
+                else:
+                    correct_answer = question.correct_text_answer_uz
+
             elif 'answer_ru' in answer:
                 student_answer = answer['answer_ru']
-                correct_answer = question.correct_text_answer_ru
+                if question.correct_math_answer_ru:
+                    correct_answer = question.correct_math_answer_ru
+                    is_math_question = True
+                else:
+                    correct_answer = question.correct_text_answer_ru
 
             if student_answer is None or correct_answer is None:
                 continue
 
-            # HTML teglardan tozalash
-            student_answer_plain = strip_tags(student_answer).strip()
-            correct_answer_plain = strip_tags(correct_answer).strip()
-
-            # Endi advanced_math_check ni ishlatamiz
-            is_correct = advanced_math_check(student_answer_plain, correct_answer_plain)
+            # Agar bu matematika bo'lsa, advanced_math_check bilan tekshir
+            if is_math_question:
+                is_correct = advanced_math_check(student_answer, correct_answer)
+            else:
+                # Oddiy matnlarni tekshir
+                student_answer_plain = strip_tags(student_answer).strip()
+                correct_answer_plain = strip_tags(correct_answer).strip()
+                is_correct = (correct_answer_plain == student_answer_plain)
 
             total_answers += 1
             if is_correct:
                 correct_answers += 1
-                if question.id not in awarded_questions:
-                    student_score.score += 1
-                    awarded_questions.add(question.id)
-                    StudentScoreLog.objects.create(student_score=student_score, question=question)
+
+            if is_correct and question.id not in awarded_questions:
+                student_score.score += 1
+                awarded_questions.add(question.id)
+                StudentScoreLog.objects.create(student_score=student_score, question=question)
 
             last_question_topic = question.topic
             question_details.append({
