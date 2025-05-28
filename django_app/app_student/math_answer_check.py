@@ -12,7 +12,11 @@ def detect_variables(expr):
 def clean_latex(expr):
     expr = re.sub(r'\\frac\{([^}]+)\}\{([^}]+)\}', r'(\1)/(\2)', expr)
     expr = re.sub(r'\\sqrt\{([^}]+)\}', r'sqrt(\1)', expr)
-    return expr.replace('\\', '').replace(' ', '')
+    expr = expr.replace('\\', '').replace(' ', '')
+    # Remove \( \) if present
+    expr = re.sub(r'^\(\s*', '', expr)
+    expr = re.sub(r'\s*\)$', '', expr)
+    return expr
 
 def insert_multiplication(expr):
     # (a)(b) -> (a)*(b)
@@ -46,4 +50,5 @@ def advanced_math_check(student_answer, correct_answer):
         return True
         
     except Exception:
-        return student.lower().strip() == correct.lower().strip()
+        # Agar xatolik bo'lsa, stringlarni taqqoslash
+        return student_answer.lower().strip() == correct_answer.lower().strip()
