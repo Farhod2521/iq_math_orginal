@@ -148,19 +148,34 @@ class CheckChoiceAnswerSerializer(serializers.Serializer):
         child=serializers.IntegerField(), allow_empty=False
     )
 
-
 class CheckTextAnswerSerializer(serializers.Serializer):
     question_id = serializers.IntegerField()
     answer_uz = serializers.CharField(max_length=1000, required=False)
     answer_ru = serializers.CharField(max_length=1000, required=False)
 
+class CheckMathAnswerSerializer(serializers.Serializer):
+    question_id = serializers.IntegerField()
+    answer = serializers.CharField(max_length=1000)
 
 class CheckCompositeAnswerSerializer(serializers.Serializer):
     question_id = serializers.IntegerField()
     answers = serializers.ListField(child=serializers.CharField(), allow_empty=False)
 
-
 class CheckAnswersSerializer(serializers.Serializer):
     text_answers = CheckTextAnswerSerializer(many=True, required=False)
     choice_answers = CheckChoiceAnswerSerializer(many=True, required=False)
+    math_answers = CheckMathAnswerSerializer(many=True, required=False)
     composite_answers = CheckCompositeAnswerSerializer(many=True, required=False)
+
+    def validate(self, data):
+        """
+        Kamida bitta javob kiritilganligini tekshiramiz
+        """
+        if not any([
+            data.get('text_answers'),
+            data.get('choice_answers'),
+            data.get('math_answers'),
+            data.get('composite_answers')
+        ]):
+            raise serializers.ValidationError("Kamida bitta turdagi javoblar kiritilishi kerak")
+        return data
