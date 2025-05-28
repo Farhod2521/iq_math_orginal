@@ -45,11 +45,5 @@ def advanced_math_check(student_answer, correct_answer):
                 return False
         return True
         
-    except Exception as e:
-        # Xatolik yuz bersa ifodalar matnini taqqoslash
+    except Exception:
         return student.lower().strip() == correct.lower().strip()
-
-print(advanced_math_check("\\((c+t)(c-t)\\)", "\\((c-t)(c+t)\\)"))  # True
-print(advanced_math_check("\\frac{x+1}{2}", "(x+1)/2"))    # True
-print(advanced_math_check("(x+1)(x-1)", "x^2-1"))         # True
-print(advanced_math_check("1/2", "0.5"))       # True

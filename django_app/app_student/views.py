@@ -316,40 +316,15 @@ class QuestionListByTopicAPIView(APIView):
         
 
 from django.utils.html import strip_tags
-from sympy import simplify, Eq, symbols, SympifyError
-from sympy.parsing.sympy_parser import parse_expr
-
-def check_math_expression(student_answer, correct_answer):
-    """
-    Matematik ifodalarni semantik jihatdan solishtiradi
-    Masalan: 0.5 va 1/2, yoki (m-n)*(n+m) va (m+n)*(m-n) bir xil deb hisoblaydi
-    """
-    try:
-        # Ifodalarni tahlil qilish
-        expr1 = parse_expr(student_answer, evaluate=False)
-        expr2 = parse_expr(correct_answer, evaluate=False)
-        
-        # Soddalashtirib, ayirmasini nolga tenglashtirish
-        return simplify(expr1 - expr2) == 0
-    except (SympifyError, TypeError, AttributeError):
-        # Tahlil qilib bo'lmasa, oddiy matn sifatida solishtiramiz
-        return student_answer.strip().lower() == correct_answer.strip().lower()
-def check_answer(student_answer, correct_answer, is_math=False):
-    """
-    Javoblarni tekshirish uchun universal funksiya
-    """
-    if is_math:
-        return check_math_expression(student_answer, correct_answer)
-    return student_answer.strip().lower() == correct_answer.strip().lower()
+from .math_answer_check import advanced_math_check  
 
 class CheckAnswersAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        # Validate the incoming data
         serializer = CheckAnswersSerializer(data=request.data)
         if not serializer.is_valid():
-            return Response({"message": "Noto'g'ri formatdagi ma'lumotlar."}, status=400)
+            return Response({"message": "Noto‘g‘ri formatdagi ma'lumotlar."}, status=400)
 
         try:
             student_instance = Student.objects.get(user=request.user)
@@ -362,24 +337,23 @@ class CheckAnswersAPIView(APIView):
         index = 1
         last_question_topic = None
 
-        # Retrieve or create a StudentScore instance
         student_score, created = StudentScore.objects.get_or_create(student=student_instance)
 
-        # Get already awarded questions
         awarded_questions = set(
             StudentScoreLog.objects.filter(student_score=student_score).values_list('question_id', flat=True)
         )
 
-        # TEXT ANSWERS CHECK
+        # --- TEXT ANSWERS ---
         for answer in serializer.validated_data.get('text_answers', []):
             question = Question.objects.filter(id=answer['question_id'], question_type='text').first()
             if not question:
                 continue
 
+            # Bu yerda math_answer_check funksiyasini qo'llaymiz
             student_answer = None
             correct_answer = None
-            is_math = answer.get('is_math', False)
 
+            # Siz o'z tilingizga qarab javobni olish
             if 'answer_uz' in answer:
                 student_answer = answer['answer_uz']
                 correct_answer = question.correct_text_answer_uz
@@ -390,20 +364,20 @@ class CheckAnswersAPIView(APIView):
             if student_answer is None or correct_answer is None:
                 continue
 
+            # HTML teglardan tozalash
             student_answer_plain = strip_tags(student_answer).strip()
             correct_answer_plain = strip_tags(correct_answer).strip()
 
-            # Use our new checking function
-            is_correct = check_answer(student_answer_plain, correct_answer_plain, is_math)
-            
+            # Endi advanced_math_check ni ishlatamiz
+            is_correct = advanced_math_check(student_answer_plain, correct_answer_plain)
+
             total_answers += 1
             if is_correct:
                 correct_answers += 1
-
-            if is_correct and question.id not in awarded_questions:
-                student_score.score += 1
-                awarded_questions.add(question.id)
-                StudentScoreLog.objects.create(student_score=student_score, question=question)
+                if question.id not in awarded_questions:
+                    student_score.score += 1
+                    awarded_questions.add(question.id)
+                    StudentScoreLog.objects.create(student_score=student_score, question=question)
 
             last_question_topic = question.topic
             question_details.append({
@@ -414,13 +388,11 @@ class CheckAnswersAPIView(APIView):
                 "answer": is_correct
             })
             index += 1
-
-        # 2. TANLOVLI JAVOBLARNI TEKSHIRISH
+        # --- CHOICE ANSWERS ---
         for answer in serializer.validated_data.get('choice_answers', []):
             question = Question.objects.filter(id=answer['question_id'], question_type='choice').first()
             if not question:
                 continue
-            
             correct_choices = set(Choice.objects.filter(question=question, is_correct=True).values_list('id', flat=True))
             selected_choices = set(answer['choices'])
             is_correct = (correct_choices == selected_choices)
@@ -430,10 +402,10 @@ class CheckAnswersAPIView(APIView):
                 correct_answers += 1
 
             if is_correct and question.id not in awarded_questions:
+
                 student_score.score += 1
                 awarded_questions.add(question.id)
                 StudentScoreLog.objects.create(student_score=student_score, question=question)
-            
             last_question_topic = question.topic
             question_details.append({
                 "index": index,
@@ -444,45 +416,11 @@ class CheckAnswersAPIView(APIView):
             })
             index += 1
 
-        # 3. MATEMATIK JAVOBLARNI TEKSHIRISH
-        for answer in serializer.validated_data.get('math_answers', []):
-            question = Question.objects.filter(id=answer['question_id'], question_type='math').first()
-            if not question:
-                continue
-
-            student_answer = answer.get('answer', '').strip()
-            correct_answer = question.correct_math_answer.strip()
-
-            # Matematik ifodalarni semantik tekshirish
-            is_correct = check_math_expression(student_answer, correct_answer)
-            
-            total_answers += 1
-            if is_correct:
-                correct_answers += 1
-
-            if is_correct and question.id not in awarded_questions:
-                student_score.score += 1
-                awarded_questions.add(question.id)
-                StudentScoreLog.objects.create(student_score=student_score, question=question)
-
-            last_question_topic = question.topic
-            question_details.append({
-                "index": index,
-                "question_id": question.id,
-                "question_uz": question.question_text_uz,
-                "question_ru": question.question_text_ru,
-                "answer": is_correct,
-                "student_answer": student_answer,
-                "correct_answer": correct_answer
-            })
-            index += 1
-
-        # 4. COMPOSITE JAVOBLARNI TEKSHIRISH
+        # --- COMPOSITE ANSWERS ---
         for answer in serializer.validated_data.get('composite_answers', []):
             question = Question.objects.filter(id=answer['question_id'], question_type='composite').first()
             if not question:
                 continue
-            
             correct_subs = question.sub_questions.all()
             is_correct = True
             for sub_answer, sub_question in zip(answer['answers'], correct_subs):
@@ -493,12 +431,10 @@ class CheckAnswersAPIView(APIView):
             total_answers += 1
             if is_correct:
                 correct_answers += 1
-            
             if is_correct and question.id not in awarded_questions:
                 student_score.score += 1
                 awarded_questions.add(question.id)
                 StudentScoreLog.objects.create(student_score=student_score, question=question)
-            
             last_question_topic = question.topic
             question_details.append({
                 "index": index,
@@ -509,10 +445,10 @@ class CheckAnswersAPIView(APIView):
             })
             index += 1
 
-        # Ballarni saqlash
+        # Save the student score
         student_score.save()
 
-        # Progressni yangilash (80% dan yuqori ball uchun)
+        # Update progress if score is >= 80
         score = round((correct_answers / total_answers) * 100, 2) if total_answers else 0.0
 
         if last_question_topic and score >= 80:
@@ -525,7 +461,7 @@ class CheckAnswersAPIView(APIView):
             topic_progress.completed_at = timezone.now()
             topic_progress.save()
 
-            # Keyingi mavzuni ochish
+            # Unlock next topic if any
             all_topics = Topic.objects.filter(chapter=last_question_topic.chapter, is_locked=False).order_by('id')
             topic_ids = list(all_topics.values_list('id', flat=True))
 
@@ -540,7 +476,7 @@ class CheckAnswersAPIView(APIView):
                         next_progress.is_unlocked = True
                         next_progress.save()
 
-        # Natijani qaytarish
+        # Return the result JSON
         result_json = {
             "question": question_details,
             "result": [{
