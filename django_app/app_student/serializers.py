@@ -120,7 +120,7 @@ class CustomQuestionSerializer(serializers.ModelSerializer):
                 choice.pop("is_correct", None)
                 choice.pop("text", None)
 
-            data.pop("correct_text_answer_uz", None)
+            data.pop("correct_text_answer_uz", None) 
             data.pop("correct_text_answer_ru", None)
             data.pop("sub_questions", None)
 
