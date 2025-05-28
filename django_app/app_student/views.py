@@ -316,11 +316,17 @@ class QuestionListByTopicAPIView(APIView):
         
 
 from django.utils.html import strip_tags
-from sympy import simplify, sympify
+from sympy import simplify, sympify, expand
+def canonical_expr_cached(expr_str):
+    expr_clean = expr_str.replace('\\(', '').replace('\\)', '')
+    expr = sympify(expr_clean)
+    return expand(expr)
+
 def check_math_answer(correct_expr, student_expr):
     try:
-        # Matematik ifodalarni soddalashtirib, farqini tekshiradi
-        return simplify(sympify(correct_expr) - sympify(student_expr)) == 0
+        correct_canon = canonical_expr_cached(correct_expr)
+        student_canon = canonical_expr_cached(student_expr)
+        return correct_canon.equals(student_canon)
     except Exception:
         return False
 
