@@ -629,14 +629,6 @@ client = OpenAI(
 #         except json.JSONDecodeError:
 #             return Response({'result': result_content})
 
-def extract_base64_image(html):
-    match = re.search(r'data:image/(png|jpeg);base64,([^"]+)', html)
-    if match:
-        image_format = match.group(1)
-        base64_data = match.group(2)
-        return base64_data, image_format
-    return None, None
-
 class OpenAIProcessAPIView(APIView):
     def post(self, request, *args, **kwargs):
         question_html = request.data.get('text', '').strip()
@@ -644,34 +636,31 @@ class OpenAIProcessAPIView(APIView):
         if not question_html:
             return Response({'error': 'Savol kiritilmagan'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Rasmni ajratib olish
         base64_data, image_format = extract_base64_image(question_html)
 
-        # Matndan <img> ni olib tashlab, faqat matnni olish
         question_text = re.sub(r'<img[^>]*>', '', question_html)
-        question_text = re.sub(r'<[^>]+>', '', question_text).strip()  # HTML teglarini tozalash
+        question_text = re.sub(r'<[^>]+>', '', question_text).strip()
 
-        messages = []
+        content_parts = []
 
         if question_text:
-            messages.append({
-                "role": "user",
-                "content": {
-                    "type": "text",
-                    "text": "Savol ishlanish yo'li bilan ishlab ber ketma ketlikda qisqa lo'nda aniq javob ber:  " + question_text
-                }
+            content_parts.append({
+                "type": "text",
+                "text": "Savol ishlanish yo'li bilan ishlab ber ketma ketlikda qisqa lo'nda aniq javob ber:  " + question_text
             })
 
         if base64_data:
-            messages.append({
-                "role": "user",
-                "content": {
-                    "type": "image_url",
-                    "image_url": {
-                        "url": f"data:image/{image_format};base64,{base64_data}"
-                    }
+            content_parts.append({
+                "type": "image_url",
+                "image_url": {
+                    "url": f"data:image/{image_format};base64,{base64_data}"
                 }
             })
+
+        messages = [{
+            "role": "user",
+            "content": content_parts
+        }]
 
         try:
             completion = client.chat.completions.create(
