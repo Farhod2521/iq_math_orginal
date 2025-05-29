@@ -723,7 +723,7 @@ class OpenAIProcessAPIView(APIView):
 
         message_content.append({
             "type": "text",
-            "text": f"Savol: {question_text}\n\nIltimos, yuqoridagi savolni tushunarli tarzda yechib bering.\n\nTo‘g‘ri javob: {correct_answer}"
+            "text": f"Savol: {question_text}\n\nIltimos, yuqoridagi savolni tushunarli tarzda yechib bering ishlanish yoli bilan mendagi togir javob bilan togir chiqishi kerak.\n\nTo‘g‘ri javob: {correct_answer} shu bilan bir xil chiqishi kerak."
         })
 
         try:
