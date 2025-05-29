@@ -40,21 +40,25 @@ def insert_multiplication(expr):
 def advanced_math_check(student_answer, correct_answer):
     student = insert_multiplication(clean_latex(student_answer))
     correct = insert_multiplication(clean_latex(correct_answer))
-    
-    vars_student = detect_variables(student)
-    vars_correct = detect_variables(correct)
-    
-    if set(vars_student) != set(vars_correct):
-        return False
-    
+
     try:
+        # Float yoki Decimal son bo‘lsa, bevosita solishtiramiz
+        if re.fullmatch(r'^-?\d+(\.\d+)?$', student) and re.fullmatch(r'^-?\d+(\.\d+)?$', correct):
+            return abs(float(student) - float(correct)) < 1e-6
+
+        vars_student = detect_variables(student)
+        vars_correct = detect_variables(correct)
+
+        if set(vars_student) != set(vars_correct):
+            return False
+
         expr1 = sp.sympify(student)
         expr2 = sp.sympify(correct)
-        
+
         diff = sp.simplify(expr1 - expr2)
         if diff == 0:
             return True
-        
+
         for _ in range(10):
             values = {sp.Symbol(v): sp.Rational(randprime(1,100)) for v in vars_student}
             val1 = expr1.subs(values)
@@ -62,6 +66,10 @@ def advanced_math_check(student_answer, correct_answer):
             if not sp.simplify(val1 - val2) == 0:
                 return False
         return True
+
+    except Exception:
+        return student_answer.lower().strip() == correct_answer.lower().strip()
+
         
     except Exception:
         # Agar xatolik bo'lsa, stringlarni taqqoslash
