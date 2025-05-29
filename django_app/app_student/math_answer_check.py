@@ -10,7 +10,7 @@ def detect_variables(expr):
         return []
 
 def clean_latex(expr):
-    # Birinchi: \left va \right ni olib tashlash
+    #\left va \right ni olib tashlash
     expr = re.sub(r'\\left', '', expr)
     expr = re.sub(r'\\right', '', expr)
 
