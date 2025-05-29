@@ -629,6 +629,14 @@ client = OpenAI(
 #         except json.JSONDecodeError:
 #             return Response({'result': result_content})
 
+def extract_base64_image(html):
+    match = re.search(r'data:image/(png|jpeg);base64,([^"]+)', html)
+    if match:
+        image_format = match.group(1)
+        base64_data = match.group(2)
+        return base64_data, image_format
+    return None, None
+
 class OpenAIProcessAPIView(APIView):
     def post(self, request, *args, **kwargs):
         question_html = request.data.get('text', '').strip()
