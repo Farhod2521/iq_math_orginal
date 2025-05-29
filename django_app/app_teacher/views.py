@@ -600,29 +600,89 @@ client = OpenAI(
     api_key="#####"
 )
 
+# class OpenAIProcessAPIView(APIView):
+#     def post(self, request, *args, **kwargs):
+#         input_text = request.data.get('text', '').strip()
+
+#         if not input_text:
+#             return Response({'error': 'Matn kiritilmagan'}, status=status.HTTP_400_BAD_REQUEST)
+
+#         try:
+#             completion = client.chat.completions.create(
+#                 model="gpt-4o-mini",
+#                 messages=[
+#                     {
+#                         "role": "user",
+#                         "content": "Savol ishlanish yo'li bilan ishlab ber ketma ketlikda qisqa lo'nda aniq javob ber: " + input_text
+#                     }
+#                 ]
+#             )
+#         except Exception as e:
+#             return Response({'error': f'AI bilan bog‘lanishda xatolik: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+#         result_content = completion.choices[0].message.content
+
+#         # Natijani JSON formatda qaytarishga harakat qilamiz, agar bo'lmasa matn sifatida qaytariladi
+#         try:
+#             result_data = json.loads(result_content)
+#             return Response({'result': result_data})
+#         except json.JSONDecodeError:
+#             return Response({'result': result_content})
+
+def extract_base64_image(html):
+    match = re.search(r'data:image/(png|jpeg);base64,([^"]+)', html)
+    if match:
+        image_format = match.group(1)
+        base64_data = match.group(2)
+        return base64_data, image_format
+    return None, None
+
 class OpenAIProcessAPIView(APIView):
     def post(self, request, *args, **kwargs):
-        input_text = request.data.get('text', '').strip()
+        question_html = request.data.get('question_text_uz', '').strip()
 
-        if not input_text:
-            return Response({'error': 'Matn kiritilmagan'}, status=status.HTTP_400_BAD_REQUEST)
+        if not question_html:
+            return Response({'error': 'Savol kiritilmagan'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Rasmni ajratib olish
+        base64_data, image_format = extract_base64_image(question_html)
+
+        # Matndan <img> ni olib tashlab, faqat matnni olish
+        question_text = re.sub(r'<img[^>]*>', '', question_html)
+        question_text = re.sub(r'<[^>]+>', '', question_text).strip()  # HTML teglarini tozalash
+
+        messages = []
+
+        if question_text:
+            messages.append({
+                "role": "user",
+                "content": {
+                    "type": "text",
+                    "text": "Savol ishlanish yo'li bilan ishlab ber ketma ketlikda qisqa lo'nda aniq javob ber:  " + question_text
+                }
+            })
+
+        if base64_data:
+            messages.append({
+                "role": "user",
+                "content": {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:image/{image_format};base64,{base64_data}"
+                    }
+                }
+            })
 
         try:
             completion = client.chat.completions.create(
                 model="gpt-4o-mini",
-                messages=[
-                    {
-                        "role": "user",
-                        "content": "Savol ishlanish yo'li bilan ishlab ber ketma ketlikda qisqa lo'nda aniq javob ber: " + input_text
-                    }
-                ]
+                messages=messages
             )
         except Exception as e:
             return Response({'error': f'AI bilan bog‘lanishda xatolik: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         result_content = completion.choices[0].message.content
 
-        # Natijani JSON formatda qaytarishga harakat qilamiz, agar bo'lmasa matn sifatida qaytariladi
         try:
             result_data = json.loads(result_content)
             return Response({'result': result_data})
