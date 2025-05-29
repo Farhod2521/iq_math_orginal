@@ -596,6 +596,9 @@ class OpenAIQuestionListView(ListAPIView):
 
 from openai import OpenAI
 import json
+import base64
+from bs4 import BeautifulSoup
+from django.conf import settings
 client = OpenAI(
     api_key="#####"
 )
@@ -629,12 +632,35 @@ client = OpenAI(
 #         except json.JSONDecodeError:
 #             return Response({'result': result_content})
 
-def extract_base64_image(html):
-    match = re.search(r'data:image/(png|jpeg);base64,([^"]+)', html)
-    if match:
-        return match.group(2), match.group(1)
-    return None, None
+def save_base64_image(base64_string, extension, filename):
+    directory = os.path.join(settings.MEDIA_ROOT, 'question_images')
+    os.makedirs(directory, exist_ok=True)
+    image_data = base64.b64decode(base64_string)
+    filepath = os.path.join(directory, f"{filename}.{extension}")
+    with open(filepath, "wb") as f:
+        f.write(image_data)
+    return settings.MEDIA_URL + f"question_images/{filename}.{extension}"
 
+# HTMLdan matn va base64 rasmlarni ajratish
+def clean_html_and_extract_images(html, question_id):
+    soup = BeautifulSoup(html, "html.parser")
+    image_urls = []
+
+    for i, img in enumerate(soup.find_all("img")):
+        src = img.get("src", "")
+        match = re.match(r'data:image/(png|jpeg);base64,(.*)', src)
+        if match:
+            ext = match.group(1)
+            base64_data = match.group(2)
+            filename = f"question_{question_id}_img{i+1}"
+            image_url = save_base64_image(base64_data, ext, filename)
+            image_urls.append(f"[Rasm {i+1}]: {image_url}")
+            img.replace_with(f"[Rasm {i+1}]")  # HTML dan o‘rniga matn qo‘yiladi
+
+    clean_text = soup.get_text(separator=" ", strip=True)
+    return clean_text, image_urls
+
+# OpenAI API uchun view
 class OpenAIProcessAPIView(APIView):
     def post(self, request, *args, **kwargs):
         question_id = request.data.get('question_id')
@@ -649,16 +675,15 @@ class OpenAIProcessAPIView(APIView):
         except Question.DoesNotExist:
             return Response({'error': 'Savol topilmadi'}, status=status.HTTP_404_NOT_FOUND)
 
-        # Savol matnini tilga qarab tanlash
+        # Savol matni va rasm linklarini olish
         if lang == 'uz':
-            question_text = re.sub(r'<[^>]+>', '', question.question_text)  # RichText to plain text
+            question_text, image_refs = clean_html_and_extract_images(question.question_text, question_id)
         elif lang == 'ru':
-            question_text = re.sub(r'<[^>]+>', '', question.question_text)  # Update if you have a separate field for ru
+            question_text, image_refs = clean_html_and_extract_images(question.question_text, question_id)  # alohida field bo‘lsa o‘zgartiring
         else:
             return Response({'error': 'Til noto‘g‘ri tanlangan'}, status=status.HTTP_400_BAD_REQUEST)
 
         # To‘g‘ri javobni aniqlash
-        correct_answer = ""
         if question_type == 'text':
             correct_answer = re.sub(r'<[^>]+>', '', question.correct_text_answer or "")
         elif question_type in ['choice', 'image_choice']:
@@ -674,15 +699,12 @@ class OpenAIProcessAPIView(APIView):
         else:
             return Response({'error': 'Noma’lum savol turi'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # OpenAI API uchun prompt
+        image_text = "\n".join(image_refs) if image_refs else ""
+        full_prompt = f"Savol: {question_text}\n{image_text}\nIltimos, savolni yechib bering.\n\nTo‘g‘ri javob: {correct_answer}"
+
         messages = [{
             "role": "user",
-            "content": [
-                {
-                    "type": "text",
-                    "text": f"Savol: {question_text}\nIltimos, quyidagi savolni ketma-ketlikda va tushunarli tarzda yechib ber.\n\nTo‘g‘ri javob: {correct_answer}"
-                }
-            ]
+            "content": [{"type": "text", "text": full_prompt}]
         }]
 
         try:
@@ -694,8 +716,10 @@ class OpenAIProcessAPIView(APIView):
             return Response({'error': f'AI bilan bog‘lanishda xatolik: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         result_content = completion.choices[0].message.content
+
         return Response({
             'question': question_text,
+            'images': image_refs,
             'correct_answer': correct_answer,
             'ai_response': result_content
         })
