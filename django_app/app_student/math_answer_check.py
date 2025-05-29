@@ -14,6 +14,7 @@ def clean_latex(expr):
     expr = re.sub(r'\\frac\{([^}]+)\}\{([^}]+)\}', r'(\1)/(\2)', expr)
     expr = re.sub(r'\\sqrt\{([^}]+)\}', r'sqrt(\1)', expr)
     expr = re.sub(r'\\\(|\\\)|\\\[|\\\]', '', expr)
+    expr = re.sub(r'\{,\}', '.', expr)
     expr = expr.replace('\\', '').replace(' ', '')
     return expr
 
