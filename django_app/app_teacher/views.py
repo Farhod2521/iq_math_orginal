@@ -632,42 +632,57 @@ client = OpenAI(
 def extract_base64_image(html):
     match = re.search(r'data:image/(png|jpeg);base64,([^"]+)', html)
     if match:
-        image_format = match.group(1)
-        base64_data = match.group(2)
-        return base64_data, image_format
+        return match.group(2), match.group(1)
     return None, None
 
 class OpenAIProcessAPIView(APIView):
     def post(self, request, *args, **kwargs):
-        question_html = request.data.get('text', '').strip()
+        question_id = request.data.get('question_id')
+        lang = request.data.get('lang')
+        question_type = request.data.get('question_type')
 
-        if not question_html:
-            return Response({'error': 'Savol kiritilmagan'}, status=status.HTTP_400_BAD_REQUEST)
+        if not question_id or not lang or not question_type:
+            return Response({'error': 'Kerakli parametrlar yuborilmagan'}, status=status.HTTP_400_BAD_REQUEST)
 
-        base64_data, image_format = extract_base64_image(question_html)
+        try:
+            question = Question.objects.get(id=question_id)
+        except Question.DoesNotExist:
+            return Response({'error': 'Savol topilmadi'}, status=status.HTTP_404_NOT_FOUND)
 
-        question_text = re.sub(r'<img[^>]*>', '', question_html)
-        question_text = re.sub(r'<[^>]+>', '', question_text).strip()
+        # Savol matnini tilga qarab tanlash
+        if lang == 'uz':
+            question_text = re.sub(r'<[^>]+>', '', question.question_text)  # RichText to plain text
+        elif lang == 'ru':
+            question_text = re.sub(r'<[^>]+>', '', question.question_text)  # Update if you have a separate field for ru
+        else:
+            return Response({'error': 'Til noto‘g‘ri tanlangan'}, status=status.HTTP_400_BAD_REQUEST)
 
-        content_parts = []
+        # To‘g‘ri javobni aniqlash
+        correct_answer = ""
+        if question_type == 'text':
+            correct_answer = re.sub(r'<[^>]+>', '', question.correct_text_answer or "")
+        elif question_type in ['choice', 'image_choice']:
+            correct_choices = question.choices.filter(is_correct=True)
+            correct_answer = "\n".join(
+                f"{choice.letter}. {re.sub(r'<[^>]+>', '', choice.text or '')}" for choice in correct_choices
+            )
+        elif question_type == 'composite':
+            sub_questions = question.sub_questions.all()
+            correct_answer = "\n".join(
+                f"{sq.text1 or ''} => {sq.correct_answer} {sq.text2 or ''}" for sq in sub_questions
+            )
+        else:
+            return Response({'error': 'Noma’lum savol turi'}, status=status.HTTP_400_BAD_REQUEST)
 
-        if question_text:
-            content_parts.append({
-                "type": "text",
-                "text": "Savol ishlanish yo'li bilan ishlab ber ketma ketlikda qisqa lo'nda aniq javob ber:  " + question_text
-            })
-
-        if base64_data:
-            content_parts.append({
-                "type": "image_url",
-                "image_url": {
-                    "url": f"data:image/{image_format};base64,{base64_data}"
-                }
-            })
-
+        # OpenAI API uchun prompt
         messages = [{
             "role": "user",
-            "content": content_parts
+            "content": [
+                {
+                    "type": "text",
+                    "text": f"Savol: {question_text}\nIltimos, quyidagi savolni ketma-ketlikda va tushunarli tarzda yechib ber.\n\nTo‘g‘ri javob: {correct_answer}"
+                }
+            ]
         }]
 
         try:
@@ -679,9 +694,8 @@ class OpenAIProcessAPIView(APIView):
             return Response({'error': f'AI bilan bog‘lanishda xatolik: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         result_content = completion.choices[0].message.content
-
-        try:
-            result_data = json.loads(result_content)
-            return Response({'result': result_data})
-        except json.JSONDecodeError:
-            return Response({'result': result_content})
+        return Response({
+            'question': question_text,
+            'correct_answer': correct_answer,
+            'ai_response': result_content
+        })
