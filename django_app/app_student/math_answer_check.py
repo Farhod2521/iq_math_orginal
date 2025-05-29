@@ -10,42 +10,32 @@ def detect_variables(expr):
         return []
 
 def clean_latex(expr):
-    #\left va \right ni olib tashlash
-    expr = re.sub(r'\\left', '', expr)
-    expr = re.sub(r'\\right', '', expr)
-
-    # \frac ni (a)/(b) ko'rinishiga o'tkazish
+    expr = re.sub(r'\\left|\\right', '', expr)
     expr = re.sub(r'\\frac\{([^}]+)\}\{([^}]+)\}', r'(\1)/(\2)', expr)
-
-    # \sqrt ni sqrt() ko'rinishiga o'tkazish
     expr = re.sub(r'\\sqrt\{([^}]+)\}', r'sqrt(\1)', expr)
-
-    # \( ... \) yoki \[ ... \] o'ramlarini olib tashlash
-    expr = re.sub(r'\\\(|\\\)', '', expr)  # remove \( and \)
-    expr = re.sub(r'\\\[|\\\]', '', expr) # remove \[ and \]
-
-    # Qolgan barcha \ belgilarini olib tashlash
-    expr = expr.replace('\\', '')
-
-    # Bo'sh joylarni olib tashlash
-    expr = expr.replace(' ', '')
-
+    expr = re.sub(r'\\\(|\\\)|\\\[|\\\]', '', expr)
+    expr = expr.replace('\\', '').replace(' ', '')
     return expr
 
 def insert_multiplication(expr):
-    # (a)(b) -> (a)*(b)
-    expr = re.sub(r'(\))\(', r')*(', expr)
-    return expr
+    return re.sub(r'(\))\(', r')*(', expr)
+
+def is_number(s):
+    try:
+        float(s)
+        return True
+    except:
+        return False
 
 def advanced_math_check(student_answer, correct_answer):
     student = insert_multiplication(clean_latex(student_answer))
     correct = insert_multiplication(clean_latex(correct_answer))
 
-    try:
-        # Float yoki Decimal son bo‘lsa, bevosita solishtiramiz
-        if re.fullmatch(r'^-?\d+(\.\d+)?$', student) and re.fullmatch(r'^-?\d+(\.\d+)?$', correct):
-            return abs(float(student) - float(correct)) < 1e-6
+    # Son bo'lsa, bevosita float bilan solishtiramiz
+    if is_number(student) and is_number(correct):
+        return abs(float(student) - float(correct)) < 1e-6
 
+    try:
         vars_student = detect_variables(student)
         vars_correct = detect_variables(correct)
 
@@ -60,17 +50,13 @@ def advanced_math_check(student_answer, correct_answer):
             return True
 
         for _ in range(10):
-            values = {sp.Symbol(v): sp.Rational(randprime(1,100)) for v in vars_student}
+            values = {sp.Symbol(v): sp.Rational(randprime(1, 100)) for v in vars_student}
             val1 = expr1.subs(values)
             val2 = expr2.subs(values)
             if not sp.simplify(val1 - val2) == 0:
                 return False
+
         return True
 
-    except Exception:
-        return student_answer.lower().strip() == correct_answer.lower().strip()
-
-        
-    except Exception:
-        # Agar xatolik bo'lsa, stringlarni taqqoslash
-        return student_answer.lower().strip() == correct_answer.lower().strip()
+    except:
+        return student_answer.strip().lower() == correct_answer.strip().lower()
