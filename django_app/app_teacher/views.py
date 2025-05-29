@@ -675,15 +675,25 @@ class OpenAIProcessAPIView(APIView):
         except Question.DoesNotExist:
             return Response({'error': 'Savol topilmadi'}, status=status.HTTP_404_NOT_FOUND)
 
-        # Savol matni va rasm linklarini olish
-        if lang == 'uz':
-            question_text, image_refs = clean_html_and_extract_images(question.question_text, question_id)
-        elif lang == 'ru':
-            question_text, image_refs = clean_html_and_extract_images(question.question_text, question_id)  # alohida field bo‘lsa o‘zgartiring
-        else:
-            return Response({'error': 'Til noto‘g‘ri tanlangan'}, status=status.HTTP_400_BAD_REQUEST)
+        # Savol matni va rasmlar
+        html = question.question_text
+        soup = BeautifulSoup(html, "html.parser")
+        question_text = soup.get_text()
+
+        # Rasm URL'larini topish
+        image_urls = []
+        for img_tag in soup.find_all("img"):
+            src = img_tag.get("src", "")
+            if not src:
+                continue
+            if src.startswith("http"):
+                full_url = src
+            else:
+                full_url = request.build_absolute_uri(src)
+            image_urls.append(full_url)
 
         # To‘g‘ri javobni aniqlash
+        correct_answer = ""
         if question_type == 'text':
             correct_answer = re.sub(r'<[^>]+>', '', question.correct_text_answer or "")
         elif question_type in ['choice', 'image_choice']:
@@ -699,18 +709,30 @@ class OpenAIProcessAPIView(APIView):
         else:
             return Response({'error': 'Noma’lum savol turi'}, status=status.HTTP_400_BAD_REQUEST)
 
-        image_text = "\n".join(image_refs) if image_refs else ""
-        full_prompt = f"Savol: {question_text}\n{image_text}\nIltimos, savolni yechib bering.\n\nTo‘g‘ri javob: {correct_answer}"
+        # OpenAI uchun xabar tayyorlash
+        message_content = []
 
-        messages = [{
-            "role": "user",
-            "content": [{"type": "text", "text": full_prompt}]
-        }]
+        for url in image_urls:
+            message_content.append({
+                "type": "image_url",
+                "image_url": {
+                    "url": url,
+                    "detail": "auto"
+                }
+            })
+
+        message_content.append({
+            "type": "text",
+            "text": f"Savol: {question_text}\n\nIltimos, yuqoridagi savolni tushunarli tarzda yechib bering.\n\nTo‘g‘ri javob: {correct_answer}"
+        })
 
         try:
             completion = client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=messages
+                model="gpt-4o",
+                messages=[{
+                    "role": "user",
+                    "content": message_content
+                }]
             )
         except Exception as e:
             return Response({'error': f'AI bilan bog‘lanishda xatolik: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -719,7 +741,7 @@ class OpenAIProcessAPIView(APIView):
 
         return Response({
             'question': question_text,
-            'images': image_refs,
+            'images': image_urls,
             'correct_answer': correct_answer,
             'ai_response': result_content
         })
