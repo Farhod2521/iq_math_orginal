@@ -639,7 +639,7 @@ def extract_base64_image(html):
 
 class OpenAIProcessAPIView(APIView):
     def post(self, request, *args, **kwargs):
-        question_html = request.data.get('question_text_uz', '').strip()
+        question_html = request.data.get('text', '').strip()
 
         if not question_html:
             return Response({'error': 'Savol kiritilmagan'}, status=status.HTTP_400_BAD_REQUEST)
