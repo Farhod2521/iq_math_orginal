@@ -589,7 +589,6 @@ def slugify_uz(text):
 def slugify_ru(text):
     return re.sub(r'\s+', '-', text.strip().lower())
 
-
 class PathFromIdsAPIView(APIView):
     def post(self, request):
         subject_id = request.data.get("subject")
@@ -601,29 +600,23 @@ class PathFromIdsAPIView(APIView):
 
         subject = get_object_or_404(Subject, id=subject_id)
         chapter = get_object_or_404(Chapter, id=chapter_id, subject=subject)
-        class_name_uz = f"{subject.classes.name}-sinf {subject.name}"
-        class_name_ru = f"{subject.classes.name}-класс {subject.name}"  # Agar `name_ru` bo‘lsa, alohida olish mumkin
 
-        base_data = {
+        response_data = [
+            {
+                "id": str(subject.id),
+                "title": subject.name_uz
+            },
+            {
+                "id": str(chapter.id),
+                "title": chapter.name_uz
+            }
+        ]
 
-        }
         if topic_id:
             topic = get_object_or_404(Topic, id=topic_id, chapter=chapter)
-
-            url_uz = f"{slugify_uz(class_name_uz)}/{slugify_uz(chapter.name_uz)}/{slugify_uz(topic.name_uz)}"
-            url_ru = f"{slugify_ru(class_name_ru)}/{slugify_ru(chapter.name_ru)}/{slugify_ru(topic.name_ru)}"
-
-            base_data.update({
-                "url_uz": url_uz,
-                "url_ru": url_ru,
-            })
-        else:
-            url_uz = f"{slugify_uz(class_name_uz)}/{slugify_uz(chapter.name_uz)}"
-            url_ru = f"{slugify_ru(class_name_ru)}/{slugify_ru(chapter.name_ru)}"
-
-            base_data.update({
-                "url_uz": url_uz,
-                "url_ru": url_ru,
+            response_data.append({
+                "id": str(topic.id),
+                "title": topic.name_uz
             })
 
-        return Response(base_data, status=status.HTTP_200_OK)
+        return Response(response_data, status=status.HTTP_200_OK)
