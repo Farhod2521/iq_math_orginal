@@ -21,6 +21,7 @@ from django.contrib.auth.hashers import make_password
 from django.utils.timezone import now
 from rest_framework.generics import  ListAPIView, UpdateAPIView
 from .sms_service import send_login_parol_resend_email
+from django_app.app_student.models import Diagnost_Student
 User = get_user_model()
 
 
@@ -516,7 +517,6 @@ class UserProfileAPIView(APIView):
             return Response({"error": "Only student and teacher roles are supported"}, status=403)
 
         return Response(data)
-
 class StudentProfileAPIView(APIView): 
 
     def get(self, request, *args, **kwargs):
@@ -540,6 +540,9 @@ class StudentProfileAPIView(APIView):
         except Student.DoesNotExist:
             return Response({"error": "Student profile not found"}, status=404)
 
+        # ✅ Diagnostika topshirgan-topshirmaganini aniqlash
+        has_diagnost = Diagnost_Student.objects.filter(student=student).exists()
+
         # Vaqt zonasi
         student_datetime = student.student_date
         ashgabat_tz = pytz.timezone("Asia/Ashgabat") 
@@ -552,8 +555,8 @@ class StudentProfileAPIView(APIView):
             student_time = None
 
         data = {
-            "id":student.id, 
-            "identification":student.identification, 
+            "id": student.id, 
+            "identification": student.identification, 
             'full_name': student.full_name,
             'phone': getattr(student.user, 'phone', None),
             'email': getattr(student.user, 'email', None),
@@ -569,7 +572,7 @@ class StudentProfileAPIView(APIView):
             'type_of_education': student.type_of_education,
             'student_date': student_date,
             'student_time': student_time,
-            "referal_link": f"https://iqmath.uz/referal?code={student.identification}"
+            "has_diagnost": has_diagnost 
         }
 
         return Response(data)
