@@ -604,8 +604,8 @@ class PathFromIdsAPIView(APIView):
         response_data = [
             {
                 "id": str(subject.id),
-                "title_uz": subject.name_uz,
-                "title_ru": subject.name_ru
+                "title_uz": f"{subject.classes.name}-sinf {subject.name}",
+                "title_ru": f"{subject.classes.name}-класс {subject.name}"
             },
             {
                 "id": str(chapter.id),
