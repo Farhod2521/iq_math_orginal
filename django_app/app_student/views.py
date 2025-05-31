@@ -604,11 +604,13 @@ class PathFromIdsAPIView(APIView):
         response_data = [
             {
                 "id": str(subject.id),
-                "title": subject.name_uz
+                "title_uz": subject.name_uz,
+                "title_ru": subject.name_ru
             },
             {
                 "id": str(chapter.id),
-                "title": chapter.name_uz
+                "title_uz": chapter.name_uz,
+                "title_ru": chapter.name_ru
             }
         ]
 
@@ -616,7 +618,8 @@ class PathFromIdsAPIView(APIView):
             topic = get_object_or_404(Topic, id=topic_id, chapter=chapter)
             response_data.append({
                 "id": str(topic.id),
-                "title": topic.name_uz
+                "title_uz": topic.name_uz,
+                "title_ru": topic.name_ru
             })
 
         return Response(response_data, status=status.HTTP_200_OK)
