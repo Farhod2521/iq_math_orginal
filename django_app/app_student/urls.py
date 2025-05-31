@@ -3,7 +3,7 @@ from .views import (
      GenerateTestAPIView, CheckAnswersAPIView, 
      StudentSubjectListAPIView, ChapterListBySubjectAPIView,QuestionListByTopicAPIView,
      TopicListByChapterAPIView, GenerateCheckAnswersAPIView, StudentScoreAPIView, DiagnostLevelOverviewAPIView,
-     DiagnostLevelDetailAPIView, Diagnostika_TopicDetailAPIView
+     DiagnostLevelDetailAPIView, Diagnostika_TopicDetailAPIView, PathFromIdsAPIView
 )
 from .View.product_exchange import ProductExchangeView, ProductExchangeListView
 
@@ -22,5 +22,7 @@ urlpatterns = [
 
     path('my-products/exchange/<int:product_id>/', ProductExchangeView.as_view(), name='product-exchange'),
     path('my-products/exchange/list/', ProductExchangeListView.as_view(), name='product-list'),
+    path('path/list/', PathFromIdsAPIView.as_view(), name='product-list'),
+
 
 ]
