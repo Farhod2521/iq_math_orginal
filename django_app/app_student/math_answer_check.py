@@ -15,6 +15,7 @@ def clean_latex(expr):
     expr = re.sub(r'\\sqrt\{([^}]+)\}', r'sqrt(\1)', expr)
     expr = re.sub(r'\\\(|\\\)|\\\[|\\\]', '', expr)
     expr = re.sub(r'\{,\}', '.', expr)
+    expr = re.sub(r'(?<=\d),(?=\d)', '.', expr)
     expr = expr.replace(',', '.')
     expr = expr.replace('\\', '').replace(' ', '')
     return expr
