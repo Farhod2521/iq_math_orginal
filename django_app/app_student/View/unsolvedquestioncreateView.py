@@ -14,7 +14,7 @@ class UnsolvedQuestionCreateView(APIView):
 
         # request.user orqali student profilini aniqlash
         try:
-            student = request.user.student  # yoki student_profile bo‘lishi mumkin
+            student = request.user.student_profile  # yoki student_profile bo‘lishi mumkin
         except:
             return Response({"error": "Siz student emassiz"}, status=status.HTTP_403_FORBIDDEN)
 
