@@ -5,7 +5,7 @@ from .views import(
        MyChapterListView, QuestionAddCreateView, MyQuestionListView, QuestionUpdateView, QuestionDeleteView, SubjectListAPIView,
        ChoiceQuestionToXlsxImport, CompenQuestionToXlsxImport, UploadQuestionsAPIView, OpenAIQuestionListView, OpenAIProcessAPIView
 )
-from .View.unsolved import  TeacherUnsolvedQuestionReportListView
+from .View.unsolved import  TeacherUnsolvedQuestionReportListView, TeacherAnswerUnsolvedQuestionView
 urlpatterns = [
     path("my-subjects/", TeacherSubjectsAPIView.as_view(), name="teacher-subjects"),
     path("subject-list/", SubjectListAPIView.as_view(), name="teacher-subjects"),
@@ -25,6 +25,7 @@ urlpatterns = [
     path('xlsx-import/', QuestionImportFromXlsx.as_view(), name='my-topics'),
     path('word-import/', UploadQuestionsAPIView.as_view(), name='my-topics'),
     path('my-unsolved-question/list/', TeacherUnsolvedQuestionReportListView.as_view(), name='unsolved-question-list'),
+    path('my-unsolved-question/answer/', TeacherAnswerUnsolvedQuestionView.as_view(), name='unsolved-question-answer'),
 
 
     path('openai/questions/', OpenAIQuestionListView.as_view(), name='openai-question-list'),
