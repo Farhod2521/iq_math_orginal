@@ -4,7 +4,7 @@ from django.utils.safestring import mark_safe
 
 from .models import (
     Topic, Question,
-                      Chapter,  Choice, CompositeSubQuestion
+                      Chapter,  Choice, CompositeSubQuestion, UnsolvedQuestionReport
                       )
 
 from django_app.app_user.models import  Subject, Subject_Category
@@ -82,3 +82,23 @@ class ChoiceAdmin(TranslationAdmin):
 class CompositeSubQuestionAdmin(TranslationAdmin):
     list_display = ('question', 'text1', 'correct_answer', 'text2')
     search_fields = ('text1', 'correct_answer', 'text2')
+
+
+
+@admin.register(UnsolvedQuestionReport)
+class UnsolvedQuestionReportAdmin(admin.ModelAdmin):
+    list_display = (
+        'id', 
+        'student', 
+        'question', 
+        'status', 
+        'answered_by', 
+        'created_at', 
+        'answered_at'
+    )
+    list_filter = ('status', 'created_at', 'answered_at')
+    search_fields = ('student__full_name', 'question__title', 'message', 'answer')
+    autocomplete_fields = ('student', 'teachers', 'answered_by', 'question')
+    filter_horizontal = ('teachers',)
+    readonly_fields = ('created_at', 'answered_at')
+    date_hierarchy = 'created_at'
