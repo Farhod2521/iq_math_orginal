@@ -6,7 +6,7 @@ from .views import (
      DiagnostLevelDetailAPIView, Diagnostika_TopicDetailAPIView, PathFromIdsAPIView
 )
 from .View.product_exchange import ProductExchangeView, ProductExchangeListView
-from  .View.unsolvedquestioncreateView import UnsolvedQuestionCreateView
+from  .View.unsolvedquestioncreateView import UnsolvedQuestionCreateView, UnsolvedQuestionReportListView
 urlpatterns = [
     path('my-subjects/', StudentSubjectListAPIView.as_view(), name='my-subjects'),
     path('my-chapter/<int:subject_id>/', ChapterListBySubjectAPIView.as_view(), name='chapter-list-by-subject'),
@@ -23,6 +23,7 @@ urlpatterns = [
     path('my-products/exchange/<int:product_id>/', ProductExchangeView.as_view(), name='product-exchange'),
     path('my-products/exchange/list/', ProductExchangeListView.as_view(), name='product-list'),
     path('my-unsolved-question/create/', UnsolvedQuestionCreateView.as_view(), name='unsolved-question-create'),
+    path('my-unsolved-question/list/', UnsolvedQuestionReportListView.as_view(), name='unsolved-question-list'),
     path('path/list/', PathFromIdsAPIView.as_view(), name='product-list'),
 
 

@@ -44,3 +44,31 @@ class UnsolvedQuestionCreateView(APIView):
         report.save()
 
         return Response({"success": "Misol yuborildi"}, status=status.HTTP_201_CREATED)
+
+
+
+class UnsolvedQuestionReportListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            student = request.user.student_profile  # yoki request.user.student
+        except AttributeError:
+            return Response({"error": "Siz student emassiz"}, status=status.HTTP_403_FORBIDDEN)
+
+        reports = UnsolvedQuestionReport.objects.filter(student=student).order_by('-created_at')
+
+        data = []
+        for report in reports:
+            data.append({
+                "id": report.id,
+                "question": str(report.question),
+                "message": report.message,
+                "status": report.status,
+                "answer": report.answer if report.answer else "",
+                "answered_by": str(report.answered_by) if report.answered_by else None,
+                "created_at": report.created_at,
+                "answered_at": report.answered_at,
+            })
+
+        return Response(data, status=status.HTTP_200_OK)
