@@ -93,3 +93,30 @@ class Choice(models.Model):
     class Meta:
         verbose_name = "Variant"
         verbose_name_plural = "Variantlar"
+
+
+
+
+
+class UnsolvedQuestionReport(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Ko‘rib chiqilmoqda'),
+        ('answered', 'Javob yozildi'),
+    ]
+
+    question = models.ForeignKey("Question", on_delete=models.CASCADE, related_name="unsolved_reports")
+    student = models.ForeignKey("Student", on_delete=models.CASCADE, related_name="unsolved_reports")
+    teachers = models.ManyToManyField("Teacher", related_name="unsolved_reports")  # Subject teacherlari
+    message = models.TextField(verbose_name="Izoh", blank=True, null=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    answered_by = models.ForeignKey("Teacher", on_delete=models.SET_NULL, null=True, blank=True, related_name="answered_reports")
+    answer = RichTextField(verbose_name="O‘qituvchi javobi", blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    answered_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.student.full_name} - {self.question}"
+
+    class Meta:
+        verbose_name = "Ishlanmagan savol"
+        verbose_name_plural = "Ishlanmagan savollar"
