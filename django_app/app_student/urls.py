@@ -5,7 +5,7 @@ from .views import (
      TopicListByChapterAPIView, GenerateCheckAnswersAPIView, StudentScoreAPIView, DiagnostLevelOverviewAPIView,
      DiagnostLevelDetailAPIView, Diagnostika_TopicDetailAPIView, PathFromIdsAPIView
 )
-from .View.product_exchange import ProductExchangeView, ProductExchangeListView, 
+from .View.product_exchange import ProductExchangeView, ProductExchangeListView
 from  .View.unsolvedquestioncreateView import UnsolvedQuestionCreateView
 urlpatterns = [
     path('my-subjects/', StudentSubjectListAPIView.as_view(), name='my-subjects'),
