@@ -14,8 +14,8 @@ class UnsolvedQuestionCreateView(APIView):
 
         # request.user orqali student profilini aniqlash
         try:
-            student = request.user.student_profile  # yoki student_profile bo‘lishi mumkin
-        except:
+            student = request.user.student_profile  # yoki request.user.student bo'lishi mumkin, tekshiring
+        except AttributeError:
             return Response({"error": "Siz student emassiz"}, status=status.HTTP_403_FORBIDDEN)
 
         try:
@@ -27,8 +27,11 @@ class UnsolvedQuestionCreateView(APIView):
         if UnsolvedQuestionReport.objects.filter(question=question, student=student).exists():
             return Response({"error": "Bu savol allaqachon yuborilgan"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Barcha o‘qituvchilarni olish
-        teachers = question.subject.teachers.all()
+        # Barcha o‘qituvchilarni olish - TO‘G‘RILANDI:
+        try:
+            teachers = question.topic.chapter.subject.teachers.all()
+        except AttributeError:
+            return Response({"error": "Savolga tegishli fan uchun o‘qituvchilar topilmadi"}, status=status.HTTP_400_BAD_REQUEST)
 
         report = UnsolvedQuestionReport.objects.create(
             question=question,
