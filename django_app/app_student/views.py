@@ -589,18 +589,33 @@ def slugify_uz(text):
 def slugify_ru(text):
     return re.sub(r'\s+', '-', text.strip().lower())
 
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from django.shortcuts import get_object_or_404
+
 class PathFromIdsAPIView(APIView):
     def post(self, request):
         subject_id = request.data.get("subject")
         chapter_id = request.data.get("chapter")
         topic_id = request.data.get("topic")  # optional
 
-        if not subject_id or not chapter_id:
-            return Response({"error": "Subject va Chapter ID majburiy"}, status=400)
+        if not subject_id:
+            return Response({"error": "Subject ID majburiy"}, status=400)
 
         subject = get_object_or_404(Subject, id=subject_id)
-        chapter = get_object_or_404(Chapter, id=chapter_id, subject=subject)
 
+        # Faqat subject bo'lsa, faqat subjectni qaytaramiz
+        if not chapter_id:
+            subject_data = {
+                "id": str(subject.id),
+                "title_uz": f"{subject.classes.name}-sinf {subject.name}",
+                "title_ru": f"{subject.classes.name}-класс {subject.name}"
+            }
+            return Response([subject_data], status=status.HTTP_200_OK)
+
+        # chapter bo‘lsa, uni ham qaytaramiz
+        chapter = get_object_or_404(Chapter, id=chapter_id, subject=subject)
         response_data = [
             {
                 "id": str(subject.id),
@@ -614,6 +629,7 @@ class PathFromIdsAPIView(APIView):
             }
         ]
 
+        # topic bo‘lsa, uni ham qo‘shamiz
         if topic_id:
             topic = get_object_or_404(Topic, id=topic_id, chapter=chapter)
             response_data.append({
