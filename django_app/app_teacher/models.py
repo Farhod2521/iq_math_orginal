@@ -2,7 +2,7 @@ from django.db import models
 from django_app.app_user.models import  Subject
 from ckeditor.fields import RichTextField
 
-
+from django_app.app_user.models import Teacher, Student
 
 
 class Chapter(models.Model):
@@ -105,11 +105,11 @@ class UnsolvedQuestionReport(models.Model):
     ]
 
     question = models.ForeignKey("Question", on_delete=models.CASCADE, related_name="unsolved_reports")
-    student = models.ForeignKey("Student", on_delete=models.CASCADE, related_name="unsolved_reports")
-    teachers = models.ManyToManyField("Teacher", related_name="unsolved_reports")  # Subject teacherlari
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name="unsolved_reports")
+    teachers = models.ManyToManyField(Teacher, related_name="unsolved_reports")  # Subject teacherlari
     message = models.TextField(verbose_name="Izoh", blank=True, null=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-    answered_by = models.ForeignKey("Teacher", on_delete=models.SET_NULL, null=True, blank=True, related_name="answered_reports")
+    answered_by = models.ForeignKey(Teacher, on_delete=models.SET_NULL, null=True, blank=True, related_name="answered_reports")
     answer = RichTextField(verbose_name="O‘qituvchi javobi", blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     answered_at = models.DateTimeField(null=True, blank=True)
