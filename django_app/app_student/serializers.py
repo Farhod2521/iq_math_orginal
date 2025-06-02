@@ -57,10 +57,13 @@ class TopicSerializer(serializers.ModelSerializer):
     class Meta:
         model = Topic
         fields = ['id', 'name_uz', 'name_ru', 'chapter', "video_url_uz", "video_url_ru","content_uz", "content_ru", "is_locked", "is_open"]
-
     def get_is_open(self, obj):
         request = self.context.get('request')
         user = request.user
+
+        # Agar foydalanuvchi teacher_profile ga ega bo‘lsa, doim ochiq
+        if hasattr(user, 'teacher_profile'):
+            return True
 
         # Agar mavzu qulflangan bo‘lsa, hech kimga ochilmaydi
         if obj.is_locked:
@@ -70,9 +73,9 @@ class TopicSerializer(serializers.ModelSerializer):
         if not obj.is_locked:
             return True
 
-        # Foydalanuvchini Student obyekti sifatida olish
+        # Student profili bo‘yicha tekshirish
         try:
-            student_instance = Student.objects.get(user=user)  # Foydalanuvchi orqali Student olish
+            student_instance = Student.objects.get(user=user)
             progress = TopicProgress.objects.get(user=student_instance, topic=obj)
             return progress.is_unlocked
         except (TopicProgress.DoesNotExist, Student.DoesNotExist):
