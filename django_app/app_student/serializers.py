@@ -30,17 +30,22 @@ class ChapterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Chapter
-        fields = ['id', 'name_uz', 'name_ru', 'subject', 'progress']  # ← progress ni qo‘shildi
+        fields = ['id', 'name_uz', 'name_ru', 'subject', 'progress']
 
     def get_progress(self, chapter):
         request = self.context.get('request')
         user = request.user
 
+        # Agar foydalanuvchi o'qituvchi bo'lsa — progress doim 100%
+        if hasattr(user, 'teacher_profile'):
+            return 100.0
+
+        # Student bo'lsa — ChapterProgress tekshiramiz
         try:
             student_instance = Student.objects.get(user=user)
             progress = ChapterProgress.objects.get(user=student_instance, chapter=chapter)
             return round(progress.progress_percentage, 2)
-        except ChapterProgress.DoesNotExist:
+        except (ChapterProgress.DoesNotExist, Student.DoesNotExist):
             return 0.0
 
 class TopicSerializer1(serializers.ModelSerializer):
