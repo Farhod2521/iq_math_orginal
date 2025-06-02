@@ -527,7 +527,7 @@ class StudentScoreAPIView(APIView):
         if hasattr(user, 'teacher_profile'):
             return Response({
                 "detail": "Bu sahifa faqat talaba profili uchun mo‘ljallangan.",
-                "score": None
+                "score": 9999
             }, status=status.HTTP_200_OK)
 
         # Talaba uchun davom etadi
