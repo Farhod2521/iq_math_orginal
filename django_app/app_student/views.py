@@ -222,8 +222,23 @@ class StudentSubjectListAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        user = request.user
+
+        # Agar o'qituvchi bo'lsa — barcha subjectlar ochiq bo'lib qaytariladi
+        if hasattr(user, 'teacher_profile'):
+            all_subjects = Subject.objects.all()
+            result = []
+
+            for subject in all_subjects:
+                serialized = SubjectSerializer(subject).data
+                serialized["is_open"] = True
+                result.append(serialized)
+
+            return Response(result, status=status.HTTP_200_OK)
+
+        # Aks holda — talaba uchun ishlashni davom ettiramiz
         try:
-            student = Student.objects.get(user=request.user)
+            student = Student.objects.get(user=user)
             now_time = now()
 
             is_subscription_valid = False
@@ -243,19 +258,17 @@ class StudentSubjectListAPIView(APIView):
 
             for subject in all_subjects:
                 serialized = SubjectSerializer(subject).data
-                if is_subscription_valid:
-                    serialized["is_open"] = True
-                elif is_free_trial_active:
+                if is_subscription_valid or is_free_trial_active:
                     serialized["is_open"] = True
                 else:
                     serialized["is_open"] = False
-
                 result.append(serialized)
 
             return Response(result, status=status.HTTP_200_OK)
 
         except Student.DoesNotExist:
             return Response({"detail": "Student topilmadi"}, status=status.HTTP_404_NOT_FOUND)
+
 
 class ChapterListBySubjectAPIView(APIView):
     permission_classes = [IsAuthenticated]
