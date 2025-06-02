@@ -521,8 +521,18 @@ class StudentScoreAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        user = request.user
+
+        # Agar teacher bo‘lsa, oddiy javob qaytariladi
+        if hasattr(user, 'teacher_profile'):
+            return Response({
+                "detail": "Bu sahifa faqat talaba profili uchun mo‘ljallangan.",
+                "score": None
+            }, status=status.HTTP_200_OK)
+
+        # Talaba uchun davom etadi
         try:
-            student = Student.objects.get(user=request.user)
+            student = Student.objects.get(user=user)
         except Student.DoesNotExist:
             return Response({"detail": "Talaba topilmadi."}, status=status.HTTP_404_NOT_FOUND)
 
@@ -539,7 +549,7 @@ class StudentScoreAPIView(APIView):
                 "score": 0,
                 "message": "Hozircha sizga hech qanday ball biriktirilmagan."
             })
-        
+
 
 class DiagnostLevelOverviewAPIView(APIView):
     permission_classes = [IsAuthenticated]
