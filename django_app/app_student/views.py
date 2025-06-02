@@ -351,10 +351,20 @@ class CheckAnswersAPIView(APIView):
         if not serializer.is_valid():
             return Response({"message": "Noto‘g‘ri formatdagi ma'lumotlar."}, status=400)
 
-        try:
-            student_instance = Student.objects.get(user=request.user)
-        except Student.DoesNotExist:
-            return Response({"message": "Student topilmadi"}, status=404)
+        is_teacher = hasattr(request.user, 'teacher_profile')
+        student_instance = None
+        student_score = None
+        awarded_questions = set()
+
+        if not is_teacher:
+            try:
+                student_instance = Student.objects.get(user=request.user)
+                student_score, _ = StudentScore.objects.get_or_create(student=student_instance)
+                awarded_questions = set(
+                    StudentScoreLog.objects.filter(student_score=student_score).values_list('question_id', flat=True)
+                )
+            except Student.DoesNotExist:
+                return Response({"message": "Student topilmadi"}, status=404)
 
         correct_answers = 0
         total_answers = 0
@@ -362,44 +372,23 @@ class CheckAnswersAPIView(APIView):
         index = 1
         last_question_topic = None
 
-        student_score, created = StudentScore.objects.get_or_create(student=student_instance)
-
-        awarded_questions = set(
-            StudentScoreLog.objects.filter(student_score=student_score).values_list('question_id', flat=True)
-        )
-
-        # --- TEXT ANSWERS ---
+        # TEXT ANSWERS
         for answer in serializer.validated_data.get('text_answers', []):
             question = Question.objects.filter(id=answer['question_id'], question_type='text').first()
             if not question:
                 continue
 
-            # Bu yerda math_answer_check funksiyasini qo'llaymiz
-            student_answer = None
-            correct_answer = None
-
-            # Siz o'z tilingizga qarab javobni olish
-            if 'answer_uz' in answer:
-                student_answer = answer['answer_uz']
-                correct_answer = question.correct_text_answer_uz
-            elif 'answer_ru' in answer:
-                student_answer = answer['answer_ru']
-                correct_answer = question.correct_text_answer_ru
+            student_answer = answer.get('answer_uz') or answer.get('answer_ru')
+            correct_answer = question.correct_text_answer_uz if 'answer_uz' in answer else question.correct_text_answer_ru
 
             if student_answer is None or correct_answer is None:
                 continue
 
-            # HTML teglardan tozalash
-            student_answer_plain = strip_tags(student_answer).strip()
-            correct_answer_plain = strip_tags(correct_answer).strip()
-
-            # Endi advanced_math_check ni ishlatamiz
-            is_correct = advanced_math_check(student_answer_plain, correct_answer_plain)
-
+            is_correct = advanced_math_check(strip_tags(student_answer).strip(), strip_tags(correct_answer).strip())
             total_answers += 1
             if is_correct:
                 correct_answers += 1
-                if question.id not in awarded_questions:
+                if not is_teacher and question.id not in awarded_questions:
                     student_score.score += 1
                     awarded_questions.add(question.id)
                     StudentScoreLog.objects.create(student_score=student_score, question=question)
@@ -413,11 +402,13 @@ class CheckAnswersAPIView(APIView):
                 "answer": is_correct
             })
             index += 1
-        # --- CHOICE ANSWERS ---
+
+        # CHOICE ANSWERS
         for answer in serializer.validated_data.get('choice_answers', []):
             question = Question.objects.filter(id=answer['question_id'], question_type='choice').first()
             if not question:
                 continue
+
             correct_choices = set(Choice.objects.filter(question=question, is_correct=True).values_list('id', flat=True))
             selected_choices = set(answer['choices'])
             is_correct = (correct_choices == selected_choices)
@@ -425,12 +416,11 @@ class CheckAnswersAPIView(APIView):
             total_answers += 1
             if is_correct:
                 correct_answers += 1
+                if not is_teacher and question.id not in awarded_questions:
+                    student_score.score += 1
+                    awarded_questions.add(question.id)
+                    StudentScoreLog.objects.create(student_score=student_score, question=question)
 
-            if is_correct and question.id not in awarded_questions:
-
-                student_score.score += 1
-                awarded_questions.add(question.id)
-                StudentScoreLog.objects.create(student_score=student_score, question=question)
             last_question_topic = question.topic
             question_details.append({
                 "index": index,
@@ -441,25 +431,23 @@ class CheckAnswersAPIView(APIView):
             })
             index += 1
 
-        # --- COMPOSITE ANSWERS ---
+        # COMPOSITE ANSWERS
         for answer in serializer.validated_data.get('composite_answers', []):
             question = Question.objects.filter(id=answer['question_id'], question_type='composite').first()
             if not question:
                 continue
+
             correct_subs = question.sub_questions.all()
-            is_correct = True
-            for sub_answer, sub_question in zip(answer['answers'], correct_subs):
-                if sub_answer != sub_question.correct_answer:
-                    is_correct = False
-                    break
+            is_correct = all(sub_answer == sub_q.correct_answer for sub_answer, sub_q in zip(answer['answers'], correct_subs))
 
             total_answers += 1
             if is_correct:
                 correct_answers += 1
-            if is_correct and question.id not in awarded_questions:
-                student_score.score += 1
-                awarded_questions.add(question.id)
-                StudentScoreLog.objects.create(student_score=student_score, question=question)
+                if not is_teacher and question.id not in awarded_questions:
+                    student_score.score += 1
+                    awarded_questions.add(question.id)
+                    StudentScoreLog.objects.create(student_score=student_score, question=question)
+
             last_question_topic = question.topic
             question_details.append({
                 "index": index,
@@ -470,48 +458,44 @@ class CheckAnswersAPIView(APIView):
             })
             index += 1
 
-        # Save the student score
-        student_score.save()
-
-        # Update progress if score is >= 80
         score = round((correct_answers / total_answers) * 100, 2) if total_answers else 0.0
 
-        if last_question_topic and score >= 80:
-            topic_progress, _ = TopicProgress.objects.get_or_create(
-                user=student_instance,
-                topic=last_question_topic
-            )
-            topic_progress.is_unlocked = True
-            topic_progress.score = score
-            topic_progress.completed_at = timezone.now()
-            topic_progress.save()
+        # Agar bu teacher bo'lmasa, ma'lumotlarni saqlaymiz
+        if not is_teacher:
+            student_score.save()
 
-            # Unlock next topic if any
-            all_topics = Topic.objects.filter(chapter=last_question_topic.chapter, is_locked=False).order_by('id')
-            topic_ids = list(all_topics.values_list('id', flat=True))
+            if last_question_topic and score >= 80:
+                topic_progress, _ = TopicProgress.objects.get_or_create(
+                    user=student_instance, topic=last_question_topic
+                )
+                topic_progress.is_unlocked = True
+                topic_progress.score = score
+                topic_progress.completed_at = timezone.now()
+                topic_progress.save()
 
-            if last_question_topic.id in topic_ids:
-                current_index = topic_ids.index(last_question_topic.id)
-                if current_index + 1 < len(topic_ids):
-                    next_topic = Topic.objects.get(id=topic_ids[current_index + 1])
-                    next_progress, created = TopicProgress.objects.get_or_create(
-                        user=student_instance, topic=next_topic
-                    )
-                    if created:
-                        next_progress.is_unlocked = True
-                        next_progress.save()
+                all_topics = Topic.objects.filter(chapter=last_question_topic.chapter, is_locked=False).order_by('id')
+                topic_ids = list(all_topics.values_list('id', flat=True))
 
-        # Return the result JSON
-        result_json = {
+                if last_question_topic.id in topic_ids:
+                    current_index = topic_ids.index(last_question_topic.id)
+                    if current_index + 1 < len(topic_ids):
+                        next_topic = Topic.objects.get(id=topic_ids[current_index + 1])
+                        next_progress, created = TopicProgress.objects.get_or_create(
+                            user=student_instance, topic=next_topic
+                        )
+                        if created:
+                            next_progress.is_unlocked = True
+                            next_progress.save()
+
+        return Response({
             "question": question_details,
             "result": [{
                 "total_answers": total_answers,
                 "correct_answers": correct_answers,
                 "score": score
             }]
-        }
+        })
 
-        return Response(result_json)
 
 
 
