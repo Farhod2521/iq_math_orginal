@@ -53,33 +53,42 @@ class TopicSerializer1(serializers.ModelSerializer):
 
 class TopicSerializer(serializers.ModelSerializer):
     is_open = serializers.SerializerMethodField()
+    is_locked = serializers.SerializerMethodField()  # is_locked endi method orqali boshqariladi
 
     class Meta:
         model = Topic
-        fields = ['id', 'name_uz', 'name_ru', 'chapter', "video_url_uz", "video_url_ru","content_uz", "content_ru", "is_locked", "is_open"]
+        fields = ['id', 'name_uz', 'name_ru', 'chapter', "video_url_uz", "video_url_ru", "content_uz", "content_ru", "is_locked", "is_open"]
+
     def get_is_open(self, obj):
         request = self.context.get('request')
         user = request.user
 
-        # Agar foydalanuvchi teacher_profile ga ega bo‘lsa, doim ochiq
+        # O‘qituvchi bo‘lsa — doim ochiq
         if hasattr(user, 'teacher_profile'):
             return True
 
-        # Agar mavzu qulflangan bo‘lsa, hech kimga ochilmaydi
+        # Mavzu qulflangan bo‘lsa — faqat studentda progress tekshiriladi
         if obj.is_locked:
+            try:
+                student_instance = Student.objects.get(user=user)
+                progress = TopicProgress.objects.get(user=student_instance, topic=obj)
+                return progress.is_unlocked
+            except (Student.DoesNotExist, TopicProgress.DoesNotExist):
+                return False
+
+        # Mavzu qulflanmagan bo‘lsa — ochiq
+        return True
+
+    def get_is_locked(self, obj):
+        request = self.context.get('request')
+        user = request.user
+
+        # O‘qituvchi bo‘lsa — hechnarsa qulflanmagan sifatida ko‘rsatiladi
+        if hasattr(user, 'teacher_profile'):
             return False
 
-        # Agar admin tomonidan ochilgan bo'lsa, unda is_open True bo'lishi kerak
-        if not obj.is_locked:
-            return True
-
-        # Student profili bo‘yicha tekshirish
-        try:
-            student_instance = Student.objects.get(user=user)
-            progress = TopicProgress.objects.get(user=student_instance, topic=obj)
-            return progress.is_unlocked
-        except (TopicProgress.DoesNotExist, Student.DoesNotExist):
-            return False
+        # Aks holda — real qiymati qaytariladi
+        return obj.is_locked
 class ChoiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Choice
