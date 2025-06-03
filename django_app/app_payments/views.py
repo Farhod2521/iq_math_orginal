@@ -185,7 +185,7 @@ class SubscriptionTrialDaysAPIView(APIView):
         return Response(
             {
             "days_until_next_payment": remaining_days,
-            "end_date": subscription.end_date.strftime("%Y-%m-%d"),
+            "end_date": subscription.end_date.strftime("%d/%m/%Y"),
             "payment_amount": 499000, 
             "is_paid": subscription.is_paid
 
