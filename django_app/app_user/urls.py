@@ -7,6 +7,10 @@ from .views import (
     ClassListView, TeacherLoginAPIView, TeacherProfileAPIView, UpdateStudentFieldAPIView, UserProfileAPIView
 
 )
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+)
 urlpatterns = [
     ###################################################################################
     #########################  STUDENT  ################################################
@@ -42,7 +46,7 @@ urlpatterns = [
     ###################################################################################
     path('class/class_name_listview/', ClassListView.as_view(), name='class_name_listview'),
 
-
+    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 
 
 ]
