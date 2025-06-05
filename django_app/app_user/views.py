@@ -705,13 +705,14 @@ class LoginAPIView(APIView):
         if serializer.is_valid():
             user = serializer.validated_data["user"]
 
-            # Student yoki Teacher profillarni aniqlash
-            profile_data = {}
+            # Tokenlarni yaratish
             refresh = RefreshToken.for_user(user)
             access_token = refresh.access_token
             access_token.set_exp(lifetime=timedelta(hours=13))
             expires_in = timedelta(hours=13).total_seconds()
 
+            # Student yoki Teacher profillarni aniqlash
+            profile_data = {}
             try:
                 student = Student.objects.get(user=user)
                 access_token['student_id'] = student.id
@@ -722,6 +723,7 @@ class LoginAPIView(APIView):
                     "role": user.role,
                     "status": student.status,
                     "access_token": str(access_token),
+                    "refresh_token": str(refresh),  # Qo‘shilgan refresh token
                     "expires_in": expires_in,
                 }
             except Student.DoesNotExist:
@@ -735,6 +737,7 @@ class LoginAPIView(APIView):
                         "role": user.role,
                         "status": teacher.status,
                         "access_token": str(access_token),
+                        "refresh_token": str(refresh),  # Qo‘shilgan refresh token
                         "expires_in": expires_in,
                     }
                 except Teacher.DoesNotExist:
