@@ -4,7 +4,7 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from django_app.app_user.models import Teacher, Student
 from django_app.app_teacher.models import Group
-from app_teacher.serializers import GroupSerializer
+from django_app.app_teacher.serializers import GroupSerializer
 from django.shortcuts import get_object_or_404
 
 class GroupCreateListAPIView(APIView):
