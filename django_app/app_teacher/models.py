@@ -120,3 +120,17 @@ class UnsolvedQuestionReport(models.Model):
     class Meta:
         verbose_name = "Ishlanmagan savol"
         verbose_name_plural = "Ishlanmagan savollar"
+
+
+class Group(models.Model):
+    name = models.CharField(max_length=200, verbose_name="Guruh nomi")
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name="groups", verbose_name="O'qituvchi")
+    students = models.ManyToManyField(Student, related_name="groups", blank=True, verbose_name="O'quvchilar")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Yaratilgan sana")
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = "Guruh"
+        verbose_name_plural = "Guruhlar"

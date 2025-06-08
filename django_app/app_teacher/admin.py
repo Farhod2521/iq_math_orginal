@@ -4,7 +4,7 @@ from django.utils.safestring import mark_safe
 
 from .models import (
     Topic, Question,
-                      Chapter,  Choice, CompositeSubQuestion, UnsolvedQuestionReport
+                      Chapter,  Choice, CompositeSubQuestion, UnsolvedQuestionReport, Group
                       )
 
 from django_app.app_user.models import  Subject, Subject_Category
@@ -102,3 +102,11 @@ class UnsolvedQuestionReportAdmin(admin.ModelAdmin):
     filter_horizontal = ('teachers',)
     readonly_fields = ('created_at', 'answered_at')
     date_hierarchy = 'created_at'
+
+
+@admin.register(Group)
+class GroupAdmin(admin.ModelAdmin):
+    list_display = ('name', 'teacher', 'created_at')
+    search_fields = ('name', 'teacher__full_name')
+    list_filter = ('teacher',)
+    filter_horizontal = ('students',)
