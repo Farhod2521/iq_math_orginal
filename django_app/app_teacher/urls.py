@@ -6,6 +6,7 @@ from .views import(
        ChoiceQuestionToXlsxImport, CompenQuestionToXlsxImport, UploadQuestionsAPIView, OpenAIQuestionListView, OpenAIProcessAPIView
 )
 from .View.unsolved import  TeacherUnsolvedQuestionReportListView, TeacherAnswerUnsolvedQuestionView
+from  .View.gruop_student import GroupCreateListAPIView, AddStudentsToGroupAPIView
 urlpatterns = [
     path("my-subjects/", TeacherSubjectsAPIView.as_view(), name="teacher-subjects"),
     path("subject-list/", SubjectListAPIView.as_view(), name="teacher-subjects"),
@@ -30,5 +31,8 @@ urlpatterns = [
 
     path('openai/questions/', OpenAIQuestionListView.as_view(), name='openai-question-list'),
     path('openai/process/', OpenAIProcessAPIView.as_view(), name='openai-process'),
+
+    path("my-groups/create", GroupCreateListAPIView.as_view(), name="group-list-create"),
+    path("my-groups/<int:group_id>/add-students/", AddStudentsToGroupAPIView.as_view(), name="group-add-students"),
 
 ]

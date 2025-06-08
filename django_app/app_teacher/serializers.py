@@ -166,3 +166,11 @@ class OpenAIQuestionSerializer(serializers.ModelSerializer):
             'choices',
             'sub_questions',
         ]
+
+
+
+
+class GroupSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Group
+        fields = ["id", "name", "teacher", "students", "created_at"]
