@@ -35,9 +35,17 @@ class MyChapterAddSerializer(serializers.ModelSerializer):
         fields = ["id", "name_uz", "name_ru", "subject"]
 
 class MyTopicAddSerializer(serializers.ModelSerializer):
+    question_count = serializers.SerializerMethodField()
+
     class Meta:
-        model =  Topic
-        fields = ["id", "name_uz", "name_ru", "video_url_uz","video_url_ru", "chapter", "content_uz", "content_ru"]
+        model = Topic
+        fields = [
+            "id", "name_uz", "name_ru", "video_url_uz", "video_url_ru",
+            "chapter", "content_uz", "content_ru", "question_count"
+        ]
+
+    def get_question_count(self, obj):
+        return obj.questions.count()
 class ChoiceSerializer(serializers.ModelSerializer):
     question = serializers.PrimaryKeyRelatedField(
         queryset=Question.objects.all(),
