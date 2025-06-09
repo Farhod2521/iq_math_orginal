@@ -3,7 +3,7 @@ from .models import (
     Chapter, Topic, Question,Choice, CompositeSubQuestion, Group
     
 )
-from django_app.app_user.models import  Subject
+from django_app.app_user.models import  Subject, Student
 
 class SubjectSerializer(serializers.ModelSerializer):
     class_name = serializers.CharField(source="classes.name")  # Sinf nomini olish
@@ -175,4 +175,21 @@ class GroupSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'teacher': {'read_only': True},  # teacher POST'da kiritilmaydi
             'students': {'required': False}
+        }
+
+class StudentSerializer(serializers.ModelSerializer):
+    class_name = serializers.CharField(source='class_name.name', read_only=True)
+
+    class Meta:
+        model = Student
+        fields = ['id', 'full_name', 'identification', 'class_name']
+
+class GroupSerializer_DETAIL(serializers.ModelSerializer):
+    students = StudentSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Group
+        fields = ['id', 'name', 'teacher', 'students']
+        extra_kwargs = {
+            'teacher': {'read_only': True}
         }
