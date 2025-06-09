@@ -43,5 +43,5 @@ class GroupDetailAPIView(APIView):
     def get(self, request, pk):
         teacher = get_object_or_404(Teacher, user=request.user)
         group = get_object_or_404(Group, pk=pk, teacher=teacher)
-        serializer = GroupSerializer(group)
+        serializer = GroupSerializer_DETAIL(group)
         return Response(serializer.data)
