@@ -7,19 +7,22 @@ from django_app.app_teacher.models import Group
 from django_app.app_teacher.serializers import GroupSerializer
 from django.shortcuts import get_object_or_404
 
-class GroupCreateListAPIView(APIView):
+class GroupListAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         teacher = get_object_or_404(Teacher, user=request.user)
         groups = Group.objects.filter(teacher=teacher)
         serializer = GroupSerializer(groups, many=True)
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class GroupCreateAPIView(APIView):
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
         teacher = get_object_or_404(Teacher, user=request.user)
         data = request.data.copy()
-        data["teacher"] = teacher.id
+        data['teacher'] = teacher.id
         serializer = GroupSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
