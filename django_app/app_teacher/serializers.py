@@ -168,12 +168,11 @@ class OpenAIQuestionSerializer(serializers.ModelSerializer):
         ]
 
 
-
 class GroupSerializer(serializers.ModelSerializer):
     class Meta:
         model = Group
         fields = ['id', 'name', 'teacher', 'students']
         extra_kwargs = {
-            'teacher': {'read_only': True},  # teacher faqat backenddan qo‘shiladi
+            'teacher': {'read_only': True},  # teacher POST'da kiritilmaydi
             'students': {'required': False}
         }

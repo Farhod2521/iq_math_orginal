@@ -21,11 +21,9 @@ class GroupCreateAPIView(APIView):
 
     def post(self, request):
         teacher = get_object_or_404(Teacher, user=request.user)
-        data = request.data.copy()
-        data['teacher'] = teacher.id
-        serializer = GroupSerializer(data=data)
+        serializer = GroupSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            serializer.save(teacher=teacher)  # teacher ni bu yerda uzatyapmiz
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
