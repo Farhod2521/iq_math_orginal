@@ -4,7 +4,7 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from django_app.app_user.models import Teacher, Student
 from django_app.app_teacher.models import Group
-from django_app.app_teacher.serializers import GroupSerializer
+from django_app.app_teacher.serializers import GroupSerializer, GroupSerializer_DETAIL
 from django.shortcuts import get_object_or_404
 
 class GroupListAPIView(APIView):
@@ -36,3 +36,12 @@ class AddStudentsToGroupAPIView(APIView):
         students = Student.objects.filter(id__in=student_ids)
         group.students.add(*students)
         return Response({"message": "Talabalar guruhga qo'shildi."}, status=status.HTTP_200_OK)
+    
+class GroupDetailAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        teacher = get_object_or_404(Teacher, user=request.user)
+        group = get_object_or_404(Group, pk=pk, teacher=teacher)
+        serializer = GroupSerializer(group)
+        return Response(serializer.data)

@@ -59,3 +59,5 @@ class TeacherAnswerUnsolvedQuestionView(APIView):
         report.save()
 
         return Response({"success": "Javob muvaffaqiyatli yozildi"}, status=status.HTTP_200_OK)
+    
+
