@@ -355,6 +355,7 @@ class CheckAnswersAPIView(APIView):
         student_instance = None
         student_score = None
         awarded_questions = set()
+        today_coin_count = 0
 
         if not is_teacher:
             try:
@@ -363,6 +364,7 @@ class CheckAnswersAPIView(APIView):
                 awarded_questions = set(
                     StudentScoreLog.objects.filter(student_score=student_score).values_list('question_id', flat=True)
                 )
+                today_coin_count = get_today_coin_count(student_score)
             except Student.DoesNotExist:
                 return Response({"message": "Student topilmadi"}, status=404)
 
@@ -373,33 +375,34 @@ class CheckAnswersAPIView(APIView):
         last_question_topic = None
 
         def process_question(question, is_correct):
-            nonlocal correct_answers, student_score, awarded_questions, student_instance
+            nonlocal correct_answers, student_score, awarded_questions, student_instance, today_coin_count
             if is_correct:
                 correct_answers += 1
 
                 if not is_teacher and question.id not in awarded_questions:
                     give_coin = False
-                    allow_award = False
 
-                    # Faqat birinchi urinish va kunlik limit ichida bo‘lsa
+                    # Faqat birinchi urinishda savolga tanga beriladi
                     if not TopicProgress.objects.filter(user=student_instance, topic=question.topic).exists():
-                        if get_today_coin_count(student_score) < 10:
+                        if today_coin_count < 10:
                             student_score.coin += 1
+                            today_coin_count += 1
                             give_coin = True
-                            allow_award = True
+                        else:
+                            student_score.score += 1  # coin limiti tugagan, endi ball beriladi
 
-                    # Faqat agar tanga berilsa, ball ham beriladi
-                    if allow_award:
+                    else:
+                        # Agar bu topic ilgari o‘rganilgan bo‘lsa faqat score beriladi
                         student_score.score += 1
-                        awarded_questions.add(question.id)
 
-                        StudentScoreLog.objects.create(
-                            student_score=student_score,
-                            question=question,
-                            awarded_coin=give_coin
-                        )
+                    awarded_questions.add(question.id)
+                    StudentScoreLog.objects.create(
+                        student_score=student_score,
+                        question=question,
+                        awarded_coin=give_coin
+                    )
 
-        # TEXT SAVOLLAR
+        # TEXT
         for answer in serializer.validated_data.get('text_answers', []):
             question = Question.objects.filter(id=answer['question_id'], question_type='text').first()
             if not question:
@@ -425,7 +428,7 @@ class CheckAnswersAPIView(APIView):
             })
             index += 1
 
-        # CHOICE SAVOLLAR
+        # CHOICE
         for answer in serializer.validated_data.get('choice_answers', []):
             question = Question.objects.filter(id=answer['question_id'], question_type='choice').first()
             if not question:
@@ -448,7 +451,7 @@ class CheckAnswersAPIView(APIView):
             })
             index += 1
 
-        # COMPOSITE SAVOLLAR
+        # COMPOSITE
         for answer in serializer.validated_data.get('composite_answers', []):
             question = Question.objects.filter(id=answer['question_id'], question_type='composite').first()
             if not question:
@@ -470,10 +473,8 @@ class CheckAnswersAPIView(APIView):
             })
             index += 1
 
-        # FOIZLI NATIJA
         score = round((correct_answers / total_answers) * 100, 2) if total_answers else 0.0
 
-        # BALL VA MAVZU HOLATINI SAQLASH
         if not is_teacher:
             student_score.save()
 
@@ -508,7 +509,6 @@ class CheckAnswersAPIView(APIView):
                 "score": score
             }]
         })
-
 #############################   STUDENT BALL ###############################
 
 class StudentScoreAPIView(APIView):
