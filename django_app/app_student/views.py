@@ -381,20 +381,19 @@ class CheckAnswersAPIView(APIView):
 
                 if not is_teacher and question.id not in awarded_questions:
                     give_coin = False
-                    give_score = False
 
-                    if today_coin_count < 10:
+                    is_first_time = not TopicProgress.objects.filter(user=student_instance, topic=question.topic).exists()
+
+                    if is_first_time and today_coin_count < 10:
                         give_coin = True
                         today_coin_count += 1
-                        # Faqat coin beriladi, score emas
+                        # faqat tanga
                     else:
-                        # Coin limiti tugagan, endi ball
-                        give_score = True
-
-                    if give_score:
+                        # coin limiti tugagan yoki bu topic ilgari ochilgan bo‘lsa — ball
                         student_score.score += 1
 
                     awarded_questions.add(question.id)
+
                     StudentScoreLog.objects.create(
                         student_score=student_score,
                         question=question,
