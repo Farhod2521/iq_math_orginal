@@ -381,18 +381,17 @@ class CheckAnswersAPIView(APIView):
 
                 if not is_teacher and question.id not in awarded_questions:
                     give_coin = False
+                    give_score = False
 
-                    # Faqat birinchi urinishda savolga tanga beriladi
-                    if not TopicProgress.objects.filter(user=student_instance, topic=question.topic).exists():
-                        if today_coin_count < 10:
-                            student_score.coin += 1
-                            today_coin_count += 1
-                            give_coin = True
-                        else:
-                            student_score.score += 1  # coin limiti tugagan, endi ball beriladi
-
+                    if today_coin_count < 10:
+                        give_coin = True
+                        today_coin_count += 1
+                        # Faqat coin beriladi, score emas
                     else:
-                        # Agar bu topic ilgari o‘rganilgan bo‘lsa faqat score beriladi
+                        # Coin limiti tugagan, endi ball
+                        give_score = True
+
+                    if give_score:
                         student_score.score += 1
 
                     awarded_questions.add(question.id)
@@ -484,7 +483,7 @@ class CheckAnswersAPIView(APIView):
                 )
                 topic_progress.is_unlocked = True
                 topic_progress.score = score
-                topic_progress.completed_at = timezone.now()
+                topic_progress.completed_at = now()
                 topic_progress.save()
 
                 all_topics = Topic.objects.filter(chapter=last_question_topic.chapter, is_locked=False).order_by('id')
