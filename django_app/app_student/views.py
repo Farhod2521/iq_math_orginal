@@ -355,7 +355,6 @@ class CheckAnswersAPIView(APIView):
         student_instance = None
         student_score = None
         awarded_questions = set()
-        today_coin_count = 0
 
         if not is_teacher:
             try:
@@ -364,7 +363,6 @@ class CheckAnswersAPIView(APIView):
                 awarded_questions = set(
                     StudentScoreLog.objects.filter(student_score=student_score).values_list('question_id', flat=True)
                 )
-                today_coin_count = get_today_coin_count(student_score)
             except Student.DoesNotExist:
                 return Response({"message": "Student topilmadi"}, status=404)
 
@@ -375,24 +373,18 @@ class CheckAnswersAPIView(APIView):
         last_question_topic = None
 
         def process_question(question, is_correct):
-            nonlocal correct_answers, student_score, awarded_questions, student_instance, today_coin_count
+            nonlocal correct_answers, student_score, awarded_questions, student_instance
             if is_correct:
                 correct_answers += 1
-
                 if not is_teacher and question.id not in awarded_questions:
-                    give_coin = False
-
-                    is_first_time = not TopicProgress.objects.filter(user=student_instance, topic=question.topic).exists()
-
-                    if is_first_time and today_coin_count < 10:
-                        give_coin = True
-                        today_coin_count += 1
-                        # faqat tanga
-                    else:
-                        # coin limiti tugagan yoki bu topic ilgari ochilgan bo‘lsa — ball
-                        student_score.score += 1
-
+                    student_score.score += 1
                     awarded_questions.add(question.id)
+
+                    give_coin = False
+                    if not TopicProgress.objects.filter(user=student_instance, topic=question.topic).exists():
+                        if get_today_coin_count(student_score) < 10:
+                            student_score.coin += 1
+                            give_coin = True
 
                     StudentScoreLog.objects.create(
                         student_score=student_score,
@@ -400,7 +392,6 @@ class CheckAnswersAPIView(APIView):
                         awarded_coin=give_coin
                     )
 
-        # TEXT
         for answer in serializer.validated_data.get('text_answers', []):
             question = Question.objects.filter(id=answer['question_id'], question_type='text').first()
             if not question:
@@ -426,7 +417,6 @@ class CheckAnswersAPIView(APIView):
             })
             index += 1
 
-        # CHOICE
         for answer in serializer.validated_data.get('choice_answers', []):
             question = Question.objects.filter(id=answer['question_id'], question_type='choice').first()
             if not question:
@@ -449,7 +439,6 @@ class CheckAnswersAPIView(APIView):
             })
             index += 1
 
-        # COMPOSITE
         for answer in serializer.validated_data.get('composite_answers', []):
             question = Question.objects.filter(id=answer['question_id'], question_type='composite').first()
             if not question:
@@ -482,7 +471,7 @@ class CheckAnswersAPIView(APIView):
                 )
                 topic_progress.is_unlocked = True
                 topic_progress.score = score
-                topic_progress.completed_at = now()
+                topic_progress.completed_at = timezone.now()
                 topic_progress.save()
 
                 all_topics = Topic.objects.filter(chapter=last_question_topic.chapter, is_locked=False).order_by('id')
@@ -507,6 +496,8 @@ class CheckAnswersAPIView(APIView):
                 "score": score
             }]
         })
+
+
 #############################   STUDENT BALL ###############################
 
 class StudentScoreAPIView(APIView):
