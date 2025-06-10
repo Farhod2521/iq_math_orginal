@@ -524,6 +524,7 @@ class StudentScoreAPIView(APIView):
             return Response({
                 "student": student.full_name,
                 "score": score_obj.score,
+                "coin": score_obj.coin,
                 "created_at": score_obj.created_at
             })
         except StudentScore.DoesNotExist:
