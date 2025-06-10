@@ -342,7 +342,7 @@ class QuestionListByTopicAPIView(APIView):
 
 from django.utils.html import strip_tags
 from .math_answer_check import advanced_math_check  
-
+from .helper_coin import get_today_coin_count
 class CheckAnswersAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -372,7 +372,26 @@ class CheckAnswersAPIView(APIView):
         index = 1
         last_question_topic = None
 
-        # TEXT ANSWERS
+        def process_question(question, is_correct):
+            nonlocal correct_answers, student_score, awarded_questions, student_instance
+            if is_correct:
+                correct_answers += 1
+                if not is_teacher and question.id not in awarded_questions:
+                    student_score.score += 1
+                    awarded_questions.add(question.id)
+
+                    give_coin = False
+                    if not TopicProgress.objects.filter(user=student_instance, topic=question.topic).exists():
+                        if get_today_coin_count(student_score) < 10:
+                            student_score.coin += 1
+                            give_coin = True
+
+                    StudentScoreLog.objects.create(
+                        student_score=student_score,
+                        question=question,
+                        awarded_coin=give_coin
+                    )
+
         for answer in serializer.validated_data.get('text_answers', []):
             question = Question.objects.filter(id=answer['question_id'], question_type='text').first()
             if not question:
@@ -386,12 +405,7 @@ class CheckAnswersAPIView(APIView):
 
             is_correct = advanced_math_check(strip_tags(student_answer).strip(), strip_tags(correct_answer).strip())
             total_answers += 1
-            if is_correct:
-                correct_answers += 1
-                if not is_teacher and question.id not in awarded_questions:
-                    student_score.score += 1
-                    awarded_questions.add(question.id)
-                    StudentScoreLog.objects.create(student_score=student_score, question=question)
+            process_question(question, is_correct)
 
             last_question_topic = question.topic
             question_details.append({
@@ -403,7 +417,6 @@ class CheckAnswersAPIView(APIView):
             })
             index += 1
 
-        # CHOICE ANSWERS
         for answer in serializer.validated_data.get('choice_answers', []):
             question = Question.objects.filter(id=answer['question_id'], question_type='choice').first()
             if not question:
@@ -414,12 +427,7 @@ class CheckAnswersAPIView(APIView):
             is_correct = (correct_choices == selected_choices)
 
             total_answers += 1
-            if is_correct:
-                correct_answers += 1
-                if not is_teacher and question.id not in awarded_questions:
-                    student_score.score += 1
-                    awarded_questions.add(question.id)
-                    StudentScoreLog.objects.create(student_score=student_score, question=question)
+            process_question(question, is_correct)
 
             last_question_topic = question.topic
             question_details.append({
@@ -431,7 +439,6 @@ class CheckAnswersAPIView(APIView):
             })
             index += 1
 
-        # COMPOSITE ANSWERS
         for answer in serializer.validated_data.get('composite_answers', []):
             question = Question.objects.filter(id=answer['question_id'], question_type='composite').first()
             if not question:
@@ -441,12 +448,7 @@ class CheckAnswersAPIView(APIView):
             is_correct = all(sub_answer == sub_q.correct_answer for sub_answer, sub_q in zip(answer['answers'], correct_subs))
 
             total_answers += 1
-            if is_correct:
-                correct_answers += 1
-                if not is_teacher and question.id not in awarded_questions:
-                    student_score.score += 1
-                    awarded_questions.add(question.id)
-                    StudentScoreLog.objects.create(student_score=student_score, question=question)
+            process_question(question, is_correct)
 
             last_question_topic = question.topic
             question_details.append({
@@ -460,7 +462,6 @@ class CheckAnswersAPIView(APIView):
 
         score = round((correct_answers / total_answers) * 100, 2) if total_answers else 0.0
 
-        # Agar bu teacher bo'lmasa, ma'lumotlarni saqlaymiz
         if not is_teacher:
             student_score.save()
 
@@ -495,8 +496,6 @@ class CheckAnswersAPIView(APIView):
                 "score": score
             }]
         })
-
-
 
 
 #############################   STUDENT BALL ###############################
