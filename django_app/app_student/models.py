@@ -51,6 +51,7 @@ class StudentScore(models.Model):
     score = models.PositiveIntegerField(default=0)
     coin = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
+    awarded_coin = models.BooleanField(default=False)
 
     class Meta:
         unique_together = ('student',)
