@@ -376,22 +376,30 @@ class CheckAnswersAPIView(APIView):
             nonlocal correct_answers, student_score, awarded_questions, student_instance
             if is_correct:
                 correct_answers += 1
-                if not is_teacher and question.id not in awarded_questions:
-                    student_score.score += 1
-                    awarded_questions.add(question.id)
 
+                if not is_teacher and question.id not in awarded_questions:
                     give_coin = False
+                    allow_award = False
+
+                    # Faqat birinchi urinish va kunlik limit ichida bo‘lsa
                     if not TopicProgress.objects.filter(user=student_instance, topic=question.topic).exists():
                         if get_today_coin_count(student_score) < 10:
                             student_score.coin += 1
                             give_coin = True
+                            allow_award = True
 
-                    StudentScoreLog.objects.create(
-                        student_score=student_score,
-                        question=question,
-                        awarded_coin=give_coin
-                    )
+                    # Faqat agar tanga berilsa, ball ham beriladi
+                    if allow_award:
+                        student_score.score += 1
+                        awarded_questions.add(question.id)
 
+                        StudentScoreLog.objects.create(
+                            student_score=student_score,
+                            question=question,
+                            awarded_coin=give_coin
+                        )
+
+        # TEXT SAVOLLAR
         for answer in serializer.validated_data.get('text_answers', []):
             question = Question.objects.filter(id=answer['question_id'], question_type='text').first()
             if not question:
@@ -417,6 +425,7 @@ class CheckAnswersAPIView(APIView):
             })
             index += 1
 
+        # CHOICE SAVOLLAR
         for answer in serializer.validated_data.get('choice_answers', []):
             question = Question.objects.filter(id=answer['question_id'], question_type='choice').first()
             if not question:
@@ -439,6 +448,7 @@ class CheckAnswersAPIView(APIView):
             })
             index += 1
 
+        # COMPOSITE SAVOLLAR
         for answer in serializer.validated_data.get('composite_answers', []):
             question = Question.objects.filter(id=answer['question_id'], question_type='composite').first()
             if not question:
@@ -460,8 +470,10 @@ class CheckAnswersAPIView(APIView):
             })
             index += 1
 
+        # FOIZLI NATIJA
         score = round((correct_answers / total_answers) * 100, 2) if total_answers else 0.0
 
+        # BALL VA MAVZU HOLATINI SAQLASH
         if not is_teacher:
             student_score.save()
 
@@ -496,7 +508,6 @@ class CheckAnswersAPIView(APIView):
                 "score": score
             }]
         })
-
 
 #############################   STUDENT BALL ###############################
 
