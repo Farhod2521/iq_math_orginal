@@ -377,21 +377,22 @@ class CheckAnswersAPIView(APIView):
             if is_correct:
                 correct_answers += 1
                 if not is_teacher and question.id not in awarded_questions:
+                    # Har doim ball beriladi
                     student_score.score += 1
                     awarded_questions.add(question.id)
 
                     give_coin = False
-                    if not TopicProgress.objects.filter(user=student_instance, topic=question.topic).exists():
-                        if get_today_coin_count(student_score) < 10:
-                            student_score.coin += 1
-                            give_coin = True
+                    # 10 tanga berilmagan bo‘lsa, yana beriladi
+                    if get_today_coin_count(student_score) < 10:
+                        student_score.coin += 1
+                        give_coin = True
 
+                    # Logga yoziladi, qay biri berilgan bo‘lsa
                     StudentScoreLog.objects.create(
                         student_score=student_score,
                         question=question,
                         awarded_coin=give_coin
                     )
-
         for answer in serializer.validated_data.get('text_answers', []):
             question = Question.objects.filter(id=answer['question_id'], question_type='text').first()
             if not question:
