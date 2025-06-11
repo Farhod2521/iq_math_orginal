@@ -373,24 +373,33 @@ class CheckAnswersAPIView(APIView):
         last_question_topic = None
 
         def process_question(question, is_correct):
-            nonlocal correct_answers, student_score, awarded_questions, student_instance
-            if is_correct:
+            nonlocal correct_answers, student_score, awarded_questions, student_instance, today_coin_count
+            if is_correct and not is_teacher and question.id not in awarded_questions:
                 correct_answers += 1
-                if not is_teacher and question.id not in awarded_questions:
+                give_coin = False
+                give_score = False
+
+                if today_coin_count < 10:
+                    # Faqat coin beriladi, score berilmaydi
+                    give_coin = True
+                    today_coin_count += 1
+                else:
+                    # Coin limiti tugagan — endi score beriladi
+                    give_score = True
+
+                if give_score:
                     student_score.score += 1
-                    awarded_questions.add(question.id)
 
-                    give_coin = False
-                    if not TopicProgress.objects.filter(user=student_instance, topic=question.topic).exists():
-                        if get_today_coin_count(student_score) < 10:
-                            student_score.coin += 1
-                            give_coin = True
+                if give_coin:
+                    student_score.coin += 1
 
-                    StudentScoreLog.objects.create(
-                        student_score=student_score,
-                        question=question,
-                        awarded_coin=give_coin
-                    )
+                awarded_questions.add(question.id)
+
+                StudentScoreLog.objects.create(
+                    student_score=student_score,
+                    question=question,
+                    awarded_coin=give_coin
+                )
 
         for answer in serializer.validated_data.get('text_answers', []):
             question = Question.objects.filter(id=answer['question_id'], question_type='text').first()
