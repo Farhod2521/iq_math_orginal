@@ -373,16 +373,16 @@ class CheckAnswersAPIView(APIView):
         last_question_topic = None
 
         def process_question(question, is_correct):
-            nonlocal correct_answers, student_score, awarded_questions, student_instance, today_coin_count
+            nonlocal correct_answers, student_score, awarded_questions, student_instance, get_today_coin_count
             if is_correct and not is_teacher and question.id not in awarded_questions:
                 correct_answers += 1
                 give_coin = False
                 give_score = False
 
-                if today_coin_count < 10:
+                if get_today_coin_count < 10:
                     # Faqat coin beriladi, score berilmaydi
                     give_coin = True
-                    today_coin_count += 1
+                    get_today_coin_count += 1
                 else:
                     # Coin limiti tugagan — endi score beriladi
                     give_score = True
