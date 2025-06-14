@@ -32,7 +32,7 @@ class StudentDiagnostSubjectsAPIView(APIView):
                     "class_ru": f"{class_name}-класс {subject.name_ru}",
                     "image_uz": subject.image_uz.url if subject.image_uz else "",
                     "image_ru": subject.image_ru.url if subject.image_ru else "",
-                    "is_open": True  # yoki kerakli shart bilan o‘zgartirsa ham bo‘ladi
+           
                 })
 
         return Response(data)
