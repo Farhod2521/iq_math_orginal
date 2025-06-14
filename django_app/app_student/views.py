@@ -42,13 +42,13 @@ class GenerateTestAPIView(APIView):
         except Class.DoesNotExist:
             return Response({"message": "Joriy sinf topilmadi"}, status=400)
 
-        # 1. level tekshir
+        # 1. Level tekshir
         try:
             level = int(request.data.get("level"))
         except (TypeError, ValueError):
             return Response({"message": "Level noto‘g‘ri formatda"}, status=400)
 
-        # 2. subject_id mavjud bo‘lsa, shu fan; bo‘lmasa avtomatik aniqlanadi
+        # 2. subject_id orqali fan aniqlanadi
         subject_id = request.data.get("subject_id")
         if subject_id:
             try:
@@ -56,13 +56,12 @@ class GenerateTestAPIView(APIView):
             except Subject.DoesNotExist:
                 return Response({"message": "Berilgan subject_id bo‘yicha fan topilmadi"}, status=404)
         else:
-            # agar subject_id bo‘lmasa — avtomatik tanlangan birinchi fanni olamiz
             subjects = Subject.objects.filter(classes=current_class).order_by("id")
             if not subjects.exists():
                 return Response({"message": "Ushbu sinf uchun hech qanday fan topilmadi"}, status=404)
             subject = subjects.first()
 
-        # 3. Savollarni subject va sinf asosida olish
+        # 3. Savollarni olish
         chapters = subject.chapters.all()
         questions = Question.objects.filter(
             topic__chapter__in=chapters,
@@ -70,6 +69,17 @@ class GenerateTestAPIView(APIView):
         ).distinct()
 
         question_list = sample(list(questions), min(30, questions.count()))
+
+        # ✅ Diagnostikani avtomatik yaratish
+        diagnost = Diagnost_Student.objects.create(
+            student=student,
+            level=level,
+            subject=subject,
+            result={"message": "Savollar generatsiya qilindi, hali javoblar yo‘q"}
+        )
+
+        # fan bilan bog‘liq barcha boblar diagnostikaga biriktiriladi
+        diagnost.chapters.set(chapters)
 
         serializer = CustomQuestionSerializer(question_list, many=True, context={'request': request})
         filtered_data = list(filter(None, serializer.data))
