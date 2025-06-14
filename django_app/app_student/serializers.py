@@ -9,10 +9,14 @@ class SubjectSerializer(serializers.ModelSerializer):
     class_uz = serializers.SerializerMethodField()
     class_ru = serializers.SerializerMethodField()
     is_open = serializers.SerializerMethodField()
+    is_diagnost_open = serializers.SerializerMethodField()  # ✅ yangi field
 
     class Meta:
         model = Subject
-        fields = ["id", "name_uz", "name_ru", "class_name", "class_uz", "class_ru", "image_uz", "image_ru", "is_open"]
+        fields = [
+            "id", "name_uz", "name_ru", "class_name", "class_uz", "class_ru",
+            "image_uz", "image_ru", "is_open", "is_diagnost_open"
+        ]
 
     def get_class_uz(self, obj):
         return f"{obj.classes.name}-sinf {obj.name_uz}"
@@ -21,8 +25,10 @@ class SubjectSerializer(serializers.ModelSerializer):
         return f"{obj.classes.name}-класс {obj.name_ru}"
 
     def get_is_open(self, obj):
-        # context orqali is_open qiymatini olish
-        return getattr(obj, 'is_open', False)
+        return self.context.get("is_open", False)
+
+    def get_is_diagnost_open(self, obj):
+        return self.context.get("is_diagnost_open", False)
 
     
 class ChapterSerializer(serializers.ModelSerializer):
