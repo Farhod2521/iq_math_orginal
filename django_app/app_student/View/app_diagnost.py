@@ -15,18 +15,28 @@ class StudentDiagnostSubjectsAPIView(APIView):
 
     def get(self, request):
         student = Student.objects.get(user=request.user)
+
         diagnost_list = Diagnost_Student.objects.filter(student=student).select_related('subject').distinct('subject')
-        data = [
-            {
-                "id": d.subject.id,
-                "name_uz": d.subject.name_uz,
-                "name_ru": d.subject.name_ru,
-                "class_uz": f"{d.subject.classes.name}-sinf {d.subject.name_uz}",
-                "class_ru": f"{d.subject.classes.name}-класс {d.subject.name_ru}"
-            }
-            for d in diagnost_list if d.subject
-        ]
+
+        data = []
+        for d in diagnost_list:
+            subject = d.subject
+            if subject:
+                class_name = subject.classes.name if subject.classes else ""
+                data.append({
+                    "id": subject.id,
+                    "name_uz": subject.name_uz,
+                    "name_ru": subject.name_ru,
+                    "class_name": class_name,
+                    "class_uz": f"{class_name}-sinf {subject.name_uz}",
+                    "class_ru": f"{class_name}-класс {subject.name_ru}",
+                    "image_uz": subject.image_uz.url if subject.image_uz else "",
+                    "image_ru": subject.image_ru.url if subject.image_ru else "",
+                    "is_open": True  # yoki kerakli shart bilan o‘zgartirsa ham bo‘ladi
+                })
+
         return Response(data)
+
 
 
 class SubjectChaptersAPIView(APIView):

@@ -70,7 +70,7 @@ class GenerateTestAPIView(APIView):
 
         question_list = sample(list(questions), min(30, questions.count()))
 
-        # ✅ Diagnostikani avtomatik yaratish
+        # ✅ Faqat subject, level, student va bo‘sh result bilan yozamiz
         diagnost = Diagnost_Student.objects.create(
             student=student,
             level=level,
@@ -78,13 +78,14 @@ class GenerateTestAPIView(APIView):
             result={"message": "Savollar generatsiya qilindi, hali javoblar yo‘q"}
         )
 
-        # fan bilan bog‘liq barcha boblar diagnostikaga biriktiriladi
-        diagnost.chapters.set(chapters)
+        # ❌ Barcha boblarni yozish kerak emas!
+        # diagnost.chapters.set(chapters)  ← bu qator olib tashlandi
 
         serializer = CustomQuestionSerializer(question_list, many=True, context={'request': request})
         filtered_data = list(filter(None, serializer.data))
 
         return Response(filtered_data)
+
 
 class GenerateCheckAnswersAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -103,7 +104,7 @@ class GenerateCheckAnswersAPIView(APIView):
         total_answers = 0
         question_details = []
         wrong_topics = {}
-        wrong_topic_instances = set()  # <- faqat xato mavzular uchun
+        wrong_topic_instances = set()
 
         index = 1
 
@@ -213,17 +214,30 @@ class GenerateCheckAnswersAPIView(APIView):
             }]
         }
 
-        first_question_id = question_details[0]['question_id'] if question_details else None
-        level = Question.objects.filter(id=first_question_id).first().level if first_question_id else None
+        # Savollardan subject aniqlaymiz
+        subject = None
+        first_question = Question.objects.filter(id=question_details[0]['question_id']).select_related(
+            'topic__chapter__subject').first() if question_details else None
 
+        if first_question and first_question.topic and first_question.topic.chapter:
+            subject = first_question.topic.chapter.subject
+            level = first_question.level
+        else:
+            level = None
+
+        # Diagnost_Student yozamiz
         diagnost = Diagnost_Student.objects.create(
             student=student_instance,
             level=level,
+            subject=subject,
             result=result_json
         )
 
-        # faqat xato qilingan savollarning topiclarini biriktiramiz
+        # ✅ Faqat xato qilingan topic va ularga tegishli chapterlar
+        wrong_chapter_instances = set(topic.chapter for topic in wrong_topic_instances)
+
         diagnost.topic.set(wrong_topic_instances)
+        diagnost.chapters.set(wrong_chapter_instances)
 
         return Response(result_json)
 
