@@ -28,50 +28,53 @@ class GenerateTestAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        student = Student.objects.get(user=request.user)
-        if not student or not student.class_name:
+        try:
+            student = Student.objects.get(user=request.user)
+        except Student.DoesNotExist:
+            return Response({"message": "Foydalanuvchi topilmadi"}, status=404)
+
+        if not student.class_name:
             return Response({"message": "Foydalanuvchining sinfi topilmadi"}, status=400)
 
         current_class_name = student.class_name.classes.name
-
         try:
             current_class = Class.objects.get(name=current_class_name)
         except Class.DoesNotExist:
             return Response({"message": "Joriy sinf topilmadi"}, status=400)
 
+        # 1. level tekshir
         try:
             level = int(request.data.get("level"))
         except (TypeError, ValueError):
             return Response({"message": "Level noto‘g‘ri formatda"}, status=400)
 
-        def get_questions_by_class(cls, count):
-            subjects = Subject.objects.filter(classes=cls, category__name__iexact="Matematika")
-            if not subjects.exists():
-                return []
-            subject = subjects.first()
-            chapters = subject.chapters.all()
-            questions = Question.objects.filter(topic__chapter__in=chapters, level=level).distinct()
-            return sample(list(questions), min(count, questions.count()))
-
-        if current_class_name == "5":
-            # faqat 5-sinfdan 30 ta
-            questions_list = get_questions_by_class(current_class, 30)
-        else:
-            # 15 ta joriy sinf, 15 ta quyi sinf
+        # 2. subject_id mavjud bo‘lsa, shu fan; bo‘lmasa avtomatik aniqlanadi
+        subject_id = request.data.get("subject_id")
+        if subject_id:
             try:
-                prev_class = Class.objects.get(name=str(int(current_class_name) - 1))
-            except (ValueError, Class.DoesNotExist):
-                return Response({"message": "Quyi sinf topilmadi"}, status=400)
+                subject = Subject.objects.get(id=subject_id)
+            except Subject.DoesNotExist:
+                return Response({"message": "Berilgan subject_id bo‘yicha fan topilmadi"}, status=404)
+        else:
+            # agar subject_id bo‘lmasa — avtomatik tanlangan birinchi fanni olamiz
+            subjects = Subject.objects.filter(classes=current_class).order_by("id")
+            if not subjects.exists():
+                return Response({"message": "Ushbu sinf uchun hech qanday fan topilmadi"}, status=404)
+            subject = subjects.first()
 
-            current_qs = get_questions_by_class(current_class, 15)
-            prev_qs = get_questions_by_class(prev_class, 15)
-            questions_list = current_qs + prev_qs
+        # 3. Savollarni subject va sinf asosida olish
+        chapters = subject.chapters.all()
+        questions = Question.objects.filter(
+            topic__chapter__in=chapters,
+            level=level
+        ).distinct()
 
-        serializer = CustomQuestionSerializer(questions_list, many=True, context={'request': request})
+        question_list = sample(list(questions), min(30, questions.count()))
+
+        serializer = CustomQuestionSerializer(question_list, many=True, context={'request': request})
         filtered_data = list(filter(None, serializer.data))
 
         return Response(filtered_data)
-
 
 class GenerateCheckAnswersAPIView(APIView):
     permission_classes = [IsAuthenticated]
