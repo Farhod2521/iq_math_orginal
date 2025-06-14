@@ -97,4 +97,4 @@ class ProductExchange(models.Model):
         verbose_name_plural = "Mahsulotga almashtirishlar"
 
     def __str__(self):
-        return f"{self.student.full_name} → {self.product.name} ({self.used_score} ball)"
+        return f"{self.student.full_name} → {self.product.name} ({self.used_coin} ball)"
