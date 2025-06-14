@@ -2,15 +2,17 @@ from django.db import models
 from django_app.app_user.models import Student
 from django_app.app_teacher.models import Topic, Question, Chapter
 from django_app.app_management.models import Product
-class  Diagnost_Student(models.Model):
-    student =  models.ForeignKey(Student, on_delete=models.CASCADE)
-    topic =  models.ManyToManyField(Topic, null=True)
+from django_app.app_user.models import Subject
+class Diagnost_Student(models.Model):
+    student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, null=True)  
+    chapters = models.ManyToManyField(Chapter, blank=True)  
+    topic = models.ManyToManyField(Topic, blank=True)       
     level = models.PositiveIntegerField()
-    result   = models.JSONField()
+    result = models.JSONField()
 
     def __str__(self):
-        return str(self.student.full_name)
-    
+        return f"{self.student.full_name} - {self.subject.name}"
 
 
 class ChapterProgress(models.Model):
