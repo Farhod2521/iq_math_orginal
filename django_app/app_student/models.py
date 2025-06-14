@@ -12,7 +12,7 @@ class Diagnost_Student(models.Model):
     result = models.JSONField()
 
     def __str__(self):
-        return f"{self.student.full_name} - {self.subject.name}"
+        return f"{self.student.full_name} - {self.subject}"
 
 
 class ChapterProgress(models.Model):
