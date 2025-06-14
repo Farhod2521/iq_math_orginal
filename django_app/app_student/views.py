@@ -251,19 +251,19 @@ class StudentSubjectListAPIView(APIView):
     def get(self, request):
         user = request.user
 
-        # Agar o'qituvchi bo'lsa — barcha subjectlar ochiq bo'lib qaytariladi
         if hasattr(user, 'teacher_profile'):
             all_subjects = Subject.objects.all()
             result = []
 
             for subject in all_subjects:
-                serialized = SubjectSerializer(subject).data
-                serialized["is_open"] = True
+                serialized = SubjectSerializer(subject, context={
+                    "is_open": True,
+                    "is_diagnost_open": True
+                }).data
                 result.append(serialized)
 
             return Response(result, status=status.HTTP_200_OK)
 
-        # Aks holda — talaba uchun ishlashni davom ettiramiz
         try:
             student = Student.objects.get(user=user)
             now_time = now()
@@ -284,17 +284,20 @@ class StudentSubjectListAPIView(APIView):
             result = []
 
             for subject in all_subjects:
-                serialized = SubjectSerializer(subject).data
-                if is_subscription_valid or is_free_trial_active:
-                    serialized["is_open"] = True
-                else:
-                    serialized["is_open"] = False
+                # Diagnostikadan o‘tganmi?
+                has_diagnost = Diagnost_Student.objects.filter(student=student, subject=subject).exists()
+
+                # Avvalgi is_open logikasi saqlanadi
+                is_open = (is_subscription_valid or is_free_trial_active)
+
+                serialized = SubjectSerializer(subject, context={
+                    "is_open": is_open,
+                    "is_diagnost_open": has_diagnost
+                }).data
+
                 result.append(serialized)
 
             return Response(result, status=status.HTTP_200_OK)
-
-        except Student.DoesNotExist:
-            return Response({"detail": "Student topilmadi"}, status=status.HTTP_404_NOT_FOUND)
 
 
 class ChapterListBySubjectAPIView(APIView):
