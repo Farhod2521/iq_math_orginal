@@ -299,6 +299,9 @@ class StudentSubjectListAPIView(APIView):
 
             return Response(result, status=status.HTTP_200_OK)
 
+        except Student.DoesNotExist:
+            return Response({"detail": "Student topilmadi"}, status=status.HTTP_404_NOT_FOUND)
+
 
 class ChapterListBySubjectAPIView(APIView):
     permission_classes = [IsAuthenticated]
