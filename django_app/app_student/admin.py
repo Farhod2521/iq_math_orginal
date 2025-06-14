@@ -1,8 +1,9 @@
 from django.contrib import admin
-from .models import Diagnost_Student, TopicProgress, StudentScore, StudentScoreLog, ChapterProgress
+from .models import Diagnost_Student, TopicProgress, StudentScore, StudentScoreLog, ChapterProgress, ProductExchange
 
 
 admin.site.register(Diagnost_Student)
+admin.site.register(ProductExchange)
 # Register your models here.
 
 
