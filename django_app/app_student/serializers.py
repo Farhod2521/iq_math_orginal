@@ -64,12 +64,30 @@ class TopicSerializer1(serializers.ModelSerializer):
 
 class TopicSerializer(serializers.ModelSerializer):
     is_open = serializers.SerializerMethodField()
-    is_locked = serializers.SerializerMethodField()  # is_locked endi method orqali boshqariladi
+    is_locked = serializers.SerializerMethodField()
+    score = serializers.SerializerMethodField()  # Qo‘shilmoqda
 
     class Meta:
         model = Topic
-        fields = ['id', 'name_uz', 'name_ru', 'chapter', "video_url_uz", "video_url_ru", "content_uz", "content_ru", "is_locked", "is_open"]
+        fields = [
+            'id', 'name_uz', 'name_ru', 'chapter', 
+            "video_url_uz", "video_url_ru", 
+            "content_uz", "content_ru", 
+            "is_locked", "is_open", "score"  # yangi field
+        ]
+    def get_score(self, obj):
+        request = self.context.get('request')
+        user = request.user
 
+        if hasattr(user, 'teacher_profile'):
+            return None  # O‘qituvchiga score kerak emas
+
+        try:
+            student = Student.objects.get(user=user)
+            progress = TopicProgress.objects.get(user=student, topic=obj)
+            return round(progress.score, 1)
+        except (Student.DoesNotExist, TopicProgress.DoesNotExist):
+            return 0.
     def get_is_open(self, obj):
         request = self.context.get('request')
         user = request.user
