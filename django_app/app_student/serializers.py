@@ -79,37 +79,16 @@ class TopicSerializer(serializers.ModelSerializer):
     def get_score(self, obj):
         request = self.context.get('request')
         user = request.user
+
         if hasattr(user, 'teacher_profile'):
             return None
+
         try:
             student = Student.objects.get(user=user)
             progress = TopicProgress.objects.get(user=student, topic=obj)
             return round(progress.score, 1)
         except (Student.DoesNotExist, TopicProgress.DoesNotExist):
             return 0.0
-
-    def get_is_open(self, obj):
-        request = self.context.get('request')
-        user = request.user
-
-        if hasattr(user, 'teacher_profile'):
-            return True
-
-        try:
-            student = Student.objects.get(user=user)
-        except Student.DoesNotExist:
-            return False
-
-        # Agar mavzu qulflanmagan bo‘lsa — ochiq
-        if not obj.is_locked:
-            return True
-
-        # Progress orqali ochilgan bo‘lsa
-        try:
-            progress = TopicProgress.objects.get(user=student, topic=obj)
-            return progress.is_unlocked
-        except TopicProgress.DoesNotExist:
-            return False
 
     def get_is_locked(self, obj):
         request = self.context.get('request')
@@ -123,27 +102,33 @@ class TopicSerializer(serializers.ModelSerializer):
         except Student.DoesNotExist:
             return True
 
-        # 🔐 Agar bu topicning oldingi topiclari bo‘lsa, ularni tekshirish kerak
-        chapter_topics = Topic.objects.filter(chapter=obj.chapter, is_locked=False).order_by('id')
+        # Chapterdagi barcha topiclarni tartib bilan olamiz
+        chapter_topics = Topic.objects.filter(chapter=obj.chapter).order_by('id')
         topic_ids = list(chapter_topics.values_list('id', flat=True))
 
         try:
             current_index = topic_ids.index(obj.id)
         except ValueError:
-            return True  # bu topic chapterda yo‘q bo‘lsa, qulflanadi
+            return True  # Topic chapter ichida bo‘lmasa — qulflanadi
 
-        # Agar bu chapterdagi birinchi topic bo‘lsa
+        # Agar birinchi topic bo‘lsa — doim ochiq
         if current_index == 0:
             return False
 
-        # Oldingi topicni olib, uning score'ini tekshiramiz
+        # Oldingi topicni topamiz
         prev_topic_id = topic_ids[current_index - 1]
         try:
             prev_topic = Topic.objects.get(id=prev_topic_id)
             prev_progress = TopicProgress.objects.get(user=student, topic=prev_topic)
-            return prev_progress.score < 80  # agar oldingi score < 80 bo‘lsa, bu topic qulflanadi
+            if prev_progress.score >= 80:
+                return False  # oldingi topic 80%+ bo‘lsa — bu topic ochiladi
         except TopicProgress.DoesNotExist:
-            return True
+            pass
+
+        return True  # Aks holda — qulflanadi
+
+    def get_is_open(self, obj):
+        return not self.get_is_locked(obj)
 class ChoiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Choice
