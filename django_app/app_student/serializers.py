@@ -65,7 +65,7 @@ class TopicSerializer1(serializers.ModelSerializer):
 class TopicSerializer(serializers.ModelSerializer):
     is_open = serializers.SerializerMethodField()
     is_locked = serializers.SerializerMethodField()
-    score = serializers.SerializerMethodField()  # Qo‘shilmoqda
+    score = serializers.SerializerMethodField()
 
     class Meta:
         model = Topic
@@ -73,51 +73,77 @@ class TopicSerializer(serializers.ModelSerializer):
             'id', 'name_uz', 'name_ru', 'chapter', 
             "video_url_uz", "video_url_ru", 
             "content_uz", "content_ru", 
-            "is_locked", "is_open", "score"  # yangi field
+            "is_locked", "is_open", "score"
         ]
+
     def get_score(self, obj):
         request = self.context.get('request')
         user = request.user
-
         if hasattr(user, 'teacher_profile'):
-            return None  # O‘qituvchiga score kerak emas
-
+            return None
         try:
             student = Student.objects.get(user=user)
             progress = TopicProgress.objects.get(user=student, topic=obj)
             return round(progress.score, 1)
         except (Student.DoesNotExist, TopicProgress.DoesNotExist):
-            return 0.
+            return 0.0
+
     def get_is_open(self, obj):
         request = self.context.get('request')
         user = request.user
 
-        # O‘qituvchi bo‘lsa — doim ochiq
         if hasattr(user, 'teacher_profile'):
             return True
 
-        # Mavzu qulflangan bo‘lsa — faqat studentda progress tekshiriladi
-        if obj.is_locked:
-            try:
-                student_instance = Student.objects.get(user=user)
-                progress = TopicProgress.objects.get(user=student_instance, topic=obj)
-                return progress.is_unlocked
-            except (Student.DoesNotExist, TopicProgress.DoesNotExist):
-                return False
+        try:
+            student = Student.objects.get(user=user)
+        except Student.DoesNotExist:
+            return False
 
-        # Mavzu qulflanmagan bo‘lsa — ochiq
-        return True
+        # Agar mavzu qulflanmagan bo‘lsa — ochiq
+        if not obj.is_locked:
+            return True
+
+        # Progress orqali ochilgan bo‘lsa
+        try:
+            progress = TopicProgress.objects.get(user=student, topic=obj)
+            return progress.is_unlocked
+        except TopicProgress.DoesNotExist:
+            return False
 
     def get_is_locked(self, obj):
         request = self.context.get('request')
         user = request.user
 
-        # O‘qituvchi bo‘lsa — hechnarsa qulflanmagan sifatida ko‘rsatiladi
         if hasattr(user, 'teacher_profile'):
             return False
 
-        # Aks holda — real qiymati qaytariladi
-        return obj.is_locked
+        try:
+            student = Student.objects.get(user=user)
+        except Student.DoesNotExist:
+            return True
+
+        # 🔐 Agar bu topicning oldingi topiclari bo‘lsa, ularni tekshirish kerak
+        chapter_topics = Topic.objects.filter(chapter=obj.chapter, is_locked=False).order_by('id')
+        topic_ids = list(chapter_topics.values_list('id', flat=True))
+
+        try:
+            current_index = topic_ids.index(obj.id)
+        except ValueError:
+            return True  # bu topic chapterda yo‘q bo‘lsa, qulflanadi
+
+        # Agar bu chapterdagi birinchi topic bo‘lsa
+        if current_index == 0:
+            return False
+
+        # Oldingi topicni olib, uning score'ini tekshiramiz
+        prev_topic_id = topic_ids[current_index - 1]
+        try:
+            prev_topic = Topic.objects.get(id=prev_topic_id)
+            prev_progress = TopicProgress.objects.get(user=student, topic=prev_topic)
+            return prev_progress.score < 80  # agar oldingi score < 80 bo‘lsa, bu topic qulflanadi
+        except TopicProgress.DoesNotExist:
+            return True
 class ChoiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Choice
