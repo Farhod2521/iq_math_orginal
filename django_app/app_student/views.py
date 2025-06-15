@@ -404,25 +404,29 @@ class CheckAnswersAPIView(APIView):
         question_details = []
         index = 1
         last_question_topic = None
+        today_coin_count = get_today_coin_count(student_score)
 
         def process_question(question, is_correct):
-            nonlocal correct_answers, student_score, awarded_questions, student_instance
+            nonlocal correct_answers, student_score, awarded_questions, student_instance, today_coin_count
+
             if is_correct:
                 correct_answers += 1
+
                 if not is_teacher and question.id not in awarded_questions:
-                    # Har doim ball beriladi
                     student_score.score += 1
                     awarded_questions.add(question.id)
 
                     give_coin = False
-                    if get_today_coin_count(student_score) < 10:
+                    if today_coin_count < 10:
                         student_score.coin += 1
+                        today_coin_count += 1  # Bu muhim: ortga query qilmaslik uchun
                         give_coin = True
 
                     StudentScoreLog.objects.create(
                         student_score=student_score,
                         question=question,
-                        awarded_coin=give_coin
+                        awarded_coin=give_coin,
+                        awarded_at=timezone.now()  # ishonch uchun yozib ketamiz
                     )
 
         # TEXT SAVOLLAR
