@@ -415,17 +415,17 @@ class CheckAnswersAPIView(APIView):
                     awarded_questions.add(question.id)
 
                     give_coin = False
-                    # 10 tanga berilmagan bo‘lsa, yana beriladi
                     if get_today_coin_count(student_score) < 10:
                         student_score.coin += 1
                         give_coin = True
 
-                    # Logga yoziladi, qay biri berilgan bo‘lsa
                     StudentScoreLog.objects.create(
                         student_score=student_score,
                         question=question,
                         awarded_coin=give_coin
                     )
+
+        # TEXT SAVOLLAR
         for answer in serializer.validated_data.get('text_answers', []):
             question = Question.objects.filter(id=answer['question_id'], question_type='text').first()
             if not question:
@@ -451,6 +451,7 @@ class CheckAnswersAPIView(APIView):
             })
             index += 1
 
+        # CHOICE SAVOLLAR
         for answer in serializer.validated_data.get('choice_answers', []):
             question = Question.objects.filter(id=answer['question_id'], question_type='choice').first()
             if not question:
@@ -473,6 +474,7 @@ class CheckAnswersAPIView(APIView):
             })
             index += 1
 
+        # COMPOSITE SAVOLLAR
         for answer in serializer.validated_data.get('composite_answers', []):
             question = Question.objects.filter(id=answer['question_id'], question_type='composite').first()
             if not question:
@@ -499,28 +501,16 @@ class CheckAnswersAPIView(APIView):
         if not is_teacher:
             student_score.save()
 
-            if last_question_topic and score >= 80:
+            if last_question_topic:
                 topic_progress, _ = TopicProgress.objects.get_or_create(
                     user=student_instance, topic=last_question_topic
                 )
-                topic_progress.is_unlocked = True
-                topic_progress.score = score
-                topic_progress.completed_at = timezone.now()
-                topic_progress.save()
 
-                all_topics = Topic.objects.filter(chapter=last_question_topic.chapter, is_locked=False).order_by('id')
-                topic_ids = list(all_topics.values_list('id', flat=True))
-
-                if last_question_topic.id in topic_ids:
-                    current_index = topic_ids.index(last_question_topic.id)
-                    if current_index + 1 < len(topic_ids):
-                        next_topic = Topic.objects.get(id=topic_ids[current_index + 1])
-                        next_progress, created = TopicProgress.objects.get_or_create(
-                            user=student_instance, topic=next_topic
-                        )
-                        if created:
-                            next_progress.is_unlocked = True
-                            next_progress.save()
+                # Eng yuqori score ni saqlash
+                if score > topic_progress.score:
+                    topic_progress.score = score
+                    topic_progress.completed_at = timezone.now()
+                    topic_progress.save()
 
         return Response({
             "question": question_details,
