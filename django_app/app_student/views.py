@@ -413,20 +413,23 @@ class CheckAnswersAPIView(APIView):
                 correct_answers += 1
 
                 if not is_teacher and question.id not in awarded_questions:
-                    student_score.score += 1
                     awarded_questions.add(question.id)
+
+                    # Har doim ball beriladi
+                    student_score.score += 1
 
                     give_coin = False
                     if today_coin_count < 10:
                         student_score.coin += 1
-                        today_coin_count += 1  # Bu muhim: ortga query qilmaslik uchun
+                        today_coin_count += 1  # Local counterni yangilaymiz
                         give_coin = True
 
+                    # Logga yoziladi
                     StudentScoreLog.objects.create(
                         student_score=student_score,
                         question=question,
                         awarded_coin=give_coin,
-                        awarded_at=timezone.now()  # ishonch uchun yozib ketamiz
+                        awarded_at=timezone.now()  # zarur bo‘lsa
                     )
 
         # TEXT SAVOLLAR
