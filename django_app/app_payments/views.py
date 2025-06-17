@@ -68,7 +68,7 @@ class InitiatePaymentAPIView(APIView):
 
         try:
             response = requests.post(
-                "https://dev-mesh.multicard.uz/payment/invoice",
+                "https://mesh.multicard.uz/payment/invoice",
                 headers=headers,
                 json=data
             )
@@ -130,7 +130,7 @@ class PaymentCallbackAPIView(APIView):
         payment.invoice_uuid = invoice_uuid
         payment.billing_id = billing_id
         payment.sign = sign
-        payment.receipt_url = f"https://dev-checkout.multicard.uz/invoice/{uuid}"
+        payment.receipt_url = f"https://mesh.multicard.uz/invoice/{uuid}"
         payment.save()
 
         # Obunani yaratish yoki olish

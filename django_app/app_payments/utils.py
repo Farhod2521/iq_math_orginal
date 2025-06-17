@@ -2,7 +2,7 @@
 
 import requests
 
-MULTICARD_AUTH_URL = "https://dev-mesh.multicard.uz/auth"
+MULTICARD_AUTH_URL = "https://mesh.multicard.uz/auth"
 APPLICATION_ID = "udea"
 SECRET_KEY = "n4eci720czqjlo2t"
 
