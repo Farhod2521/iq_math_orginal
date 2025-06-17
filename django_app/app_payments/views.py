@@ -48,7 +48,7 @@ class InitiatePaymentAPIView(APIView):
         amount_in_tiyin = int(float(amount) * 100)
 
         data = {
-            "store_id": 6,
+            "store_id": 553,
             "amount": amount_in_tiyin,
             "invoice_id": transaction_id,
             "return_url": "https://iqmath.uz/",
@@ -186,7 +186,7 @@ class SubscriptionTrialDaysAPIView(APIView):
             {
             "days_until_next_payment": remaining_days,
             "end_date": subscription.end_date.strftime("%d/%m/%Y"),
-            "payment_amount": 499000, 
+            "payment_amount": 1000, 
             "is_paid": subscription.is_paid
 
             },

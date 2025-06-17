@@ -3,8 +3,8 @@
 import requests
 
 MULTICARD_AUTH_URL = "https://dev-mesh.multicard.uz/auth"
-APPLICATION_ID = "rhmt_test"
-SECRET_KEY = "Pw18axeBFo8V7NamKHXX"
+APPLICATION_ID = "udea"
+SECRET_KEY = "n4eci720czqjlo2t"
 
 def get_multicard_token():
     response = requests.post(MULTICARD_AUTH_URL, json={
