@@ -113,7 +113,7 @@ class PaymentCallbackAPIView(APIView):
         sign = data.get("sign")
 
         # Sizning secret keyingiz
-        SECRET_KEY = "Pw18axeBFo8V7NamKHXX"
+        SECRET_KEY = "n4eci720czqjlo2t"
         EXPECTED_SIGN = self.generate_sign(store_id, invoice_id, amount, SECRET_KEY)
 
         # Imzo tekshirish
