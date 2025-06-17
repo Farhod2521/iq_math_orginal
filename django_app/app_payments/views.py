@@ -23,7 +23,7 @@ class InitiatePaymentAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        amount = 499000
+        amount = 1000
 
         if not amount:
             return Response({"error": "amount kerak"}, status=status.HTTP_400_BAD_REQUEST)
