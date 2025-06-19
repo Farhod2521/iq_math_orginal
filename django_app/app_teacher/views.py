@@ -140,9 +140,7 @@ class MyTopicListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, id):
-    
-        topics = Topic.objects.filter(chapter__in=[id])
-
+        topics = Topic.objects.filter(chapter__in=[id]).order_by('order') 
         serializer = MyTopicAddSerializer(topics, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     def put(self, request, id):
