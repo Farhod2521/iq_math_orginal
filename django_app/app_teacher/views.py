@@ -599,7 +599,7 @@ import base64
 from bs4 import BeautifulSoup
 from django.conf import settings
 client = OpenAI(
-    api_key="os.getenv("OPENAI")"
+    api_key=f"{os.getenv('OPENAI')}"
 )
 
 # class OpenAIProcessAPIView(APIView):
