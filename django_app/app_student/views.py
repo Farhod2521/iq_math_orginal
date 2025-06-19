@@ -252,7 +252,7 @@ class StudentSubjectListAPIView(APIView):
         user = request.user
 
         if hasattr(user, 'teacher_profile'):
-            all_subjects = Subject.objects.all()
+            all_subjects = Subject.objects.all().order_by('order')  # ✅ Tartib bilan
             result = []
 
             for subject in all_subjects:
@@ -280,14 +280,11 @@ class StudentSubjectListAPIView(APIView):
             except Subscription.DoesNotExist:
                 pass
 
-            all_subjects = Subject.objects.all()
+            all_subjects = Subject.objects.all().order_by('order')  # ✅ Tartib bilan
             result = []
 
             for subject in all_subjects:
-                # Diagnostikadan o‘tganmi?
                 has_diagnost = Diagnost_Student.objects.filter(student=student, subject=subject).exists()
-
-                # Avvalgi is_open logikasi saqlanadi
                 is_open = (is_subscription_valid or is_free_trial_active)
 
                 serialized = SubjectSerializer(subject, context={
