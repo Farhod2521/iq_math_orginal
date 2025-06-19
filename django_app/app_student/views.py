@@ -309,7 +309,7 @@ class ChapterListBySubjectAPIView(APIView):
     def get(self, request, subject_id):
         try:
             subject = Subject.objects.get(id=subject_id)
-            chapters = Chapter.objects.filter(subject=subject)
+            chapters = Chapter.objects.filter(subject=subject).order_by('order')
             serializer = ChapterSerializer(chapters, many=True, context={'request': request})
             return Response(serializer.data, status=status.HTTP_200_OK)
         
@@ -322,19 +322,18 @@ class TopicListByChapterAPIView(APIView):
     def get(self, request, chapter_id):
         user = request.user
 
-        # Agar teacher_profile mavjud bo‘lsa, obuna tekshiruvisiz ko‘rsatamiz
+        # 👨‍🏫 Teacher kirgan bo‘lsa — to‘g‘ridan-to‘g‘ri ko‘rsatamiz
         if hasattr(user, 'teacher_profile'):
             try:
                 chapter = Chapter.objects.get(id=chapter_id)
-                topics = Topic.objects.filter(chapter=chapter)
+                topics = Topic.objects.filter(chapter=chapter).order_by('order')  # ✅ Order bo‘yicha
                 serializer = TopicSerializer(topics, many=True, context={'request': request})
                 return Response(serializer.data, status=status.HTTP_200_OK)
             except Chapter.DoesNotExist:
                 return Response({"detail": "Chapter topilmadi"}, status=status.HTTP_404_NOT_FOUND)
 
-        # Student bo‘lsa, obuna va progress tekshiriladi
+        # 👩‍🎓 Student kirgan bo‘lsa — obuna vaqti tekshiriladi
         student = getattr(user, 'student_profile', None)
-
         if not student:
             return Response({"detail": "Foydalanuvchi uchun student profili topilmadi"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -348,12 +347,11 @@ class TopicListByChapterAPIView(APIView):
 
         try:
             chapter = Chapter.objects.get(id=chapter_id)
-            topics = Topic.objects.filter(chapter=chapter)
+            topics = Topic.objects.filter(chapter=chapter).order_by('order')  # ✅ Order bo‘yicha
             serializer = TopicSerializer(topics, many=True, context={'request': request})
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Chapter.DoesNotExist:
             return Response({"detail": "Chapter topilmadi"}, status=status.HTTP_404_NOT_FOUND)
-
 class QuestionListByTopicAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
