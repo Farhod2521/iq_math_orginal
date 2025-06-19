@@ -106,6 +106,8 @@ class Subject(models.Model):
     teachers = models.ManyToManyField(Teacher, related_name="subjects", verbose_name="O‘qituvchilar")
     classes = models.ForeignKey(Class, on_delete=models.SET_NULL, related_name="subjects", verbose_name="Sinf", null=True)
     category = models.ForeignKey(Subject_Category, on_delete=models.SET_NULL, related_name="subjects", verbose_name="Fan bo'limi", null=True)
+    
+    order = models.PositiveIntegerField(default=0, verbose_name="Tartib raqami")  # ✅ Qo‘shildi
 
     def __str__(self):
         return f"{self.name} - {self.classes.name}"
@@ -113,6 +115,7 @@ class Subject(models.Model):
     class Meta:
         verbose_name = "Fan"
         verbose_name_plural = "Fanlar"
+        ordering = ['order']  # ✅ Tartibli chiqadi
 from django.utils.timezone import now
 
 def generate_daily_user_id():

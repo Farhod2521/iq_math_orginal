@@ -2,6 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django_app.app_teacher.models import Topic, Chapter
+from django_app.app_user.models import Subject
 from django.shortcuts import get_object_or_404
 
 class ReorderTopicAPIView(APIView):
@@ -33,3 +34,19 @@ class ReorderChapterAPIView(APIView):
             Chapter.objects.filter(id=chapter_id).update(order=index)
 
         return Response({"detail": "Chapter tartibi muvaffaqiyatli yangilandi"}, status=200)
+
+
+class ReorderSubjectAPIView(APIView):
+    def post(self, request):
+        # ✅ Faqat teacher kirsa ruxsat
+        if not hasattr(request.user, 'teacher_profile'):
+            return Response({"detail": "Faqat o‘qituvchilar tartibni o‘zgartirishi mumkin."}, status=403)
+
+        ordered_ids = request.data.get("ordered_ids", [])
+        if not isinstance(ordered_ids, list):
+            return Response({"detail": "ordered_ids list ko‘rinishida bo‘lishi kerak"}, status=400)
+
+        for index, subject_id in enumerate(ordered_ids, start=1):
+            Subject.objects.filter(id=subject_id).update(order=index)
+
+        return Response({"detail": "Fanlar tartibi muvaffaqiyatli yangilandi"}, status=200)
