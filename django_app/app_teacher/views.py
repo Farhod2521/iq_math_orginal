@@ -118,7 +118,7 @@ class MyChapterListView(APIView):
     def get(self, request, id):
         teacher = request.user.teacher_profile  
         subjects = Subject.objects.filter(teachers=teacher)  
-        chapters = Chapter.objects.filter(subject__in=[id])  
+        chapters = Chapter.objects.filter(subject__in=[id]).order_by('order') 
 
         serializer = MyChapterAddSerializer(chapters, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
