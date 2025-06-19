@@ -26,7 +26,7 @@ class TeacherSubjectsAPIView(APIView):
 
     def get(self, request):
         teacher = request.user.teacher_profile  # Tizimga kirgan o‘qituvchini olish
-        subjects = Subject.objects.filter(teachers=teacher)  # O‘qituvchiga bog‘langan fanlar
+        subjects = Subject.objects.filter(teachers=teacher).order_by("order")  # O‘qituvchiga bog‘langan fanlar
         serializer = SubjectSerializer(subjects, many=True)
         return Response(serializer.data)
 
