@@ -10,7 +10,8 @@ from .serializers import(
 from django_app.app_user.models import  Subject
 from django.shortcuts import get_object_or_404
 from rest_framework.generics import ListAPIView
-
+import os
+from dotenv import load_dotenv
 
 class SubjectListAPIView(ListAPIView):
     queryset = Subject.objects.all()
@@ -598,7 +599,7 @@ import base64
 from bs4 import BeautifulSoup
 from django.conf import settings
 client = OpenAI(
-    api_key="#####"
+    api_key="os.getenv("OPENAI")"
 )
 
 # class OpenAIProcessAPIView(APIView):
