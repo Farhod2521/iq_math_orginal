@@ -7,13 +7,20 @@ from django_app.app_user.models import Teacher, Student
 
 class Chapter(models.Model):
     name = models.CharField(max_length=500, verbose_name="Bob nomi")
-    subject = models.ForeignKey(Subject,on_delete=models.SET_NULL,related_name="chapters",verbose_name="Tegishli fan", null=True )
+    subject = models.ForeignKey(
+        Subject, on_delete=models.SET_NULL,
+        related_name="chapters", verbose_name="Tegishli fan",
+        null=True
+    )
+    order = models.PositiveIntegerField(default=0, verbose_name="Tartib raqami")  # ✅ Qo‘shildi
 
     def __str__(self):
         return self.name
+
     class Meta:
         verbose_name = "Fan Bobi"
-        verbose_name_plural = "Fan Bobi"
+        verbose_name_plural = "Fan Boblari"
+        ordering = ['order']  # ✅ Tartiblash
 
 class Topic(models.Model):
     name = models.CharField(max_length=200, verbose_name="Mavzu nomi")

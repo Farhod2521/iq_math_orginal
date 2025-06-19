@@ -7,7 +7,7 @@ from .views import(
 )
 from .View.unsolved import  TeacherUnsolvedQuestionReportListView, TeacherAnswerUnsolvedQuestionView
 from  .View.gruop_student import AddStudentsToGroupAPIView, GroupCreateAPIView, GroupListAPIView, GroupDetailAPIView
-from .View.reorderTopicAPIView import  ReorderTopicAPIView
+from .View.reorderOrderIndex  import  ReorderTopicAPIView, ReorderChapterAPIView
 urlpatterns = [
     path("my-subjects/", TeacherSubjectsAPIView.as_view(), name="teacher-subjects"),
     path("subject-list/", SubjectListAPIView.as_view(), name="teacher-subjects"),
@@ -40,5 +40,6 @@ urlpatterns = [
 
 
     path('topics/reorder/', ReorderTopicAPIView.as_view(), name='topic-reorder'),
+    path('chapters/reorder/', ReorderChapterAPIView.as_view(), name='chapter-reorder'),
 
 ]
