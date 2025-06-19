@@ -22,13 +22,14 @@ class Topic(models.Model):
     video_url_ru = models.URLField(blank=True, null=True, verbose_name="Mavzu videosi")
     content = RichTextField(verbose_name="Mavzu matni", blank=True, null=True)
     is_locked = models.BooleanField(default=True, verbose_name="Qulflangan")
-
+    order = models.PositiveIntegerField(default=0, verbose_name="Tartib raqami")
     def __str__(self):
         return self.name
 
     class Meta:
         verbose_name = "Mavzu"
         verbose_name_plural = "Mavzular"
+        ordering = ['order'] 
 
 
 
