@@ -1,9 +1,12 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from django.db.models import Sum, Count, Max
+from django_app.app_payments.models import Payment
+from django_app.app_student.models import StudentScore
+from django_app.app_user.models import Student
 from django.shortcuts import get_object_or_404
-from django.db.models import Sum, Max
-from .models import Student, StudentScore, Payment
+
 
 class StudentStatisticsDetailAPIView(APIView):
     permission_classes = [IsAuthenticated]
