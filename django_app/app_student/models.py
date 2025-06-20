@@ -15,6 +15,7 @@ class Diagnost_Student(models.Model):
         return f"{self.student.full_name} - {self.subject}"
 
 
+
 class ChapterProgress(models.Model):
     user = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='chapter_progress')
     chapter = models.ForeignKey(Chapter, on_delete=models.CASCADE, related_name='progress')
