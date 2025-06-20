@@ -94,6 +94,7 @@ class UnsolvedQuestionReportAdmin(admin.ModelAdmin):
         'answered_by', 
         'created_at', 
         'answered_at'
+        
     )
     list_filter = ('status', 'created_at', 'answered_at')
     search_fields = ('student__full_name', 'question__title', 'message', 'answer')
