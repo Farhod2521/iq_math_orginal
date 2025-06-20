@@ -15,16 +15,22 @@ class StudentStatisticsDetailAPIView(APIView):
         student = get_object_or_404(Student, id=student_id)
 
         score_data = StudentScore.objects.filter(student=student).first()
-        payments = Payment.objects.filter(student=student, status="success")
 
-        total_paid_amount = payments.aggregate(total=Sum('amount'))['total'] or 0
-        payment_count = payments.count()
+        # Hammasi (statusdan qat'i nazar)
+        all_payments = Payment.objects.filter(student=student)
 
-        last_payment = payments.order_by('-payment_date').first()
+        # Status bo‘yicha ajratilganlar
+        success_payments = all_payments.filter(status='success')
+        pending_payments = all_payments.filter(status='pending')
+        failed_payments = all_payments.filter(status='failed')
+
+        # Oxirgi muvaffaqiyatli to‘lov
+        last_payment = success_payments.order_by('-payment_date').first()
 
         last_payment_date = last_payment.payment_date.strftime("%d/%m/%Y") if last_payment else None
         last_payment_time = last_payment.payment_date.strftime("%H:%M") if last_payment else None
         last_payment_amount = float(last_payment.amount) if last_payment else 0
+        total_paid_amount = success_payments.aggregate(total=Sum('amount'))['total'] or 0
 
         data = {
             'student_id': student.id,
@@ -34,7 +40,11 @@ class StudentStatisticsDetailAPIView(APIView):
             'last_payment_date': last_payment_date,
             'last_payment_time': last_payment_time,
             'last_payment_amount': last_payment_amount,
-            'payment_count': payment_count,
+            'payment_status_count': {
+                'pending': pending_payments.count(),
+                'success': success_payments.count(),
+                'failed': failed_payments.count(),
+            },
             'total_paid_amount': float(total_paid_amount),
         }
 
