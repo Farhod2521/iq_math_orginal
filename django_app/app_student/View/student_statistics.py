@@ -1,12 +1,9 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from django.db.models import Sum, Count, Max
-from django_app.app_payments.models import Payment
-from django_app.app_student.models import StudentScore
-from django_app.app_user.models import Student
 from django.shortcuts import get_object_or_404
-
+from django.db.models import Sum, Max
+from .models import Student, StudentScore, Payment
 
 class StudentStatisticsDetailAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -19,14 +16,19 @@ class StudentStatisticsDetailAPIView(APIView):
 
         total_paid_amount = payments.aggregate(total=Sum('amount'))['total'] or 0
         payment_count = payments.count()
-        last_payment_date = payments.aggregate(last=Max('payment_date'))['last']
+        last_payment = payments.aggregate(last=Max('payment_date'))['last']
+
+        # Sana va vaqt formatlash
+        last_payment_date = last_payment.strftime("%d/%m/%Y") if last_payment else None
+        last_payment_time = last_payment.strftime("%H:%M") if last_payment else None
 
         data = {
             'student_id': student.id,
             'full_name': student.full_name,
             'score': score_data.score if score_data else 0,
             'coin': score_data.coin if score_data else 0,
-            'last_payment_date': last_payment_date,
+            'last_payment_date': last_payment_date,  # Masalan: 18/06/2025
+            'last_payment_time': last_payment_time,  # Masalan: 14:21
             'payment_count': payment_count,
             'total_paid_amount': total_paid_amount,
         }
