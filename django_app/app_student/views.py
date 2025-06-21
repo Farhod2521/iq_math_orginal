@@ -251,8 +251,9 @@ class StudentSubjectListAPIView(APIView):
     def get(self, request):
         user = request.user
 
+        # 👉 Agar teacher bo‘lsa — barcha fanlar
         if hasattr(user, 'teacher_profile'):
-            all_subjects = Subject.objects.all().order_by('order')  # ✅ Tartib bilan
+            all_subjects = Subject.objects.all().order_by('order')
             result = []
 
             for subject in all_subjects:
@@ -264,6 +265,7 @@ class StudentSubjectListAPIView(APIView):
 
             return Response(result, status=status.HTTP_200_OK)
 
+        # 👉 Aks holda student bo‘lsa
         try:
             student = Student.objects.get(user=user)
             now_time = now()
@@ -280,12 +282,13 @@ class StudentSubjectListAPIView(APIView):
             except Subscription.DoesNotExist:
                 pass
 
-            all_subjects = Subject.objects.all().order_by('order')  # ✅ Tartib bilan
+            # ✅ Faqat active=True bo‘lgan fanlar
+            all_subjects = Subject.objects.filter(active=True).order_by('order')
             result = []
 
             for subject in all_subjects:
                 has_diagnost = Diagnost_Student.objects.filter(student=student, subject=subject).exists()
-                is_open = (is_subscription_valid or is_free_trial_active)
+                is_open = is_subscription_valid or is_free_trial_active
 
                 serialized = SubjectSerializer(subject, context={
                     "is_open": is_open,
@@ -298,8 +301,6 @@ class StudentSubjectListAPIView(APIView):
 
         except Student.DoesNotExist:
             return Response({"detail": "Student topilmadi"}, status=status.HTTP_404_NOT_FOUND)
-
-
 class ChapterListBySubjectAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
