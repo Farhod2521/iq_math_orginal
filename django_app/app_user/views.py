@@ -667,6 +667,7 @@ class StudentsListView(APIView):
                 student_time = None
 
             data.append({
+                "id": student.id,
                 'full_name': student.full_name,
                 'phone': student.user.phone,
                 'email': student.user.email,
