@@ -674,8 +674,14 @@ class OpenAIProcessAPIView(APIView):
         except Question.DoesNotExist:
             return Response({'error': 'Savol topilmadi'}, status=status.HTTP_404_NOT_FOUND)
 
-        # Savol matni va rasmlar
-        html = question.question_text
+        # Tilga qarab savol matnini olish
+        if lang == 'uz':
+            html = question.question_text_uz
+        elif lang == 'ru':
+            html = question.question_text_ru
+        else:
+            return Response({'error': 'Til noto‘g‘ri ko‘rsatilgan (faqat uz yoki ru)'}, status=400)
+
         soup = BeautifulSoup(html, "html.parser")
         question_text = soup.get_text()
 
@@ -685,16 +691,13 @@ class OpenAIProcessAPIView(APIView):
             src = img_tag.get("src", "")
             if not src:
                 continue
-            if src.startswith("http"):
-                full_url = src
-            else:
-                full_url = request.build_absolute_uri(src)
+            full_url = src if src.startswith("http") else request.build_absolute_uri(src)
             image_urls.append(full_url)
 
         # To‘g‘ri javobni aniqlash
         correct_answer = ""
         if question_type == 'text':
-            correct_answer = re.sub(r'<[^>]+>', '', question.correct_text_answer or "")
+            correct_answer = re.sub(r'<[^>]+>', '', question.correct_text_answer_uz if lang == 'uz' else question.correct_text_answer_ru or "")
         elif question_type in ['choice', 'image_choice']:
             correct_choices = question.choices.filter(is_correct=True)
             correct_answer = "\n".join(
@@ -708,7 +711,23 @@ class OpenAIProcessAPIView(APIView):
         else:
             return Response({'error': 'Noma’lum savol turi'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # OpenAI uchun xabar tayyorlash
+        # Tilga qarab prompt yaratish
+        if lang == 'uz':
+            prompt_text = (
+                f"Savol: {question_text}\n\n"
+                f"Iltimos, yuqoridagi savolni tushunarli tarzda yechib bering, ishlanish yo‘li bilan. "
+                f"Menda quyidagi to‘g‘ri javob mavjud — sizning yechimingiz ham aynan shunga to‘g‘ri kelishi kerak.\n\n"
+                f"To‘g‘ri javob: {correct_answer}"
+            )
+        elif lang == 'ru':
+            prompt_text = (
+                f"Вопрос: {question_text}\n\n"
+                f"Пожалуйста, решите приведённый выше вопрос с подробным объяснением и обоснованием решения. "
+                f"Ваш ответ должен совпадать с правильным ответом, приведённым ниже.\n\n"
+                f"Правильный ответ: {correct_answer}"
+            )
+
+        # OpenAI uchun xabar
         message_content = []
 
         for url in image_urls:
@@ -722,9 +741,10 @@ class OpenAIProcessAPIView(APIView):
 
         message_content.append({
             "type": "text",
-            "text": f"Savol: {question_text}\n\nIltimos, yuqoridagi savolni tushunarli tarzda yechib bering ishlanish yoli bilan mendagi togir javob bilan togir chiqishi kerak.\n\nTo‘g‘ri javob: {correct_answer} shu bilan bir xil chiqishi kerak."
+            "text": prompt_text
         })
 
+        # OpenAI bilan ishlash
         try:
             completion = client.chat.completions.create(
                 model="gpt-4o",
