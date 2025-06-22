@@ -121,7 +121,7 @@ class SubjectListWithMasteryAPIView(APIView):
                 for topic in chapter.topics.all():
                     all_topic_count += 1
                     progress = TopicProgress.objects.filter(user=student, topic=topic).first()
-                    if progress and progress.score >= 10:
+                    if progress and progress.score >= 80:
                         mastered_topic_count += 1
 
             if all_topic_count == 0:
