@@ -74,7 +74,37 @@ class StudentStatisticsDetailAPIView(APIView):
 
         return Response(data)
     
-class SubjectChapterTopicProgressAPIView(APIView):
+class ChapterTopicProgressAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, student_id, subject_id):
+        student = get_object_or_404(Student, id=student_id)
+        subject = get_object_or_404(Subject, id=subject_id, active=True)
+
+        result = []
+
+        for chapter in subject.chapters.all().order_by('order'):
+            chapter_data = {
+                "chapter_id": chapter.id,
+                "chapter_name": chapter.name,
+                "topics": []
+            }
+
+            for topic in chapter.topics.all().order_by('order'):
+                progress = TopicProgress.objects.filter(user=student, topic=topic).first()
+                score = round(progress.score, 1) if progress else 0.0
+
+                chapter_data["topics"].append({
+                    "topic_id": topic.id,
+                    "topic_name": topic.name,
+                    "score_percent": score
+                })
+
+            result.append(chapter_data)
+
+        return Response(result)
+
+class SubjectListWithMasteryAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, student_id):
@@ -84,43 +114,28 @@ class SubjectChapterTopicProgressAPIView(APIView):
         subjects = Subject.objects.filter(active=True).order_by('order')
 
         for subject in subjects:
-            subject_data = {
-                "subject_id": subject.id,
-                "subject_name": subject.name,
-                "chapters": []
-            }
-
             all_topic_count = 0
             mastered_topic_count = 0
 
-            for chapter in subject.chapters.all().order_by('order'):
-                chapter_data = {
-                    "chapter_id": chapter.id,
-                    "chapter_name": chapter.name,
-                    "topics": []
-                }
-
-                for topic in chapter.topics.all().order_by('order'):
+            for chapter in subject.chapters.all():
+                for topic in chapter.topics.all():
                     all_topic_count += 1
-
                     progress = TopicProgress.objects.filter(user=student, topic=topic).first()
-                    score = round(progress.score, 1) if progress else 0.0
-
-                    if score >= 80:
+                    if progress and progress.score >= 80:
                         mastered_topic_count += 1
 
-                    chapter_data["topics"].append({
-                        "topic_id": topic.id,
-                        "topic_name": topic.name,
-                        "score_percent": score
-                    })
-
-                subject_data["chapters"].append(chapter_data)
-
-            # ✅ Fan bo‘yicha umumiy mastery foizi
             mastery_percent = round((mastered_topic_count / all_topic_count) * 100, 1) if all_topic_count else 0.0
-            subject_data["mastery_percent"] = mastery_percent
 
-            result.append(subject_data)
+            result.append({
+                "id": subject.id,
+                "name_uz": subject.name,  # Agar `name_uz` bo'lsa, o'shani ishlating
+                "name_ru": subject.name,  # Agar `name_ru` bo'lsa, o'shani ishlating
+                "class_name": subject.classes.name if subject.classes else "",
+                "class_uz": f"{subject.classes.name}-sinf {subject.name}" if subject.classes else subject.name,
+                "class_ru": f"{subject.classes.name}-класс {subject.name}" if subject.classes else subject.name,
+                "image_uz": subject.image_uz.url if subject.image_uz else None,
+                "image_ru": subject.image_ru.url if subject.image_ru else None,
+                "mastery_percent": mastery_percent
+            })
 
         return Response(result)

@@ -8,7 +8,7 @@ from .views import (
 from .View.app_diagnost import StudentDiagnostSubjectsAPIView, SubjectChaptersAPIView, ChapterTopicsAPIView
 from .View.product_exchange import ProductExchangeView, ProductExchangeListView
 from  .View.unsolvedquestioncreateView import UnsolvedQuestionCreateView, UnsolvedQuestionReportListView
-from .View.student_statistics import StudentStatisticsDetailAPIView, SubjectChapterTopicProgressAPIView
+from .View.student_statistics import StudentStatisticsDetailAPIView, SubjectListWithMasteryAPIView, ChapterTopicProgressAPIView
 
 
 urlpatterns = [
@@ -39,7 +39,8 @@ urlpatterns = [
 
 ##########################################################################################
     path('student-statistics/<int:student_id>/', StudentStatisticsDetailAPIView.as_view()),
-    path('student-topic/<int:student_id>/progress/', SubjectChapterTopicProgressAPIView.as_view(), name='student-subject-progress'),
+    path('students/<int:student_id>/subjects/', SubjectListWithMasteryAPIView.as_view(), name='subject-list-with-mastery'),
+    path('students/<int:student_id>/subjects/<int:subject_id>/chapters/', ChapterTopicProgressAPIView.as_view(), name='chapter-topic-progress'),
 
 
 ]
