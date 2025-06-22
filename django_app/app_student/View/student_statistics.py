@@ -78,7 +78,6 @@ class SubjectChapterTopicProgressAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, student_id):
-        # 1. Faqat teacher yoki admin bu endpointdan foydalana olsin desangiz, shartni yozish mumkin
         student = get_object_or_404(Student, id=student_id)
         result = []
 
@@ -91,6 +90,9 @@ class SubjectChapterTopicProgressAPIView(APIView):
                 "chapters": []
             }
 
+            all_topic_count = 0
+            mastered_topic_count = 0
+
             for chapter in subject.chapters.all().order_by('order'):
                 chapter_data = {
                     "chapter_id": chapter.id,
@@ -99,8 +101,13 @@ class SubjectChapterTopicProgressAPIView(APIView):
                 }
 
                 for topic in chapter.topics.all().order_by('order'):
+                    all_topic_count += 1
+
                     progress = TopicProgress.objects.filter(user=student, topic=topic).first()
                     score = round(progress.score, 1) if progress else 0.0
+
+                    if score >= 80:
+                        mastered_topic_count += 1
 
                     chapter_data["topics"].append({
                         "topic_id": topic.id,
@@ -109,6 +116,10 @@ class SubjectChapterTopicProgressAPIView(APIView):
                     })
 
                 subject_data["chapters"].append(chapter_data)
+
+            # ✅ Fan bo‘yicha umumiy mastery foizi
+            mastery_percent = round((mastered_topic_count / all_topic_count) * 100, 1) if all_topic_count else 0.0
+            subject_data["mastery_percent"] = mastery_percent
 
             result.append(subject_data)
 
