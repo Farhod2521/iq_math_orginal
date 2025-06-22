@@ -121,21 +121,26 @@ class SubjectListWithMasteryAPIView(APIView):
                 for topic in chapter.topics.all():
                     all_topic_count += 1
                     progress = TopicProgress.objects.filter(user=student, topic=topic).first()
-                    if progress and progress.score >= 80:
+                    if progress and progress.score >= 10:
                         mastered_topic_count += 1
 
-            mastery_percent = round((mastered_topic_count / all_topic_count) * 100, 1) if all_topic_count else 0.0
+            if all_topic_count == 0:
+                continue
 
-            result.append({
-                "id": subject.id,
-                "name_uz": subject.name,  # Agar `name_uz` bo'lsa, o'shani ishlating
-                "name_ru": subject.name,  # Agar `name_ru` bo'lsa, o'shani ishlating
-                "class_name": subject.classes.name if subject.classes else "",
-                "class_uz": f"{subject.classes.name}-sinf {subject.name}" if subject.classes else subject.name,
-                "class_ru": f"{subject.classes.name}-класс {subject.name}" if subject.classes else subject.name,
-                "image_uz": subject.image_uz.url if subject.image_uz else None,
-                "image_ru": subject.image_ru.url if subject.image_ru else None,
-                "mastery_percent": mastery_percent
-            })
+            mastery_percent = round((mastered_topic_count / all_topic_count) * 100, 1)
+
+            # 🔒 Faqat mastery > 0 bo‘lsa, ro'yxatga qo‘shamiz
+            if mastery_percent > 0:
+                result.append({
+                    "id": subject.id,
+                    "name_uz": subject.name,  # Agar Translation ishlatilsa: subject.name_uz
+                    "name_ru": subject.name,  # Agar Translation ishlatilsa: subject.name_ru
+                    "class_name": subject.classes.name if subject.classes else "",
+                    "class_uz": f"{subject.classes.name}-sinf {subject.name}" if subject.classes else subject.name,
+                    "class_ru": f"{subject.classes.name}-класс {subject.name}" if subject.classes else subject.name,
+                    "image_uz": subject.image_uz.url if subject.image_uz else None,
+                    "image_ru": subject.image_ru.url if subject.image_ru else None,
+                    "mastery_percent": mastery_percent
+                })
 
         return Response(result)
