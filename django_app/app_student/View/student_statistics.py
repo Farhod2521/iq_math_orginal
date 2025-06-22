@@ -4,7 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from django.db.models import Sum, Count, Max
 from django_app.app_payments.models import Payment
 from django_app.app_student.models import StudentScore,  Diagnost_Student, TopicProgress
-from django_app.app_user.models import Student
+from django_app.app_user.models import Student, Subject
 from django.shortcuts import get_object_or_404
 
 
@@ -73,3 +73,43 @@ class StudentStatisticsDetailAPIView(APIView):
         }
 
         return Response(data)
+    
+class SubjectChapterTopicProgressAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, student_id):
+        # 1. Faqat teacher yoki admin bu endpointdan foydalana olsin desangiz, shartni yozish mumkin
+        student = get_object_or_404(Student, id=student_id)
+        result = []
+
+        subjects = Subject.objects.filter(active=True).order_by('order')
+
+        for subject in subjects:
+            subject_data = {
+                "subject_id": subject.id,
+                "subject_name": subject.name,
+                "chapters": []
+            }
+
+            for chapter in subject.chapters.all().order_by('order'):
+                chapter_data = {
+                    "chapter_id": chapter.id,
+                    "chapter_name": chapter.name,
+                    "topics": []
+                }
+
+                for topic in chapter.topics.all().order_by('order'):
+                    progress = TopicProgress.objects.filter(user=student, topic=topic).first()
+                    score = round(progress.score, 1) if progress else 0.0
+
+                    chapter_data["topics"].append({
+                        "topic_id": topic.id,
+                        "topic_name": topic.name,
+                        "score_percent": score
+                    })
+
+                subject_data["chapters"].append(chapter_data)
+
+            result.append(subject_data)
+
+        return Response(result)
