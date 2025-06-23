@@ -644,24 +644,41 @@ class UpdateStudentFieldAPIView(APIView):
 from django.utils.timezone import localtime
 import pytz
 from rest_framework.permissions import IsAuthenticated
-class StudentsListView(APIView): 
+class StudentsListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        ashgabat_tz = pytz.timezone("Asia/Ashgabat")  # UTC+5 vaqt zonasi
+        ashgabat_tz = pytz.timezone("Asia/Ashgabat")
 
-        # Faqat roli 'student' bo'lgan foydalanuvchilarni olish
-        students = Student.objects.filter(user__role='student', status=True)
+        page = int(request.GET.get('page', 1))
+        size = int(request.GET.get('size', 10))
+
+        students = Student.objects.filter(user__role='student', status=True).order_by('id')
+
+        paginator = Paginator(students, size)
+        total_count = paginator.count
+        total_pages = paginator.num_pages
+
+        try:
+            current_page = paginator.page(page)
+        except EmptyPage:
+            return Response({
+                "error": "Page not found",
+                "page": page,
+                "size": size,
+                "total": total_count,
+                "total_pages": total_pages,
+                "results": []
+            }, status=404)
 
         data = []
-        for student in students:
-            student_datetime = student.student_date  # Studentning vaqt maydoni
+        for student in current_page.object_list:
+            student_datetime = student.student_date
 
             if student_datetime:
-                # UTC vaqtni UTC+5 (Ashgabat) ga o‘girish
                 student_datetime = student_datetime.astimezone(ashgabat_tz)
-                student_date = student_datetime.strftime('%Y-%m-%d')  # YYYY-MM-DD
-                student_time = student_datetime.strftime('%H:%M:%S')  # HH:MM:SS
+                student_date = student_datetime.strftime('%Y-%m-%d')
+                student_time = student_datetime.strftime('%H:%M:%S')
             else:
                 student_date = None
                 student_time = None
@@ -682,11 +699,17 @@ class StudentsListView(APIView):
                 'document_type': student.document_type,
                 'document': student.document,
                 'type_of_education': student.type_of_education,
-                'student_date': student_date,  # YYYY-MM-DD (UTC+5)
-                'student_time': student_time,  # HH:MM:SS (UTC+5)
+                'student_date': student_date,
+                'student_time': student_time,
             })
 
-        return Response(data)
+        return Response({
+            "page": page,
+            "size": size,
+            "total": total_count,
+            "total_pages": total_pages,
+            "results": data
+        })
 
 
 
