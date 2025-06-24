@@ -144,3 +144,73 @@ class SubjectListWithMasteryAPIView(APIView):
                 })
 
         return Response(result)
+
+
+
+########################################   DIAGNOSTIKA  ###############################################
+class DiagnostSubjectListAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, student_id):
+        student = get_object_or_404(Student, id=student_id)
+
+        # Studentga tegishli Diagnostik subjectlar (unique qilib)
+        subject_ids = Diagnost_Student.objects.filter(student=student)\
+                        .values_list('subject_id', flat=True).distinct()
+
+        subjects = Subject.objects.filter(id__in=subject_ids).order_by('order')
+        result = []
+
+        for subject in subjects:
+            result.append({
+                "id": subject.id,
+                "name_uz": subject.name,  # Agar Translation ishlatsa: subject.name_uz
+                "name_ru": subject.name,  # Agar Translation ishlatsa: subject.name_ru
+                "class_name": subject.classes.name if subject.classes else "",
+                "class_uz": f"{subject.classes.name}-sinf {subject.name}" if subject.classes else subject.name,
+                "class_ru": f"{subject.classes.name}-класс {subject.name}" if subject.classes else subject.name,
+                "image_uz": subject.image_uz.url if subject.image_uz else None,
+                "image_ru": subject.image_ru.url if subject.image_ru else None
+            })
+
+        return Response(result)
+
+
+class DiagnostChapterTopicProgressAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, student_id, subject_id):
+        student = get_object_or_404(Student, id=student_id)
+        subject = get_object_or_404(Subject, id=subject_id, active=True)
+
+        # ✅ Faqat Diagnost_Student orqali yuklangan topiclar va chapters
+        diagnost = Diagnost_Student.objects.filter(student=student, subject=subject).first()
+        if not diagnost:
+            return Response({"detail": "Diagnostika topilmadi"}, status=404)
+
+        chapters = diagnost.chapters.all().order_by('order')
+        result = []
+
+        for chapter in chapters:
+            chapter_data = {
+                "chapter_id": chapter.id,
+                "chapter_name": chapter.name,
+                "topics": []
+            }
+
+            # Faqat diagnostikadagi topiclar ichidan shu chapterga tegishlilarini olamiz
+            topics = diagnost.topic.filter(chapter=chapter).order_by('order')
+
+            for topic in topics:
+                progress = TopicProgress.objects.filter(user=student, topic=topic).first()
+                score = round(progress.score, 1) if progress else 0.0
+
+                chapter_data["topics"].append({
+                    "topic_id": topic.id,
+                    "topic_name": topic.name,
+                    "score_percent": score
+                })
+
+            result.append(chapter_data)
+
+        return Response(result)

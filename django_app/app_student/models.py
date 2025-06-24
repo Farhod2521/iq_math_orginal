@@ -3,6 +3,7 @@ from django_app.app_user.models import Student
 from django_app.app_teacher.models import Topic, Question, Chapter
 from django_app.app_management.models import Product
 from django_app.app_user.models import Subject
+
 class Diagnost_Student(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, null=True)  
@@ -101,3 +102,6 @@ class ProductExchange(models.Model):
 
     def __str__(self):
         return f"{self.student.full_name} → {self.product.name} ({self.used_coin} ball)"
+    
+
+
