@@ -12,7 +12,7 @@ class SystemSettingsAdmin(admin.ModelAdmin):
             'fields': ('logo',)
         }),
         ("Biz haqimizda", {
-            'fields': ('about',)
+            'fields': ('about_uz', 'about_ru')
         }),
         ("Ijtimoiy tarmoqlar", {
             'fields': (
