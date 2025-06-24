@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import SystemSettings, FAQ, Product, ReferralAndCouponSettings
+from .models import SystemSettings, FAQ, Product, ReferralAndCouponSettings, Banner
 from modeltranslation.admin import TranslationAdmin
 from django.utils.html import format_html
 
@@ -27,6 +27,7 @@ class SystemSettingsAdmin(admin.ModelAdmin):
             'fields': ('updated_at',)
         }),
     )
+admin.site.register(Banner)
 
 @admin.register(FAQ)
 class FAQAdmin(admin.ModelAdmin):
