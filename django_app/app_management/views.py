@@ -1,6 +1,6 @@
 from rest_framework.generics import ListAPIView
-from .models import SystemSettings, FAQ, Product
-from .serializers import SystemSettingsSerializer, FAQSerializer, ProductSerializer
+from .models import SystemSettings, FAQ, Product, Banner
+from .serializers import SystemSettingsSerializer, FAQSerializer, ProductSerializer, BannerSerializer
 from django_app.app_user.models import User, Teacher, Student
 from django_app.app_payments.models import Subscription, Payment
 from rest_framework.views import APIView
@@ -17,6 +17,11 @@ class SystemSettingsListView(ListAPIView):
 class FAQListView(ListAPIView):
     queryset = FAQ.objects.all()
     serializer_class = FAQSerializer
+
+
+class BannerListView(ListAPIView):
+    queryset = Banner.objects.all()
+    serializer_class = BannerSerializer
 
 class ProductListView(ListAPIView):
     queryset = Product.objects.all()
