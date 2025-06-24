@@ -5,7 +5,7 @@ from django.db import models
 
 class SystemSettings(models.Model):
     logo = models.ImageField(upload_to='system/logo/', blank=True, null=True, verbose_name="Logo")
-
+    about =  RichTextField(verbose_name="Biz Haqimizda")
     instagram_link = models.URLField(blank=True, null=True, verbose_name="Instagram Linki")
     telegram_link = models.URLField(blank=True, null=True, verbose_name="Telegram Linki")
     youtube_link = models.URLField(blank=True, null=True, verbose_name="YouTube Linki")
@@ -25,8 +25,13 @@ class SystemSettings(models.Model):
         verbose_name = "Tizim Sozlamasi"
         verbose_name_plural = "Tizim Sozlamalari"
 
+class  Banner(models.Model):
+    image  =  models.ImageField(upload_to="Media/BANNER/")
+    desc =  models.CharField(max_length=200, null=True, blank=True)
 
-
+    class Meta:
+        verbose_name = "Banner"
+        verbose_name_plural = "Banner"
 
 class FAQ(models.Model):
     question = models.CharField(max_length=500, verbose_name="Savol")
