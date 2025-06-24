@@ -11,6 +11,9 @@ class SystemSettingsAdmin(admin.ModelAdmin):
         ("Logo", {
             'fields': ('logo',)
         }),
+        ("Biz haqimizda", {
+            'fields': ('about',)
+        }),
         ("Ijtimoiy tarmoqlar", {
             'fields': (
                 'instagram_link', 'telegram_link', 'youtube_link',
@@ -25,11 +28,16 @@ class SystemSettingsAdmin(admin.ModelAdmin):
         }),
     )
 
-
 @admin.register(FAQ)
 class FAQAdmin(admin.ModelAdmin):
-    list_display = ['question']
-    search_fields = ['question', 'answer']
+    list_display = ['question_uz']
+    search_fields = ['question_uz', 'answer_uz', 'question_ru', 'answer_ru']
+
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
+        form.base_fields.pop('question', None)
+        form.base_fields.pop('answer', None)  # optional: agar 'answer' ham kerak bo‘lmasa
+        return form
 
 @admin.register(ReferralAndCouponSettings)
 class ReferralAndCouponSettingsAdmin(admin.ModelAdmin):
