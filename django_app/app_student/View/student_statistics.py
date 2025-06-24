@@ -154,23 +154,35 @@ class DiagnostSubjectListAPIView(APIView):
     def get(self, request, student_id):
         student = get_object_or_404(Student, id=student_id)
 
-        # Studentga tegishli Diagnostik subjectlar (unique qilib)
-        subject_ids = Diagnost_Student.objects.filter(student=student)\
-                        .values_list('subject_id', flat=True).distinct()
+        # Studentga tegishli diagnostika subjectlari
+        diagnost_entries = Diagnost_Student.objects.filter(student=student).select_related('subject').prefetch_related('topic')
 
-        subjects = Subject.objects.filter(id__in=subject_ids).order_by('order')
         result = []
 
-        for subject in subjects:
+        for diagnost in diagnost_entries:
+            subject = diagnost.subject
+            diagnost_topics = diagnost.topic.all()
+
+            total_topics = diagnost_topics.count()
+            mastered_topics = 0
+
+            for topic in diagnost_topics:
+                progress = TopicProgress.objects.filter(user=student, topic=topic).first()
+                if progress and progress.score >= 80:
+                    mastered_topics += 1
+
+            mastery_percent = round((mastered_topics / total_topics) * 100, 1) if total_topics else 0.0
+
             result.append({
                 "id": subject.id,
-                "name_uz": subject.name,  # Agar Translation ishlatsa: subject.name_uz
-                "name_ru": subject.name,  # Agar Translation ishlatsa: subject.name_ru
+                "name_uz": subject.name,  # yoki subject.name_uz agar translation ishlatilsa
+                "name_ru": subject.name,  # yoki subject.name_ru
                 "class_name": subject.classes.name if subject.classes else "",
                 "class_uz": f"{subject.classes.name}-sinf {subject.name}" if subject.classes else subject.name,
                 "class_ru": f"{subject.classes.name}-класс {subject.name}" if subject.classes else subject.name,
                 "image_uz": subject.image_uz.url if subject.image_uz else None,
-                "image_ru": subject.image_ru.url if subject.image_ru else None
+                "image_ru": subject.image_ru.url if subject.image_ru else None,
+                "mastery_percent": mastery_percent
             })
 
         return Response(result)
