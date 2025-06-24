@@ -154,29 +154,28 @@ class DiagnostSubjectListAPIView(APIView):
     def get(self, request, student_id):
         student = get_object_or_404(Student, id=student_id)
 
-        # Studentga tegishli diagnostika subjectlari
         diagnost_entries = Diagnost_Student.objects.filter(student=student).select_related('subject').prefetch_related('topic')
 
         result = []
 
         for diagnost in diagnost_entries:
             subject = diagnost.subject
-            diagnost_topics = diagnost.topic.all()
+            topics = diagnost.topic.all()
 
-            total_topics = diagnost_topics.count()
-            mastered_topics = 0
+            total = topics.count()
+            mastered = 0
 
-            for topic in diagnost_topics:
+            for topic in topics:
                 progress = TopicProgress.objects.filter(user=student, topic=topic).first()
                 if progress and progress.score >= 80:
-                    mastered_topics += 1
+                    mastered += 1
 
-            mastery_percent = round((mastered_topics / total_topics) * 100, 1) if total_topics else 0.0
+            mastery_percent = round((mastered / total) * 100, 1) if total else 0.0
 
             result.append({
                 "id": subject.id,
-                "name_uz": subject.name,  # yoki subject.name_uz agar translation ishlatilsa
-                "name_ru": subject.name,  # yoki subject.name_ru
+                "name_uz": subject.name,
+                "name_ru": subject.name,
                 "class_name": subject.classes.name if subject.classes else "",
                 "class_uz": f"{subject.classes.name}-sinf {subject.name}" if subject.classes else subject.name,
                 "class_ru": f"{subject.classes.name}-класс {subject.name}" if subject.classes else subject.name,
@@ -195,14 +194,20 @@ class DiagnostChapterTopicProgressAPIView(APIView):
         student = get_object_or_404(Student, id=student_id)
         subject = get_object_or_404(Subject, id=subject_id, active=True)
 
-        # ✅ Faqat Diagnost_Student orqali yuklangan topiclar va chapters
         diagnost = Diagnost_Student.objects.filter(student=student, subject=subject).first()
         if not diagnost:
             return Response({"detail": "Diagnostika topilmadi"}, status=404)
 
         chapters = diagnost.chapters.all().order_by('order')
-        result = []
+        topics_by_chapter = {
+            chapter.id: [] for chapter in chapters
+        }
 
+        for topic in diagnost.topic.all():
+            if topic.chapter_id in topics_by_chapter:
+                topics_by_chapter[topic.chapter_id].append(topic)
+
+        result = []
         for chapter in chapters:
             chapter_data = {
                 "chapter_id": chapter.id,
@@ -210,8 +215,7 @@ class DiagnostChapterTopicProgressAPIView(APIView):
                 "topics": []
             }
 
-            # Faqat diagnostikadagi topiclar ichidan shu chapterga tegishlilarini olamiz
-            topics = diagnost.topic.filter(chapter=chapter).order_by('order')
+            topics = sorted(topics_by_chapter[chapter.id], key=lambda t: t.order)
 
             for topic in topics:
                 progress = TopicProgress.objects.filter(user=student, topic=topic).first()
