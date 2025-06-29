@@ -372,7 +372,7 @@ class QuestionListByTopicAPIView(APIView):
 from django.utils.html import strip_tags
 from .math_answer_check import advanced_math_check  
 from .helper_coin import get_today_coin_count
-class CheckAnswersAPIView(APIView):
+class CheckAnswersAPIView(APIView): 
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -410,22 +410,19 @@ class CheckAnswersAPIView(APIView):
 
                 if not is_teacher and question.id not in awarded_questions:
                     awarded_questions.add(question.id)
-
-                    # Har doim ball beriladi
                     student_score.score += 1
 
                     give_coin = False
                     if today_coin_count < 10:
                         student_score.coin += 1
-                        today_coin_count += 1  # Local counterni yangilaymiz
+                        today_coin_count += 1
                         give_coin = True
 
-                    # Logga yoziladi
                     StudentScoreLog.objects.create(
                         student_score=student_score,
                         question=question,
                         awarded_coin=give_coin,
-                        awarded_at=timezone.now()  # zarur bo‘lsa
+                        awarded_at=timezone.now()
                     )
 
         # TEXT SAVOLLAR
@@ -450,7 +447,8 @@ class CheckAnswersAPIView(APIView):
                 "question_id": question.id,
                 "question_uz": question.question_text_uz,
                 "question_ru": question.question_text_ru,
-                "answer": is_correct
+                "answer": is_correct,
+                "answer_text": student_answer  # ⬅️ YUBORILGAN JAVOB
             })
             index += 1
 
@@ -473,7 +471,8 @@ class CheckAnswersAPIView(APIView):
                 "question_id": question.id,
                 "question_uz": question.question_text_uz,
                 "question_ru": question.question_text_ru,
-                "answer": is_correct
+                "answer": is_correct,
+                "selected_choices": list(selected_choices)  # ⬅️ YUBORILGAN TANLOVLAR
             })
             index += 1
 
@@ -495,7 +494,8 @@ class CheckAnswersAPIView(APIView):
                 "question_id": question.id,
                 "question_uz": question.question_text_uz,
                 "question_ru": question.question_text_ru,
-                "answer": is_correct
+                "answer": is_correct,
+                "sub_answers": answer['answers']  # ⬅️ FOYDALANUVCHI YUBORGANI
             })
             index += 1
 
@@ -508,8 +508,6 @@ class CheckAnswersAPIView(APIView):
                 topic_progress, _ = TopicProgress.objects.get_or_create(
                     user=student_instance, topic=last_question_topic
                 )
-
-                # Eng yuqori score ni saqlash
                 if score > topic_progress.score:
                     topic_progress.score = score
                     topic_progress.completed_at = timezone.now()
