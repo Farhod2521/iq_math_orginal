@@ -513,15 +513,35 @@ class CheckAnswersAPIView(APIView):
                     topic_progress.completed_at = timezone.now()
                     topic_progress.save()
 
-        return Response({
+        response_data = {
             "question": question_details,
             "result": [{
                 "total_answers": total_answers,
                 "correct_answers": correct_answers,
                 "score": score
             }]
-        })
+        }
 
+        if last_question_topic:
+            topic = last_question_topic
+            chapter = topic.chapter
+            subject = chapter.subject
+
+            response_data["info"] = {
+                "topic": {
+                    "id": topic.id,
+                    "name": topic.name
+                },
+                "chapter": {
+                    "id": chapter.id,
+                    "name": chapter.name
+                },
+                "subject": {
+                    "id": subject.id,
+                }
+            }
+
+        return Response(response_data)
 
 #############################   STUDENT BALL ###############################
 
