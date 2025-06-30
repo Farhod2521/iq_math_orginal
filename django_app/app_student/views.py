@@ -530,11 +530,9 @@ class CheckAnswersAPIView(APIView):
             response_data["info"] = {
                 "topic": {
                     "id": topic.id,
-                    "name": topic.name
                 },
                 "chapter": {
                     "id": chapter.id,
-                    "name": chapter.name
                 },
                 "subject": {
                     "id": subject.id,
