@@ -250,3 +250,16 @@ class TopicHelpRequestIndependentSerializer(serializers.ModelSerializer):
         instance.topics.set([topic])
 
         return instance
+    
+class TopicHelpRequestIndependentSerializer(serializers.ModelSerializer):
+    commit_uz = serializers.CharField(required=False, allow_blank=True)
+    commit_ru = serializers.CharField(required=False, allow_blank=True)
+
+    class Meta:
+        model = TopicHelpRequestIndependent
+        fields = [
+            'id', 'student', 'subject', 'chapters', 'topics', 'level',
+            'question_json', 'result_json',
+            'teacher', 'commit_uz', 'commit_ru', 'reviewed_at', 'created_at'
+        ]
+        read_only_fields = ['student', 'created_at', 'teacher', 'reviewed_at']

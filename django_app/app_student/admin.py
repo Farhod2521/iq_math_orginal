@@ -1,6 +1,6 @@
 from django.contrib import admin
-from .models import Diagnost_Student, TopicProgress, StudentScore, StudentScoreLog, ChapterProgress, ProductExchange
-
+from .models import Diagnost_Student, TopicProgress, StudentScore, StudentScoreLog, ChapterProgress, ProductExchange, TopicHelpRequestIndependent
+from modeltranslation.admin import TranslationAdmin
 
 admin.site.register(Diagnost_Student)
 admin.site.register(ProductExchange)
@@ -45,3 +45,16 @@ class StudentScoreLogAdmin(admin.ModelAdmin):
     ordering = ('-awarded_at',)
     verbose_name = "Ball olish tarixi"
     verbose_name_plural = "Ballar olish tarixi"
+
+
+
+
+
+
+
+@admin.register(TopicHelpRequestIndependent)
+class TopicHelpRequestIndependentAdmin(TranslationAdmin):
+    list_display = ('student', 'subject', 'teacher', 'level', 'reviewed_at', 'created_at')
+    list_filter = ('subject', 'teacher', 'level', 'created_at')
+    search_fields = ('student__user__phone', 'teacher__full_name', 'commit_uz', 'commit_ru')
+    readonly_fields = ('created_at', 'reviewed_at')
