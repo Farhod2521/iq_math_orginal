@@ -226,26 +226,31 @@ class TopicHelpRequestIndependentSerializer(serializers.ModelSerializer):
     class Meta:
         model = TopicHelpRequestIndependent
         fields = ['id', 'info', 'question', 'result', 'level']
-        extra_kwargs = {
-            'subject': {'required': False},
-            'chapters': {'required': False},
-            'topics': {'required': False},
-            'question_json': {'required': False},
-            'result_json': {'required': False},
-        }
+
+    def to_internal_value(self, data):
+        # override qilamiz required fieldlar validatsiyasini o‘chirib qo‘yish uchun
+        ret = super().to_internal_value(data)
+        ret['info'] = data.get('info')
+        ret['question'] = data.get('question')
+        ret['result'] = data.get('result')
+        return ret
 
     def create(self, validated_data):
         request = self.context['request']
-        user = request.user
-        student = user.student_profile
+        student = request.user.student_profile
 
         info = validated_data.pop('info')
         question_json = validated_data.pop('question')
         result_json = validated_data.pop('result')
 
-        subject = Subject.objects.get(id=info['subject']['id'])
-        chapter = Chapter.objects.get(id=info['chapter']['id'])
-        topic = Topic.objects.get(id=info['topic']['id'])
+        # Extracting subject/chapter/topic from info
+        subject_id = info['subject']['id']
+        chapter_id = info['chapter']['id']
+        topic_id = info['topic']['id']
+
+        subject = Subject.objects.get(id=subject_id)
+        chapter = Chapter.objects.get(id=chapter_id)
+        topic = Topic.objects.get(id=topic_id)
 
         instance = TopicHelpRequestIndependent.objects.create(
             student=student,
@@ -253,12 +258,11 @@ class TopicHelpRequestIndependentSerializer(serializers.ModelSerializer):
             level=validated_data.get('level', 1),
             question_json=question_json,
             result_json=result_json,
-            teacher=None  # hozircha avtomatik tayinlanmaydi
         )
         instance.chapters.set([chapter])
         instance.topics.set([topic])
         return instance
-    
+
 class TopicHelpRequestIndependentSerializer(serializers.ModelSerializer):
     commit_uz = serializers.CharField(required=False, allow_blank=True)
     commit_ru = serializers.CharField(required=False, allow_blank=True)
