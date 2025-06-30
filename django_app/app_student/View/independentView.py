@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.utils.timezone import now
 from django_app.app_student.models import  TopicHelpRequestIndependent
-from django_app.app_student.serializers import  TopicHelpRequestIndependentSerializer, TopicHelpRequestIndependentSerializer
+from django_app.app_student.serializers import  TopicHelpRequestIndependentSerializer
 
 
 class TopicHelpRequestCreateView(CreateAPIView):
