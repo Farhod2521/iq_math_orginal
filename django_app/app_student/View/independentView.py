@@ -17,7 +17,15 @@ class TopicHelpRequestCreateView(CreateAPIView):
         context['request'] = self.request
         return context
 
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
 
+        return Response({
+            "success": True,
+            "message": "O‘qituvchiga yuborildi"
+        }, status=status.HTTP_201_CREATED)
 
 
 
