@@ -519,7 +519,8 @@ class CheckAnswersAPIView(APIView):
                 "total_answers": total_answers,
                 "correct_answers": correct_answers,
                 "score": score
-            }]
+            }], 
+            
         }
 
         if last_question_topic:
@@ -528,16 +529,15 @@ class CheckAnswersAPIView(APIView):
             subject = chapter.subject
 
             response_data["info"] = {
-                "topic": {
-                    "id": topic.id,
-                },
-                "chapter": {
-                    "id": chapter.id,
-                },
-                "subject": {
-                    "id": subject.id,
-                }
+                "topic": {"id": topic.id},
+                "chapter": {"id": chapter.id},
+                "subject": {"id": subject.id}
             }
+
+            # 🔥 LEVELNI QO‘SHISH:
+            first_question_with_level = Question.objects.filter(topic=topic).first()
+            if first_question_with_level:
+                response_data["level"] = first_question_with_level.level
 
         return Response(response_data)
 
