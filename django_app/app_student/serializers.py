@@ -3,7 +3,7 @@ from django_app.app_teacher.models import Chapter, Choice, CompositeSubQuestion,
 from modeltranslation.utils import get_translation_fields
 
 from django_app.app_user.models import  Subject, Student
-from .models import TopicProgress, ChapterProgress
+from .models import TopicProgress, ChapterProgress, TopicHelpRequestIndependent
 class SubjectSerializer(serializers.ModelSerializer):
     class_name = serializers.CharField(source="classes.name")
     class_uz = serializers.SerializerMethodField()
@@ -216,3 +216,37 @@ class CheckAnswersSerializer(serializers.Serializer):
     text_answers = CheckTextAnswerSerializer(many=True, required=False)
     choice_answers = CheckChoiceAnswerSerializer(many=True, required=False)
     composite_answers = CheckCompositeAnswerSerializer(many=True, required=False)
+
+
+class TopicHelpRequestIndependentSerializer(serializers.ModelSerializer):
+    info = serializers.JSONField(write_only=True)
+    question = serializers.JSONField(write_only=True)
+    result = serializers.JSONField(write_only=True)
+
+    class Meta:
+        model = TopicHelpRequestIndependent
+        fields = ['id', 'info', 'question', 'result', 'level']
+
+    def create(self, validated_data):
+        request = self.context['request']
+        user = request.user
+
+        info = validated_data.pop('info')
+        question_json = validated_data.pop('question')
+        result_json = validated_data.pop('result')
+
+        subject = Subject.objects.get(id=info['subject']['id'])
+        chapter = Chapter.objects.get(id=info['chapter']['id'])
+        topic = Topic.objects.get(id=info['topic']['id'])
+
+        instance = TopicHelpRequestIndependent.objects.create(
+            student=user.student_profile,  # agar Student modeli OneToOne(User) bo‘lsa
+            subject=subject,
+            level=validated_data.get('level', 1),
+            question_json=question_json,
+            result_json=result_json,
+        )
+        instance.chapters.set([chapter])
+        instance.topics.set([topic])
+
+        return instance

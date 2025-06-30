@@ -1,5 +1,5 @@
 from django.db import models
-from django_app.app_user.models import Student
+from django_app.app_user.models import Student, Teacher
 from django_app.app_teacher.models import Topic, Question, Chapter
 from django_app.app_management.models import Product
 from django_app.app_user.models import Subject
@@ -104,4 +104,23 @@ class ProductExchange(models.Model):
         return f"{self.student.full_name} → {self.product.name} ({self.used_coin} ball)"
     
 
+class TopicHelpRequestIndependent(models.Model):
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='student_results')
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+    chapters = models.ManyToManyField(Chapter)
+    topics = models.ManyToManyField(Topic)
+    level = models.PositiveSmallIntegerField(default=1)
+    question_json = models.JSONField()
+    result_json = models.JSONField()    
+    teacher = models.ForeignKey(
+        Teacher,
+        verbose_name="Tekshiruvchi o‘qituvchi"
+    )
 
+    commit = models.TextField(null=True, blank=True, verbose_name="O‘qituvchi izohi")
+    reviewed_at = models.DateTimeField(null=True, blank=True, verbose_name="Tekshirilgan vaqt")
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.student} - {self.subject} - {self.get_level_display()}"
