@@ -226,7 +226,8 @@ class TopicHelpRequestIndependentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TopicHelpRequestIndependent
-        exclude = ['teacher', 'commit', 'reviewed_at']
+        exclude = ['subject', 'chapters', 'topics', 'question_json', 'result_json',  'student', 'commit', 'reviewed_at']
+        # Bu yerda 'student' serializerdan chiqarib tashlanmoqda
 
     def create(self, validated_data):
         request = self.context['request']
