@@ -112,11 +112,18 @@ class TopicHelpRequestIndependent(models.Model):
     level = models.PositiveSmallIntegerField(default=1)
     question_json = models.JSONField()
     result_json = models.JSONField()    
-    teacher = models.ForeignKey(Teacher,on_delete=models.PROTECT ,verbose_name="Tekshiruvchi o‘qituvchi")
+
+    # ✅ Bu yerda null va blank qilish kerak
+    teacher = models.ForeignKey(
+        Teacher,
+        on_delete=models.PROTECT,
+        verbose_name="Tekshiruvchi o‘qituvchi",
+        null=True,
+        blank=True
+    )
 
     commit = models.TextField(null=True, blank=True, verbose_name="O‘qituvchi izohi")
     reviewed_at = models.DateTimeField(null=True, blank=True, verbose_name="Tekshirilgan vaqt")
-
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
