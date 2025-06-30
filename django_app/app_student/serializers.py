@@ -226,8 +226,8 @@ class TopicHelpRequestIndependentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TopicHelpRequestIndependent
-        # Majburiy bo'lgan maydonlarni chiqarib yuboramiz
-        exclude = ['subject', 'chapters', 'topics', 'question_json', 'result_json', 'teacher', 'commit', 'reviewed_at']
+        exclude = ['subject', 'chapters', 'topics', 'question_json', 'result_json', 'teacher', 'student', 'commit', 'reviewed_at']
+        # Bu yerda 'student' serializerdan chiqarib tashlanmoqda
 
     def create(self, validated_data):
         request = self.context['request']
@@ -237,13 +237,9 @@ class TopicHelpRequestIndependentSerializer(serializers.ModelSerializer):
         question_json = validated_data.pop('question')
         result_json = validated_data.pop('result')
 
-        subject_id = info['subject']['id']
-        chapter_id = info['chapter']['id']
-        topic_id = info['topic']['id']
-
-        subject = Subject.objects.get(id=subject_id)
-        chapter = Chapter.objects.get(id=chapter_id)
-        topic = Topic.objects.get(id=topic_id)
+        subject = Subject.objects.get(id=info['subject']['id'])
+        chapter = Chapter.objects.get(id=info['chapter']['id'])
+        topic = Topic.objects.get(id=info['topic']['id'])
 
         instance = TopicHelpRequestIndependent.objects.create(
             student=student,
@@ -254,7 +250,7 @@ class TopicHelpRequestIndependentSerializer(serializers.ModelSerializer):
         )
         instance.chapters.set([chapter])
         instance.topics.set([topic])
-
         return instance
+
 
 
