@@ -4,30 +4,27 @@ from rest_framework.permissions import IsAuthenticated
 from django_app.app_student.models import  TopicHelpRequestIndependent
 
 
+from collections import defaultdict
+
 class TeacherSubjectIndependentListAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        # ❌ Avval teacher bo‘yicha filter bo‘lgan
-        # ✅ Endi hamma requestlar chiqadi
         help_requests = TopicHelpRequestIndependent.objects.all()\
             .select_related('student__user', 'subject')\
             .prefetch_related('topics')
 
-        response_data = []
+        # 🧠 Student bo‘yicha guruhlab boramiz
+        grouped_data = defaultdict(list)
+
         for req in help_requests:
             subject = req.subject
             class_name = getattr(subject, 'class_field', "1")
             topics = req.topics.all()
 
-            # ✅ STATUSNI ANIQLASH
-            if req.commit:
-                status_text = "javob berilgan"
-            else:
-                status_text = "kutmoqda"
+            status_text = "javob berilgan" if req.commit else "kutmoqda"
 
-            response_data.append({
-                "student_full_name": req.student.full_name,
+            grouped_data[req.student.full_name].append({
                 "class_uz": f"{class_name}-sinf {subject.name_uz}",
                 "class_ru": f"{class_name}-класс {subject.name_ru}",
                 "topics_name_uz": [topic.name_uz for topic in topics],
@@ -35,8 +32,17 @@ class TeacherSubjectIndependentListAPIView(APIView):
                 "question_json": req.question_json,
                 "result_json": req.result_json,
                 "created_at": req.created_at,
-                "status": status_text  # ✅ Qo‘shildi
+                "status": status_text
             })
+
+        # 🔁 Yakuniy formatga keltiramiz
+        response_data = [
+            {
+                "student_full_name": full_name,
+                "requests": requests
+            }
+            for full_name, requests in grouped_data.items()
+        ]
 
         return Response(response_data)
 
