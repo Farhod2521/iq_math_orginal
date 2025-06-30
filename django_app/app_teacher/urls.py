@@ -45,6 +45,6 @@ urlpatterns = [
     path('subjects/reorder/', ReorderSubjectAPIView.as_view(), name='subject-reorder'),
 
     ############################################################################################ 
-    path('subjects-independent/list/', TeacherSubjectIndependentListAPIView.as_view(), name='subject-reorder'),
+    path('teacher-independent/list/', TeacherSubjectIndependentListAPIView.as_view(), name='subject-reorder'),
 
 ]
