@@ -8,8 +8,9 @@ class TeacherSubjectIndependentListAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        teacher = request.user.teacher_profile
-        help_requests = TopicHelpRequestIndependent.objects.filter(teacher=teacher)\
+        # ❌ Avval teacher bo‘yicha filter bo‘lgan
+        # ✅ Endi hamma requestlar chiqadi
+        help_requests = TopicHelpRequestIndependent.objects.all()\
             .select_related('student__user', 'subject')\
             .prefetch_related('topics')
 
@@ -18,6 +19,12 @@ class TeacherSubjectIndependentListAPIView(APIView):
             subject = req.subject
             class_name = getattr(subject, 'class_field', "1")
             topics = req.topics.all()
+
+            # ✅ STATUSNI ANIQLASH
+            if req.commit:
+                status_text = "javob berilgan"
+            else:
+                status_text = "kutmoqda"
 
             response_data.append({
                 "student_full_name": req.student.full_name,
@@ -28,6 +35,7 @@ class TeacherSubjectIndependentListAPIView(APIView):
                 "question_json": req.question_json,
                 "result_json": req.result_json,
                 "created_at": req.created_at,
+                "status": status_text  # ✅ Qo‘shildi
             })
 
         return Response(response_data)
