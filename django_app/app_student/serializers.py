@@ -226,10 +226,18 @@ class TopicHelpRequestIndependentSerializer(serializers.ModelSerializer):
     class Meta:
         model = TopicHelpRequestIndependent
         fields = ['id', 'info', 'question', 'result', 'level']
+        extra_kwargs = {
+            'subject': {'required': False},
+            'chapters': {'required': False},
+            'topics': {'required': False},
+            'question_json': {'required': False},
+            'result_json': {'required': False},
+        }
 
     def create(self, validated_data):
         request = self.context['request']
         user = request.user
+        student = user.student_profile
 
         info = validated_data.pop('info')
         question_json = validated_data.pop('question')
@@ -240,15 +248,15 @@ class TopicHelpRequestIndependentSerializer(serializers.ModelSerializer):
         topic = Topic.objects.get(id=info['topic']['id'])
 
         instance = TopicHelpRequestIndependent.objects.create(
-            student=user.student_profile,  # agar Student modeli OneToOne(User) bo‘lsa
+            student=student,
             subject=subject,
             level=validated_data.get('level', 1),
             question_json=question_json,
             result_json=result_json,
+            teacher=None  # hozircha avtomatik tayinlanmaydi
         )
         instance.chapters.set([chapter])
         instance.topics.set([topic])
-
         return instance
     
 class TopicHelpRequestIndependentSerializer(serializers.ModelSerializer):
