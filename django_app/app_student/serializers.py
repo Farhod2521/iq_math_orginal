@@ -227,14 +227,6 @@ class TopicHelpRequestIndependentSerializer(serializers.ModelSerializer):
         model = TopicHelpRequestIndependent
         fields = ['id', 'info', 'question', 'result', 'level']
 
-    def to_internal_value(self, data):
-        # override qilamiz required fieldlar validatsiyasini o‘chirib qo‘yish uchun
-        ret = super().to_internal_value(data)
-        ret['info'] = data.get('info')
-        ret['question'] = data.get('question')
-        ret['result'] = data.get('result')
-        return ret
-
     def create(self, validated_data):
         request = self.context['request']
         student = request.user.student_profile
@@ -243,25 +235,29 @@ class TopicHelpRequestIndependentSerializer(serializers.ModelSerializer):
         question_json = validated_data.pop('question')
         result_json = validated_data.pop('result')
 
-        # Extracting subject/chapter/topic from info
+        # Extract IDs from info
         subject_id = info['subject']['id']
         chapter_id = info['chapter']['id']
         topic_id = info['topic']['id']
 
+        # Get related models
         subject = Subject.objects.get(id=subject_id)
         chapter = Chapter.objects.get(id=chapter_id)
         topic = Topic.objects.get(id=topic_id)
 
+        # Create instance
         instance = TopicHelpRequestIndependent.objects.create(
             student=student,
             subject=subject,
             level=validated_data.get('level', 1),
             question_json=question_json,
-            result_json=result_json,
+            result_json=result_json
         )
         instance.chapters.set([chapter])
         instance.topics.set([topic])
+
         return instance
+
 
 class TopicHelpRequestIndependentSerializer(serializers.ModelSerializer):
     commit_uz = serializers.CharField(required=False, allow_blank=True)
