@@ -218,6 +218,7 @@ class CheckAnswersSerializer(serializers.Serializer):
     composite_answers = CheckCompositeAnswerSerializer(many=True, required=False)
 
 
+
 class TopicHelpRequestIndependentSerializer(serializers.ModelSerializer):
     info = serializers.JSONField(write_only=True)
     question = serializers.JSONField(write_only=True)
@@ -225,7 +226,8 @@ class TopicHelpRequestIndependentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TopicHelpRequestIndependent
-        fields = ['id', 'info', 'question', 'result', 'level']
+        # Majburiy bo'lgan maydonlarni chiqarib yuboramiz
+        exclude = ['subject', 'chapters', 'topics', 'question_json', 'result_json', 'teacher', 'commit', 'reviewed_at']
 
     def create(self, validated_data):
         request = self.context['request']
@@ -235,17 +237,14 @@ class TopicHelpRequestIndependentSerializer(serializers.ModelSerializer):
         question_json = validated_data.pop('question')
         result_json = validated_data.pop('result')
 
-        # Extract IDs from info
         subject_id = info['subject']['id']
         chapter_id = info['chapter']['id']
         topic_id = info['topic']['id']
 
-        # Get related models
         subject = Subject.objects.get(id=subject_id)
         chapter = Chapter.objects.get(id=chapter_id)
         topic = Topic.objects.get(id=topic_id)
 
-        # Create instance
         instance = TopicHelpRequestIndependent.objects.create(
             student=student,
             subject=subject,
