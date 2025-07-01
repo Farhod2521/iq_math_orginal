@@ -8,7 +8,7 @@ from .views import(
 from .View.unsolved import  TeacherUnsolvedQuestionReportListView, TeacherAnswerUnsolvedQuestionView
 from  .View.gruop_student import AddStudentsToGroupAPIView, GroupCreateAPIView, GroupListAPIView, GroupDetailAPIView
 from .View.reorderOrderIndex  import  ReorderTopicAPIView, ReorderChapterAPIView, ReorderSubjectAPIView
-from .View.independentView import  TeacherSubjectIndependentListAPIView
+from .View.independentView import  TeacherTopicHelpRequestListAPIView, TeacherTopicHelpRequestDetailAPIView
 urlpatterns = [
     path("my-subjects/", TeacherSubjectsAPIView.as_view(), name="teacher-subjects"),
     path("subject-list/", SubjectListAPIView.as_view(), name="teacher-subjects"),
@@ -45,6 +45,7 @@ urlpatterns = [
     path('subjects/reorder/', ReorderSubjectAPIView.as_view(), name='subject-reorder'),
 
     ############################################################################################ 
-    path('teacher-independent/list/', TeacherSubjectIndependentListAPIView.as_view(), name='subject-reorder'),
+    path('teacher-independent/list/', TeacherTopicHelpRequestListAPIView.as_view(), name='subject-reorder'),
+    path('teacher-independent/detail/<int:id>/', TeacherTopicHelpRequestDetailAPIView.as_view(), name='subject-reorder'),
 
 ]
