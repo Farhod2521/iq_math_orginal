@@ -102,6 +102,11 @@ class TopicSerializer(serializers.ModelSerializer):
         except Student.DoesNotExist:
             return True
 
+        # ❗ 1. Agar student bu topicda ishlagan bo‘lsa — har doim ochiq
+        if TopicProgress.objects.filter(user=student, topic=obj).exists():
+            return False
+
+        # 2. Chapterdagi barcha topiclarni olamiz
         chapter_topics = Topic.objects.filter(chapter=obj.chapter).order_by('order')
         topic_ids = list(chapter_topics.values_list('id', flat=True))
 
@@ -110,8 +115,8 @@ class TopicSerializer(serializers.ModelSerializer):
         except ValueError:
             return True
 
+        # 3. Agar birinchi topic bo‘lsa — oldingi chapterdagi oxirgi topicga qaraymiz
         if current_index == 0:
-            # Oldingi chapterni tekshiramiz
             previous_chapter = Chapter.objects.filter(order__lt=obj.chapter.order).order_by('-order').first()
             if not previous_chapter:
                 return False  # Bu birinchi chapter bo‘lsa — ochiq
@@ -126,7 +131,7 @@ class TopicSerializer(serializers.ModelSerializer):
             except TopicProgress.DoesNotExist:
                 return True
 
-        # Oldingi topicni tekshiramiz
+        # 4. Oldingi topicni tekshiramiz
         prev_topic_id = topic_ids[current_index - 1]
         try:
             prev_topic = Topic.objects.get(id=prev_topic_id)
@@ -134,6 +139,7 @@ class TopicSerializer(serializers.ModelSerializer):
             return not (prev_progress.score >= 80)
         except TopicProgress.DoesNotExist:
             return True
+
 
     def get_is_open(self, obj):
         return not self.get_is_locked(obj)
