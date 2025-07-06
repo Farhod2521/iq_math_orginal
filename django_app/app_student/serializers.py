@@ -102,30 +102,38 @@ class TopicSerializer(serializers.ModelSerializer):
         except Student.DoesNotExist:
             return True
 
-        # Chapterdagi barcha topiclarni tartib bilan olamiz
-        chapter_topics = Topic.objects.filter(chapter=obj.chapter).order_by('id')
+        chapter_topics = Topic.objects.filter(chapter=obj.chapter).order_by('order')
         topic_ids = list(chapter_topics.values_list('id', flat=True))
 
         try:
             current_index = topic_ids.index(obj.id)
         except ValueError:
-            return True  # Topic chapter ichida bo‘lmasa — qulflanadi
+            return True
 
-        # Agar birinchi topic bo‘lsa — doim ochiq
         if current_index == 0:
-            return False
+            # Oldingi chapterni tekshiramiz
+            previous_chapter = Chapter.objects.filter(order__lt=obj.chapter.order).order_by('-order').first()
+            if not previous_chapter:
+                return False  # Bu birinchi chapter bo‘lsa — ochiq
 
-        # Oldingi topicni topamiz
+            prev_topic = Topic.objects.filter(chapter=previous_chapter).order_by('-order').first()
+            if not prev_topic:
+                return False
+
+            try:
+                prev_progress = TopicProgress.objects.get(user=student, topic=prev_topic)
+                return not (prev_progress.score >= 80)
+            except TopicProgress.DoesNotExist:
+                return True
+
+        # Oldingi topicni tekshiramiz
         prev_topic_id = topic_ids[current_index - 1]
         try:
             prev_topic = Topic.objects.get(id=prev_topic_id)
             prev_progress = TopicProgress.objects.get(user=student, topic=prev_topic)
-            if prev_progress.score >= 80:
-                return False  # oldingi topic 80%+ bo‘lsa — bu topic ochiladi
+            return not (prev_progress.score >= 80)
         except TopicProgress.DoesNotExist:
-            pass
-
-        return True  # Aks holda — qulflanadi
+            return True
 
     def get_is_open(self, obj):
         return not self.get_is_locked(obj)
