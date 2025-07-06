@@ -41,8 +41,8 @@ urlpatterns = [
     path('student-statistics/<int:student_id>/', StudentStatisticsDetailAPIView.as_view()),
     path('students/<int:student_id>/subjects/', SubjectListWithMasteryAPIView.as_view(), name='subject-list-with-mastery'),
     path('students/<int:student_id>/subjects/<int:subject_id>/chapters/', ChapterTopicProgressAPIView.as_view(), name='chapter-topic-progress'),
-    path('diagnost/students/<int:student_id>/subjects/', SubjectListWithMasteryAPIView.as_view(), name='subject-list-with-mastery'),
-    path('diagnost/students/<int:student_id>/subjects/<int:subject_id>/chapters/', ChapterTopicProgressAPIView.as_view(), name='chapter-topic-progress'),
+    path('diagnost/students/<int:student_id>/subjects/', DiagnostSubjectListAPIView.as_view(), name='subject-list-with-mastery'),
+    path('diagnost/students/<int:student_id>/subjects/<int:subject_id>/chapters/', DiagnostChapterTopicProgressAPIView.as_view(), name='chapter-topic-progress'),
 
 
 ###################################################################################################################################
