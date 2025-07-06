@@ -102,10 +102,11 @@ class TopicSerializer(serializers.ModelSerializer):
         except Student.DoesNotExist:
             return True
 
-        # Agar student bu mavzuda allaqachon ishlagan bo‘lsa → ochiq
+        # Agar student bu topicni ishlagan bo‘lsa — ochiq
         if TopicProgress.objects.filter(user=student, topic=obj).exists():
             return False
 
+        # Hozirgi chapterdagi topiclar
         chapter_topics = Topic.objects.filter(chapter=obj.chapter).order_by('order')
         topic_ids = list(chapter_topics.values_list('id', flat=True))
 
@@ -114,25 +115,26 @@ class TopicSerializer(serializers.ModelSerializer):
         except ValueError:
             return True
 
-        # Agar bu chapterdagi birinchi mavzu bo‘lsa
+        # === 1. Agar bu chapterdagi birinchi topic bo‘lsa ===
         if current_index == 0:
-            # Oldingi chapterni topamiz (order yoki id bo‘yicha)
+            # Oldingi chapterni topamiz
             previous_chapter = Chapter.objects.filter(order__lt=obj.chapter.order).order_by('-order').first()
             if not previous_chapter:
-                return False  # Bu birinchi chapter bo‘lsa — ochiq
+                return False  # Birinchi chapter bo‘lsa — ochiq
 
-            # Oldingi chapterdagi oxirgi mavzuni topamiz
-            prev_topic = Topic.objects.filter(chapter=previous_chapter).order_by('-order').first()
-            if not prev_topic:
-                return False
+            # Oldingi chapterdagi oxirgi topicni topamiz
+            previous_topics = Topic.objects.filter(chapter=previous_chapter).order_by('-order')
+            if not previous_topics.exists():
+                return False  # Hech qanday topic bo‘lmasa — ochiq
 
+            prev_topic = previous_topics.first()
             try:
                 prev_progress = TopicProgress.objects.get(user=student, topic=prev_topic)
                 return not (prev_progress.score >= 80)
             except TopicProgress.DoesNotExist:
                 return True
 
-        # Aks holda — oldingi topicni tekshiramiz
+        # === 2. Aks holda, oldingi topicga qaraymiz ===
         prev_topic_id = topic_ids[current_index - 1]
         try:
             prev_topic = Topic.objects.get(id=prev_topic_id)
