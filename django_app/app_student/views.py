@@ -42,13 +42,11 @@ class GenerateTestAPIView(APIView):
         except Class.DoesNotExist:
             return Response({"message": "Joriy sinf topilmadi"}, status=400)
 
-        # 1. Level tekshir
         try:
             level = int(request.data.get("level"))
         except (TypeError, ValueError):
             return Response({"message": "Level noto‘g‘ri formatda"}, status=400)
 
-        # 2. subject_id orqali fan aniqlanadi
         subject_id = request.data.get("subject_id")
         if subject_id:
             try:
@@ -61,30 +59,19 @@ class GenerateTestAPIView(APIView):
                 return Response({"message": "Ushbu sinf uchun hech qanday fan topilmadi"}, status=404)
             subject = subjects.first()
 
-        # 3. Savollarni olish
         chapters = subject.chapters.all()
-        questions = Question.objects.filter(
-            topic__chapter__in=chapters,
-            level=level
-        ).distinct()
-
+        questions = Question.objects.filter(topic__chapter__in=chapters, level=level).distinct()
         question_list = sample(list(questions), min(30, questions.count()))
-
-        # ✅ Faqat subject, level, student va bo‘sh result bilan yozamiz
-        diagnost = Diagnost_Student.objects.create(
-            student=student,
-            level=level,
-            subject=subject,
-            result={"message": "Savollar generatsiya qilindi, hali javoblar yo‘q"}
-        )
-
-        # ❌ Barcha boblarni yozish kerak emas!
-        # diagnost.chapters.set(chapters)  ← bu qator olib tashlandi
 
         serializer = CustomQuestionSerializer(question_list, many=True, context={'request': request})
         filtered_data = list(filter(None, serializer.data))
 
-        return Response(filtered_data)
+        return Response({
+            "questions": filtered_data,
+            "level": level,
+            "subject_id": subject.id  # kerak bo‘lsa frontga subject qaytariladi
+        })
+
 
 
 class GenerateCheckAnswersAPIView(APIView):
@@ -100,13 +87,9 @@ class GenerateCheckAnswersAPIView(APIView):
         except Student.DoesNotExist:
             return Response({"message": "Student topilmadi"}, status=404)
 
-        correct_answers = 0
-        total_answers = 0
-        question_details = []
-        wrong_topics = {}
+        correct_answers, total_answers, index = 0, 0, 1
+        question_details, wrong_topics = [], {}
         wrong_topic_instances = set()
-
-        index = 1
 
         def add_wrong_topic(question):
             if question.topic:
@@ -118,7 +101,7 @@ class GenerateCheckAnswersAPIView(APIView):
                         'topic_name_uz': question.topic.name_uz
                     }
 
-        # TEXT QUESTIONS
+        # TEXT
         for answer in serializer.validated_data.get('text_answers', []):
             question = Question.objects.filter(id=answer['question_id'], question_type='text').first()
             if not question:
@@ -126,14 +109,10 @@ class GenerateCheckAnswersAPIView(APIView):
 
             student_answer = answer.get('answer_uz') or answer.get('answer_ru')
             correct_answer = question.correct_text_answer_uz if 'answer_uz' in answer else question.correct_text_answer_ru
-
-            if student_answer is None or correct_answer is None:
+            if not student_answer or not correct_answer:
                 continue
 
-            student_answer_plain = strip_tags(student_answer).strip()
-            correct_answer_plain = strip_tags(correct_answer).strip()
-            is_correct = (student_answer_plain == correct_answer_plain)
-
+            is_correct = strip_tags(student_answer).strip() == strip_tags(correct_answer).strip()
             total_answers += 1
             if is_correct:
                 correct_answers += 1
@@ -149,7 +128,7 @@ class GenerateCheckAnswersAPIView(APIView):
             })
             index += 1
 
-        # CHOICE QUESTIONS
+        # CHOICE
         for answer in serializer.validated_data.get('choice_answers', []):
             question = Question.objects.filter(id=answer['question_id'], question_type='choice').first()
             if not question:
@@ -157,8 +136,8 @@ class GenerateCheckAnswersAPIView(APIView):
 
             correct_choices = set(Choice.objects.filter(question=question, is_correct=True).values_list('id', flat=True))
             selected_choices = set(answer['choices'])
-            is_correct = (correct_choices == selected_choices)
 
+            is_correct = correct_choices == selected_choices
             total_answers += 1
             if is_correct:
                 correct_answers += 1
@@ -174,18 +153,14 @@ class GenerateCheckAnswersAPIView(APIView):
             })
             index += 1
 
-        # COMPOSITE QUESTIONS
+        # COMPOSITE
         for answer in serializer.validated_data.get('composite_answers', []):
             question = Question.objects.filter(id=answer['question_id'], question_type='composite').first()
             if not question:
                 continue
 
             correct_subs = question.sub_questions.all()
-            is_correct = True
-            for sub_answer, sub_question in zip(answer['answers'], correct_subs):
-                if sub_answer != sub_question.correct_answer:
-                    is_correct = False
-                    break
+            is_correct = all(sa == sq.correct_answer for sa, sq in zip(answer['answers'], correct_subs))
 
             total_answers += 1
             if is_correct:
@@ -214,18 +189,16 @@ class GenerateCheckAnswersAPIView(APIView):
             }]
         }
 
-        # Savollardan subject aniqlaymiz
+        # Fan, level va topiclardan subject aniqlaymiz
         subject = None
+        level = None
         first_question = Question.objects.filter(id=question_details[0]['question_id']).select_related(
             'topic__chapter__subject').first() if question_details else None
 
         if first_question and first_question.topic and first_question.topic.chapter:
             subject = first_question.topic.chapter.subject
             level = first_question.level
-        else:
-            level = None
 
-        # Diagnost_Student yozamiz
         diagnost = Diagnost_Student.objects.create(
             student=student_instance,
             level=level,
@@ -233,9 +206,8 @@ class GenerateCheckAnswersAPIView(APIView):
             result=result_json
         )
 
-        # ✅ Faqat xato qilingan topic va ularga tegishli chapterlar
+        # Xato qilingan topic va chapterlarni yozamiz
         wrong_chapter_instances = set(topic.chapter for topic in wrong_topic_instances)
-
         diagnost.topic.set(wrong_topic_instances)
         diagnost.chapters.set(wrong_chapter_instances)
 
