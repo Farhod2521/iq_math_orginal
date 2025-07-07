@@ -575,6 +575,7 @@ class StudentProfileAPIView(APIView):
             'type_of_education': student.type_of_education,
             'student_date': student_date,
             'student_time': student_time,
+            "role": "student",
             "has_diagnost": has_diagnost 
         }
 
