@@ -182,13 +182,15 @@ class SubscriptionTrialDaysAPIView(APIView):
         else:
             remaining_days = 0
 
+        # Logika: agar to‘lov muddati tugagan bo‘lsa, is_paid = False
+        is_paid = subscription.is_paid and remaining_days > 0
+
         return Response(
             {
-            "days_until_next_payment": remaining_days,
-            "end_date": subscription.end_date.strftime("%d/%m/%Y"),
-            "payment_amount": 1000, 
-            "is_paid": subscription.is_paid
-
+                "days_until_next_payment": remaining_days,
+                "end_date": subscription.end_date.strftime("%d/%m/%Y"),
+                "payment_amount": 1000,
+                "is_paid": is_paid
             },
             status=status.HTTP_200_OK
         )
