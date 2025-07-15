@@ -142,3 +142,6 @@ class Group(models.Model):
     class Meta:
         verbose_name = "Guruh"
         verbose_name_plural = "Guruhlar"
+
+
+
