@@ -14,22 +14,32 @@ class CreateTeacherCouponAPIView(APIView):
     def post(self, request):
         user = request.user
 
-        # Faqat Teacher profili borligini tekshiramiz
+        # Foydalanuvchi teacher ekanini tekshiramiz
         try:
             teacher = user.teacher_profile
         except Teacher.DoesNotExist:
             return Response({"error": "Teacher profili mavjud emas."}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Kupon kodi yuborilganmi?
+        code = request.data.get("code")
+        if not code:
+            return Response({"error": "Kupon kodi kiritilmadi."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Takrorlanmaganligini tekshiramiz
+        if Coupon.objects.filter(code=code).exists():
+            return Response({"error": "Bu kupon kodi allaqachon mavjud."}, status=status.HTTP_400_BAD_REQUEST)
+
         # Sozlamalarni olish
         settings = ReferralAndCouponSettings.objects.last()
         if not settings:
-            return Response({"error": "Kupon sozlamalari topilmadi."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({"error": "Kupon sozlamalari mavjud emas."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        # Amal qilish muddatini belgilash
+        # Amal qilish muddati
         valid_until = timezone.now() + timedelta(days=settings.coupon_valid_days)
 
-        # Kupon yaratish
+        # Kupon yaratamiz
         coupon = Coupon.objects.create(
+            code=code,
             discount_percent=settings.coupon_discount_percent,
             valid_from=timezone.now(),
             valid_until=valid_until,
@@ -43,3 +53,4 @@ class CreateTeacherCouponAPIView(APIView):
             "discount_percent": coupon.discount_percent,
             "valid_until": coupon.valid_until
         }, status=status.HTTP_201_CREATED)
+
