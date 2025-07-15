@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import SystemSettings, FAQ, Product, ReferralAndCouponSettings, Banner
+from .models import SystemSettings, FAQ, Product, ReferralAndCouponSettings, Banner, Coupon
 from modeltranslation.admin import TranslationAdmin
 from django.utils.html import format_html
 
@@ -62,3 +62,36 @@ class ProductAdmin(TranslationAdmin):  # model.ModelAdmin o'rniga TranslationAdm
             return format_html('<img src="{}" width="50" height="50" style="object-fit: cover;" />', obj.image.url)
         return "-"
     image_tag.short_description = 'Rasm'
+
+
+
+@admin.register(Coupon)
+class CouponAdmin(admin.ModelAdmin):
+    list_display = (
+        'code',
+        'discount_percent',
+        'valid_from',
+        'valid_until',
+        'created_by',
+        'is_active',
+        'created_at'
+    )
+    list_filter = (
+        'is_active',
+        'created_by_teacher',
+        'created_by_student',
+    )
+    search_fields = (
+        'code',
+        'created_by_teacher__full_name',
+        'created_by_student__full_name',
+    )
+
+    def created_by(self, obj):
+        if obj.created_by_teacher:
+            return f"👨‍🏫 {obj.created_by_teacher.full_name}"
+        elif obj.created_by_student:
+            return f"🧑‍🎓 {obj.created_by_student.full_name}"
+        return "Noma’lum"
+    
+    created_by.short_description = "Yaratuvchi"
