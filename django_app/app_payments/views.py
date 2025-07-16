@@ -15,15 +15,16 @@ from rest_framework.permissions import IsAuthenticated
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from .serializers import PaymentSerializer
-
+from  django_app.app_management.models import SystemCoupon
 
 
 
 class InitiatePaymentAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
-        amount = 1000
+    def post(self, request):
+        amount = request.data.get('amount', 1000)
+        coupon_code = request.data.get('coupon', None)
 
         if not amount:
             return Response({"error": "amount kerak"}, status=status.HTTP_400_BAD_REQUEST)
@@ -33,7 +34,26 @@ class InitiatePaymentAPIView(APIView):
         except Student.DoesNotExist:
             return Response({"error": "Talaba topilmadi"}, status=status.HTTP_404_NOT_FOUND)
 
-        # Multicard token olish
+        discount_percent = 0
+        coupon_text = "IQMATH.UZ oylik to'lov"
+
+        # Kupon kodni tekshirish
+        if coupon_code:
+            try:
+                coupon = SystemCoupon.objects.get(code=coupon_code, is_active=True)
+                if coupon.valid_until > timezone.now():
+                    discount_percent = coupon.discount_percent
+                    coupon_text = f"IQMATH {discount_percent}% chegirma asosida oylik to'lov"
+                else:
+                    return Response({"error": "Kupon muddati tugagan"}, status=status.HTTP_400_BAD_REQUEST)
+            except SystemCoupon.DoesNotExist:
+                return Response({"error": "Kupon topilmadi yoki faolligi yo‘q"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Chegirmadan so‘ng hisoblash
+        discounted_amount = float(amount)
+        if discount_percent > 0:
+            discounted_amount = discounted_amount * (1 - discount_percent / 100)
+
         try:
             token = get_multicard_token()
         except Exception as e:
@@ -44,8 +64,7 @@ class InitiatePaymentAPIView(APIView):
             "Authorization": f"Bearer {token}"
         }
 
-        # So‘mni tiyin formatiga o‘tkazish
-        amount_in_tiyin = int(float(amount) * 100)
+        amount_in_tiyin = int(discounted_amount * 100)
 
         data = {
             "store_id": 553,
@@ -58,7 +77,7 @@ class InitiatePaymentAPIView(APIView):
                     "vat": 12,
                     "price": amount_in_tiyin,
                     "qty": 1,
-                    "name": "IQMATH.UZ oylik to'lov",
+                    "name": coupon_text,
                     "package_code": "1508099",
                     "mxik": "10202001002000000",
                     "total": amount_in_tiyin
@@ -78,16 +97,16 @@ class InitiatePaymentAPIView(APIView):
         if response.status_code != 200:
             return Response({"error": "To‘lov yaratilishda xatolik", "details": response.text}, status=500)
 
-        # Bazaga to‘lovni yozib qo‘yamiz
         Payment.objects.create(
             student=student,
-            amount=amount,
+            amount=discounted_amount,
             transaction_id=transaction_id,
             status="pending",
             payment_gateway="multicard",
         )
 
         return Response(response.json(), status=200)
+
 
 
 class PaymentCallbackAPIView(APIView):
