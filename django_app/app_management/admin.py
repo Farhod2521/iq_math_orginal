@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import SystemSettings, FAQ, Product, ReferralAndCouponSettings, Banner, Coupon
+from .models import SystemSettings, FAQ, Product, ReferralAndCouponSettings, Banner, Coupon, SystemCoupon
 from modeltranslation.admin import TranslationAdmin
 from django.utils.html import format_html
 
@@ -43,7 +43,7 @@ class FAQAdmin(admin.ModelAdmin):
 @admin.register(ReferralAndCouponSettings)
 class ReferralAndCouponSettingsAdmin(admin.ModelAdmin):
     list_display = (
-        'referral_bonus_points',
+     
         'coupon_discount_percent',
         'coupon_valid_days',
         'updated_at',
@@ -95,3 +95,11 @@ class CouponAdmin(admin.ModelAdmin):
         return "Noma’lum"
     
     created_by.short_description = "Yaratuvchi"
+
+
+@admin.register(SystemCoupon)
+class SystemCouponAdmin(admin.ModelAdmin):
+    list_display = ('code', 'discount_percent', 'valid_until', 'is_active')
+    list_filter = ('is_active', 'valid_until')
+    search_fields = ('code',)
+    ordering = ('-valid_until',)
