@@ -52,10 +52,13 @@ class FAQ(models.Model):
 
 
 class ReferralAndCouponSettings(models.Model):
-    referral_bonus_points = models.PositiveIntegerField(
+    teacher_referral_bonus_points = models.PositiveIntegerField(
         default=0,
-        help_text="Referal orqali foydalanuvchi taklif qilganda beriladigan ball miqdori",
-        verbose_name="Referal uchun ball miqdori"
+        verbose_name="O‘qituvchi uchun referal ball"
+    )
+    student_referral_bonus_points = models.PositiveIntegerField(
+        default=0,
+        verbose_name="O‘quvchi uchun referal ball"
     )
     coupon_discount_percent = models.PositiveIntegerField(
         default=0,
@@ -82,6 +85,30 @@ class ReferralAndCouponSettings(models.Model):
     class Meta:
         verbose_name = "Referal va kupon sozlamasi"
         verbose_name_plural = "Referal va kupon sozlamalari"
+
+class SystemCoupon(models.Model):
+    code = models.CharField(
+        max_length=20,
+        unique=True,
+        verbose_name="Kupon kodi"
+    )
+    discount_percent = models.PositiveIntegerField(
+        verbose_name="Chegirma foizi (%)"
+    )
+    valid_until = models.DateTimeField(
+        verbose_name="Amal qilish muddati"
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name="Faolligi"
+    )
+
+    class Meta:
+        verbose_name = "Tizim kuponi"
+        verbose_name_plural = "Tizim kuponlari"
+
+    def __str__(self):
+        return f"{self.code} ({self.discount_percent}%)"
 
 class Product(models.Model):
     name = models.CharField(max_length=255, verbose_name="Mahsulot nomi")
