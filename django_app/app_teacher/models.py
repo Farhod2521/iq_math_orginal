@@ -1,7 +1,7 @@
 from django.db import models
 from django_app.app_user.models import  Subject
 from ckeditor.fields import RichTextField
-
+from django_app.app_management.models import Product
 from django_app.app_user.models import Teacher, Student
 
 
@@ -145,3 +145,37 @@ class Group(models.Model):
 
 
 
+class TeacherScore(models.Model):
+    teacher = models.OneToOneField(Teacher, on_delete=models.CASCADE)
+    score = models.PositiveIntegerField(default=0)
+    coin = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "O‘qituvchi bali"
+        verbose_name_plural = "O‘qituvchilar ballari"
+        ordering = ['-score']
+
+    def __str__(self):
+        return f"{self.teacher.full_name} - {self.score} ball"
+    
+
+class TeacherProductExchange(models.Model):
+    STATUS_CHOICES = (
+        ('pending', 'Kutilmoqda'),
+        ('approved', 'Tasdiqlangan'),
+        ('rejected', 'Rad etilgan'),
+    )
+
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='product_exchanges')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    used_coin = models.PositiveIntegerField()
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "O‘qituvchining mahsulot almashtiruvi"
+        verbose_name_plural = "O‘qituvchilarning mahsulot almashtiruvi"
+
+    def __str__(self):
+        return f"{self.teacher.full_name} → {self.product.name} ({self.used_coin} tanga)"
