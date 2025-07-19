@@ -71,12 +71,12 @@ class ChangeStudentPasswordAPIView(APIView):
                 subject = "Parolingiz o‘zgartirildi"
                 from_email = None  # `DEFAULT_FROM_EMAIL` ishlatiladi
                 to_email = student_user.email
-
                 html_content = render_to_string(
                     'emails/password_changed_by_teacher.html',
                     {
                         'student_name': student.full_name,
                         'teacher_name': teacher.teacher_profile.full_name,
+                        'new_password': new_password,
                     }
                 )
 
