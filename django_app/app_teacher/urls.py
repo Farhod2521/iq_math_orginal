@@ -10,6 +10,7 @@ from  .View.gruop_student import AddStudentsToGroupAPIView, GroupCreateAPIView, 
 from .View.reorderOrderIndex  import  ReorderTopicAPIView, ReorderChapterAPIView, ReorderSubjectAPIView
 from .View.independentView import  TeacherTopicHelpRequestListAPIView, TeacherTopicHelpRequestDetailAPIView
 from .View.coupon import   CreateTeacherCouponAPIView
+from .View.login_as_student import LoginAsStudentAPIView
 urlpatterns = [
     path("my-subjects/", TeacherSubjectsAPIView.as_view(), name="teacher-subjects"),
     path("subject-list/", SubjectListAPIView.as_view(), name="teacher-subjects"),
@@ -53,5 +54,7 @@ urlpatterns = [
 
     ####################################################################################################
     path('teacher/create-coupon/', CreateTeacherCouponAPIView.as_view(), name='teacher-create-coupon'),
+        ####################################################################################################
+    path('teacher/login-as-student/<int:student_id>/', LoginAsStudentAPIView.as_view(), name='login-as-student'),
 
 ]
