@@ -128,3 +128,17 @@ class TopicHelpRequestIndependent(models.Model):
 
     def __str__(self):
         return f"{self.student} - {self.subject} - {self.get_level_display()}"
+
+
+
+class StudentReferral(models.Model):
+    referrer = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='referred_students')  # Taklif qilgan
+    referred = models.OneToOneField(Student, on_delete=models.CASCADE, related_name='referred_by')     # Yangi ro'yxatdan o'tgan
+    referred_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Student referali"
+        verbose_name_plural = "Student referallari"
+
+    def __str__(self):
+        return f"{self.referred.full_name} ← {self.referrer.full_name}"

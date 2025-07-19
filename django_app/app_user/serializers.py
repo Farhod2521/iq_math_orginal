@@ -7,7 +7,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth import authenticate
 from django.utils.timezone import now
 from django_app.app_payments.models import Subscription, SubscriptionSetting
-from django_app.app_student.models import  StudentScore
+from django_app.app_student.models import  StudentScore, StudentReferral
 from django_app.app_management.models import  ReferralAndCouponSettings
 User = get_user_model()
 
@@ -191,10 +191,10 @@ class StudentRegisterSerializer(serializers.Serializer):
             "student_date": now()
         }
 
-        # 1. Foydalanuvchi yaratish
+        # 1. User yaratish
         user = User.objects.create(phone=phone, role='student')
 
-        # 2. SMS kod yuborish
+        # 2. SMS code
         sms_code = str(random.randint(10000, 99999))
         user.sms_code = sms_code
         user.set_unusable_password()
@@ -210,26 +210,37 @@ class StudentRegisterSerializer(serializers.Serializer):
         end_date = start_date + timedelta(days=free_days)
         Subscription.objects.create(student=student, start_date=start_date, end_date=end_date, is_paid=False)
 
-        # 5. Agar referral bor bo‘lsa
+        # 5. REFERAL QISMI
         if referral_code:
             try:
                 referrer_student = Student.objects.get(identification=referral_code)
 
-                # Referral yozuvi yaratish
-                Referral.objects.create(referrer=referrer_student, referred=student)
+                # Referal munosabat
+                StudentReferral.objects.create(referrer=referrer_student, referred=student)
 
-                # Referral ball olish
-                bonus_points = ReferralAndCouponSettings.objects.first().referral_bonus_points
-                score_obj, created = StudentScore.objects.get_or_create(student=referrer_student)
-                score_obj.score += bonus_points
-                score_obj.save()
+                # Sozlamani olish
+                settings = ReferralAndCouponSettings.objects.first()
+                student_bonus = settings.student_referral_bonus_points
+                referrer_bonus = settings.student_referral_bonus_points  # yoki alohida maydon kiritilsa teacher uchun farqlanadi
+
+                # 5.1 Referrer uchun ball
+                referrer_score, _ = StudentScore.objects.get_or_create(student=referrer_student)
+                referrer_score.score += referrer_bonus
+                referrer_score.save()
+
+                # 5.2 Referred (yangi foydalanuvchi) uchun ball
+                referred_score, _ = StudentScore.objects.get_or_create(student=student)
+                referred_score.score += student_bonus
+                referred_score.save()
+
             except Student.DoesNotExist:
-                pass  # noto‘g‘ri kod bo‘lsa, e'tibor berilmaydi
+                pass  # noto‘g‘ri kod bo‘lsa — e’tibor berilmaydi
 
         # 6. SMS yuborish
         send_sms(phone, sms_code)
 
         return user
+
         
 class Class_Serializer(serializers.ModelSerializer):
     class Meta:
