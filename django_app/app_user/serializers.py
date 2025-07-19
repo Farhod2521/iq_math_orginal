@@ -143,14 +143,15 @@ class TeacherRegisterSerializer(serializers.Serializer):
 class StudentRegisterSerializer(serializers.Serializer):
     full_name = serializers.CharField(required=True)
     phone = serializers.CharField(required=True)
-    class_name = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all(), required=True)  # ForeignKey uchun
+    class_name = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all(), required=True)
     referral_code = serializers.CharField(required=False, allow_blank=True)
-    def validate_user_data(self, email, phone):
+
+    def validate_user_data(self, phone):
         user = User.objects.filter(phone=phone).first()
         if user:
             student = getattr(user, "student_profile", None)
             if student and not student.status:
-                # 5 daqiqa ichida qayta urinishni tekshirish
+                # 5 daqiqalik limit
                 time_diff = now() - student.student_date
                 remaining_time = 300 - int(time_diff.total_seconds())
 
@@ -160,23 +161,12 @@ class StudentRegisterSerializer(serializers.Serializer):
                     raise serializers.ValidationError(
                         f"Qayta urinib ko‘rish uchun {minutes} daqiqa {seconds} soniya kuting."
                     )
-                
-                # 5 daqiqadan keyin userni o‘chirish
                 user.delete()
-
             else:
                 raise serializers.ValidationError("Bu telefon raqam allaqachon ro'yxatdan o'tgan.")
-        
-        if User.objects.filter(email=email).exists():
-            raise serializers.ValidationError("Bu email allaqachon ro'yxatdan o'tgan.")
 
     def validate(self, attrs):
-        """Barcha tekshiruvlarni yagona joyda bajarish"""
-        self.validate_user_data(attrs.get("email"), attrs.get("phone"))
-        
-        if Student.objects.filter(document=attrs.get("document")).exists():
-            raise serializers.ValidationError("Bu shaxs allaqachon ro'yxatdan o'tgan.")
-
+        self.validate_user_data(attrs.get("phone"))
         return attrs
 
     def create(self, validated_data):
@@ -187,8 +177,8 @@ class StudentRegisterSerializer(serializers.Serializer):
         student_data = {
             'full_name': validated_data.pop('full_name'),
             'class_name': class_name,
-            "status": False,
-            "student_date": now()
+            'status': False,
+            'student_date': now()
         }
 
         # 1. User yaratish
@@ -204,37 +194,22 @@ class StudentRegisterSerializer(serializers.Serializer):
         student_data['user'] = user
         student = Student.objects.create(**student_data)
 
-        # 4. Tekin obuna
+        # 4. Obuna
         free_days = SubscriptionSetting.objects.first().free_trial_days
-        start_date = now()
-        end_date = start_date + timedelta(days=free_days)
-        Subscription.objects.create(student=student, start_date=start_date, end_date=end_date, is_paid=False)
+        Subscription.objects.create(
+            student=student,
+            start_date=now(),
+            end_date=now() + timedelta(days=free_days),
+            is_paid=False
+        )
 
-        # 5. REFERAL QISMI
+        # 5. Faqat referral yozuvi (ball YO‘Q!)
         if referral_code:
             try:
                 referrer_student = Student.objects.get(identification=referral_code)
-
-                # Referal munosabat
                 StudentReferral.objects.create(referrer=referrer_student, referred=student)
-
-                # Sozlamani olish
-                settings = ReferralAndCouponSettings.objects.first()
-                student_bonus = settings.student_referral_bonus_points
-                referrer_bonus = settings.student_referral_bonus_points  # yoki alohida maydon kiritilsa teacher uchun farqlanadi
-
-                # 5.1 Referrer uchun ball
-                referrer_score, _ = StudentScore.objects.get_or_create(student=referrer_student)
-                referrer_score.score += referrer_bonus
-                referrer_score.save()
-
-                # 5.2 Referred (yangi foydalanuvchi) uchun ball
-                referred_score, _ = StudentScore.objects.get_or_create(student=student)
-                referred_score.score += student_bonus
-                referred_score.save()
-
             except Student.DoesNotExist:
-                pass  # noto‘g‘ri kod bo‘lsa — e’tibor berilmaydi
+                pass
 
         # 6. SMS yuborish
         send_sms(phone, sms_code)
@@ -265,28 +240,52 @@ class VerifySmsCodeSerializer(serializers.Serializer):
                 "non_field_errors": ["Telefon raqam yoki kod noto'g'ri."]
             })
 
-        # Generate a random password
+        # Random parol generatsiya
         chars = string.ascii_letters + string.digits
         password = ''.join(random.choice(chars) for _ in range(8))
 
-        # Set the password for the user
         user.set_password(password)
-        user.sms_code = None  # Clear the SMS code
+        user.sms_code = None
         user.save()
-        email = user.email
-        send_login_parol_email(email, phone,password)
-        # Update student status to True
+
+        # Parolni emailga yuborish
+        if user.email:
+            send_login_parol_email(user.email, phone, password)
+
         try:
             student = Student.objects.get(user=user)
             student.status = True
             student.save()
+
+            # ✳️ Referral bo‘lsa ball beriladi
+            try:
+                referral = StudentReferral.objects.get(referred=student)
+                referrer = referral.referrer
+
+                settings = ReferralAndCouponSettings.objects.first()
+                student_bonus = settings.student_referral_bonus_points
+                referrer_bonus = settings.student_referral_bonus_points
+
+                # Referrer uchun
+                ref_score, _ = StudentScore.objects.get_or_create(student=referrer)
+                ref_score.score += referrer_bonus
+                ref_score.save()
+
+                # Referred uchun
+                my_score, _ = StudentScore.objects.get_or_create(student=student)
+                my_score.score += student_bonus
+                my_score.save()
+
+            except StudentReferral.DoesNotExist:
+                pass
+
         except Student.DoesNotExist:
             raise serializers.ValidationError({
                 "non_field_errors": ["Student profili topilmadi."]
             })
 
         return {"phone": phone, "password": password, "user": user}
-    
+
 
 class TeacherVerifySmsCodeSerializer(serializers.Serializer):
     phone = serializers.CharField(required=True)
