@@ -17,7 +17,8 @@ from dateutil.relativedelta import relativedelta
 from .serializers import PaymentSerializer
 from  django_app.app_management.models import SystemCoupon
 
-
+URL_TEST = "https://dev-mesh.multicard.uz"
+URL_DEV = "https://mesh.multicard.uz"
 
 class InitiatePaymentAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -87,7 +88,7 @@ class InitiatePaymentAPIView(APIView):
 
         try:
             response = requests.post(
-                "https://mesh.multicard.uz/payment/invoice",
+                f"{URL_TEST}/payment/invoice",
                 headers=headers,
                 json=data
             )
@@ -132,7 +133,7 @@ class PaymentCallbackAPIView(APIView):
         sign = data.get("sign")
 
         # Sizning secret keyingiz
-        SECRET_KEY = "n4eci720czqjlo2t"
+        SECRET_KEY = "Pw18axeBFo8V7NamKHXX"
         EXPECTED_SIGN = self.generate_sign(store_id, invoice_id, amount, SECRET_KEY)
 
         # Imzo tekshirish
@@ -149,7 +150,7 @@ class PaymentCallbackAPIView(APIView):
         payment.invoice_uuid = invoice_uuid
         payment.billing_id = billing_id
         payment.sign = sign
-        payment.receipt_url = f"https://mesh.multicard.uz/invoice/{uuid}"
+        payment.receipt_url = f"{URL_TEST}/invoice/{uuid}"
         payment.save()
 
         # Obunani yaratish yoki olish
