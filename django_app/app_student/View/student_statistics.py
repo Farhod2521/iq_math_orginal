@@ -3,10 +3,10 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Sum, Count, Max
 from django_app.app_payments.models import Payment
-from django_app.app_student.models import StudentScore,  Diagnost_Student, TopicProgress
+from django_app.app_student.models import StudentScore,  Diagnost_Student, TopicProgress, StudentReferral
 from django_app.app_user.models import Student, Subject
 from django.shortcuts import get_object_or_404
-
+from  django_app.app_student.serializers import  ReferredStudentSerializer
 
 class StudentStatisticsDetailAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -230,3 +230,15 @@ class DiagnostChapterTopicProgressAPIView(APIView):
             result.append(chapter_data)
 
         return Response(result)
+    
+
+
+
+class MyReferralsAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        student = request.user.student_profile  # Agar sizda `user -> student` bog‘lanishi bo‘lsa
+        referrals = StudentReferral.objects.filter(referrer=student)
+        serializer = ReferredStudentSerializer(referrals, many=True)
+        return Response(serializer.data)

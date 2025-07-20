@@ -8,7 +8,7 @@ from .views import (
 from .View.app_diagnost import StudentDiagnostSubjectsAPIView, SubjectChaptersAPIView, ChapterTopicsAPIView
 from .View.product_exchange import ProductExchangeView, ProductExchangeListView
 from  .View.unsolvedquestioncreateView import UnsolvedQuestionCreateView, UnsolvedQuestionReportListView
-from .View.student_statistics import StudentStatisticsDetailAPIView, SubjectListWithMasteryAPIView, ChapterTopicProgressAPIView, DiagnostSubjectListAPIView, DiagnostChapterTopicProgressAPIView
+from .View.student_statistics import StudentStatisticsDetailAPIView, SubjectListWithMasteryAPIView, ChapterTopicProgressAPIView, DiagnostSubjectListAPIView, MyReferralsAPIView ,DiagnostChapterTopicProgressAPIView
 from .View.independentView import  TopicHelpRequestCreateView
 
 urlpatterns = [
@@ -36,6 +36,7 @@ urlpatterns = [
     path('my-diagnost-subjects/', StudentDiagnostSubjectsAPIView.as_view()),
     path('my-diagnost-subject/<int:subject_id>/chapters/', SubjectChaptersAPIView.as_view()),
     path('my-diagnost-chapter/<int:chapter_id>/topics/', ChapterTopicsAPIView.as_view()),
+    
 
 ##########################################################################################
     path('student-statistics/<int:student_id>/', StudentStatisticsDetailAPIView.as_view()),
@@ -43,6 +44,7 @@ urlpatterns = [
     path('students/<int:student_id>/subjects/<int:subject_id>/chapters/', ChapterTopicProgressAPIView.as_view(), name='chapter-topic-progress'),
     path('diagnost/students/<int:student_id>/subjects/', DiagnostSubjectListAPIView.as_view(), name='subject-list-with-mastery'),
     path('diagnost/students/<int:student_id>/subjects/<int:subject_id>/chapters/', DiagnostChapterTopicProgressAPIView.as_view(), name='chapter-topic-progress'),
+    path('my-referrals/', MyReferralsAPIView.as_view(), name='my-referrals'),
 
 
 ###################################################################################################################################
