@@ -15,40 +15,45 @@ class StudentDiagnostSubjectsAPIView(APIView):
 
     def get(self, request):
         student = Student.objects.get(user=request.user)
-        diagnost_list = Diagnost_Student.objects.filter(student=student).select_related('subject').distinct('subject')
 
-        data = []
+        # O‘quvchining barcha diagnostika qilgan subjectlari
+        diagnost_dict = {}
+        diagnost_list = Diagnost_Student.objects.filter(student=student).select_related('subject')
+
         for d in diagnost_list:
-            subject = d.subject
-            if subject:
-                class_name = subject.classes.name if subject.classes else ""
-                # Diagnost_Student ichidagi barcha mavzular
-                assigned_topics = d.topic.all()
-                total_topics = assigned_topics.count()
+            assigned_topics = d.topic.all()
+            total_topics = assigned_topics.count()
 
-                # O‘quvchi shu mavzulardan nechta bo‘yicha 80%+ ball olgan?
-                learned_count = TopicProgress.objects.filter(
-                    user=student,
-                    topic__in=assigned_topics,
-                    score__gte=80
-                ).count()
+            learned_count = TopicProgress.objects.filter(
+                user=student,
+                topic__in=assigned_topics,
+                score__gte=80
+            ).count()
 
-                # O‘zlashtirish foizi
-                progress_percent = 0
-                if total_topics > 0:
-                    progress_percent = round((learned_count / total_topics) * 100)
+            progress_percent = 0
+            if total_topics > 0:
+                progress_percent = round((learned_count / total_topics) * 100)
 
-                data.append({
-                    "id": subject.id,
-                    "name_uz": subject.name_uz,
-                    "name_ru": subject.name_ru,
-                    "class_name": class_name,
-                    "class_uz": f"{class_name}-sinf {subject.name_uz}",
-                    "class_ru": f"{class_name}-класс {subject.name_ru}",
-                    "image_uz": subject.image_uz.url if subject.image_uz else "",
-                    "image_ru": subject.image_ru.url if subject.image_ru else "",
-                    "progress_percent": progress_percent  # 🔥 Qo‘shilgan o‘zlashtirish foizi
-                })
+            diagnost_dict[d.subject.id] = progress_percent
+
+        # Endi barcha fanlar ro'yxatini olamiz
+        subjects = Subject.objects.all().select_related('classes')
+        data = []
+        for subject in subjects:
+            class_name = subject.classes.name if subject.classes else ""
+            progress_percent = diagnost_dict.get(subject.id)
+
+            data.append({
+                "id": subject.id,
+                "name_uz": subject.name_uz,
+                "name_ru": subject.name_ru,
+                "class_name": class_name,
+                "class_uz": f"{class_name}-sinf {subject.name_uz}",
+                "class_ru": f"{class_name}-класс {subject.name_ru}",
+                "image_uz": subject.image_uz.url if subject.image_uz else "",
+                "image_ru": subject.image_ru.url if subject.image_ru else "",
+                "progress_percent": progress_percent  # diagnostika topshirgan bo‘lsa raqam, yo‘q bo‘lsa None
+            })
 
         return Response(data)
 
