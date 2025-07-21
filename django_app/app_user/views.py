@@ -6,7 +6,7 @@ StudentRegisterSerializer, VerifySmsCodeSerializer,
 LoginSerializer, StudentProfileSerializer, TeacherRegisterSerializer, Class_Serializer,
 TeacherVerifySmsCodeSerializer
 )
-from .models import Student, UserSMSAttempt, Teacher, Class
+from .models import Student, UserSMSAttempt, Teacher, Class, StudentLoginHistory
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.settings import api_settings
 from datetime import timedelta
@@ -725,6 +725,8 @@ from django.contrib.sessions.models import Session
 from django.db import transaction
 import user_agents 
 
+
+
 class LoginAPIView(APIView):
     def post(self, request, *args, **kwargs):
         serializer = LoginSerializer(data=request.data)
@@ -737,10 +739,13 @@ class LoginAPIView(APIView):
             access_token.set_exp(lifetime=timedelta(hours=13))
             expires_in = timedelta(hours=13).total_seconds()
 
-            # Student yoki Teacher profillarni aniqlash
             profile_data = {}
             try:
                 student = Student.objects.get(user=user)
+
+                # 👇 Kirgan vaqtni yozamiz
+                StudentLoginHistory.objects.create(student=student)
+
                 access_token['student_id'] = student.id
                 profile_data = {
                     "id": student.id,
@@ -749,9 +754,10 @@ class LoginAPIView(APIView):
                     "role": user.role,
                     "status": student.status,
                     "access_token": str(access_token),
-                    "refresh_token": str(refresh),  # Qo‘shilgan refresh token
+                    "refresh_token": str(refresh),
                     "expires_in": expires_in,
                 }
+
             except Student.DoesNotExist:
                 try:
                     teacher = Teacher.objects.get(user=user)
@@ -763,7 +769,7 @@ class LoginAPIView(APIView):
                         "role": user.role,
                         "status": teacher.status,
                         "access_token": str(access_token),
-                        "refresh_token": str(refresh),  # Qo‘shilgan refresh token
+                        "refresh_token": str(refresh),
                         "expires_in": expires_in,
                     }
                 except Teacher.DoesNotExist:
@@ -772,6 +778,7 @@ class LoginAPIView(APIView):
             return Response(profile_data, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
     def get_client_ip(self, request):
         """Foydalanuvchining IP-manzilini olish"""
@@ -823,3 +830,10 @@ class LogoutDeviceAPIView(APIView):
 
         except UserSession.DoesNotExist:
             return Response({"detail": "Sessiya topilmadi."}, status=status.HTTP_404_NOT_FOUND)
+        
+
+
+
+
+
+

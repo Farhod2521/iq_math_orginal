@@ -223,3 +223,15 @@ class Referral(models.Model):
     class Meta:
         verbose_name = "Referal"
         verbose_name_plural = "Referallar"
+
+
+class StudentLoginHistory(models.Model):
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='login_history')
+    login_time = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.student.full_name} - {self.login_time.strftime('%Y-%m-%d %H:%M:%S')}"
+
+    class Meta:
+        verbose_name = "O‘quvchi login vaqti"
+        verbose_name_plural = "O‘quvchi login vaqtlar tarixi"

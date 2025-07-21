@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django_app.app_teacher.models import Chapter, Choice, CompositeSubQuestion, Question, Topic
 from modeltranslation.utils import get_translation_fields
 
-from django_app.app_user.models import  Subject, Student
+from django_app.app_user.models import  Subject, Student, StudentLoginHistory
 from .models import TopicProgress, ChapterProgress, TopicHelpRequestIndependent, StudentReferral
 class SubjectSerializer(serializers.ModelSerializer):
     class_name = serializers.CharField(source="classes.name")
@@ -278,3 +278,10 @@ class ReferredStudentSerializer(serializers.ModelSerializer):
     class Meta:
         model = StudentReferral
         fields = ['full_name',  'referred_at']
+
+
+
+class StudentLoginHistorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StudentLoginHistory
+        fields = ['id', 'login_time']
