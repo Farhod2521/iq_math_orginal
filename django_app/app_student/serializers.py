@@ -280,8 +280,16 @@ class ReferredStudentSerializer(serializers.ModelSerializer):
         fields = ['full_name',  'referred_at']
 
 
-
 class StudentLoginHistorySerializer(serializers.ModelSerializer):
+    date = serializers.SerializerMethodField()
+    time = serializers.SerializerMethodField()
+
     class Meta:
         model = StudentLoginHistory
-        fields = ['id', 'login_time']
+        fields = ['id', 'date', 'time']
+
+    def get_date(self, obj):
+        return obj.login_time.strftime('%d/%m/%Y')  # Day/Month/Year
+
+    def get_time(self, obj):
+        return obj.login_time.strftime('%H:%M')  # Soat:Minut (24 soatlik format)
