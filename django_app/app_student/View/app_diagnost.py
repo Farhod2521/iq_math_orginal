@@ -4,7 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 
 from django_app.app_user.models import Student, Subject
-from django_app.app_student.models import Diagnost_Student
+from django_app.app_student.models import Diagnost_Student, TopicProgress
 from django_app.app_teacher.models import Chapter
 
 
@@ -15,7 +15,6 @@ class StudentDiagnostSubjectsAPIView(APIView):
 
     def get(self, request):
         student = Student.objects.get(user=request.user)
-
         diagnost_list = Diagnost_Student.objects.filter(student=student).select_related('subject').distinct('subject')
 
         data = []
@@ -23,6 +22,22 @@ class StudentDiagnostSubjectsAPIView(APIView):
             subject = d.subject
             if subject:
                 class_name = subject.classes.name if subject.classes else ""
+                # Diagnost_Student ichidagi barcha mavzular
+                assigned_topics = d.topic.all()
+                total_topics = assigned_topics.count()
+
+                # O‘quvchi shu mavzulardan nechta bo‘yicha 80%+ ball olgan?
+                learned_count = TopicProgress.objects.filter(
+                    user=student,
+                    topic__in=assigned_topics,
+                    score__gte=80
+                ).count()
+
+                # O‘zlashtirish foizi
+                progress_percent = 0
+                if total_topics > 0:
+                    progress_percent = round((learned_count / total_topics) * 100)
+
                 data.append({
                     "id": subject.id,
                     "name_uz": subject.name_uz,
@@ -32,11 +47,10 @@ class StudentDiagnostSubjectsAPIView(APIView):
                     "class_ru": f"{class_name}-класс {subject.name_ru}",
                     "image_uz": subject.image_uz.url if subject.image_uz else "",
                     "image_ru": subject.image_ru.url if subject.image_ru else "",
-           
+                    "progress_percent": progress_percent  # 🔥 Qo‘shilgan o‘zlashtirish foizi
                 })
 
         return Response(data)
-
 
 
 class SubjectChaptersAPIView(APIView):
