@@ -675,8 +675,8 @@ class StudentsListView(APIView):
 
         data = []
         for student in current_page.object_list:
+            # student_date va student_time
             student_datetime = student.student_date
-
             if student_datetime:
                 student_datetime = student_datetime.astimezone(ashgabat_tz)
                 student_date = student_datetime.strftime('%Y-%m-%d')
@@ -684,6 +684,14 @@ class StudentsListView(APIView):
             else:
                 student_date = None
                 student_time = None
+
+            # 🔥 Oxirgi login vaqtini topish
+            last_login_obj = StudentLoginHistory.objects.filter(student=student).order_by('-login_time').first()
+            if last_login_obj:
+                last_login_local = last_login_obj.login_time.astimezone(ashgabat_tz)
+                last_login_formatted = last_login_local.strftime('%d/%m/%Y %H:%M')
+            else:
+                last_login_formatted = None
 
             data.append({
                 "id": student.id,
@@ -703,6 +711,7 @@ class StudentsListView(APIView):
                 'type_of_education': student.type_of_education,
                 'student_date': student_date,
                 'student_time': student_time,
+                'last_login_time': last_login_formatted  # ✅ qo‘shilgan maydon
             })
 
         return Response({
