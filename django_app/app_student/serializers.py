@@ -280,16 +280,31 @@ class ReferredStudentSerializer(serializers.ModelSerializer):
         fields = ['full_name',  'referred_at']
 
 
+from django.utils.timezone import localtime
+import pytz
+
 class StudentLoginHistorySerializer(serializers.ModelSerializer):
     date = serializers.SerializerMethodField()
     time = serializers.SerializerMethodField()
+    logout_time = serializers.SerializerMethodField()
 
     class Meta:
         model = StudentLoginHistory
-        fields = ['id', 'date', 'time']
+        fields = ['id', 'date', 'time', 'logout_time']
 
     def get_date(self, obj):
-        return obj.login_time.strftime('%d/%m/%Y')  # Day/Month/Year
+        tz = pytz.timezone("Asia/Tashkent")
+        login_local = obj.login_time.astimezone(tz)
+        return login_local.strftime('%d/%m/%Y')
 
     def get_time(self, obj):
-        return obj.login_time.strftime('%H:%M')  # Soat:Minut (24 soatlik format)
+        tz = pytz.timezone("Asia/Tashkent")
+        login_local = obj.login_time.astimezone(tz)
+        return login_local.strftime('%H:%M')
+
+    def get_logout_time(self, obj):
+        if obj.logout_time:
+            tz = pytz.timezone("Asia/Tashkent")
+            logout_local = obj.logout_time.astimezone(tz)
+            return logout_local.strftime('%H:%M')
+        return None
