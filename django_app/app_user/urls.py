@@ -4,7 +4,7 @@ from .views import (
      StudentProfileAPIView, StudentsListView, ForgotPasswordView, VerifySMSCodeView,
     ResetPasswordView, ResendSMSCodeView,
     LogoutDeviceAPIView, RegisterStudentAPIView, RegisterTeacherAPIView, TeacherVerifySmsCodeAPIView,
-    ClassListView, TeacherLoginAPIView, TeacherProfileAPIView, UpdateStudentFieldAPIView, UserProfileAPIView
+    ClassListView, TeacherLoginAPIView, TeacherProfileAPIView, UpdateStudentFieldAPIView, UserProfileAPIView, LogoutAPIView
 
 )
 from rest_framework_simplejwt.views import (
@@ -18,6 +18,7 @@ urlpatterns = [
     path('student/register/', RegisterStudentAPIView.as_view(), name='register_student'),
     path('student/register-verify-sms/', StudentVerifySmsCodeAPIView.as_view(), name='verify_sms'),#register
     path('student/login/', LoginAPIView.as_view(), name='login'),
+    path('student/logout/', LogoutAPIView.as_view(), name='login'),
     path('student/profile/', StudentProfileAPIView.as_view(), name='profile'),
     path('student/profile-update/', UpdateStudentFieldAPIView.as_view(), name='profile'),
     path('student/student_list/', StudentsListView.as_view(), name='student_list'),

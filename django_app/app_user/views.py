@@ -835,5 +835,21 @@ class LogoutDeviceAPIView(APIView):
 
 
 
+class LogoutAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        try:
+            student = Student.objects.get(user=user)
+            latest_login = StudentLoginHistory.objects.filter(student=student, logout_time__isnull=True).last()
+            if latest_login:
+                latest_login.logout_time = timezone.now()
+                latest_login.save()
+        except Student.DoesNotExist:
+            pass  # Teacher uchun yozmaslik mumkin
+
+        # Tokenni blacklist qilish yoki frontend tokenni o‘chirish logikasi shu yerda bo‘lishi mumkin
+        return Response({"detail": "Chiqqan vaqtingiz yozildi."}, status=200)
 
 
