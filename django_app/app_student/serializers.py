@@ -80,8 +80,8 @@ class TopicSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         user = request.user
 
-        if hasattr(user, 'teacher_profile'):
-            return None
+        if user.role in ['teacher', 'admin']:
+            return None  # 👨‍🏫 Admin va teacher uchun score ko‘rsatilmaydi
 
         try:
             student = Student.objects.get(user=user)
@@ -94,8 +94,8 @@ class TopicSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         user = request.user
 
-        if hasattr(user, 'teacher_profile'):
-            return False
+        if user.role in ['teacher', 'admin']:
+            return False  # 👨‍🏫 Admin va teacher uchun doim ochiq
 
         try:
             student = Student.objects.get(user=user)
@@ -117,12 +117,10 @@ class TopicSerializer(serializers.ModelSerializer):
 
         # 3. Agar bu chapterdagi birinchi mavzu bo‘lsa
         if current_index == 0:
-            # ❗❗❗ Shu yerda order emas, id ishlatamiz!
             previous_chapter = Chapter.objects.filter(id__lt=obj.chapter.id).order_by('-id').first()
             if not previous_chapter:
                 return False  # Bu birinchi chapter bo‘lsa — ochiq
 
-            # Oldingi chapterdagi oxirgi mavzuni topamiz
             prev_topic = Topic.objects.filter(chapter=previous_chapter).order_by('-order').first()
             if not prev_topic:
                 return False
@@ -142,10 +140,19 @@ class TopicSerializer(serializers.ModelSerializer):
         except TopicProgress.DoesNotExist:
             return True
 
-
-
     def get_is_open(self, obj):
-        return not self.get_is_locked(obj)
+        request = self.context.get('request')
+        user = request.user
+
+        if user.role in ['teacher', 'admin']:
+            return True  # 👨‍🏫 Admin va teacher uchun doim ochiq
+
+        try:
+            student = Student.objects.get(user=user)
+            return TopicProgress.objects.filter(user=student, topic=obj).exists()
+        except Student.DoesNotExist:
+            return False
+
 class ChoiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Choice
