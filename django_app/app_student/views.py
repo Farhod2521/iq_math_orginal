@@ -223,8 +223,8 @@ class StudentSubjectListAPIView(APIView):
     def get(self, request):
         user = request.user
 
-        # 👉 Agar teacher bo‘lsa — barcha fanlar
-        if hasattr(user, 'teacher_profile'):
+        # 👉 Agar teacher yoki admin bo‘lsa — barcha fanlar to‘liq ochiq
+        if user.role in ['teacher', 'admin']:
             all_subjects = Subject.objects.all().order_by('order')
             result = []
 
@@ -237,7 +237,7 @@ class StudentSubjectListAPIView(APIView):
 
             return Response(result, status=status.HTTP_200_OK)
 
-        # 👉 Aks holda student bo‘lsa
+        # 👉 Student bo‘lsa
         try:
             student = Student.objects.get(user=user)
             now_time = now()
@@ -254,7 +254,6 @@ class StudentSubjectListAPIView(APIView):
             except Subscription.DoesNotExist:
                 pass
 
-            # ✅ Faqat active=True bo‘lgan fanlar
             all_subjects = Subject.objects.filter(active=True).order_by('order')
             result = []
 
@@ -273,6 +272,7 @@ class StudentSubjectListAPIView(APIView):
 
         except Student.DoesNotExist:
             return Response({"detail": "Student topilmadi"}, status=status.HTTP_404_NOT_FOUND)
+
 class ChapterListBySubjectAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -292,17 +292,17 @@ class TopicListByChapterAPIView(APIView):
     def get(self, request, chapter_id):
         user = request.user
 
-        # 👨‍🏫 Teacher kirgan bo‘lsa — to‘g‘ridan-to‘g‘ri ko‘rsatamiz
-        if hasattr(user, 'teacher_profile'):
+        # 👨‍🏫👨‍💼 Agar teacher yoki admin bo‘lsa, to‘g‘ridan-to‘g‘ri barcha mavzular ko‘rsatiladi
+        if user.role in ['teacher', 'admin']:
             try:
                 chapter = Chapter.objects.get(id=chapter_id)
-                topics = Topic.objects.filter(chapter=chapter).order_by('order')  # ✅ Order bo‘yicha
+                topics = Topic.objects.filter(chapter=chapter).order_by('order')
                 serializer = TopicSerializer(topics, many=True, context={'request': request})
                 return Response(serializer.data, status=status.HTTP_200_OK)
             except Chapter.DoesNotExist:
                 return Response({"detail": "Chapter topilmadi"}, status=status.HTTP_404_NOT_FOUND)
 
-        # 👩‍🎓 Student kirgan bo‘lsa — obuna vaqti tekshiriladi
+        # 👩‍🎓 Student bo‘lsa, subscription tekshiriladi
         student = getattr(user, 'student_profile', None)
         if not student:
             return Response({"detail": "Foydalanuvchi uchun student profili topilmadi"}, status=status.HTTP_400_BAD_REQUEST)
@@ -317,11 +317,12 @@ class TopicListByChapterAPIView(APIView):
 
         try:
             chapter = Chapter.objects.get(id=chapter_id)
-            topics = Topic.objects.filter(chapter=chapter).order_by('order')  # ✅ Order bo‘yicha
+            topics = Topic.objects.filter(chapter=chapter).order_by('order')
             serializer = TopicSerializer(topics, many=True, context={'request': request})
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Chapter.DoesNotExist:
             return Response({"detail": "Chapter topilmadi"}, status=status.HTTP_404_NOT_FOUND)
+
 class QuestionListByTopicAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -344,7 +345,7 @@ class QuestionListByTopicAPIView(APIView):
 from django.utils.html import strip_tags
 from .math_answer_check import advanced_math_check  
 from .helper_coin import get_today_coin_count
-class CheckAnswersAPIView(APIView): 
+class CheckAnswersAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -352,12 +353,14 @@ class CheckAnswersAPIView(APIView):
         if not serializer.is_valid():
             return Response({"message": "Noto‘g‘ri formatdagi ma'lumotlar."}, status=400)
 
-        is_teacher = hasattr(request.user, 'teacher_profile')
+        # Admin yoki Teacher bo‘lsa student sifatida log yozilmaydi
+        is_staff_user = request.user.role in ['teacher', 'admin']
+
         student_instance = None
         student_score = None
         awarded_questions = set()
 
-        if not is_teacher:
+        if not is_staff_user:
             try:
                 student_instance = Student.objects.get(user=request.user)
                 student_score, _ = StudentScore.objects.get_or_create(student=student_instance)
@@ -372,7 +375,7 @@ class CheckAnswersAPIView(APIView):
         question_details = []
         index = 1
         last_question_topic = None
-        today_coin_count = get_today_coin_count(student_score)
+        today_coin_count = get_today_coin_count(student_score) if not is_staff_user else 0
 
         def process_question(question, is_correct):
             nonlocal correct_answers, student_score, awarded_questions, student_instance, today_coin_count
@@ -380,7 +383,7 @@ class CheckAnswersAPIView(APIView):
             if is_correct:
                 correct_answers += 1
 
-                if not is_teacher and question.id not in awarded_questions:
+                if not is_staff_user and question.id not in awarded_questions:
                     awarded_questions.add(question.id)
                     student_score.score += 1
 
@@ -420,7 +423,7 @@ class CheckAnswersAPIView(APIView):
                 "question_uz": question.question_text_uz,
                 "question_ru": question.question_text_ru,
                 "answer": is_correct,
-                "answer_text": student_answer  # ⬅️ YUBORILGAN JAVOB
+                "answer_text": student_answer
             })
             index += 1
 
@@ -444,7 +447,7 @@ class CheckAnswersAPIView(APIView):
                 "question_uz": question.question_text_uz,
                 "question_ru": question.question_text_ru,
                 "answer": is_correct,
-                "selected_choices": list(selected_choices)  # ⬅️ YUBORILGAN TANLOVLAR
+                "selected_choices": list(selected_choices)
             })
             index += 1
 
@@ -467,13 +470,14 @@ class CheckAnswersAPIView(APIView):
                 "question_uz": question.question_text_uz,
                 "question_ru": question.question_text_ru,
                 "answer": is_correct,
-                "sub_answers": answer['answers']  # ⬅️ FOYDALANUVCHI YUBORGANI
+                "sub_answers": answer['answers']
             })
             index += 1
 
         score = round((correct_answers / total_answers) * 100, 2) if total_answers else 0.0
 
-        if not is_teacher:
+        # Faqat student uchun saqlaymiz
+        if not is_staff_user:
             student_score.save()
 
             if last_question_topic:
@@ -491,10 +495,10 @@ class CheckAnswersAPIView(APIView):
                 "total_answers": total_answers,
                 "correct_answers": correct_answers,
                 "score": score
-            }], 
-            
+            }]
         }
 
+        # Qo‘shimcha info
         if last_question_topic:
             topic = last_question_topic
             chapter = topic.chapter
@@ -506,7 +510,6 @@ class CheckAnswersAPIView(APIView):
                 "subject": {"id": subject.id}
             }
 
-            # 🔥 LEVELNI QO‘SHISH:
             first_question_with_level = Question.objects.filter(topic=topic).first()
             if first_question_with_level:
                 response_data["level"] = first_question_with_level.level
