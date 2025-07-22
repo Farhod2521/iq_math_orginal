@@ -516,7 +516,7 @@ class UserProfileAPIView(APIView):
             return Response({"error": "Only student and teacher roles are supported"}, status=403)
 
         return Response(data)
-class StudentProfileAPIView(APIView): 
+class StudentProfileAPIView(APIView):
 
     def get(self, request, *args, **kwargs):
         token_header = request.headers.get('Authorization', '')
@@ -539,7 +539,6 @@ class StudentProfileAPIView(APIView):
         except User.DoesNotExist:
             return Response({"error": "User not found"}, status=404)
 
-        # Student profile
         if user.role == 'student':
             try:
                 student = user.student_profile
@@ -555,31 +554,32 @@ class StudentProfileAPIView(APIView):
             else:
                 student_date = None
                 student_time = None
-            has_diagnost = Diagnost_Student.objects.filter(student=student).exists()
-            data = {
-            "id": student.id, 
-            "identification": student.identification, 
-            'full_name': student.full_name,
-            'phone': getattr(student.user, 'phone', None),
-            'email': getattr(student.user, 'email', None),
-            'region': student.region,
-            'districts': student.districts,
-            'address': student.address,
-            'brithday': student.brithday,
-            'academy_or_school': student.academy_or_school,
-            'academy_or_school_name': student.academy_or_school_name,
-            'class_name_uz': f"{student.class_name.classes.name}-sinf {student.class_name.name_uz}" if student.class_name else None,
-            'class_name_ru': f"{student.class_name.classes.name}-класс {student.class_name.name_ru}" if student.class_name else None,
-            'document_type': student.document_type,
-            'document': student.document,
-            'type_of_education': student.type_of_education,
-            'student_date': student_date,
-            'student_time': student_time,
-            "role": "student",
-            "has_diagnost": has_diagnost 
-        }
 
-        # Teacher profile
+            has_diagnost = Diagnost_Student.objects.filter(student=student).exists()
+
+            data = {
+                "id": student.id,
+                "identification": student.identification,
+                'full_name': student.full_name,
+                'phone': getattr(student.user, 'phone', None),
+                'email': getattr(student.user, 'email', None),
+                'region': student.region,
+                'districts': student.districts,
+                'address': student.address,
+                'brithday': student.brithday,
+                'academy_or_school': student.academy_or_school,
+                'academy_or_school_name': student.academy_or_school_name,
+                'class_name_uz': f"{student.class_name.classes.name}-sinf {student.class_name.name_uz}" if student.class_name else None,
+                'class_name_ru': f"{student.class_name.classes.name}-класс {student.class_name.name_ru}" if student.class_name else None,
+                'document_type': student.document_type,
+                'document': student.document,
+                'type_of_education': student.type_of_education,
+                'student_date': student_date,
+                'student_time': student_time,
+                "role": "student",
+                "has_diagnost": has_diagnost
+            }
+
         elif user.role == 'teacher':
             try:
                 teacher = user.teacher_profile
@@ -613,8 +613,17 @@ class StudentProfileAPIView(APIView):
                 'teacher_time': teacher_time,
             }
 
+        elif user.role == 'admin':
+            data = {
+                "role": "admin",
+                "id": user.id,
+                "full_name": f"{user.first_name} {user.last_name}",
+                "phone": user.phone,
+                "email": user.email,
+            }
+
         else:
-            return Response({"error": "Only student and teacher roles are supported"}, status=403)
+            return Response({"error": "Only student, teacher, and admin roles are supported"}, status=403)
 
         return Response(data)
 
@@ -749,25 +758,27 @@ class LoginAPIView(APIView):
             expires_in = timedelta(hours=13).total_seconds()
 
             profile_data = {}
-            try:
-                student = Student.objects.get(user=user)
 
-                # 👇 Kirgan vaqtni yozamiz
-                StudentLoginHistory.objects.create(student=student)
+            if user.role == 'student':
+                try:
+                    student = Student.objects.get(user=user)
+                    StudentLoginHistory.objects.create(student=student)
 
-                access_token['student_id'] = student.id
-                profile_data = {
-                    "id": student.id,
-                    "full_name": student.full_name,
-                    "phone": user.phone,
-                    "role": user.role,
-                    "status": student.status,
-                    "access_token": str(access_token),
-                    "refresh_token": str(refresh),
-                    "expires_in": expires_in,
-                }
+                    access_token['student_id'] = student.id
+                    profile_data = {
+                        "id": student.id,
+                        "full_name": student.full_name,
+                        "phone": user.phone,
+                        "role": user.role,
+                        "status": student.status,
+                        "access_token": str(access_token),
+                        "refresh_token": str(refresh),
+                        "expires_in": expires_in,
+                    }
+                except Student.DoesNotExist:
+                    return Response({"detail": "Student profile not found."}, status=status.HTTP_404_NOT_FOUND)
 
-            except Student.DoesNotExist:
+            elif user.role == 'teacher':
                 try:
                     teacher = Teacher.objects.get(user=user)
                     access_token['teacher_id'] = teacher.id
@@ -782,11 +793,27 @@ class LoginAPIView(APIView):
                         "expires_in": expires_in,
                     }
                 except Teacher.DoesNotExist:
-                    return Response({"detail": "Profile not found."}, status=status.HTTP_404_NOT_FOUND)
+                    return Response({"detail": "Teacher profile not found."}, status=status.HTTP_404_NOT_FOUND)
+
+            elif user.role == 'admin':
+                # Admin uchun oddiy profil javobi
+                profile_data = {
+                    "id": user.id,
+                    "full_name": f"{user.first_name} {user.last_name}".strip(),
+                    "phone": user.phone,
+                    "role": user.role,
+                    "access_token": str(access_token),
+                    "refresh_token": str(refresh),
+                    "expires_in": expires_in,
+                }
+
+            else:
+                return Response({"detail": "Role is not supported."}, status=status.HTTP_403_FORBIDDEN)
 
             return Response(profile_data, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 
     def get_client_ip(self, request):
