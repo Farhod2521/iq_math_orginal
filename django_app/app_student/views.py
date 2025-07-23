@@ -80,10 +80,7 @@ class GenerateCheckAnswersAPIView(APIView):
     def post(self, request):
         serializer = CheckAnswersSerializer(data=request.data)
         if not serializer.is_valid():
-            return Response({
-                "message": "Noto‘g‘ri formatdagi ma'lumotlar.",
-                "errors": serializer.errors
-            }, status=400)
+            return Response({"message": "Noto‘g‘ri formatdagi ma'lumotlar."}, status=400)
 
         try:
             student_instance = Student.objects.get(user=request.user)
@@ -91,8 +88,7 @@ class GenerateCheckAnswersAPIView(APIView):
             return Response({"message": "Student topilmadi"}, status=404)
 
         correct_answers, total_answers, index = 0, 0, 1
-        question_details = []
-        wrong_topics = {}
+        question_details, wrong_topics = [], {}
         wrong_topic_instances = set()
 
         def add_wrong_topic(question):
@@ -105,14 +101,14 @@ class GenerateCheckAnswersAPIView(APIView):
                         'topic_name_uz': question.topic.name_uz
                     }
 
-        # TEXT ANSWERS
+        # TEXT
         for answer in serializer.validated_data.get('text_answers', []):
             question = Question.objects.filter(id=answer['question_id'], question_type='text').first()
             if not question:
                 continue
 
             student_answer = answer.get('answer_uz') or answer.get('answer_ru')
-            correct_answer = question.correct_text_answer
+            correct_answer = question.correct_text_answer_uz if 'answer_uz' in answer else question.correct_text_answer_ru
             if not student_answer or not correct_answer:
                 continue
 
@@ -126,23 +122,22 @@ class GenerateCheckAnswersAPIView(APIView):
             question_details.append({
                 "index": index,
                 "question_id": question.id,
-                "question_uz": question.question_text,
+                "question_uz": question.question_text_uz,
+                "question_ru": question.question_text_ru,
                 "answer": is_correct
             })
             index += 1
 
-        # CHOICE ANSWERS (based on letter)
+        # CHOICE
         for answer in serializer.validated_data.get('choice_answers', []):
-            question = Question.objects.filter(id=answer['question_id'], question_type__in=['choice', 'image_choice']).first()
+            question = Question.objects.filter(id=answer['question_id'], question_type='choice').first()
             if not question:
                 continue
 
-            selected_letters = set(answer['choices'])  # e.g., {"A", "B"}
-            correct_letters = set(
-                question.choices.filter(is_correct=True).values_list('letter', flat=True)
-            )
+            correct_choices = set(Choice.objects.filter(question=question, is_correct=True).values_list('id', flat=True))
+            selected_choices = set(answer['choices'])
 
-            is_correct = selected_letters == correct_letters
+            is_correct = correct_choices == selected_choices
             total_answers += 1
             if is_correct:
                 correct_answers += 1
@@ -152,24 +147,20 @@ class GenerateCheckAnswersAPIView(APIView):
             question_details.append({
                 "index": index,
                 "question_id": question.id,
-                "question_uz": question.question_text,
+                "question_uz": question.question_text_uz,
+                "question_ru": question.question_text_ru,
                 "answer": is_correct
             })
             index += 1
 
-        # COMPOSITE ANSWERS
+        # COMPOSITE
         for answer in serializer.validated_data.get('composite_answers', []):
             question = Question.objects.filter(id=answer['question_id'], question_type='composite').first()
             if not question:
                 continue
 
-            correct_subs = question.sub_questions.all().order_by('id')
-            student_answers = answer['answers']
-
-            is_correct = all(
-                sa.strip() == sq.correct_answer.strip()
-                for sa, sq in zip(student_answers, correct_subs)
-            )
+            correct_subs = question.sub_questions.all()
+            is_correct = all(sa == sq.correct_answer for sa, sq in zip(answer['answers'], correct_subs))
 
             total_answers += 1
             if is_correct:
@@ -180,7 +171,8 @@ class GenerateCheckAnswersAPIView(APIView):
             question_details.append({
                 "index": index,
                 "question_id": question.id,
-                "question_uz": question.question_text,
+                "question_uz": question.question_text_uz,
+                "question_ru": question.question_text_ru,
                 "answer": is_correct
             })
             index += 1
@@ -197,8 +189,9 @@ class GenerateCheckAnswersAPIView(APIView):
             }]
         }
 
-        # Subject & Level aniqlash
-        subject, level = None, None
+        # Fan, level va topiclardan subject aniqlaymiz
+        subject = None
+        level = None
         first_question = Question.objects.filter(id=question_details[0]['question_id']).select_related(
             'topic__chapter__subject').first() if question_details else None
 
@@ -213,10 +206,12 @@ class GenerateCheckAnswersAPIView(APIView):
             result=result_json
         )
 
+        # Xato qilingan topic va chapterlarni yozamiz
+        wrong_chapter_instances = set(topic.chapter for topic in wrong_topic_instances)
         diagnost.topic.set(wrong_topic_instances)
-        diagnost.chapters.set(set(topic.chapter for topic in wrong_topic_instances))
+        diagnost.chapters.set(wrong_chapter_instances)
 
-        return Response(result_json, status=200)
+        return Response(result_json)
 
 
 
