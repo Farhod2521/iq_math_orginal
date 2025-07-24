@@ -251,6 +251,8 @@ class CheckAnswersSerializer(serializers.Serializer):
 
 
 
+from django.utils.html import strip_tags
+
 class TopicHelpRequestIndependentSerializer(serializers.ModelSerializer):
     info = serializers.JSONField(write_only=True)
     question = serializers.JSONField(write_only=True)
@@ -258,31 +260,55 @@ class TopicHelpRequestIndependentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TopicHelpRequestIndependent
-        exclude = ['subject', 'chapters', 'topics', 'question_json', 'result_json',  'student', 'commit', 'reviewed_at', "level"]
-        # Bu yerda 'student' serializerdan chiqarib tashlanmoqda
+        exclude = ['subject', 'chapters', 'topics', 'question_json', 'result_json',
+                   'student', 'commit', 'reviewed_at', "level"]
 
     def create(self, validated_data):
         request = self.context['request']
         student = request.user.student_profile
 
         info = validated_data.pop('info')
-        question_json = validated_data.pop('question')
+        questions = validated_data.pop('question')
         result_json = validated_data.pop('result')
 
         subject = Subject.objects.get(id=info['subject']['id'])
         chapter = Chapter.objects.get(id=info['chapter']['id'])
         topic = Topic.objects.get(id=info['topic']['id'])
 
+        # 🧠 SYSTEM JAVOBLARNI QO‘SHISH
+        for q in questions:
+            question_id = q.get("question_id")
+            try:
+                question_obj = Question.objects.get(id=question_id)
+            except Question.DoesNotExist:
+                q["system_response"] = None
+                continue
+
+            if question_obj.question_type == "text":
+                q["system_response"] = strip_tags(question_obj.correct_text_answer or "")
+            elif question_obj.question_type == "composite":
+                q["system_response"] = [
+                    sub.correct_answer for sub in question_obj.sub_questions.all()
+                ]
+            elif question_obj.question_type in ["choice", "image_choice"]:
+                q["system_response"] = [
+                    choice.letter for choice in question_obj.choices.filter(is_correct=True)
+                ]
+            else:
+                q["system_response"] = None
+
+        # 🔗 Bazaga yozish
         instance = TopicHelpRequestIndependent.objects.create(
             student=student,
             subject=subject,
             level=validated_data.get('level', 1),
-            question_json=question_json,
+            question_json={"question": questions, "result": result_json, "info": info},
             result_json=result_json
         )
         instance.chapters.set([chapter])
         instance.topics.set([topic])
         return instance
+
 
 
 
