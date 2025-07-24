@@ -8,7 +8,7 @@ from .views import(
 from .View.unsolved import  TeacherUnsolvedQuestionReportListView, TeacherAnswerUnsolvedQuestionView
 from  .View.gruop_student import AddStudentsToGroupAPIView, GroupCreateAPIView, GroupListAPIView, GroupDetailAPIView
 from .View.reorderOrderIndex  import  ReorderTopicAPIView, ReorderChapterAPIView, ReorderSubjectAPIView
-from .View.independentView import  TeacherTopicHelpRequestListAPIView, TeacherTopicHelpRequestDetailAPIView
+from .View.independentView import  TeacherTopicHelpRequestListAPIView, TeacherTopicHelpRequestDetailAPIView, TeacherCommitToHelpRequestAPIView
 from .View.coupon import   CreateTeacherCouponAPIView
 from .View.login_as_student import LoginAsStudentAPIView, ChangeStudentPasswordAPIView
 urlpatterns = [
@@ -49,6 +49,7 @@ urlpatterns = [
     ############################################################################################ 
     path('teacher-independent/list/', TeacherTopicHelpRequestListAPIView.as_view(), name='subject-reorder'),
     path('teacher-independent/detail/<int:id>/', TeacherTopicHelpRequestDetailAPIView.as_view(), name='subject-reorder'),
+    path('teacher-independent/commit/', TeacherCommitToHelpRequestAPIView.as_view(), name='subject-reorder'),
 
 
 
