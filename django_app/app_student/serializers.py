@@ -115,21 +115,9 @@ class TopicSerializer(serializers.ModelSerializer):
         except ValueError:
             return True
 
-        # 3. Agar bu chapterdagi birinchi mavzu bo‘lsa
+        # ✅ 3. Agar bu chapter ichidagi BIRINCHI mavzu bo‘lsa → har doim ochiq bo‘lsin
         if current_index == 0:
-            previous_chapter = Chapter.objects.filter(id__lt=obj.chapter.id).order_by('-id').first()
-            if not previous_chapter:
-                return False  # Bu birinchi chapter bo‘lsa — ochiq
-
-            prev_topic = Topic.objects.filter(chapter=previous_chapter).order_by('-order').first()
-            if not prev_topic:
-                return False
-
-            try:
-                prev_progress = TopicProgress.objects.get(user=student, topic=prev_topic)
-                return not (prev_progress.score >= 80)
-            except TopicProgress.DoesNotExist:
-                return True
+            return False  # ❗ istisno: chapter ichida birinchi mavzu doim ochiq
 
         # 4. Aks holda — oldingi topicni tekshiramiz
         prev_topic_id = topic_ids[current_index - 1]
