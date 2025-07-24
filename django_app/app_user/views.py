@@ -655,18 +655,106 @@ from django.utils.timezone import localtime
 import pytz
 from rest_framework.permissions import IsAuthenticated
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.http import HttpResponse
+from django.utils.encoding import escape_uri_path
+from openpyxl import Workbook
+
+
 class StudentsListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         ashgabat_tz = pytz.timezone("Asia/Ashgabat")
-
-        page = int(request.GET.get('page', 1))
-        size = int(request.GET.get('size', 10))
+        export_excel = request.GET.get("export") == "excel"
 
         students = Student.objects.filter(user__role='student', status=True).order_by('id')
 
-        paginator = Paginator(students, size)
+        data_json = []  # JSON uchun
+        data_excel = []  # Excel uchun
+
+        for student in students:
+            student_datetime = student.student_date
+            if student_datetime:
+                student_datetime = student_datetime.astimezone(ashgabat_tz)
+                student_date = student_datetime.strftime('%Y-%m-%d')
+                student_time = student_datetime.strftime('%H:%M:%S')
+            else:
+                student_date = None
+                student_time = None
+
+            last_login_obj = StudentLoginHistory.objects.filter(student=student).order_by('-login_time').first()
+            if last_login_obj:
+                last_login_local = last_login_obj.login_time.astimezone(ashgabat_tz)
+                last_login_formatted = last_login_local.strftime('%d/%m/%Y %H:%M')
+            else:
+                last_login_formatted = None
+
+            # JSON uchun ingliz tilidagi maydonlar
+            data_json.append({
+                "id": student.id,
+                "full_name": student.full_name,
+                "phone": student.user.phone,
+                "email": student.user.email,
+                "region": student.region,
+                "districts": student.districts,
+                "address": student.address,
+                "brithday": student.brithday,
+                "academy_or_school": student.academy_or_school,
+                "academy_or_school_name": student.academy_or_school_name,
+                "class_name_uz": f"{student.class_name.classes.name}-sinf {student.class_name.name_uz}" if student.class_name else None,
+                "class_name_ru": f"{student.class_name.classes.name}-класс {student.class_name.name_ru}" if student.class_name else None,
+                "document_type": student.document_type,
+                "document": student.document,
+                "type_of_education": student.type_of_education,
+                "student_date": student_date,
+                "student_time": student_time,
+                "last_login_time": last_login_formatted
+            })
+
+            # Excel uchun o‘zbek tilidagi maydonlar
+            data_excel.append({
+                "ID": student.id,
+                "F.I.Sh.": student.full_name,
+                "Telefon": student.user.phone,
+                "Email": student.user.email,
+                "Viloyat": student.region,
+                "Tuman": student.districts,
+                "Manzil": student.address,
+                "Tug‘ilgan sana": student.brithday,
+                "Ta'lim muassasasi": student.academy_or_school,
+                "Muassasa nomi": student.academy_or_school_name,
+                "Sinf (UZ)": f"{student.class_name.classes.name}-sinf {student.class_name.name_uz}" if student.class_name else None,
+                "Sinf (RU)": f"{student.class_name.classes.name}-класс {student.class_name.name_ru}" if student.class_name else None,
+                "Hujjat turi": student.document_type,
+                "Hujjat raqami": student.document,
+                "Ta'lim turi": student.type_of_education,
+                "Ro‘yxatga olingan sana": student_date,
+                "Ro‘yxatga olingan vaqt": student_time,
+                "Oxirgi tizimga kirgan vaqt": last_login_formatted
+            })
+
+        if export_excel:
+            wb = Workbook()
+            ws = wb.active
+            ws.title = "O'quvchilar ro'yxati"
+
+            headers = list(data_excel[0].keys()) if data_excel else []
+            ws.append(headers)
+
+            for row in data_excel:
+                ws.append(list(row.values()))
+
+            response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            filename = escape_uri_path("Oquvchilar_royxati.xlsx")
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            wb.save(response)
+            return response
+
+        # JSON qaytarish (paginatsiya bilan)
+        page = int(request.GET.get('page', 1))
+        size = int(request.GET.get('size', 10))
+
+        paginator = Paginator(data_json, size)
         total_count = paginator.count
         total_pages = paginator.num_pages
 
@@ -682,55 +770,13 @@ class StudentsListView(APIView):
                 "results": []
             }, status=404)
 
-        data = []
-        for student in current_page.object_list:
-            # student_date va student_time
-            student_datetime = student.student_date
-            if student_datetime:
-                student_datetime = student_datetime.astimezone(ashgabat_tz)
-                student_date = student_datetime.strftime('%Y-%m-%d')
-                student_time = student_datetime.strftime('%H:%M:%S')
-            else:
-                student_date = None
-                student_time = None
-
-            # 🔥 Oxirgi login vaqtini topish
-            last_login_obj = StudentLoginHistory.objects.filter(student=student).order_by('-login_time').first()
-            if last_login_obj:
-                last_login_local = last_login_obj.login_time.astimezone(ashgabat_tz)
-                last_login_formatted = last_login_local.strftime('%d/%m/%Y %H:%M')
-            else:
-                last_login_formatted = None
-
-            data.append({
-                "id": student.id,
-                'full_name': student.full_name,
-                'phone': student.user.phone,
-                'email': student.user.email,
-                'region': student.region,
-                'districts': student.districts,
-                'address': student.address,
-                'brithday': student.brithday,
-                'academy_or_school': student.academy_or_school,
-                'academy_or_school_name': student.academy_or_school_name,
-                'class_name_uz': f"{student.class_name.classes.name}-sinf {student.class_name.name_uz}" if student.class_name else None,
-                'class_name_ru': f"{student.class_name.classes.name}-класс {student.class_name.name_ru}" if student.class_name else None,
-                'document_type': student.document_type,
-                'document': student.document,
-                'type_of_education': student.type_of_education,
-                'student_date': student_date,
-                'student_time': student_time,
-                'last_login_time': last_login_formatted  # ✅ qo‘shilgan maydon
-            })
-
         return Response({
             "page": page,
             "size": size,
             "total": total_count,
             "total_pages": total_pages,
-            "results": data
+            "results": current_page.object_list
         })
-
 
 
 
