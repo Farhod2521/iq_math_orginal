@@ -3,8 +3,10 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django_app.app_student.models import  TopicHelpRequestIndependent
 from rest_framework.pagination import PageNumberPagination
-
+from rest_framework import status
 from collections import defaultdict
+from django.utils import timezone  
+
 
 class TeacherTopicHelpRequestListAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -66,6 +68,42 @@ class TeacherTopicHelpRequestDetailAPIView(RetrieveAPIView):
         })
 
 
+
+
+
+class TeacherCommitToHelpRequestAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            teacher = request.user.teacher_profile
+        except AttributeError:
+            return Response({"error": "Siz o‘qituvchi emassiz"}, status=status.HTTP_403_FORBIDDEN)
+
+        help_request_id = request.data.get("help_request_id")
+        commit = request.data.get("commit")
+
+        if not help_request_id or not commit:
+            return Response(
+                {"error": "help_request_id va commit maydonlari majburiy"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            help_request = TopicHelpRequestIndependent.objects.get(id=help_request_id)
+        except TopicHelpRequestIndependent.DoesNotExist:
+            return Response(
+                {"error": "Ushbu so‘rov mavjud emas"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Commit va o‘qituvchini yozamiz
+        help_request.teacher = teacher
+        help_request.commit = commit
+        help_request.reviewed_at = timezone.now()
+        help_request.save()
+
+        return Response({"success": "Izoh muvaffaqiyatli yozildi"}, status=status.HTTP_200_OK)
 
 
 # class TeacherTopicHelpRequestBySubjectView(ListAPIView):
