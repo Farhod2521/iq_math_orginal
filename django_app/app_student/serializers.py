@@ -137,9 +137,29 @@ class TopicSerializer(serializers.ModelSerializer):
 
         try:
             student = Student.objects.get(user=user)
-            return TopicProgress.objects.filter(user=student, topic=obj).exists()
         except Student.DoesNotExist:
             return False
+
+        # ✅ Agar mavzu allaqachon ishlangan bo‘lsa
+        if TopicProgress.objects.filter(user=student, topic=obj).exists():
+            return True
+
+        # ✅ Chapterdagi topiclar ro‘yxati
+        chapter_topics = Topic.objects.filter(chapter=obj.chapter).order_by('order')
+        topic_ids = list(chapter_topics.values_list('id', flat=True))
+
+        try:
+            current_index = topic_ids.index(obj.id)
+        except ValueError:
+            return False
+
+        # ✅ Agar bu chapter ichidagi birinchi mavzu bo‘lsa → ochiq deb hisoblaymiz
+        if current_index == 0:
+            return True
+
+        # Aks holda — yopiq
+        return False
+
 
 class ChoiceSerializer(serializers.ModelSerializer):
     class Meta:
