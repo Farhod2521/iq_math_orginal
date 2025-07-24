@@ -144,21 +144,21 @@ class TopicSerializer(serializers.ModelSerializer):
         if TopicProgress.objects.filter(user=student, topic=obj).exists():
             return True
 
-        # ✅ Chapterdagi topiclar ro‘yxati
-        chapter_topics = Topic.objects.filter(chapter=obj.chapter).order_by('order')
-        topic_ids = list(chapter_topics.values_list('id', flat=True))
+        # ✅ Fanning (subject) eng birinchi bobini topamiz
+        first_chapter = Chapter.objects.filter(subject=obj.chapter.subject).order_by('order').first()
+        if not first_chapter:
+            return False  # Bob yo‘q bo‘lsa, yopiq
 
-        try:
-            current_index = topic_ids.index(obj.id)
-        except ValueError:
-            return False
+        # ✅ Shu bobdagi eng birinchi mavzuni topamiz
+        first_topic = Topic.objects.filter(chapter=first_chapter).order_by('order').first()
+        if not first_topic:
+            return False  # Mavzular yo‘q bo‘lsa, yopiq
 
-        # ✅ Agar bu chapter ichidagi birinchi mavzu bo‘lsa → ochiq deb hisoblaymiz
-        if current_index == 0:
+        # ✅ Agar hozirgi mavzu aynan fanning birinchi bobidagi birinchi mavzu bo‘lsa
+        if obj.id == first_topic.id:
             return True
 
-        # Aks holda — yopiq
-        return False
+        return False  # Boshqa holatlarda — yopiq
 
 
 class ChoiceSerializer(serializers.ModelSerializer):
