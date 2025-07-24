@@ -218,7 +218,28 @@ class CustomQuestionSerializer(serializers.ModelSerializer):
         return data
 
     
- 
+class CheckChoiceAnswerSerializer(serializers.Serializer):
+    question_id = serializers.IntegerField()
+    choices = serializers.ListField(
+        child=serializers.IntegerField(), allow_empty=False
+    )
+
+
+class CheckTextAnswerSerializer(serializers.Serializer):
+    question_id = serializers.IntegerField()
+    answer_uz = serializers.CharField(max_length=1000, required=False)
+    answer_ru = serializers.CharField(max_length=1000, required=False)
+
+
+class CheckCompositeAnswerSerializer(serializers.Serializer):
+    question_id = serializers.IntegerField()
+    answers = serializers.ListField(child=serializers.CharField(), allow_empty=False)
+
+
+class CheckAnswersSerializer(serializers.Serializer):
+    text_answers = CheckTextAnswerSerializer(many=True, required=False)
+    choice_answers = CheckChoiceAnswerSerializer(many=True, required=False)
+    composite_answers = CheckCompositeAnswerSerializer(many=True, required=False)
 
 
 
