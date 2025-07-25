@@ -2,9 +2,9 @@
 
 import requests
 
-# MULTICARD_AUTH_URL = "https://mesh.multicard.uz/auth"
-# APPLICATION_ID = "raqamli_iqtisodiyot_va_agrotexnologiyalar_universiteti"
-# SECRET_KEY = "b7lydo1mu8abay9x"
+MULTICARD_AUTH_URL = "https://mesh.multicard.uz/auth"
+APPLICATION_ID = "raqamli_iqtisodiyot_va_agrotexnologiyalar_universiteti"
+SECRET_KEY = "b7lydo1mu8abay9x"
 
 
 # MULTICARD_AUTH_URL = "https://mesh.multicard.uz/auth"
@@ -13,9 +13,9 @@ import requests
 
 
 ########### TESTIVIY ########################
-MULTICARD_AUTH_URL = "https://dev-mesh.multicard.uz/auth"
-APPLICATION_ID = "rhmt_test"
-SECRET_KEY = "Pw18axeBFo8V7NamKHXX"
+# MULTICARD_AUTH_URL = "https://dev-mesh.multicard.uz/auth"
+# APPLICATION_ID = "rhmt_test"
+# SECRET_KEY = "Pw18axeBFo8V7NamKHXX"
 
 
 def get_multicard_token():
