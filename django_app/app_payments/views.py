@@ -68,8 +68,8 @@ class InitiatePaymentAPIView(APIView):
         amount_in_tiyin = int(discounted_amount * 100)
 
         data = {
-            # "store_id": 553,
-            "store_id": 6,
+            "store_id": 553,
+            # "store_id": 6,  ##### TESTIVIY
             "amount": amount_in_tiyin,
             "invoice_id": transaction_id,
             "return_url": "https://iqmath.uz/",
@@ -89,7 +89,7 @@ class InitiatePaymentAPIView(APIView):
 
         try:
             response = requests.post(
-                f"{URL_TEST}/payment/invoice",
+                f"{URL_DEV}/payment/invoice",
                 headers=headers,
                 json=data
             )
@@ -134,7 +134,7 @@ class PaymentCallbackAPIView(APIView):
         sign = data.get("sign")
 
         # Sizning secret keyingiz
-        SECRET_KEY = "Pw18axeBFo8V7NamKHXX"
+        SECRET_KEY = "b7lydo1mu8abay9x"
         EXPECTED_SIGN = self.generate_sign(store_id, invoice_id, amount, SECRET_KEY)
 
         # Imzo tekshirish
@@ -151,7 +151,7 @@ class PaymentCallbackAPIView(APIView):
         payment.invoice_uuid = invoice_uuid
         payment.billing_id = billing_id
         payment.sign = sign
-        payment.receipt_url = f"{URL_TEST}/invoice/{uuid}"
+        payment.receipt_url = f"{URL_DEV}/invoice/{uuid}"
         payment.save()
 
         # Obunani yaratish yoki olish
