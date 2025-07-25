@@ -68,7 +68,7 @@ class InitiatePaymentAPIView(APIView):
         amount_in_tiyin = int(discounted_amount * 100)
 
         data = {
-            "store_id": 553,
+            "store_id": 1915,
             # "store_id": 6,  ##### TESTIVIY
             "amount": amount_in_tiyin,
             "invoice_id": transaction_id,
