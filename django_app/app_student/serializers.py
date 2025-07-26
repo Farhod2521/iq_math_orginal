@@ -260,8 +260,10 @@ class TopicHelpRequestIndependentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TopicHelpRequestIndependent
-        exclude = ['subject', 'chapters', 'topics', 'question_json', 'result_json',
-                   'student', 'commit', 'reviewed_at', "level"]
+        exclude = [
+            'subject', 'chapters', 'topics', 'question_json', 'result_json',
+            'student', 'commit', 'reviewed_at', 'level'
+        ]
 
     def create(self, validated_data):
         request = self.context['request']
@@ -275,14 +277,18 @@ class TopicHelpRequestIndependentSerializer(serializers.ModelSerializer):
         chapter = Chapter.objects.get(id=info['chapter']['id'])
         topic = Topic.objects.get(id=info['topic']['id'])
 
-        # 🧠 SYSTEM JAVOBLARNI QO‘SHISH
+        # 🧠 SYSTEM JAVOBLARNI QO‘SHISH + SAVOL TURINI QO‘SHISH
         for q in questions:
             question_id = q.get("question_id")
             try:
                 question_obj = Question.objects.get(id=question_id)
             except Question.DoesNotExist:
                 q["system_response"] = None
+                q["question_type"] = None
                 continue
+
+            # ➕ Savol turini yozamiz
+            q["question_type"] = question_obj.question_type
 
             if question_obj.question_type == "text":
                 q["system_response"] = strip_tags(question_obj.correct_text_answer or "")
@@ -308,7 +314,6 @@ class TopicHelpRequestIndependentSerializer(serializers.ModelSerializer):
         instance.chapters.set([chapter])
         instance.topics.set([topic])
         return instance
-
 
 
 
