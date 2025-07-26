@@ -8,7 +8,7 @@ from django_app.app_student.serializers import  TopicHelpRequestIndependentSeria
 from rest_framework.views import APIView
 from django.utils import timezone
 from .telegram_bot_service import send_question_to_telegram
-
+from django_app.app_teacher.models import Teacher
 class TopicHelpRequestCreateView(CreateAPIView):
     queryset = TopicHelpRequestIndependent.objects.all()
     serializer_class = TopicHelpRequestIndependentSerializer
