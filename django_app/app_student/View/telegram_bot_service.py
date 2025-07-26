@@ -24,7 +24,7 @@ def send_question_to_telegram(student_full_name, question_id, result_json):
         f"📊 <b>Natija:</b>\n"
         f"➕ To‘g‘ri: <b>{correct}</b> / {total}\n"
         f"⭐️ Ball: <b>{score}</b>\n\n"
-        f"🕘 <i>Kim birinchi bo‘lib javob bersa, savol unga biriktiriladi</i>"
+     
     )
 
     keyboard = {
