@@ -2,9 +2,9 @@ import os
 import django
 import logging
 import requests
-from asgiref.sync import sync_to_async
-from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CallbackQueryHandler, ContextTypes
+from asgiref.sync import sync_to_async
 
 # Django sozlamasi
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.production')
@@ -24,7 +24,7 @@ def get_logs(help_request_id):
 async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-
+    
     data = query.data
     if data.startswith("assign_"):
         help_request_id = int(data.split("_")[1])
@@ -43,36 +43,41 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if result.get("success"):
             teacher_name = result.get("teacher_name")
+            logs = await get_logs(help_request_id)
 
-            # Faqat 🔗 tugma
             url = f"https://mentor.iqmath.uz/dashboard/teacher/student-examples/{help_request_id}?student_name=Oquvchi"
             new_markup = InlineKeyboardMarkup([
                 [InlineKeyboardButton("🔗 Savolga o‘tish", url=url)]
             ])
 
-            logs = await get_logs(help_request_id)
             for log in logs:
                 try:
-                    # Tugmani yangilaymiz (Javob berish tugmasi yo‘qoladi)
-                    await context.bot.edit_message_reply_markup(
+                    # Faqat tugma bosgan o‘qituvchidan boshqalarga reply xabar
+                    if log.chat_id != query.message.chat_id:
+                        # Reply bilan xabar
+                        await context.bot.send_message(
+                            chat_id=log.chat_id,
+                            text=f"❗ Bu savolga hozirda <b>{teacher_name}</b> javob beryapti.",
+                            parse_mode="HTML",
+                            reply_to_message_id=log.message_id
+                        )
+
+                    # Matnni yangilash (📥 -> 👨‍🏫)
+                    original_text = context.bot_data.get(f"text_{log.message_id}", query.message.text)
+                    new_text = original_text.replace("📥 Yangi savol!", f"👨‍🏫 O‘qituvchi: {teacher_name}")
+
+                    await context.bot.edit_message_text(
                         chat_id=log.chat_id,
                         message_id=log.message_id,
-                        reply_markup=new_markup
-                    )
-
-                    # Matn yuboramiz: "Bu savolga hozirda ..."
-                    await context.bot.send_message(
-                        chat_id=log.chat_id,
-                        text=f"❗ Bu savolga hozirda <b>{teacher_name}</b> javob beryapti.",
+                        text=new_text,
+                        reply_markup=new_markup,
                         parse_mode="HTML"
                     )
-
                 except Exception as e:
                     logging.error(f"❌ Edit/send xatolik: {e}")
         else:
             await query.message.reply_text(result.get("message", "❌ Xatolik yuz berdi"))
 
-# Botni ishga tushirish
 def main():
     app = Application.builder().token(BOT_TOKEN).build()
     app.add_handler(CallbackQueryHandler(handle_callback))
