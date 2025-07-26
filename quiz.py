@@ -1,55 +1,52 @@
-import sympy as sp
-import re
-from sympy import randprime
+import logging
+import requests
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Application, CallbackQueryHandler, ContextTypes
 
-def detect_variables(expr):
-    try:
-        parsed_expr = sp.sympify(expr)
-        return [str(s) for s in parsed_expr.free_symbols]
-    except:
-        return []
+BOT_TOKEN = "7826335243:AAGXTZvtzJ8e8g35Hrx_Swy7mwmRPd3T7Po"
+BACKEND_ASSIGN_API = "https://api.iqmath.uz/api/v1/func_student/student/telegram/assign-teacher/"
 
-def clean_latex(expr):
-    expr = re.sub(r'\\frac\{([^}]+)\}\{([^}]+)\}', r'(\1)/(\2)', expr)
-    expr = re.sub(r'\\sqrt\{([^}]+)\}', r'sqrt(\1)', expr)
-    return expr.replace('\\', '').replace(' ', '')
+logging.basicConfig(level=logging.INFO)
 
-def insert_multiplication(expr):
-    # (a)(b) -> (a)*(b)
-    expr = re.sub(r'(\))\(', r')*(', expr)
-    return expr
+async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
 
-def advanced_math_check(student_answer, correct_answer):
-    student = insert_multiplication(clean_latex(student_answer))
-    correct = insert_multiplication(clean_latex(correct_answer))
-    
-    vars_student = detect_variables(student)
-    vars_correct = detect_variables(correct)
-    
-    if set(vars_student) != set(vars_correct):
-        return False
-    
-    try:
-        expr1 = sp.sympify(student)
-        expr2 = sp.sympify(correct)
-        
-        diff = sp.simplify(expr1 - expr2)
-        if diff == 0:
-            return True
-        
-        for _ in range(10):
-            values = {sp.Symbol(v): sp.Rational(randprime(1,100)) for v in vars_student}
-            val1 = expr1.subs(values)
-            val2 = expr2.subs(values)
-            if not sp.simplify(val1 - val2) == 0:
-                return False
-        return True
-        
-    except Exception as e:
-        # Xatolik yuz bersa ifodalar matnini taqqoslash
-        return student.lower().strip() == correct.lower().strip()
+    data = query.data
+    if data.startswith("assign_"):
+        help_request_id = int(data.split("_")[1])
+        telegram_id = query.from_user.id
 
-print(advanced_math_check("\\((c+t)(c-t)\\)", "\\((c-t)(c+t)\\)"))  # True
-print(advanced_math_check("\\frac{x+1}{2}", "(x+1)/2"))    # True
-print(advanced_math_check("(x+1)(x-1)", "x^2-1"))         # True
-print(advanced_math_check("1/2", "0.5"))       # True
+        response = requests.post(BACKEND_ASSIGN_API, data={
+            "help_request_id": help_request_id,
+            "telegram_id": telegram_id
+        })
+
+        result = response.json()
+
+        if result.get("success"):
+            teacher_name = result.get("teacher_name")
+
+            # Savolga javob berilganligini bildiruvchi matn
+            text = f"❗ Bu savolga hozirda <b>{teacher_name}</b> javob beryapti."
+
+            try:
+                await context.bot.edit_message_text(
+                    chat_id=query.message.chat_id,
+                    message_id=query.message.message_id,
+                    text=text,
+                    parse_mode="HTML"
+                )
+            except Exception as e:
+                logging.error(f"Xatolik: {e}")
+        else:
+            await query.message.reply_text(result.get("message", "Xatolik yuz berdi"))
+
+def main():
+    app = Application.builder().token(BOT_TOKEN).build()
+    app.add_handler(CallbackQueryHandler(handle_callback))
+    print("✅ Bot ishga tushdi... kutyapti.")
+    app.run_polling()
+
+if __name__ == "__main__":
+    main()
