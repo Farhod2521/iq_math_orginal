@@ -1,8 +1,8 @@
 import requests
 import urllib.parse
 
-BOT_TOKEN = 'YOUR_TELEGRAM_BOT_TOKEN'
-TEACHER_CHAT_ID = 123456789  # yoki kerakli guruh/chat ID
+BOT_TOKEN = '7826335243:AAGXTZvtzJ8e8g35Hrx_Swy7mwmRPd3T7Po'
+TEACHER_CHAT_ID = 1858379541  # yoki kerakli guruh/chat ID
 
 def send_question_to_telegram(student_full_name, question_id):
     student_name_encoded = urllib.parse.quote(student_full_name)
