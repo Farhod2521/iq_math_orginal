@@ -58,3 +58,7 @@ class TopicHelpRequestIndependentAdmin(TranslationAdmin):
     list_filter = ('subject', 'teacher', 'level', 'created_at')
     search_fields = ('student__user__phone', 'teacher__full_name', 'commit_uz', 'commit_ru')
     readonly_fields = ('created_at', 'reviewed_at')
+
+
+
+
