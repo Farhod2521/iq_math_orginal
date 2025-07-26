@@ -5,8 +5,8 @@ from django_app.app_student.models import HelpRequestMessageLog  # Log modeli
 
 BOT_TOKEN = '7826335243:AAGXTZvtzJ8e8g35Hrx_Swy7mwmRPd3T7Po'
 
-# Bu yerda barcha o‘qituvchilarning telegram_id'lari bo‘ladi
-TEACHER_CHAT_IDS = [1858379541, 79451684]  # misol uchun
+# Bu yerda barcha o‘qituvchilarning telegram_id'lari bo‘ladi  79451684
+TEACHER_CHAT_IDS = [1858379541]  # misol uchun
 
 def send_question_to_telegram(student_full_name, question_id, result_json):
     student_name_encoded = urllib.parse.quote(student_full_name)
