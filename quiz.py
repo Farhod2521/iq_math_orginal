@@ -30,7 +30,6 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         help_request_id = int(data.split("_")[1])
         telegram_id = query.from_user.id
 
-        # Backendga so‘rov yuborish
         try:
             response = requests.post(BACKEND_ASSIGN_API, data={
                 "help_request_id": help_request_id,
@@ -45,27 +44,33 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if result.get("success"):
             teacher_name = result.get("teacher_name")
 
-            # 🔘 Faqat "🔗 Savolga o‘tish" tugmasini qoldiramiz
-            student_name_encoded = ""  # optional: if kerak bo‘lsa, backenddan qaytar
+            # Faqat 🔗 tugma
             url = f"https://mentor.iqmath.uz/dashboard/teacher/student-examples/{help_request_id}?student_name=Oquvchi"
-
             new_markup = InlineKeyboardMarkup([
                 [InlineKeyboardButton("🔗 Savolga o‘tish", url=url)]
             ])
 
-            # Har bir yuborilgan xabar uchun tugmalarni yangilaymiz
             logs = await get_logs(help_request_id)
             for log in logs:
                 try:
+                    # Tugmani yangilaymiz (Javob berish tugmasi yo‘qoladi)
                     await context.bot.edit_message_reply_markup(
                         chat_id=log.chat_id,
                         message_id=log.message_id,
-                        reply_markup=new_markup  # faqat "🔗" tugma qoladi
+                        reply_markup=new_markup
                     )
+
+                    # Matn yuboramiz: "Bu savolga hozirda ..."
+                    await context.bot.send_message(
+                        chat_id=log.chat_id,
+                        text=f"❗ Bu savolga hozirda <b>{teacher_name}</b> javob beryapti.",
+                        parse_mode="HTML"
+                    )
+
                 except Exception as e:
-                    logging.error(f"❌ Tugma o‘zgartirish xatoligi: {e}")
+                    logging.error(f"❌ Edit/send xatolik: {e}")
         else:
-            await query.message.reply_text(result.get("message", "❌ Xatolik yuz berdi."))
+            await query.message.reply_text(result.get("message", "❌ Xatolik yuz berdi"))
 
 # Botni ishga tushirish
 def main():
