@@ -154,3 +154,18 @@ class StudentReferral(models.Model):
 
     def __str__(self):
         return f"{self.referred.full_name} ← {self.referrer.full_name}"
+    
+
+
+class HelpRequestMessageLog(models.Model):
+    help_request = models.ForeignKey(
+        TopicHelpRequestIndependent,
+        on_delete=models.CASCADE,
+        related_name='message_logs'
+    )
+    chat_id = models.BigIntegerField()
+    message_id = models.BigIntegerField()
+    sent_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('help_request', 'chat_id')
