@@ -24,14 +24,20 @@ class TopicHelpRequestCreateView(CreateAPIView):
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
 
-        # O‘quvchi ni aniqlash
+        # Status = sent deb saqlanadi
+        instance.status = 'sent'
+        instance.save()
+
         student = getattr(request.user, 'student_profile', None)
         if student and student.telegram_id and student.telegram_id != 0:
-            send_question_to_telegram(student.full_name, instance.id)
+            send_question_to_telegram(
+                student_full_name=student.full_name,
+                question_id=instance.id,
+                result_json=instance.result_json
+            )
 
         return Response({
             "success": True,
             "message": "O‘qituvchiga yuborildi"
         }, status=status.HTTP_201_CREATED)
-
 

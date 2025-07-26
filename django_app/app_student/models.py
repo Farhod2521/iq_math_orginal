@@ -105,15 +105,20 @@ class ProductExchange(models.Model):
     
 
 class TopicHelpRequestIndependent(models.Model):
+    STATUS_CHOICES = [
+        ('sent', "Yuborilgan"),
+        ('reviewing', "Muhokamada"),
+        ('answered', "Javob berildi"),
+    ]
+
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='student_results')
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
     chapters = models.ManyToManyField(Chapter)
     topics = models.ManyToManyField(Topic)
     level = models.PositiveSmallIntegerField(default=1)
     question_json = models.JSONField()
-    result_json = models.JSONField()    
+    result_json = models.JSONField()
 
-    # ✅ Bu yerda null va blank qilish kerak
     teacher = models.ForeignKey(
         Teacher,
         on_delete=models.PROTECT,
@@ -125,6 +130,13 @@ class TopicHelpRequestIndependent(models.Model):
     commit = models.TextField(null=True, blank=True, verbose_name="O‘qituvchi izohi")
     reviewed_at = models.DateTimeField(null=True, blank=True, verbose_name="Tekshirilgan vaqt")
     created_at = models.DateTimeField(auto_now_add=True)
+
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='sent',
+        verbose_name="Savol holati"
+    )
 
     def __str__(self):
         return f"{self.student} - {self.subject}"
