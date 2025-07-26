@@ -1,7 +1,15 @@
+import os
+import django
 import logging
 import requests
 from telegram import Update
 from telegram.ext import Application, CallbackQueryHandler, ContextTypes
+
+# Django sozlamalarini ulash
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.production')
+django.setup()
+
+# Django modeldan foydalanish
 from django_app.app_student.models import HelpRequestMessageLog
 
 BOT_TOKEN = "7826335243:AAGXTZvtzJ8e8g35Hrx_Swy7mwmRPd3T7Po"
