@@ -193,3 +193,12 @@ class GroupSerializer_DETAIL(serializers.ModelSerializer):
         extra_kwargs = {
             'teacher': {'read_only': True}
         }
+
+
+
+class TeacherRewardSerializer(serializers.Serializer):
+    teacher_id = serializers.IntegerField()
+    student_id = serializers.IntegerField()
+    reward_type = serializers.ChoiceField(choices=['score', 'coin', 'subscription_day'])
+    amount = serializers.IntegerField(min_value=1)
+    reason = serializers.CharField(required=False, allow_blank=True)
