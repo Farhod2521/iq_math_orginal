@@ -8,7 +8,7 @@ from django_app.app_user.models import  Teacher, Student
 from django_app.app_teacher.models import TeacherRewardLog
 from django_app.app_student.models import   StudentScore
 from  django_app.app_payments.models import Subscription
-from  django_app.app_teacher.serializers import TeacherRewardSerializer
+from  django_app.app_teacher.serializers import TeacherRewardSerializer, TeacherRewardLogSerializer
 class TeacherRewardAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -66,3 +66,19 @@ class TeacherRewardAPIView(APIView):
             return Response({'detail': 'Rag‘bat muvaffaqiyatli qo‘shildi'}, status=status.HTTP_201_CREATED)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+
+
+class TeacherRewardListAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        try:
+            teacher = request.user.teacher_profile
+        except:
+            return Response({'detail': 'Siz o‘qituvchi emassiz.'}, status=status.HTTP_403_FORBIDDEN)
+
+        rewards = TeacherRewardLog.objects.filter(teacher=teacher).order_by('-created_at')
+        serializer = TeacherRewardLogSerializer(rewards, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

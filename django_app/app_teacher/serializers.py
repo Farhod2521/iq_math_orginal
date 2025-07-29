@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import (
-    Chapter, Topic, Question,Choice, CompositeSubQuestion, Group
+    Chapter, Topic, Question,Choice, CompositeSubQuestion, Group, TeacherRewardLog
     
 )
 from django_app.app_user.models import  Subject, Student
@@ -201,3 +201,20 @@ class TeacherRewardSerializer(serializers.Serializer):
     reward_type = serializers.ChoiceField(choices=['score', 'coin', 'subscription_day'])
     amount = serializers.IntegerField(min_value=1)
     reason = serializers.CharField(required=False, allow_blank=True)
+
+
+class TeacherRewardLogSerializer(serializers.ModelSerializer):
+    student_name = serializers.CharField(source='student.full_name', read_only=True)
+    reward_type_display = serializers.CharField(source='get_reward_type_display', read_only=True)
+
+    class Meta:
+        model = TeacherRewardLog
+        fields = [
+            'id',
+            'student_name',
+            'reward_type',
+            'reward_type_display',
+            'amount',
+            'reason',
+            'created_at'
+        ]
