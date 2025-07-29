@@ -197,7 +197,6 @@ class GroupSerializer_DETAIL(serializers.ModelSerializer):
 
 
 class TeacherRewardSerializer(serializers.Serializer):
-    teacher_id = serializers.IntegerField()
     student_id = serializers.IntegerField()
     reward_type = serializers.ChoiceField(choices=['score', 'coin', 'subscription_day'])
     amount = serializers.IntegerField(min_value=1)

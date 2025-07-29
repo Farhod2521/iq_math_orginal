@@ -13,19 +13,23 @@ class TeacherRewardAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
+        # Auth qilingan userdan teacherni topamiz
+        try:
+            teacher = request.user.teacher_profile
+        except Teacher.DoesNotExist:
+            return Response({'detail': 'Siz o‘qituvchi emassiz yoki profil topilmadi.'}, status=status.HTTP_403_FORBIDDEN)
+
         serializer = TeacherRewardSerializer(data=request.data)
         if serializer.is_valid():
-            teacher_id = serializer.validated_data['teacher_id']
             student_id = serializer.validated_data['student_id']
             reward_type = serializer.validated_data['reward_type']
             amount = serializer.validated_data['amount']
             reason = serializer.validated_data.get('reason', '')
 
             try:
-                teacher = Teacher.objects.get(id=teacher_id)
                 student = Student.objects.get(id=student_id)
-            except (Teacher.DoesNotExist, Student.DoesNotExist):
-                return Response({'detail': 'O‘qituvchi yoki o‘quvchi topilmadi'}, status=status.HTTP_404_NOT_FOUND)
+            except Student.DoesNotExist:
+                return Response({'detail': 'O‘quvchi topilmadi'}, status=status.HTTP_404_NOT_FOUND)
 
             # Log yozamiz
             TeacherRewardLog.objects.create(
@@ -38,20 +42,23 @@ class TeacherRewardAPIView(APIView):
 
             # Amalni bajarish
             if reward_type == 'score':
-                score_obj, created = StudentScore.objects.get_or_create(student=student)
+                score_obj, _ = StudentScore.objects.get_or_create(student=student)
                 score_obj.score += amount
                 score_obj.save()
 
             elif reward_type == 'coin':
-                score_obj, created = StudentScore.objects.get_or_create(student=student)
+                score_obj, _ = StudentScore.objects.get_or_create(student=student)
                 score_obj.coin += amount
                 score_obj.save()
 
             elif reward_type == 'subscription_day':
-                sub_obj, created = Subscription.objects.get_or_create(student=student, defaults={
-                    'end_date': timezone.now() + timedelta(days=amount),
-                    'is_paid': True
-                })
+                sub_obj, created = Subscription.objects.get_or_create(
+                    student=student,
+                    defaults={
+                        'end_date': timezone.now() + timedelta(days=amount),
+                        'is_paid': True
+                    }
+                )
                 if not created:
                     sub_obj.end_date += timedelta(days=amount)
                     sub_obj.save()
