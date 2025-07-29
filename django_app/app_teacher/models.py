@@ -179,3 +179,29 @@ class TeacherProductExchange(models.Model):
 
     def __str__(self):
         return f"{self.teacher.full_name} → {self.product.name} ({self.used_coin} tanga)"
+
+
+
+class TeacherRewardLog(models.Model):
+    REWARD_TYPES = [
+        ('score', 'Ball qo‘shildi'),
+        ('coin', 'Tanga qo‘shildi'),
+        ('subscription_day', 'Obuna kuni qo‘shildi'),
+    ]
+
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='given_rewards', verbose_name="O‘qituvchi")
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='received_rewards', verbose_name="O‘quvchi")
+    
+    reward_type = models.CharField(max_length=20, choices=REWARD_TYPES, verbose_name="Rag‘bat turi")
+    amount = models.PositiveIntegerField(verbose_name="Qiymati (ball, tanga yoki kun)")
+    reason = models.TextField(blank=True, null=True, verbose_name="Sababi (ixtiyoriy)")
+    
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Berilgan vaqti")
+
+    def __str__(self):
+        return f"{self.teacher.full_name} → {self.student.full_name} ({self.get_reward_type_display()} - {self.amount})"
+
+    class Meta:
+        verbose_name = "Rag‘bat yozuvi"
+        verbose_name_plural = "Rag‘bat yozuvlari"
+        ordering = ['-created_at']

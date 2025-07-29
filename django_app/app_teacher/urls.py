@@ -11,6 +11,7 @@ from .View.reorderOrderIndex  import  ReorderTopicAPIView, ReorderChapterAPIView
 from .View.independentView import  TeacherTopicHelpRequestListAPIView, TeacherTopicHelpRequestDetailAPIView, TeacherCommitToHelpRequestAPIView
 from .View.coupon import   CreateTeacherCouponAPIView
 from .View.login_as_student import LoginAsStudentAPIView, ChangeStudentPasswordAPIView
+from  .View.teacherreward import  TeacherRewardAPIView
 urlpatterns = [
     path("my-subjects/", TeacherSubjectsAPIView.as_view(), name="teacher-subjects"),
     path("subject-list/", SubjectListAPIView.as_view(), name="teacher-subjects"),
@@ -58,5 +59,9 @@ urlpatterns = [
         ####################################################################################################
     path('teacher/login-as-student/<int:student_id>/', LoginAsStudentAPIView.as_view(), name='login-as-student'),
     path('teacher/student/<int:student_id>/change-password/', ChangeStudentPasswordAPIView.as_view(), name='change-student-password'),
+
+
+    ###########################################################################################################
+    path('teacher/reward/', TeacherRewardAPIView.as_view(), name='teacher-reward'),
 
 ]
