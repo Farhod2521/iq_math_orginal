@@ -11,7 +11,6 @@ from django.utils import timezone
 class TeacherTopicHelpRequestListAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
-    # 👇 Ichki pagination class
     class StandardResultsSetPagination(PageNumberPagination):
         page_size = 10
         page_size_query_param = 'page_size'
@@ -19,7 +18,7 @@ class TeacherTopicHelpRequestListAPIView(APIView):
 
     def get(self, request):
         help_requests = TopicHelpRequestIndependent.objects.all()\
-            .select_related('student__user', 'subject')\
+            .select_related('student__user', 'subject', 'teacher__user')\
             .prefetch_related('topics')
 
         grouped_data = defaultdict(list)
@@ -30,6 +29,14 @@ class TeacherTopicHelpRequestListAPIView(APIView):
             topics = req.topics.all()
             status_text = "javob berilgan" if req.commit else "kutmoqda"
 
+            teacher_info = None
+            if req.teacher:
+                teacher_info = {
+                    "full_name": req.teacher.full_name,
+                    "reviewed_at": req.reviewed_at,
+                    "commit": req.commit
+                }
+
             grouped_data[req.student.id, req.student.full_name].append({
                 "id": req.id,
                 "class_uz": f"{class_name}-sinf {subject.name_uz}",
@@ -37,7 +44,8 @@ class TeacherTopicHelpRequestListAPIView(APIView):
                 "topics_name_uz": [topic.name_uz for topic in topics],
                 "topics_name_ru": [topic.name_ru for topic in topics],
                 "created_at": req.created_at,
-                "status": status_text
+                "status": status_text,
+                "teacher": teacher_info  # 👈 qo‘shilgan qism
             })
 
         response_data = [
@@ -49,10 +57,10 @@ class TeacherTopicHelpRequestListAPIView(APIView):
             for (student_id, full_name), reqs in grouped_data.items()
         ]
 
-        # 👇 Paginationni qo‘llash
         paginator = self.StandardResultsSetPagination()
         paginated_page = paginator.paginate_queryset(response_data, request)
         return paginator.get_paginated_response(paginated_page)
+
 
 from rest_framework.generics import RetrieveAPIView
 class TeacherTopicHelpRequestDetailAPIView(RetrieveAPIView):
