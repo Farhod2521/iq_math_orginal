@@ -323,3 +323,15 @@ class TeacherVerifySmsCodeSerializer(serializers.Serializer):
             })
 
         return {"phone": phone, "password": password, "user": user}
+    
+
+
+class TeacherSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Teacher
+        fields = '__all__'
+
+class StudentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Student
+        fields = '__all__'

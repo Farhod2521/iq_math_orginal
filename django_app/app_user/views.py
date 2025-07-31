@@ -4,7 +4,7 @@ from rest_framework import status
 from .serializers import (
 StudentRegisterSerializer, VerifySmsCodeSerializer, 
 LoginSerializer, StudentProfileSerializer, TeacherRegisterSerializer, Class_Serializer,
-TeacherVerifySmsCodeSerializer
+TeacherVerifySmsCodeSerializer, TeacherSerializer, StudentSerializer
 )
 from .models import Student, UserSMSAttempt, Teacher, Class, StudentLoginHistory
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -940,3 +940,33 @@ class LogoutAPIView(APIView):
         return Response({"detail": "Chiqqan vaqtingiz yozildi."}, status=200)
 
 
+
+class TelegramIDCheckAPIView(APIView):
+    def post(self, request):
+        telegram_id = request.data.get('telegram_id')
+
+        if not telegram_id:
+            return Response({"detail": "telegram_id yuborilishi shart."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = User.objects.get(telegram_id=telegram_id)
+        except User.DoesNotExist:
+            return Response({"detail": "Bunday telegram_id bilan foydalanuvchi topilmadi."}, status=status.HTTP_404_NOT_FOUND)
+
+        if user.role == 'teacher':
+            try:
+                teacher = user.teacher_profile
+                serializer = TeacherSerializer(teacher)
+                return Response({"role": "teacher", "data": serializer.data})
+            except Teacher.DoesNotExist:
+                return Response({"detail": "O‘qituvchi profili topilmadi."}, status=status.HTTP_404_NOT_FOUND)
+
+        elif user.role == 'student':
+            try:
+                student = user.student_profile
+                serializer = StudentSerializer(student)
+                return Response({"role": "student", "data": serializer.data})
+            except Student.DoesNotExist:
+                return Response({"detail": "O‘quvchi profili topilmadi."}, status=status.HTTP_404_NOT_FOUND)
+
+        return Response({"detail": "Bunday rol aniqlanmadi."}, status=status.HTTP_400_BAD_REQUEST)
