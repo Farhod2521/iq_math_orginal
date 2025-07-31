@@ -149,6 +149,7 @@ class TeacherProfileAPIView(APIView):
                 'document': teacher.document,
                 'teacher_date': teacher_date,  # YYYY-MM-DD (UTC+5)
                 'teacher_time': teacher_time,  # HH:MM:SS (UTC+5)
+                "telegram_id": teacher.telegram_id,
         }
 
         return Response(data)
@@ -475,7 +476,8 @@ class UserProfileAPIView(APIView):
             'type_of_education': student.type_of_education,
             'student_date': student_date,
             'student_time': student_time,
-            "has_diagnost": has_diagnost 
+            "has_diagnost": has_diagnost,
+            "telegram_id": student.telegram_id, 
         }
 
         # Teacher profile
@@ -510,6 +512,7 @@ class UserProfileAPIView(APIView):
                 'is_verified_teacher': teacher.is_verified_teacher,
                 'teacher_date': teacher_date,
                 'teacher_time': teacher_time,
+                "telegram_id": teacher.telegram_id,
             }
 
         else:
@@ -577,7 +580,8 @@ class StudentProfileAPIView(APIView):
                 'student_date': student_date,
                 'student_time': student_time,
                 "role": "student",
-                "has_diagnost": has_diagnost
+                "has_diagnost": has_diagnost,
+                "telegram_id": student.telegram_id,
             }
 
         elif user.role == 'teacher':
@@ -611,6 +615,7 @@ class StudentProfileAPIView(APIView):
                 'is_verified_teacher': teacher.is_verified_teacher,
                 'teacher_date': teacher_date,
                 'teacher_time': teacher_time,
+                "telegram_id": teacher.telegram_id,
             }
 
         elif user.role == 'admin':
