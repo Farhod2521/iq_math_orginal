@@ -140,6 +140,7 @@ class TeacherProfileAPIView(APIView):
                 'full_name': teacher.full_name,
                 'phone': teacher.user.phone if hasattr(teacher.user, 'phone') else None,
                 'email': teacher.user.email if hasattr(teacher.user, 'email') else None,
+                "telegram_id":teacher.user.telegram_id,
                 'region': teacher.region,
                 'districts': teacher.districts,
                 'address': teacher.address,
@@ -149,7 +150,6 @@ class TeacherProfileAPIView(APIView):
                 'document': teacher.document,
                 'teacher_date': teacher_date,  # YYYY-MM-DD (UTC+5)
                 'teacher_time': teacher_time,  # HH:MM:SS (UTC+5)
-                "telegram_id": teacher.telegram_id,
         }
 
         return Response(data)
@@ -463,6 +463,7 @@ class UserProfileAPIView(APIView):
             'full_name': student.full_name,
             'phone': getattr(student.user, 'phone', None),
             'email': getattr(student.user, 'email', None),
+            "telegram_id":getattr(student.user, 'telegram_id', None),
             'region': student.region,
             'districts': student.districts,
             'address': student.address,
@@ -476,8 +477,7 @@ class UserProfileAPIView(APIView):
             'type_of_education': student.type_of_education,
             'student_date': student_date,
             'student_time': student_time,
-            "has_diagnost": has_diagnost,
-            "telegram_id": student.telegram_id, 
+            "has_diagnost": has_diagnost 
         }
 
         # Teacher profile
@@ -500,6 +500,7 @@ class UserProfileAPIView(APIView):
             data = {
                 "role": "teacher",
                 "id": teacher.id,
+                "telegram_id":user.telegram_id,
                 'full_name': teacher.full_name,
                 'phone': user.phone,
                 'email': user.email,
@@ -512,7 +513,6 @@ class UserProfileAPIView(APIView):
                 'is_verified_teacher': teacher.is_verified_teacher,
                 'teacher_date': teacher_date,
                 'teacher_time': teacher_time,
-                "telegram_id": teacher.telegram_id,
             }
 
         else:
@@ -566,6 +566,7 @@ class StudentProfileAPIView(APIView):
                 'full_name': student.full_name,
                 'phone': getattr(student.user, 'phone', None),
                 'email': getattr(student.user, 'email', None),
+                "telegram_id": getattr(student.user, 'telegram_id', None),
                 'region': student.region,
                 'districts': student.districts,
                 'address': student.address,
@@ -580,8 +581,7 @@ class StudentProfileAPIView(APIView):
                 'student_date': student_date,
                 'student_time': student_time,
                 "role": "student",
-                "has_diagnost": has_diagnost,
-                "telegram_id": student.telegram_id,
+                "has_diagnost": has_diagnost
             }
 
         elif user.role == 'teacher':
@@ -606,6 +606,7 @@ class StudentProfileAPIView(APIView):
                 'full_name': teacher.full_name,
                 'phone': user.phone,
                 'email': user.email,
+                "telegram_id":user.telegram_id,
                 'region': teacher.region,
                 'districts': teacher.districts,
                 'address': teacher.address,
@@ -615,7 +616,6 @@ class StudentProfileAPIView(APIView):
                 'is_verified_teacher': teacher.is_verified_teacher,
                 'teacher_date': teacher_date,
                 'teacher_time': teacher_time,
-                "telegram_id": teacher.telegram_id,
             }
 
         elif user.role == 'admin':

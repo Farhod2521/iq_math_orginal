@@ -48,7 +48,7 @@ class User(AbstractUser):
         verbose_name="Foydalanuvchi roli"
     )
     sms_code = models.CharField(max_length=6, blank=True, null=True, verbose_name="SMS kod")
-
+    telegram_id = models.BigIntegerField(default=0)
     USERNAME_FIELD = 'phone' 
     REQUIRED_FIELDS = []  
     objects = UserManager()  
@@ -71,7 +71,7 @@ class Teacher(models.Model):
     status = models.BooleanField(default=False, verbose_name="Holat")
     is_verified_teacher = models.BooleanField(default=False, verbose_name="O‘qituvchi")
     teacher_date = models.DateTimeField(auto_now=True, null=True, verbose_name="Ro‘yxatdan o‘tgan sana")
-    telegram_id = models.BigIntegerField(default=0)
+    
 
     def __str__(self):
         return self.full_name
@@ -139,7 +139,7 @@ class Student(models.Model):
     type_of_education = models.CharField(max_length=200, verbose_name="Ta’lim turi")
     status = models.BooleanField(default=False, verbose_name="Holat")
     student_date = models.DateTimeField(auto_now=True, null=True, verbose_name="Ro‘yxatdan o‘tgan sana")
-    telegram_id = models.BigIntegerField(default=0)
+    
     def __str__(self):
         return self.full_name
 
