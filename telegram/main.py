@@ -1,3 +1,4 @@
+import logging
 import requests
 from telegram import Update
 from telegram.ext import (
@@ -5,18 +6,26 @@ from telegram.ext import (
     CommandHandler,
     CallbackQueryHandler,
     CallbackContext,
+    Dispatcher,
     MessageHandler,
-    filters
+    Filters
 )
 from config import API_URL, BOT_TOKEN
 from teacher import teacher_menu, handle_teacher_callback
 
+# Log konfiguratsiyasi
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
+)
+logger = logging.getLogger(__name__)
+
 def start(update: Update, context: CallbackContext):
     telegram_id = update.effective_user.id
+    logger.info(f"Foydalanuvchi {telegram_id} /start buyrug'ini yubordi")
     
-    # Check user role via API
     try:
-        response = requests.post(API_URL, json={"telegram_id": telegram_id})
+        response = requests.post(API_URL, json={"telegram_id": telegram_id}, timeout=5)
         
         if response.status_code == 200:
             data = response.json()
@@ -29,24 +38,26 @@ def start(update: Update, context: CallbackContext):
         else:
             update.message.reply_text("Siz ro'yxatdan o'tmagansiz. Iltimos, avval ro'yxatdan o'ting.")
     except requests.exceptions.RequestException as e:
-        update.message.reply_text("Xatolik yuz berdi. Iltimos, keyinroq urunib ko'ring.")
-        print(f"API request failed: {e}")
+        logger.error(f"API so'rovida xatolik: {e}")
+        update.message.reply_text("Tizimda vaqtinchalik xatolik yuz berdi. Iltimos, keyinroq urunib ko'ring.")
 
 def error_handler(update: Update, context: CallbackContext):
-    """Log errors caused by updates."""
-    print(f'Update {update} caused error {context.error}')
+    """Xatoliklarni log qilish"""
+    logger.error(f'Xatolik: {context.error}', exc_info=context.error)
 
 def main():
-    # Yangi versiyada use_context kerak emas
-    updater = Updater(BOT_TOKEN)
+    # Botni ishga tushirish
+    updater = Updater(token=BOT_TOKEN, use_context=True)
     dp = updater.dispatcher
 
-    # Add handlers
+    # Handlerlar
     dp.add_handler(CommandHandler('start', start))
     dp.add_handler(CallbackQueryHandler(handle_teacher_callback))
+    
+    # Xatolik handleri
     dp.add_error_handler(error_handler)
 
-    # Start the Bot
+    logger.info("Bot ishga tushdi...")
     updater.start_polling()
     updater.idle()
 
