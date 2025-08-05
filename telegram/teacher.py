@@ -50,7 +50,6 @@ async def handle_teacher_callback(update: Update, context: ContextTypes.DEFAULT_
             has_next = data.get("next") is not None
             has_previous = data.get("previous") is not None
 
-            # Murojaatlar ro'yxati, raqam bilan
             text_lines = []
             for idx, student in enumerate(results, start=1):
                 name = student.get("student_full_name", "Noma'lum")
@@ -62,14 +61,12 @@ async def handle_teacher_callback(update: Update, context: ContextTypes.DEFAULT_
                 "\n".join(text_lines) if text_lines else "Murojaatlar topilmadi."
             )
 
-            # O'quvchilar tugmalari — har biri o'quvchi ID bilan
             keyboard = []
             for idx, student in enumerate(results, start=1):
                 student_id = student.get("student_id")
                 student_name = student.get("student_full_name", "Noma'lum")
                 keyboard.append([InlineKeyboardButton(f"{idx}. {student_name}", callback_data=f"student_{student_id}_{page}")])
 
-            # Sahifa boshqaruvi tugmalari
             nav_buttons = []
             if has_previous:
                 nav_buttons.append(InlineKeyboardButton("⬅️", callback_data=f"prev_page_{page}"))
@@ -87,7 +84,7 @@ async def handle_teacher_callback(update: Update, context: ContextTypes.DEFAULT_
         except Exception as e:
             await query.edit_message_text(text=f"❌ Xatolik yuz berdi: {e}")
 
-    # 2. O'quvchi tugmasi bosilganda, uning murojaatlari va topic_name_uz larini ko'rsatish
+    # 2. O'quvchi tanlandi — uning murojaatlari va mavzular ro'yxati (faqat raqamlar bilan, savolga o'tish tugmasiz)
     elif query.data.startswith("student_"):
         parts = query.data.split("_")
         student_id = int(parts[1])
@@ -116,21 +113,19 @@ async def handle_teacher_callback(update: Update, context: ContextTypes.DEFAULT_
                 return
 
             text_lines = [f"{student['student_full_name']} ga tegishli murojaatlar:\n"]
+            keyboard = []
+
+            # Mavzularni raqam bilan chiqazamiz, har biri alohida tugma bo'ladi
             for i, req in enumerate(requests_list, start=1):
                 topics = req.get("topics_name_uz", [])
                 topics_str = ", ".join(topics) if topics else "Mavzular mavjud emas"
                 text_lines.append(f"{i}. {topics_str}")
 
-            text = "\n".join(text_lines)
-
-            keyboard = []
-            for req in requests_list:
                 help_request_id = req.get("id")
-                student_name = student.get("student_full_name", "Oquvchi")
-                # URL dagi bo'sh joyni %20 ga almashtiramiz
-                url = f"https://iqmath.uz/dashboard/teacher/student-examples/{help_request_id}?student_name={student_name.replace(' ', '%20')}"
-                keyboard.append([InlineKeyboardButton("🔗 Savolga o‘tish", url=url)])
+                # Callback data: topic_{help_request_id}_{student_id}
+                keyboard.append([InlineKeyboardButton(f"{i}", callback_data=f"topic_{help_request_id}_{student_id}")])
 
+            text = "\n".join(text_lines)
             reply_markup = InlineKeyboardMarkup(keyboard)
 
             await query.edit_message_text(
@@ -141,10 +136,67 @@ async def handle_teacher_callback(update: Update, context: ContextTypes.DEFAULT_
         except Exception as e:
             await query.edit_message_text(text=f"❌ Xatolik yuz berdi: {e}")
 
-    # 3. Statistikalar tugmasi (hozircha demo)
+    # 3. Mavzu (topic) tanlandi — batafsil ma'lumot (Natija ko'rsatilmaydi)
+    elif query.data.startswith("topic_"):
+        parts = query.data.split("_")
+        help_request_id = int(parts[1])
+        student_id = int(parts[2])
+
+        try:
+            # Yana API dan to'liq ma'lumot olish uchun murojaatlar ro'yxatini olamiz
+            response = requests.post(
+                API_URL,
+                json={"telegram_id": telegram_id},
+                timeout=5
+            )
+            response.raise_for_status()
+            data = response.json()
+
+            results = data.get("results", [])
+            student = next((s for s in results if s.get("student_id") == student_id), None)
+
+            if not student:
+                await query.edit_message_text(text="❌ O‘quvchi topilmadi.")
+                return
+
+            requests_list = student.get("requests", [])
+            req = next((r for r in requests_list if r.get("id") == help_request_id), None)
+
+            if not req:
+                await query.edit_message_text(text="❌ Mavzu topilmadi.")
+                return
+
+            # Batafsil ma'lumotni tuzamiz (Natija qismi olib tashlandi)
+            text_lines = [
+                f"👤 O‘quvchi: {student.get('student_full_name', 'Noma\'lum')}",
+                f"🆔 Savol ID: {req.get('id')}",
+                f"📚 Sinf: {req.get('class_uz', 'Noma\'lum')}",
+                f"🕒 Yaratilgan vaqti: {req.get('created_at', 'Noma\'lum')}",
+                f"🏷 Status: {req.get('status', 'Noma\'lum')}",
+                f"⭐ Ball: {req.get('ball', '0') if req.get('ball') is not None else '0'}",
+            ]
+
+            # Javob berish tugmasi (agar kerak bo'lsa)
+            keyboard = [
+                [InlineKeyboardButton("✅ Javob berish", callback_data=f"answer_{help_request_id}_{student_id}")],
+                [InlineKeyboardButton("🔗 Savolga o‘tish", url=f"https://iqmath.uz/dashboard/teacher/student-examples/{help_request_id}?student_name={student.get('student_full_name', 'Oquvchi').replace(' ', '%20')}")]
+            ]
+
+            text = "\n".join(text_lines)
+            reply_markup = InlineKeyboardMarkup(keyboard)
+
+            await query.edit_message_text(
+                text=text,
+                reply_markup=reply_markup
+            )
+
+        except Exception as e:
+            await query.edit_message_text(text=f"❌ Xatolik yuz berdi: {e}")
+
+    # 4. Statistikalar tugmasi (hozircha demo)
     elif query.data == 'teacher_stats':
         await query.edit_message_text(text="📊 Murojaatlar statistikasi (demo)...")
 
-    # 4. Cancel tugmasi
+    # 5. Cancel tugmasi
     elif query.data == "cancel":
         await query.edit_message_text(text="❌ Menyu bekor qilindi.")
