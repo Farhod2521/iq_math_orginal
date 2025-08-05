@@ -20,6 +20,7 @@ async def teacher_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 # Callback handler
+# Callback handler
 async def handle_teacher_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -52,13 +53,17 @@ async def handle_teacher_callback(update: Update, context: ContextTypes.DEFAULT_
                 + ("\n".join(lines) if lines else "Murojaatlar topilmadi.")
             )
 
-            # Tugmalar: har bir o'quvchi uchun
-            kb = [[
-                InlineKeyboardButton(
-                    f"{i+1}. {s['student_full_name']}",
+            # Tugmalar: har bir o'quvchi uchun (5 tadan qatorlarga joylashtirish)
+            kb = []
+            row = []
+            for i, s in enumerate(results):
+                row.append(InlineKeyboardButton(
+                    f"{i+1}",
                     callback_data=f"student_{s['student_id']}_{page}"
-                )
-            ] for i, s in enumerate(results)]
+                ))
+                if len(row) == 5 or i == len(results) - 1:
+                    kb.append(row)
+                    row = []
 
             # Sahifa nav
             nav = []
@@ -71,7 +76,7 @@ async def handle_teacher_callback(update: Update, context: ContextTypes.DEFAULT_
         except Exception as e:
             await query.edit_message_text(text=f"❌ Xatolik yuz berdi: {e}")
 
-    # 2) O'quvchi tanlandi: uning murojaatlari — faqat raqamlangan mavzular
+    # 2) O'quvchi tanlandi: uning murojaatlari — faqat raqamlangan mavzular (5 tadan qatorlarga joylashtirish)
     elif query.data.startswith("student_"):
         _, stu_id, pg = query.data.split("_")
         stu_id, pg = int(stu_id), int(pg)
@@ -86,13 +91,17 @@ async def handle_teacher_callback(update: Update, context: ContextTypes.DEFAULT_
                 await query.edit_message_text(text="❌ Murojaatlar topilmadi.")
                 return
 
-            # Matn va raqamli tugmalar
+            # Matn va raqamli tugmalar (5 tadan qatorlarga joylashtirish)
             text = f"{student['student_full_name']} ga tegishli murojaatlar:\n\n"
             kb = []
+            row = []
             for i, req in enumerate(student['requests'], start=1):
                 topics = req.get("topics_name_uz", [])
                 text += f"{i}. {', '.join(topics) if topics else 'Mavzular mavjud emas'}\n"
-                kb.append([InlineKeyboardButton(str(i), callback_data=f"topic_{req['id']}_{stu_id}")])
+                row.append(InlineKeyboardButton(str(i), callback_data=f"topic_{req['id']}_{stu_id}"))
+                if len(row) == 5 or i == len(student['requests']):
+                    kb.append(row)
+                    row = []
 
             await query.edit_message_text(text=text, reply_markup=InlineKeyboardMarkup(kb))
         except Exception as e:
