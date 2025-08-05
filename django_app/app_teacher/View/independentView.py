@@ -6,7 +6,9 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework import status
 from collections import defaultdict
 from django.utils import timezone  
-
+from django.shortcuts import get_object_or_404
+from rest_framework.permissions import AllowAny
+from django_app.app_user.models import  Teacher, User
 
 class TeacherTopicHelpRequestListAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -125,3 +127,67 @@ class TeacherCommitToHelpRequestAPIView(APIView):
 #             teacher=user.teacher_profile,
 #             subject_id=subject_id
 #         )
+
+
+class TeacherTopicHelpRequestFromTelegramAPIView(APIView):
+    permission_classes = [AllowAny]
+
+    class StandardResultsSetPagination(PageNumberPagination):
+        page_size = 10
+        page_size_query_param = 'page_size'
+        max_page_size = 100
+
+    def post(self, request):
+        telegram_id = request.data.get('telegram_id')
+
+        if not telegram_id:
+            return Response({'error': 'telegram_id majburiy'}, status=400)
+
+        user = get_object_or_404(User, telegram_id=telegram_id, role='teacher')
+        teacher = get_object_or_404(Teacher, user=user)
+
+        help_requests = TopicHelpRequestIndependent.objects.filter(
+            teacher=teacher,
+            status='sent',  # yoki status='kutmoqda' — ammo bu bazada 'sent' bilan yozilgan
+        ).select_related('student__user', 'subject')\
+         .prefetch_related('topics')
+
+        grouped_data = defaultdict(list)
+
+        for req in help_requests:
+            subject = req.subject
+            class_name = getattr(subject, 'class_field', '1')
+            topics = req.topics.all()
+            status_text = "javob berilgan" if req.commit else "kutmoqda"
+
+            teacher_info = None
+            if req.teacher:
+                teacher_info = {
+                    "full_name": req.teacher.full_name,
+                    "reviewed_at": req.reviewed_at,
+                    "commit": req.commit
+                }
+
+            grouped_data[(req.student.id, req.student.full_name)].append({
+                "id": req.id,
+                "class_uz": f"{class_name}-sinf {subject.name_uz}",
+                "class_ru": f"{class_name}-класс {subject.name_ru}",
+                "topics_name_uz": [topic.name_uz for topic in topics],
+                "topics_name_ru": [topic.name_ru for topic in topics],
+                "created_at": req.created_at,
+                "status": status_text,
+                "teacher": teacher_info
+            })
+
+        response_data = [
+            {
+                "student_id": student_id,
+                "student_full_name": full_name,
+                "requests": reqs
+            }
+            for (student_id, full_name), reqs in grouped_data.items()
+        ]
+
+        paginator = self.StandardResultsSetPagination()
+        paginated_page = paginator.paginate_queryset(response_data, request)
+        return paginator.get_paginated_response(paginated_page)
