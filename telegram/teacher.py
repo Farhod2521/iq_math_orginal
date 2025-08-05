@@ -103,11 +103,14 @@ async def handle_teacher_callback(update: Update, context: ContextTypes.DEFAULT_
                     kb.append(row)
                     row = []
 
+            # Orqaga qaytish tugmasi
+            kb.append([InlineKeyboardButton("⬅️ Orqaga", callback_data=f"back_to_students_{pg}")])
+
             await query.edit_message_text(text=text, reply_markup=InlineKeyboardMarkup(kb))
         except Exception as e:
             await query.edit_message_text(text=f"❌ Xatolik yuz berdi: {e}")
 
-    # 3) Mavzu (raqam) tanlandi: batafsil ma'lumot (Natija yo'q)
+    # 3) Mavzu (raqam) tanlandi: batafsil ma'lumot
     elif query.data.startswith("topic_"):
         _, help_id, stu_id = query.data.split("_")
         help_id, stu_id = int(help_id), int(stu_id)
@@ -124,7 +127,7 @@ async def handle_teacher_callback(update: Update, context: ContextTypes.DEFAULT_
 
             # Batafsil ma'lumot
             lines = [
-                f"👤 O‘quvchi: {student['student_full_name']}",
+                f"👤 O'quvchi: {student['student_full_name']}",
                 f"🆔 Savol ID: {req['id']}",
                 f"📚 Sinf: {req.get('class_uz', '—')}",
                 f"🕒 Yaratilgan: {req.get('created_at', '—')}",
@@ -135,9 +138,10 @@ async def handle_teacher_callback(update: Update, context: ContextTypes.DEFAULT_
             kb = [
                 [InlineKeyboardButton("✅ Javob berish", callback_data=f"answer_{help_id}_{stu_id}")],
                 [InlineKeyboardButton(
-                    "🔗 Savolga o‘tish",
+                    "🔗 Savolga o'tish",
                     url=f"https://iqmath.uz/dashboard/teacher/student-examples/{help_id}?student_name={student['student_full_name'].replace(' ','%20')}"
-                )]
+                )],
+                [InlineKeyboardButton("⬅️ Orqaga", callback_data=f"back_to_topics_{stu_id}")]
             ]
 
             await query.edit_message_text(
@@ -147,10 +151,84 @@ async def handle_teacher_callback(update: Update, context: ContextTypes.DEFAULT_
         except Exception as e:
             await query.edit_message_text(text=f"❌ Xatolik yuz berdi: {e}")
 
-    # 4) Statistikalar (demo)
+    # 4) Orqaga qaytish handlerlari
+    elif query.data.startswith("back_to_topics_"):
+        stu_id = int(query.data.split("_")[-1])
+        try:
+            resp = requests.post(API_URL, json={"telegram_id": telegram_id}, timeout=5)
+            resp.raise_for_status()
+            data = resp.json()
+            student = next((s for s in data.get("results", []) if s['student_id']==stu_id), None)
+
+            if not student or not student.get("requests"):
+                await query.edit_message_text(text="❌ Murojaatlar topilmadi.")
+                return
+
+            # Matn va raqamli tugmalar (5 tadan qatorlarga joylashtirish)
+            text = f"{student['student_full_name']} ga tegishli murojaatlar:\n\n"
+            kb = []
+            row = []
+            for i, req in enumerate(student['requests'], start=1):
+                topics = req.get("topics_name_uz", [])
+                text += f"{i}. {', '.join(topics) if topics else 'Mavzular mavjud emas'}\n"
+                row.append(InlineKeyboardButton(str(i), callback_data=f"topic_{req['id']}_{stu_id}"))
+                if len(row) == 5 or i == len(student['requests']):
+                    kb.append(row)
+                    row = []
+
+            # Orqaga qaytish tugmasi (o'quvchilar ro'yxatiga)
+            kb.append([InlineKeyboardButton("⬅️ Orqaga", callback_data=f"back_to_students_1")])
+
+            await query.edit_message_text(text=text, reply_markup=InlineKeyboardMarkup(kb))
+        except Exception as e:
+            await query.edit_message_text(text=f"❌ Xatolik yuz berdi: {e}")
+
+    elif query.data.startswith("back_to_students_"):
+        page = int(query.data.split("_")[-1])
+        try:
+            resp = requests.post(API_URL, json={"telegram_id": telegram_id}, params={"page": page}, timeout=5)
+            resp.raise_for_status()
+            data = resp.json()
+
+            results = data.get("results", [])
+            has_prev = data.get("previous") is not None
+            has_next = data.get("next") is not None
+
+            # Matn
+            lines = [f"{i+1}. {s['student_full_name']} 📩 {len(s.get('requests', []))} ta murojaat"
+                     for i, s in enumerate(results)]
+            text = (
+                f"📬 Sizga kelgan murojaatlar ro'yxati (sahifa {page}):\n\n"
+                + ("\n".join(lines) if lines else "Murojaatlar topilmadi.")
+            )
+
+            # Tugmalar: har bir o'quvchi uchun (5 tadan qatorlarga joylashtirish)
+            kb = []
+            row = []
+            for i, s in enumerate(results):
+                row.append(InlineKeyboardButton(
+                    f"{i+1}",
+                    callback_data=f"student_{s['student_id']}_{page}"
+                ))
+                if len(row) == 5 or i == len(results) - 1:
+                    kb.append(row)
+                    row = []
+
+            # Sahifa nav
+            nav = []
+            if has_prev: nav.append(InlineKeyboardButton("⬅️", callback_data=f"prev_page_{page}"))
+            nav.append(InlineKeyboardButton("❌", callback_data="cancel"))
+            if has_next: nav.append(InlineKeyboardButton("➡️", callback_data=f"next_page_{page}"))
+            kb.append(nav)
+
+            await query.edit_message_text(text=text, reply_markup=InlineKeyboardMarkup(kb))
+        except Exception as e:
+            await query.edit_message_text(text=f"❌ Xatolik yuz berdi: {e}")
+
+    # 5) Statistikalar (demo)
     elif query.data == 'teacher_stats':
         await query.edit_message_text(text="📊 Murojaatlar statistikasi (demo)...")
 
-    # 5) Cancel
+    # 6) Cancel
     elif query.data == "cancel":
         await query.edit_message_text(text="❌ Menyu bekor qilindi.")
