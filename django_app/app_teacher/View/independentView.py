@@ -144,11 +144,11 @@ class TeacherTopicHelpRequestFromTelegramAPIView(APIView):
             return Response({'error': 'telegram_id majburiy'}, status=400)
 
         user = get_object_or_404(User, telegram_id=telegram_id, role='teacher')
-        teacher = get_object_or_404(Teacher, user=user)
 
+        # Faqat status='sent' bo'lgan va hali o‘qituvchi biriktirilmagan (kutmoqda holati)
         help_requests = TopicHelpRequestIndependent.objects.filter(
-            teacher=teacher,
-            status='sent',  # yoki status='kutmoqda' — ammo bu bazada 'sent' bilan yozilgan
+            status='sent',
+            teacher__isnull=True
         ).select_related('student__user', 'subject')\
          .prefetch_related('topics')
 
@@ -158,7 +158,7 @@ class TeacherTopicHelpRequestFromTelegramAPIView(APIView):
             subject = req.subject
             class_name = getattr(subject, 'class_field', '1')
             topics = req.topics.all()
-            status_text = "javob berilgan" if req.commit else "kutmoqda"
+            status_text = "kutmoqda" if not req.commit else "javob berilgan"
 
             teacher_info = None
             if req.teacher:
