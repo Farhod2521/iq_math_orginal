@@ -6,9 +6,8 @@ from telegram.ext import (
     CommandHandler,
     CallbackQueryHandler,
     CallbackContext,
-    Dispatcher,
+
     MessageHandler,
-    Filters
 )
 from config import API_URL, BOT_TOKEN
 from teacher import teacher_menu, handle_teacher_callback
