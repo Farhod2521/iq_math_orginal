@@ -4,48 +4,23 @@ from telegram.ext import ContextTypes
 
 API_URL = "https://api.iqmath.uz/api/v1/func_teacher/teacher-independent/telegram-list/"
 
-# Boshlang‘ich o‘qituvchi menyusi
+# Asosiy menyu
 async def teacher_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_data = context.user_data.get('user_info')
     full_name = user_data['data']['full_name']
-    
+
     keyboard = [
         [InlineKeyboardButton("📬 Menga kelgan murojaatlar", callback_data='teacher_applications')],
         [InlineKeyboardButton("📊 Murojaatlar statistikasi", callback_data='teacher_stats')]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    
+
     await update.message.reply_text(
         f"👋 Assalomu alaykum {full_name}!\nQuyidagi menyudan foydalaning:",
         reply_markup=reply_markup
     )
 
-# Inline tugmalar klaviaturasini yasash
-def build_teacher_applications_keyboard(results, page, has_next, has_previous):
-    keyboard = []
-
-    for item in results:
-        student_name = item.get("student_full_name", "No Name")
-        student_id = item.get("student_id")
-        count = len(item.get("requests", []))
-        btn_text = f"{student_name} 📩 {count} ta murojaat"
-        keyboard.append([
-            InlineKeyboardButton(btn_text, callback_data=f"student_{student_id}")
-        ])
-
-    # Pagination tugmalari
-    pagination_buttons = []
-    if has_previous:
-        pagination_buttons.append(InlineKeyboardButton("⬅️ Oldingi", callback_data=f"prev_page_{page}"))
-    if has_next:
-        pagination_buttons.append(InlineKeyboardButton("Keyingi ➡️", callback_data=f"next_page_{page}"))
-
-    if pagination_buttons:
-        keyboard.append(pagination_buttons)
-
-    return InlineKeyboardMarkup(keyboard)
-
-# Callback tugmalarni boshqarish
+# Callback handler
 async def handle_teacher_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -53,14 +28,12 @@ async def handle_teacher_callback(update: Update, context: ContextTypes.DEFAULT_
     telegram_id = query.from_user.id
     page = 1
 
-    # Sahifa aniqlash
     if query.data.startswith("next_page_"):
         page = int(query.data.split("_")[-1]) + 1
     elif query.data.startswith("prev_page_"):
         page = int(query.data.split("_")[-1]) - 1
 
-    # Murojaatlar sahifasi
-    if query.data in ['teacher_applications', 'next_page_1', 'prev_page_2'] or query.data.startswith(("next_page_", "prev_page_")):
+    if query.data in ['teacher_applications'] or query.data.startswith(("next_page_", "prev_page_")):
         try:
             response = requests.post(
                 API_URL,
@@ -75,24 +48,53 @@ async def handle_teacher_callback(update: Update, context: ContextTypes.DEFAULT_
             has_next = data.get("next") is not None
             has_previous = data.get("previous") is not None
 
-            reply_markup = build_teacher_applications_keyboard(results, page, has_next, has_previous)
+            text_lines = []
+            index = 1
+            for student in results:
+                name = student.get("student_full_name", "Noma'lum")
+                count = len(student.get("requests", []))
+                text_lines.append(f"{index}. {name} 📩 {count} ta murojaat")
+                index += 1
+
+            text = "📬 Sizga kelgan murojaatlar ro'yxati (sahifa {}):\n\n{}".format(
+                page,
+                "\n".join(text_lines) if text_lines else "Murojaatlar topilmadi."
+            )
+
+            # Pagination tugmalari
+            pagination_buttons = []
+            for i in range(1, 11):
+                pagination_buttons.append(InlineKeyboardButton(str(i), callback_data=f"student_dummy_{i}"))
+
+            keyboard = []
+            for i in range(0, 10, 5):
+                keyboard.append(pagination_buttons[i:i+5])
+
+            nav_buttons = []
+            if has_previous:
+                nav_buttons.append(InlineKeyboardButton("⬅️", callback_data=f"prev_page_{page}"))
+            nav_buttons.append(InlineKeyboardButton("❌", callback_data="cancel"))
+            if has_next:
+                nav_buttons.append(InlineKeyboardButton("➡️", callback_data=f"next_page_{page}"))
+            keyboard.append(nav_buttons)
+
+            reply_markup = InlineKeyboardMarkup(keyboard)
 
             await query.edit_message_text(
-                text=f"📬 Sizga kelgan murojaatlar ro'yxati (sahifa {page}):",
+                text=text,
                 reply_markup=reply_markup
             )
         except Exception as e:
-            await query.edit_message_text(
-                text=f"❌ Xatolik yuz berdi: {e}"
-            )
+            await query.edit_message_text(text=f"❌ Xatolik yuz berdi: {e}")
 
-    # Statistika tugmasi
     elif query.data == 'teacher_stats':
         await query.edit_message_text(text="📊 Murojaatlar statistikasi (demo)...")
 
-    # Har bir studentning murojaatini ko‘rsatish (keyinchalik to‘ldirish uchun joy)
     elif query.data.startswith("student_"):
         student_id = query.data.split("_")[1]
         await query.edit_message_text(
             text=f"🧑‍🎓 Student ID: {student_id} murojaatlari ko‘rsatilmoqda (ishlab chiqilmoqda)..."
         )
+
+    elif query.data == "cancel":
+        await query.edit_message_text(text="❌ Menyu bekor qilindi.")
