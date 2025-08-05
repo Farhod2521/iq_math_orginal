@@ -6,13 +6,17 @@ async def teacher_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     full_name = user_data['data']['full_name']
     
     keyboard = [
-        [InlineKeyboardButton("Menga kelgan murojaatlar", callback_data='teacher_applications')],
-        [InlineKeyboardButton("Kelgan murojatlar bo'yicha statistika", callback_data='teacher_stats')]
+        [
+            InlineKeyboardButton("📬 Menga kelgan murojaatlar", callback_data='teacher_applications')
+        ],
+        [
+            InlineKeyboardButton("📊 Murojaatlar statistikasi", callback_data='teacher_stats')
+        ]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     await update.message.reply_text(
-        f"Assalomu alaykum {full_name}! Xush kelibsiz!",
+        f"👋 Assalomu alaykum {full_name}!\nXush kelibsiz! Quyidagi menyudan foydalaning:",
         reply_markup=reply_markup
     )
 
@@ -21,6 +25,6 @@ async def handle_teacher_callback(update: Update, context: ContextTypes.DEFAULT_
     await query.answer()
     
     if query.data == 'teacher_applications':
-        await query.edit_message_text(text="Sizga kelgan murojaatlar ro'yxati...")
+        await query.edit_message_text(text="📬 Sizga kelgan murojaatlar ro'yxati...")
     elif query.data == 'teacher_stats':
-        await query.edit_message_text(text="Murojaatlar statistikasi...")
+        await query.edit_message_text(text="📊 Murojaatlar statistikasi...")
