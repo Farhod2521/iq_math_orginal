@@ -214,14 +214,11 @@ class StudentVerifySmsCodeAPIView(APIView):
             except Student.DoesNotExist:
                 return Response({"detail": "Student profile not found."}, status=status.HTTP_404_NOT_FOUND)
 
-
             refresh = RefreshToken.for_user(user)
             access_token = refresh.access_token
             access_token.set_exp(lifetime=timedelta(hours=13))
             access_token['student_id'] = student.id
             expires_in = timedelta(hours=13).total_seconds()
-
-      
 
             return Response({
                 "message": "Ro'yxatdan o'tish muvaffaqiyatli yakunlandi.",
@@ -229,6 +226,7 @@ class StudentVerifySmsCodeAPIView(APIView):
                 "password": serializer.validated_data['password'],
                 "access_token": str(access_token),
                 "expires_in": expires_in,
+                "role": user.role  # mana shu qator qo‘shildi
             }, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
