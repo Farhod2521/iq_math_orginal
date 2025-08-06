@@ -191,3 +191,16 @@ class TeacherTopicHelpRequestFromTelegramAPIView(APIView):
         paginator = self.StandardResultsSetPagination()
         paginated_page = paginator.paginate_queryset(response_data, request)
         return paginator.get_paginated_response(paginated_page)
+    
+
+class GetTelegramIDFromHelpRequestAPIView(APIView):
+
+
+    def get(self, request, pk):
+        try:
+            help_request = TopicHelpRequestIndependent.objects.select_related('student__user').get(pk=pk)
+        except TopicHelpRequestIndependent.DoesNotExist:
+            return Response({'detail': 'Bunday IDga ega so‘rov topilmadi.'}, status=status.HTTP_404_NOT_FOUND)
+        
+        telegram_id = help_request.student.user.telegram_id
+        return Response({'telegram_id': telegram_id})
