@@ -55,3 +55,11 @@ class Payment(models.Model):
     class Meta:
         verbose_name = "To‘lov"
         verbose_name_plural = "To‘lovlar"
+
+
+
+class MonthlyPayment(models.Model):
+    price = models.PositiveIntegerField(default=1000, help_text="Oylik to‘lov summasi (so‘m)")
+
+    def __str__(self):
+        return f"Oylik to‘lov: {self.price} so‘m"
