@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.utils import timezone
 from django.conf import settings
-from .models import Payment, Subscription, SubscriptionSetting
+from .models import Payment, Subscription, SubscriptionSetting, MonthlyPayment
 from datetime import timedelta
 import hashlib
 from .utils import get_multicard_token 
@@ -24,7 +24,13 @@ class InitiatePaymentAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        amount = request.data.get('amount', 1000)
+        # Bazadan oylik to'lov narxini olish
+        monthly_payment = MonthlyPayment.objects.first()
+        base_amount = monthly_payment.price if monthly_payment else 1000
+
+        # request.data dan amount olish, agar yuborilmagan bo'lsa bazadagi qiymat
+        amount = request.data.get('amount', base_amount)
+
         coupon_code = request.data.get('coupon', None)
 
         if not amount:
@@ -55,6 +61,8 @@ class InitiatePaymentAPIView(APIView):
         if discount_percent > 0:
             discounted_amount = discounted_amount * (1 - discount_percent / 100)
 
+        # Token olish va to‘lov yaratish jarayoni...
+
         try:
             token = get_multicard_token()
         except Exception as e:
@@ -69,7 +77,6 @@ class InitiatePaymentAPIView(APIView):
 
         data = {
             "store_id": 1915,
-            # "store_id": 6,  ##### TESTIVIY
             "amount": amount_in_tiyin,
             "invoice_id": transaction_id,
             "return_url": "https://iqmath.uz/",
