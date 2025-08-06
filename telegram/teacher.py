@@ -160,7 +160,7 @@ async def handle_media_answer(update: Update, context: ContextTypes.DEFAULT_TYPE
                 f"✅ Ovozli javob qabul qilindi va o'quvchiga yuborildi!",
                 reply_markup=InlineKeyboardMarkup([
                     [InlineKeyboardButton("⬅️ Orqaga", callback_data=f"topic_{help_id}_{stu_id}")]
-                ])
+                ]))
             
             # Forward to student if available
             if student_telegram_id:
