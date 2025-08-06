@@ -23,42 +23,93 @@ async def answer_help_request(update: Update, context: ContextTypes.DEFAULT_TYPE
     query = update.callback_query
     await query.answer()
     
-    # Callback ma'lumotlarini ajratib olish
-    _, help_id, stu_id = query.data.split("_")
-    help_id, stu_id = int(help_id), int(stu_id)
-    
-    # Telegram ID ni tekshirish uchun API so'rov
     try:
-        response = requests.get(
-            f"https://api.iqmath.uz/api/v1/func_teacher/teacher/help-request/{help_id}/telegram-id/"
-        )
-        response.raise_for_status()
-        data = response.json()
+        # Parse callback data
+        _, help_id, stu_id = query.data.split("_")
+        help_id, stu_id = int(help_id), int(stu_id)
         
-        if data.get("telegram_id", 0) == 0:
-            await query.edit_message_text(
-                text="❌ Ushbu o'quvchi hali Telegramdan ro'yxatdan o'tmagan.",
+        # Store the original message ID for possible later editing
+        original_message_id = query.message.message_id
+        
+        # Check student's Telegram ID via API
+        try:
+            response = requests.get(
+                f"https://api.iqmath.uz/api/v1/func_teacher/teacher/help-request/{help_id}/telegram-id/",
+                timeout=10
+            )
+            response.raise_for_status()
+            data = response.json()
+            
+            telegram_id = data.get("telegram_id", 0)
+            
+            if telegram_id == 0:
+                # Student not registered on Telegram
+                await context.bot.edit_message_text(
+                    chat_id=query.message.chat_id,
+                    message_id=original_message_id,
+                    text="❌ Ushbu o'quvchi hali Telegramdan ro'yxatdan o'tmagan.\n\n"
+                         "Iltimos, platforma orqali javob bering yoki o'quvchiga Telegramda ro'yxatdan o'tishni aytib qo'ying.",
+                    reply_markup=InlineKeyboardMarkup([
+                        [InlineKeyboardButton("⬅️ Orqaga", callback_data=f"topic_{help_id}_{stu_id}")]
+                    ])
+                )
+                return
+            
+            # Prepare for receiving answer
+            context.user_data.update({
+                'waiting_for_answer': True,
+                'current_help_id': help_id,
+                'current_stu_id': stu_id,
+                'student_telegram_id': telegram_id,
+                'original_message_id': original_message_id
+            })
+            
+            # Delete the original message to clean up the chat
+            await context.bot.delete_message(
+                chat_id=query.message.chat_id,
+                message_id=original_message_id
+            )
+            
+            # Send new message prompting for answer
+            prompt_message = await context.bot.send_message(
+                chat_id=query.message.chat_id,
+                text=f"✍️ Savol ID: {help_id} uchun javobingizni yozing:\n\n"
+                     f"O'quvchi: {query.message.text.split('\n')[0].replace('👤 O'quvchi: ', '')}\n\n"
+                     f"Yozishingiz mumkin:\n"
+                     f"- Matn\n"
+                     f"- Rasm (screenshot)\n"
+                     f"- Voice xabar\n\n"
+                     f"Javobingiz avtomatik ravishda o'quvchiga yuboriladi.",
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("❌ Bekor qilish", callback_data=f"cancel_answer_{help_id}_{stu_id}")]
+                ])
+            )
+            
+            # Store the prompt message ID for possible cancellation
+            context.user_data['prompt_message_id'] = prompt_message.message_id
+            
+        except requests.exceptions.RequestException as e:
+            await context.bot.edit_message_text(
+                chat_id=query.message.chat_id,
+                message_id=original_message_id,
+                text=f"❌ Telegram ID ni tekshirishda xatolik yuz berdi. Iltimos, keyinroq urunib ko'ring.\n\nXatolik: {str(e)}",
                 reply_markup=InlineKeyboardMarkup([
                     [InlineKeyboardButton("⬅️ Orqaga", callback_data=f"topic_{help_id}_{stu_id}")]
                 ])
             )
-        else:
-            # Foydalanuvchiga javob yozish uchun so'rov yuborish
-            await context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text=f"✍️ Endi javobingizni yozing (Savol ID: {help_id}):"
-            )
-            # Javob matnini kutib olish uchun context.user_data ga saqlaymiz
-            context.user_data['waiting_for_answer'] = True
-            context.user_data['current_help_id'] = help_id
-            context.user_data['current_stu_id'] = stu_id
             
     except Exception as e:
-        await query.edit_message_text(
-            text=f"❌ Xatolik yuz berdi: {e}",
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("⬅️ Orqaga", callback_data=f"topic_{help_id}_{stu_id}")]
-            ])
+        # Handle any unexpected errors
+        error_message = await context.bot.send_message(
+            chat_id=query.message.chat_id,
+            text=f"❌ Kutilmagan xatolik yuz berdi: {str(e)}\n\nIltimos, qaytadan urunib ko'ring."
+        )
+        
+        # Delete error message after 5 seconds
+        await asyncio.sleep(5)
+        await context.bot.delete_message(
+            chat_id=query.message.chat_id,
+            message_id=error_message.message_id
         )
 
 # Javob matnini qabul qilish handleri
