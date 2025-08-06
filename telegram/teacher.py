@@ -62,22 +62,61 @@ async def answer_help_request(update: Update, context: ContextTypes.DEFAULT_TYPE
         )
 
 # Javob matnini qabul qilish handleri
+# Javob matnini qabul qilish handleri (yangilangan versiyasi)
 async def receive_answer_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if context.user_data.get('waiting_for_answer', False):
         help_id = context.user_data['current_help_id']
         stu_id = context.user_data['current_stu_id']
         answer_text = update.message.text
         
-        # Bu yerda APIga javobni yuborish kodi bo'lishi kerak
-        # Demo uchun faqat xabarni ko'rsatamiz
-        await update.message.reply_text(
-            f"✅ Javobingiz qabul qilindi!\n"
-            f"Savol ID: {help_id}\n"
-            f"Javob: {answer_text[:100]}...",
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("⬅️ Orqaga", callback_data=f"topic_{help_id}_{stu_id}")]
-            ])
-        )
+        try:
+            # Bu yerda APIga javobni yuborish kodi bo'lishi kerak
+            # Lekin hozircha demo uchun faqat xabarni ko'rsatamiz
+            
+            # Avval foydalanuvchiga javob qabul qilindi degan xabar
+            sent_message = await update.message.reply_text(
+                f"✅ Javobingiz qabul qilindi va o'quvchiga yuborildi!\n"
+                f"Savol ID: {help_id}\n"
+                f"Javobingiz: {answer_text[:200]}...",
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("⬅️ Orqaga", callback_data=f"topic_{help_id}_{stu_id}")]
+                ])
+            
+            # Keyin asl javobni o'quvchiga yuborish (agar telegram_id mavjud bo'lsa)
+            telegram_id_response = requests.get(
+                f"https://api.iqmath.uz/api/v1/func_teacher/teacher/help-request/{help_id}/telegram-id/"
+            )
+            
+            if telegram_id_response.status_code == 200:
+                data = telegram_id_response.json()
+                student_telegram_id = data.get("telegram_id")
+                
+                if student_telegram_id and student_telegram_id != 0:
+                    try:
+                        await context.bot.send_message(
+                            chat_id=student_telegram_id,
+                            text=f"📬 Sizning savolingizga javob:\n\n"
+                                 f"Savol ID: {help_id}\n"
+                                 f"Javob: {answer_text}"
+                        )
+                    except Exception as e:
+                        print(f"O'quvchiga javob yuborishda xatolik: {e}")
+                        await sent_message.edit_text(
+                            text=f"✅ Javobingiz qabul qilindi, lekin o'quvchiga yuborishda xatolik yuz berdi.\n"
+                                 f"Savol ID: {help_id}\n"
+                                 f"Xatolik: {str(e)}",
+                            reply_markup=InlineKeyboardMarkup([
+                                [InlineKeyboardButton("⬅️ Orqaga", callback_data=f"topic_{help_id}_{stu_id}")]
+                            ])
+                        )
+            
+        except Exception as e:
+            await update.message.reply_text(
+                f"❌ Javobingizni saqlashda xatolik yuz berdi: {e}",
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("⬅️ Orqaga", callback_data=f"topic_{help_id}_{stu_id}")]
+                ])
+            )
         
         # Holatni tozalash
         context.user_data.pop('waiting_for_answer', None)
