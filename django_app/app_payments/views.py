@@ -190,6 +190,13 @@ class PaymentCallbackAPIView(APIView):
 
 
 
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework import status
+from django.utils import timezone
+from .models import MonthlyPayment, Student, Subscription, SubscriptionSetting  # mos importlar
+
 class SubscriptionTrialDaysAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -202,7 +209,9 @@ class SubscriptionTrialDaysAPIView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        trial_days = SubscriptionSetting.objects.first().free_trial_days
+        trial_days_setting = SubscriptionSetting.objects.first()
+        trial_days = trial_days_setting.free_trial_days if trial_days_setting else 0
+
         now = timezone.now()
 
         if now < subscription.end_date:
@@ -210,14 +219,18 @@ class SubscriptionTrialDaysAPIView(APIView):
         else:
             remaining_days = 0
 
-        # Logika: agar to‘lov muddati tugagan bo‘lsa, is_paid = False
+        # is_paid flag logikasi
         is_paid = subscription.is_paid and remaining_days > 0
+
+        # MonthlyPayment modeldan narx olish
+        monthly_payment = MonthlyPayment.objects.first()
+        payment_amount = monthly_payment.price if monthly_payment else 1000
 
         return Response(
             {
                 "days_until_next_payment": remaining_days,
                 "end_date": subscription.end_date.strftime("%d/%m/%Y"),
-                "payment_amount": 1000,
+                "payment_amount": payment_amount,
                 "is_paid": is_paid
             },
             status=status.HTTP_200_OK
