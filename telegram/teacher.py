@@ -1,6 +1,6 @@
 import requests
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.ext import ContextTypes
+from telegram.ext import ContextTypes, MessageHandler, filters, CallbackQueryHandler
 
 API_URL = "https://api.iqmath.uz/api/v1/func_teacher/teacher-independent/telegram-list/"
 
@@ -18,8 +18,72 @@ async def teacher_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
+# Javob yozish uchun handler
+async def answer_help_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    
+    # Callback ma'lumotlarini ajratib olish
+    _, help_id, stu_id = query.data.split("_")
+    help_id, stu_id = int(help_id), int(stu_id)
+    
+    # Telegram ID ni tekshirish uchun API so'rov
+    try:
+        response = requests.get(
+            f"https://api.iqmath.uz/api/v1/func_teacher/teacher/help-request/{help_id}/telegram-id/"
+        )
+        response.raise_for_status()
+        data = response.json()
+        
+        if data.get("telegram_id", 0) == 0:
+            await query.edit_message_text(
+                text="❌ Ushbu o'quvchi hali Telegramdan ro'yxatdan o'tmagan.",
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("⬅️ Orqaga", callback_data=f"topic_{help_id}_{stu_id}")]
+                ])
+            )
+        else:
+            # Foydalanuvchiga javob yozish uchun so'rov yuborish
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=f"✍️ Endi javobingizni yozing (Savol ID: {help_id}):"
+            )
+            # Javob matnini kutib olish uchun context.user_data ga saqlaymiz
+            context.user_data['waiting_for_answer'] = True
+            context.user_data['current_help_id'] = help_id
+            context.user_data['current_stu_id'] = stu_id
+            
+    except Exception as e:
+        await query.edit_message_text(
+            text=f"❌ Xatolik yuz berdi: {e}",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("⬅️ Orqaga", callback_data=f"topic_{help_id}_{stu_id}")]
+            ])
+        )
 
-# Callback handler
+# Javob matnini qabul qilish handleri
+async def receive_answer_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if context.user_data.get('waiting_for_answer', False):
+        help_id = context.user_data['current_help_id']
+        stu_id = context.user_data['current_stu_id']
+        answer_text = update.message.text
+        
+        # Bu yerda APIga javobni yuborish kodi bo'lishi kerak
+        # Demo uchun faqat xabarni ko'rsatamiz
+        await update.message.reply_text(
+            f"✅ Javobingiz qabul qilindi!\n"
+            f"Savol ID: {help_id}\n"
+            f"Javob: {answer_text[:100]}...",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("⬅️ Orqaga", callback_data=f"topic_{help_id}_{stu_id}")]
+            ])
+        )
+        
+        # Holatni tozalash
+        context.user_data.pop('waiting_for_answer', None)
+        context.user_data.pop('current_help_id', None)
+        context.user_data.pop('current_stu_id', None)
+
 # Callback handler
 async def handle_teacher_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -151,7 +215,11 @@ async def handle_teacher_callback(update: Update, context: ContextTypes.DEFAULT_
         except Exception as e:
             await query.edit_message_text(text=f"❌ Xatolik yuz berdi: {e}")
 
-    # 4) Orqaga qaytish handlerlari
+    # 4) Javob berish handleri
+    elif query.data.startswith("answer_"):
+        await answer_help_request(update, context)
+
+    # 5) Orqaga qaytish handlerlari
     elif query.data.startswith("back_to_topics_"):
         stu_id = int(query.data.split("_")[-1])
         try:
@@ -225,10 +293,17 @@ async def handle_teacher_callback(update: Update, context: ContextTypes.DEFAULT_
         except Exception as e:
             await query.edit_message_text(text=f"❌ Xatolik yuz berdi: {e}")
 
-    # 5) Statistikalar (demo)
+    # 6) Statistikalar (demo)
     elif query.data == 'teacher_stats':
         await query.edit_message_text(text="📊 Murojaatlar statistikasi (demo)...")
 
-    # 6) Cancel
+    # 7) Cancel
     elif query.data == "cancel":
         await query.edit_message_text(text="❌ Menyu bekor qilindi.")
+
+# Application builderda handlerlarni qo'shish
+def setup_handlers(application):
+    application.add_handler(CallbackQueryHandler(
+        handle_teacher_callback, 
+        pattern="^(teacher_applications|teacher_stats|student_|topic_|answer_|back_to_|prev_page_|next_page_|cancel)"))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, receive_answer_text))
