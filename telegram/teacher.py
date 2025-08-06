@@ -74,7 +74,7 @@ async def answer_help_request(update: Update, context: ContextTypes.DEFAULT_TYPE
             prompt_message = await context.bot.send_message(
                 chat_id=query.message.chat_id,
                 text=f"✍️ Savol ID: {help_id} uchun javobingizni yozing:\n\n"
-                     f"O'quvchi: {query.message.text.split('\n')[0].replace('👤 O'quvchi: ', '')}\n\n"
+                     f"O'quvchi: {query.message.text.split('\n')[0].replace('👤 O\'quvchi: ', '')}\n\n"
                      f"Yozishingiz mumkin:\n"
                      f"- Matn\n"
                      f"- Rasm (screenshot)\n"
