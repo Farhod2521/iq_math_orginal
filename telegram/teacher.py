@@ -80,7 +80,7 @@ async def receive_answer_text(update: Update, context: ContextTypes.DEFAULT_TYPE
                 f"Javobingiz: {answer_text[:200]}...",
                 reply_markup=InlineKeyboardMarkup([
                     [InlineKeyboardButton("⬅️ Orqaga", callback_data=f"topic_{help_id}_{stu_id}")]
-                ])
+                ]))
             
             # Keyin asl javobni o'quvchiga yuborish (agar telegram_id mavjud bo'lsa)
             telegram_id_response = requests.get(
