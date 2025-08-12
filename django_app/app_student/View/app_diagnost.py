@@ -56,7 +56,7 @@ class StudentDiagnostSubjectsAPIView(APIView):
                 "image_uz": subject.image_uz.url if subject.image_uz else "",
                 "image_ru": subject.image_ru.url if subject.image_ru else "",
                 "progress_percent": progress_percent,   # diagnostika qilgan bo‘lsa raqam, qilmagan bo‘lsa None
-                "is_diagnost_open": has_diagnost        # 🔹 yangi qo‘shilgan maydon
+                "has_taken_diagnostic ": has_diagnost        # 🔹 yangi qo‘shilgan maydon
             })
 
         return Response(data)
