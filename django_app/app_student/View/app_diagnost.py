@@ -16,7 +16,7 @@ class StudentDiagnostSubjectsAPIView(APIView):
     def get(self, request):
         student = Student.objects.get(user=request.user)
 
-        # O‘quvchining barcha diagnostika qilgan subjectlari
+        # O‘quvchining barcha diagnostika qilgan subjectlari progress foizi bilan
         diagnost_dict = {}
         diagnost_list = Diagnost_Student.objects.filter(student=student).select_related('subject')
 
@@ -36,12 +36,15 @@ class StudentDiagnostSubjectsAPIView(APIView):
 
             diagnost_dict[d.subject.id] = progress_percent
 
-        # Endi barcha fanlar ro'yxatini olamiz
+        # Barcha fanlarni olamiz
         subjects = Subject.objects.all().select_related('classes')
         data = []
         for subject in subjects:
             class_name = subject.classes.name if subject.classes else ""
             progress_percent = diagnost_dict.get(subject.id)
+
+            # ✅ Diagnostika topshirganmi yoki yo‘qmi
+            has_diagnost = Diagnost_Student.objects.filter(student=student, subject=subject).exists()
 
             data.append({
                 "id": subject.id,
@@ -52,7 +55,8 @@ class StudentDiagnostSubjectsAPIView(APIView):
                 "class_ru": f"{class_name}-класс {subject.name_ru}",
                 "image_uz": subject.image_uz.url if subject.image_uz else "",
                 "image_ru": subject.image_ru.url if subject.image_ru else "",
-                "progress_percent": progress_percent  # diagnostika topshirgan bo‘lsa raqam, yo‘q bo‘lsa None
+                "progress_percent": progress_percent,   # diagnostika qilgan bo‘lsa raqam, qilmagan bo‘lsa None
+                "is_diagnost_open": has_diagnost        # 🔹 yangi qo‘shilgan maydon
             })
 
         return Response(data)
