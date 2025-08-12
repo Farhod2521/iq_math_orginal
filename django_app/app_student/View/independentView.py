@@ -29,9 +29,8 @@ class TopicHelpRequestCreateView(CreateAPIView):
         instance.save()
 
         student = getattr(request.user, 'student_profile', None)
-        
-        # ✅ telegram_id mavjudligini xavfsiz tekshirish
-        telegram_id = getattr(student, 'telegram_id', None)
+        telegram_id = getattr(request.user, 'telegram_id', None)
+
         if student and telegram_id and telegram_id != 0:
             send_question_to_telegram(
                 student_full_name=student.full_name,
