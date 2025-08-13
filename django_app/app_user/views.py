@@ -661,7 +661,8 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.http import HttpResponse
 from django.utils.encoding import escape_uri_path
 from openpyxl import Workbook
-
+from django.db.models import Value
+from django.db.models.functions import Concat
 
 class StudentsListView(APIView):
     permission_classes = [IsAuthenticated]
@@ -676,15 +677,19 @@ class StudentsListView(APIView):
 
         students = Student.objects.filter(user__role='student', status=True)
 
+        # Full name search
         if search_query:
             students = students.filter(full_name__icontains=search_query)
 
+        # Class name filter (7-sinf Algebra format)
         if class_filter:
-            # class_name_uz — bu bir nechta maydonlardan yasalgan, shuning uchun 
-            # M2M orqali join qilib filter qilamiz
-            students = students.filter(
-                class_name__name_uz__icontains=class_filter
-            )
+            students = students.annotate(
+                class_name_full=Concat(
+                    'class_name__classes__name',
+                    Value('-sinf '),
+                    'class_name__name_uz'
+                )
+            ).filter(class_name_full__icontains=class_filter)
 
         students = students.order_by('id')
 
@@ -799,8 +804,6 @@ class StudentsListView(APIView):
             "total_pages": total_pages,
             "results": current_page.object_list
         })
-
-
 
 
 
