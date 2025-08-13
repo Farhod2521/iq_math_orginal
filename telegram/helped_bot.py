@@ -45,7 +45,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             teacher_name = result.get("teacher_name")
             logs = await get_logs(help_request_id)
 
-            url = f"https://mentor.iqmath.uz/dashboard/teacher/student-examples/{help_request_id}?student_name=Oquvchi"
+            url = f"https://iqmath.uz/dashboard/teacher/student-examples/{help_request_id}?student_name=Oquvchi"
             new_markup = InlineKeyboardMarkup([
                 [InlineKeyboardButton("🔗 Savolga o‘tish", url=url)]
             ])

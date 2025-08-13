@@ -8,7 +8,7 @@ from .views import(
 from .View.unsolved import  TeacherUnsolvedQuestionReportListView, TeacherAnswerUnsolvedQuestionView
 from  .View.gruop_student import AddStudentsToGroupAPIView, GroupCreateAPIView, GroupListAPIView, GroupDetailAPIView
 from .View.reorderOrderIndex  import  ReorderTopicAPIView, ReorderChapterAPIView, ReorderSubjectAPIView
-from .View.independentView import  TeacherTopicHelpRequestListAPIView, TeacherTopicHelpRequestDetailAPIView, GetTelegramIDFromHelpRequestAPIView,TeacherTopicHelpRequestFromTelegramAPIView,TeacherCommitToHelpRequestAPIView
+from .View.independentView import  TeacherTopicHelpRequestListAPIView, TeacherTopicHelpRequestDeleteAPIView,TeacherTopicHelpRequestDetailAPIView, GetTelegramIDFromHelpRequestAPIView,TeacherTopicHelpRequestFromTelegramAPIView,TeacherCommitToHelpRequestAPIView
 from .View.coupon import   CreateTeacherCouponAPIView
 from .View.login_as_student import LoginAsStudentAPIView, ChangeStudentPasswordAPIView
 from  .View.teacherreward import  TeacherRewardAPIView, TeacherRewardListAPIView
@@ -66,5 +66,7 @@ urlpatterns = [
     path('teacher/reward/', TeacherRewardAPIView.as_view(), name='teacher-reward'),
     path('teacher/reward/list/', TeacherRewardListAPIView.as_view(), name='teacher-reward-list'),
     path('teacher/help-request/<int:pk>/telegram-id/', GetTelegramIDFromHelpRequestAPIView.as_view(), name='get-telegram-id'),
+    path('teacher/help-request/<int:pk>/delete/', TeacherTopicHelpRequestDeleteAPIView.as_view(), name='teacher-help-request-delete'),
+
 
 ]

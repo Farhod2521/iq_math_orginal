@@ -670,10 +670,26 @@ class StudentsListView(APIView):
         ashgabat_tz = pytz.timezone("Asia/Ashgabat")
         export_excel = request.GET.get("export") == "excel"
 
-        students = Student.objects.filter(user__role='student', status=True).order_by('id')
+        # --- SEARCH & FILTER ---
+        search_query = request.GET.get("search", "").strip()
+        class_filter = request.GET.get("class_name_uz", "").strip()
 
-        data_json = []  # JSON uchun
-        data_excel = []  # Excel uchun
+        students = Student.objects.filter(user__role='student', status=True)
+
+        if search_query:
+            students = students.filter(full_name__icontains=search_query)
+
+        if class_filter:
+            # class_name_uz — bu bir nechta maydonlardan yasalgan, shuning uchun 
+            # M2M orqali join qilib filter qilamiz
+            students = students.filter(
+                class_name__name_uz__icontains=class_filter
+            )
+
+        students = students.order_by('id')
+
+        data_json = []
+        data_excel = []
 
         for student in students:
             student_datetime = student.student_date
@@ -692,7 +708,7 @@ class StudentsListView(APIView):
             else:
                 last_login_formatted = None
 
-            # JSON uchun ingliz tilidagi maydonlar
+            # JSON data
             data_json.append({
                 "id": student.id,
                 "full_name": student.full_name,
@@ -714,7 +730,7 @@ class StudentsListView(APIView):
                 "last_login_time": last_login_formatted
             })
 
-            # Excel uchun o‘zbek tilidagi maydonlar
+            # Excel data
             data_excel.append({
                 "ID": student.id,
                 "F.I.Sh.": student.full_name,
@@ -736,6 +752,7 @@ class StudentsListView(APIView):
                 "Oxirgi tizimga kirgan vaqt": last_login_formatted
             })
 
+        # --- EXPORT TO EXCEL ---
         if export_excel:
             wb = Workbook()
             ws = wb.active
@@ -747,13 +764,15 @@ class StudentsListView(APIView):
             for row in data_excel:
                 ws.append(list(row.values()))
 
-            response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            response = HttpResponse(
+                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            )
             filename = escape_uri_path("Oquvchilar_royxati.xlsx")
             response['Content-Disposition'] = f'attachment; filename="{filename}"'
             wb.save(response)
             return response
 
-        # JSON qaytarish (paginatsiya bilan)
+        # --- PAGINATION ---
         page = int(request.GET.get('page', 1))
         size = int(request.GET.get('size', 10))
 
@@ -771,7 +790,7 @@ class StudentsListView(APIView):
                 "total": total_count,
                 "total_pages": total_pages,
                 "results": []
-            }, status=404)
+            }, status=status.HTTP_404_NOT_FOUND)
 
         return Response({
             "page": page,
@@ -780,7 +799,6 @@ class StudentsListView(APIView):
             "total_pages": total_pages,
             "results": current_page.object_list
         })
-
 
 
 
