@@ -673,23 +673,22 @@ class StudentsListView(APIView):
 
         # --- SEARCH & FILTER ---
         search_query = request.GET.get("search", "").strip()
-        class_filter = request.GET.get("class_name_uz", "").strip()
+        class_num = request.GET.get("class_num", "").strip()      # Masalan: "7"
+        subject_name = request.GET.get("subject_name", "").strip()  # Masalan: "Algebra"
 
         students = Student.objects.filter(user__role='student', status=True)
 
-        # Full name search
+        # F.I.Sh bo‘yicha qidiruv
         if search_query:
             students = students.filter(full_name__icontains=search_query)
 
-        # Class name filter (7-sinf Algebra format)
-        if class_filter:
-            students = students.annotate(
-                class_name_full=Concat(
-                    'class_name__classes__name',
-                    Value('-sinf '),
-                    'class_name__name_uz'
-                )
-            ).filter(class_name_full__icontains=class_filter)
+        # Sinf raqami bo‘yicha filter
+        if class_num:
+            students = students.filter(class_name__classes__name__icontains=class_num)
+
+        # Fan nomi bo‘yicha filter
+        if subject_name:
+            students = students.filter(class_name__name_uz__icontains=subject_name)
 
         students = students.order_by('id')
 
@@ -725,8 +724,9 @@ class StudentsListView(APIView):
                 "brithday": student.brithday,
                 "academy_or_school": student.academy_or_school,
                 "academy_or_school_name": student.academy_or_school_name,
-                "class_name_uz": f"{student.class_name.classes.name}-sinf {student.class_name.name_uz}" if student.class_name else None,
-                "class_name_ru": f"{student.class_name.classes.name}-класс {student.class_name.name_ru}" if student.class_name else None,
+                "class_num": student.class_name.classes.name if student.class_name else None,
+                "subject_name_uz": student.class_name.name_uz if student.class_name else None,
+                "subject_name_ru": student.class_name.name_ru if student.class_name else None,
                 "document_type": student.document_type,
                 "document": student.document,
                 "type_of_education": student.type_of_education,
@@ -747,8 +747,9 @@ class StudentsListView(APIView):
                 "Tug‘ilgan sana": student.brithday,
                 "Ta'lim muassasasi": student.academy_or_school,
                 "Muassasa nomi": student.academy_or_school_name,
-                "Sinf (UZ)": f"{student.class_name.classes.name}-sinf {student.class_name.name_uz}" if student.class_name else None,
-                "Sinf (RU)": f"{student.class_name.classes.name}-класс {student.class_name.name_ru}" if student.class_name else None,
+                "Sinf": student.class_name.classes.name if student.class_name else None,
+                "Fan (UZ)": student.class_name.name_uz if student.class_name else None,
+                "Fan (RU)": student.class_name.name_ru if student.class_name else None,
                 "Hujjat turi": student.document_type,
                 "Hujjat raqami": student.document,
                 "Ta'lim turi": student.type_of_education,
