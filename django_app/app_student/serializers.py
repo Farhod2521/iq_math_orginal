@@ -140,28 +140,33 @@ class TopicSerializer(serializers.ModelSerializer):
         except Student.DoesNotExist:
             return False
 
-        # Agar mavzu allaqachon ishlangan bo‘lsa
+        # 1️⃣ Agar mavzu allaqachon ishlangan bo‘lsa → ochiq
         if TopicProgress.objects.filter(user=student, topic=obj).exists():
             return True
 
-        # Fanning birinchi bobini topamiz
+        # 2️⃣ Fanning eng birinchi bobining eng birinchi mavzusi → ochiq
         first_chapter = Chapter.objects.filter(subject=obj.chapter.subject).order_by('order').first()
-        if not first_chapter:
+        if first_chapter:
+            first_topic = Topic.objects.filter(chapter=first_chapter).order_by('order').first()
+            if first_topic and obj.id == first_topic.id:
+                return True
+
+        # 3️⃣ Shu bobdagi mavzular
+        chapter_topics = list(Topic.objects.filter(chapter=obj.chapter).order_by('order'))
+        try:
+            current_index = chapter_topics.index(obj)
+        except ValueError:
             return False
 
-        first_topic = Topic.objects.filter(chapter=first_chapter).order_by('order').first()
-        if not first_topic:
-            return False
+        # Agar birinchi mavzu bo‘lmasa → oldingi mavzuni tekshirish
+        if current_index > 0:
+            prev_topic = chapter_topics[current_index - 1]
+            prev_progress = TopicProgress.objects.filter(user=student, topic=prev_topic).first()
+            if prev_progress and prev_progress.score >= 80:
+                return True
 
-        # Agar bu fanning birinchi mavzusi bo‘lsa
-        if obj.id == first_topic.id:
-            return True
-
-        # --- Yangi qo‘shilgan qism ---
-        # Hozirgi bobdagi mavzular ro‘yxati
-        chapter_topics = Topic.objects.filter(chapter=obj.chapter).order_by('order')
-        if chapter_topics.first().id == obj.id:
-            # Hozirgi bobdan oldingi bobni topamiz
+        # 4️⃣ Agar bu bobdagi birinchi mavzu bo‘lsa → oldingi bobning oxirgi mavzusi tekshiriladi
+        if current_index == 0:
             prev_chapter = Chapter.objects.filter(
                 subject=obj.chapter.subject,
                 order__lt=obj.chapter.order
@@ -173,8 +178,8 @@ class TopicSerializer(serializers.ModelSerializer):
                     prev_progress = TopicProgress.objects.filter(user=student, topic=last_topic_prev_chapter).first()
                     if prev_progress and prev_progress.score >= 80:
                         return True
-        # --- Yangi qo‘shilgan qism tugadi ---
 
+        # 5️⃣ Aks holda yopiq
         return False
 
 
