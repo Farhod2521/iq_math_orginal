@@ -27,7 +27,7 @@ class TeacherTopicHelpRequestListAPIView(APIView):
 
         for req in help_requests:
             subject = req.subject
-            class_name = getattr(subject, 'name', '1')  # default value
+            class_name = getattr(subject, 'classes.name', '1')  # default value
             topics = req.topics.all()
             status_text = "javob berilgan" if req.commit else "kutmoqda"
 
