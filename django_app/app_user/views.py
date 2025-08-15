@@ -745,7 +745,7 @@ class StudentsListView(APIView):
                 # "Ta'lim muassasasi": student.academy_or_school,
                 # "Muassasa nomi": student.academy_or_school_name,
                 "Sinf": student.class_name.classes.name if student.class_name else None,
-                "Fan (UZ)": student.class_name.name_uz if student.class_name else None,
+                # "Fan (UZ)": student.class_name.name_uz if student.class_name else None,
                 # "Fan (RU)": student.class_name.name_ru if student.class_name else None,
                 # "Hujjat turi": student.document_type,
                 # "Hujjat raqami": student.document,
