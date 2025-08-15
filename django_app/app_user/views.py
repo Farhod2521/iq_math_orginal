@@ -673,20 +673,17 @@ class StudentsListView(APIView):
 
         # --- SEARCH & FILTER ---
         search_query = request.GET.get("search", "").strip()
-        class_num = request.GET.get("class_num", "").strip()      # Masalan: "7"
-        subject_name = request.GET.get("subject_name", "").strip()  # Masalan: "Algebra"
+        class_num = request.GET.get("class_num", "").strip()      
+        subject_name = request.GET.get("subject_name", "").strip()  
 
         students = Student.objects.filter(user__role='student', status=True)
 
-        # F.I.Sh bo‘yicha qidiruv
         if search_query:
             students = students.filter(full_name__icontains=search_query)
 
-        # Sinf raqami bo‘yicha filter
         if class_num:
             students = students.filter(class_name__classes__name__icontains=class_num)
 
-        # Fan nomi bo‘yicha filter
         if subject_name:
             students = students.filter(class_name__name_uz__icontains=subject_name)
 
@@ -695,7 +692,7 @@ class StudentsListView(APIView):
         data_json = []
         data_excel = []
 
-        for student in students:
+        for idx, student in enumerate(students, start=1):
             student_datetime = student.student_date
             if student_datetime:
                 student_datetime = student_datetime.astimezone(ashgabat_tz)
@@ -714,7 +711,7 @@ class StudentsListView(APIView):
 
             # JSON data
             data_json.append({
-                "id": student.id,
+                "id": student.id,  # asl student.id JSON uchun
                 "full_name": student.full_name,
                 "phone": student.user.phone,
                 "email": student.user.email,
@@ -735,24 +732,24 @@ class StudentsListView(APIView):
                 "last_login_time": last_login_formatted
             })
 
-            # Excel data
+            # Excel data — ID o‘rniga raqamlangan tartib
             data_excel.append({
-                "ID": student.id,
+                "ID": idx,
                 "F.I.Sh.": student.full_name,
                 "Telefon": student.user.phone,
-                "Email": student.user.email,
-                "Viloyat": student.region,
-                "Tuman": student.districts,
-                "Manzil": student.address,
-                "Tug‘ilgan sana": student.brithday,
-                "Ta'lim muassasasi": student.academy_or_school,
-                "Muassasa nomi": student.academy_or_school_name,
+                # "Email": student.user.email,
+                # "Viloyat": student.region,
+                # "Tuman": student.districts,
+                # "Manzil": student.address,
+                # "Tug‘ilgan sana": student.brithday,
+                # "Ta'lim muassasasi": student.academy_or_school,
+                # "Muassasa nomi": student.academy_or_school_name,
                 "Sinf": student.class_name.classes.name if student.class_name else None,
                 "Fan (UZ)": student.class_name.name_uz if student.class_name else None,
-                "Fan (RU)": student.class_name.name_ru if student.class_name else None,
-                "Hujjat turi": student.document_type,
-                "Hujjat raqami": student.document,
-                "Ta'lim turi": student.type_of_education,
+                # "Fan (RU)": student.class_name.name_ru if student.class_name else None,
+                # "Hujjat turi": student.document_type,
+                # "Hujjat raqami": student.document,
+                # "Ta'lim turi": student.type_of_education,
                 "Ro‘yxatga olingan sana": student_date,
                 "Ro‘yxatga olingan vaqt": student_time,
                 "Oxirgi tizimga kirgan vaqt": last_login_formatted
@@ -805,7 +802,6 @@ class StudentsListView(APIView):
             "total_pages": total_pages,
             "results": current_page.object_list
         })
-
 
 
 
