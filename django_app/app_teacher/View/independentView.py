@@ -10,6 +10,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework.permissions import AllowAny
 from django_app.app_user.models import  Teacher, User
 
+
 class TeacherTopicHelpRequestListAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -39,16 +40,20 @@ class TeacherTopicHelpRequestListAPIView(APIView):
                     "commit": req.commit
                 }
 
+            # created_at formatlash
+            created_at_formatted = req.created_at.strftime("%d.%m.%Y %H:%M") if req.created_at else None
+
             grouped_data[req.student.id, req.student.full_name].append({
                 "id": req.id,
                 "class_uz": f"{class_name}-sinf {subject.name_uz}",
                 "class_ru": f"{class_name}-класс {subject.name_ru}",
                 "topics_name_uz": [topic.name_uz for topic in topics],
                 "topics_name_ru": [topic.name_ru for topic in topics],
-                "created_at": req.created_at,
+                "created_at": created_at_formatted,
                 "status": status_text,
                 "teacher": teacher_info
             })
+
         response_data = [
             {
                 "student_id": student_id,
@@ -61,7 +66,6 @@ class TeacherTopicHelpRequestListAPIView(APIView):
         paginator = self.StandardResultsSetPagination()
         paginated_page = paginator.paginate_queryset(response_data, request)
         return paginator.get_paginated_response(paginated_page)
-
 
 from rest_framework.generics import RetrieveAPIView
 class TeacherTopicHelpRequestDetailAPIView(RetrieveAPIView):
