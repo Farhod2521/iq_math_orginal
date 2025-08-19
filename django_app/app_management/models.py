@@ -123,6 +123,23 @@ class Product(models.Model):
         verbose_name_plural = "Mahsulotlar"
 
 
+class ConversionRate(models.Model):
+    coin_to_score = models.PositiveIntegerField(
+        verbose_name="1 tangaga teng ball miqdori", default=1
+    )
+    coin_to_money = models.DecimalField(
+        max_digits=10, decimal_places=2, verbose_name="1 tangaga teng pul miqdori"
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Konversiya kursi"
+        verbose_name_plural = "Konversiya kurslari"
+
+    def __str__(self):
+        return f"1 coin = {self.coin_to_score} ball = {self.coin_to_money} so‘m"
+
+
 class Coupon(models.Model):
     code = models.CharField(max_length=20, unique=True)
     discount_percent = models.PositiveIntegerField(default=10, verbose_name="Chegirma foizi")

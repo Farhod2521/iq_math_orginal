@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import SystemSettings, FAQ, Product, ReferralAndCouponSettings, Banner, Coupon, SystemCoupon
+from .models import SystemSettings, FAQ, Product, ReferralAndCouponSettings, Banner, Coupon, SystemCoupon,ConversionRate
 from modeltranslation.admin import TranslationAdmin
 from django.utils.html import format_html
 
@@ -53,15 +53,32 @@ class ReferralAndCouponSettingsAdmin(admin.ModelAdmin):
 
 @admin.register(Product)
 class ProductAdmin(TranslationAdmin):  # model.ModelAdmin o'rniga TranslationAdmin ishlatiladi
-    list_display = ['name_uz','name_ru', 'coin', 'image_tag']
-    search_fields = ['name_uz','name_ru']
+    list_display = ['name_uz', 'name_ru', 'coin', 'get_price', 'image_tag']
+    search_fields = ['name_uz', 'name_ru']
     readonly_fields = ['image_tag']
 
     def image_tag(self, obj):
         if obj.image:
-            return format_html('<img src="{}" width="50" height="50" style="object-fit: cover;" />', obj.image.url)
+            return format_html(
+                '<img src="{}" width="50" height="50" style="object-fit: cover;" />',
+                obj.image.url
+            )
         return "-"
     image_tag.short_description = 'Rasm'
+
+    def get_price(self, obj):
+        """Mahsulotning pul qiymatini chiqarish"""
+        rate = ConversionRate.objects.last()
+        if rate:
+            return f"{obj.coin * rate.coin_to_money} so'm"
+        return "Kurs mavjud emas"
+    get_price.short_description = "Narxi (so'm)"
+
+
+@admin.register(ConversionRate)
+class ConversionRateAdmin(admin.ModelAdmin):
+    list_display = ("coin_to_score", "coin_to_money", "updated_at")
+    readonly_fields = ("updated_at",)
 
 
 
