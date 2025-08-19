@@ -83,7 +83,7 @@ class InitiatePaymentAPIView(APIView):
             "callback_url": "https://backend.iqmath.uz/api/v1/payments/payment-callback/",
             "ofd": [
                 {
-                    "vat": 12,
+                    "vat": 0,
                     "price": amount_in_tiyin,
                     "qty": 1,
                     "name": coupon_text,
