@@ -128,7 +128,7 @@ class ConversionRate(models.Model):
         verbose_name="1 tangaga teng ball miqdori", default=1
     )
     coin_to_money = models.DecimalField(
-        max_digits=10, decimal_places=2, verbose_name="1 tangaga teng pul miqdori"
+        max_digits=10, decimal_places=3, verbose_name="1 tangaga teng pul miqdori"
     )
     updated_at = models.DateTimeField(auto_now=True)
 
