@@ -47,7 +47,7 @@ class ProductExchangeView(APIView):
         exchange = ProductExchange.objects.create(
             student=student,
             product=product,
-            used_score=product.coin,  # modelda hali used_score deb turgan bo‘lsa, nomi o‘zgartirilmagan
+            used_coin=product.coin,  # modelda hali used_score deb turgan bo‘lsa, nomi o‘zgartirilmagan
             status='approved'
         )
 
