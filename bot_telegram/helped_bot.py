@@ -28,11 +28,12 @@ TEACHER_CHAT_IDS = [1858379541, 5467533504]  # O'qituvchilar chat ID lari
 
 # ================= TELEGRAM SERVICE FUNCTIONS =================
 
-def send_question_to_telegram(student_full_name, question_id, result_json):
+def send_question_to_telegram(student_full_name, question_id, result_json, student_id):
     """
     Savolni barcha o'qituvchilarga yuborish
     """
     student_name_encoded = urllib.parse.quote(student_full_name)
+    student_name_encoded = urllib.parse.quote(student_id)
     url = f"https://mentor.iqmath.uz/dashboard/teacher/student-examples/{question_id}?student_name={student_name_encoded}"
 
     result = result_json[0] if result_json else {}
@@ -42,7 +43,7 @@ def send_question_to_telegram(student_full_name, question_id, result_json):
 
     text = (
         f"📥 <b>Yangi savol!</b>\n"
-        f"👤 <b>O'quvchi:</b> {student_full_name}\n"
+        f"👤 <b>O'quvchi:</b>{student_id}--{student_full_name}\n"
         f"🆔 <b>Savol ID:</b> {question_id}\n\n"
         f"📊 <b>Natija:</b>\n"
         f"➕ To'g'ri: <b>{correct}</b> / {total}\n"
