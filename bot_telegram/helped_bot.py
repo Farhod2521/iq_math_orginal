@@ -135,7 +135,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     print(f"🔔 Tugma bosildi: {data}")
     
-    if data.startswith("assign_65"):
+    if data.startswith("assign_"):
         help_request_id = int(data.split("_")[1])
         teacher_name = f"{query.from_user.first_name} {query.from_user.last_name or ''}".strip()
         telegram_id = query.from_user.id
