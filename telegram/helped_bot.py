@@ -1,3 +1,4 @@
+# bot.py
 import os
 import django
 import logging
@@ -23,16 +24,13 @@ def get_logs(help_request_id):
     return list(HelpRequestMessageLog.objects.filter(help_request_id=help_request_id))
 
 @sync_to_async
-def save_message_log(help_request_id, chat_id, message_id):
-    log, created = HelpRequestMessageLog.objects.get_or_create(
-        help_request_id=help_request_id,
-        chat_id=chat_id,
-        defaults={'message_id': message_id}
-    )
-    if not created:
-        log.message_id = message_id
-        log.save()
-    return log
+def update_message_log(help_request_id, chat_id, teacher_name):
+    logs = HelpRequestMessageLog.objects.filter(help_request_id=help_request_id)
+    for log in logs:
+        if log.chat_id == chat_id:
+            log.teacher_name = teacher_name
+            log.save()
+            break
 
 async def get_student_telegram_id(student_id):
     try:
@@ -51,6 +49,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if data.startswith("assign_"):
         help_request_id = int(data.split("_")[1])
         telegram_id = query.from_user.id
+        teacher_name = f"{query.from_user.first_name} {query.from_user.last_name or ''}".strip()
         
         try:
             response = requests.post(BACKEND_ASSIGN_API, data={
@@ -64,7 +63,6 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
         
         if result.get("success"):
-            teacher_name = result.get("teacher_name")
             student_id = result.get("student_id")
             
             # O'qituvchi ID sini contextda saqlaymiz
@@ -77,11 +75,14 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             logs = await get_logs(help_request_id)
             url = f"https://iqmath.uz/dashboard/teacher/student-examples/{help_request_id}?student_name=Oquvchi"
             
-            # Yangi tugmalar
+            # Javob bergan o'qituvchi uchun yangi tugmalar
             new_markup = InlineKeyboardMarkup([
                 [InlineKeyboardButton("👨‍🏫 Siz javob berayapsiz", callback_data=f"assigned_{help_request_id}")],
                 [InlineKeyboardButton("🔗 Savolga o'tish", url=url)]
             ])
+            
+            # Loglarni yangilash
+            await update_message_log(help_request_id, query.message.chat_id, teacher_name)
             
             for log in logs:
                 try:
@@ -120,8 +121,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                         # Qo'shimcha yo'riqnoma xabari
                         await query.message.reply_text(
                             f"✅ Endi siz bu savolga javob berayapsiz.\n\n"
-                            f"Talabaga javob yuborish uchun shu xabarga 'reply' qilib yozing yoki to'g'ridan-to'g'ri yozib, "
-                            f"keyin 'Javobni yuborish' tugmasini bosing.",
+                            f"Talabaga javob yuborish uchun shu xabarga 'reply' qilib yozing.",
                             reply_markup=InlineKeyboardMarkup([
                                 [InlineKeyboardButton("📤 Javobni yuborish", callback_data=f"send_answer_{help_request_id}")]
                             ])
@@ -163,8 +163,10 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.message.reply_text("✅ Javobingiz talabaga yuborildi.")
             
             # Contextni tozalash
-            del context.user_data['answer_text']
-            del context.user_data['active_assignment']
+            if 'answer_text' in context.user_data:
+                del context.user_data['answer_text']
+            if 'active_assignment' in context.user_data:
+                del context.user_data['active_assignment']
             
         except Exception as e:
             logging.error(f"❌ Javob yuborishda xatolik: {e}")
@@ -176,7 +178,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_text = update.message.reply_to_message.text or update.message.reply_to_message.caption
         
         # Agar reply qilingan xabar javob yuborish yo'riqnomasi bo'lsa
-        if reply_text and "savolga javob berayapsiz" in reply_text:
+        if reply_text and ("savolga javob berayapsiz" in reply_text or "Javobni yuborish" in reply_text):
             context.user_data['answer_text'] = update.message.text
             await update.message.reply_text(
                 "✅ Javobingiz qabul qilindi. «📤 Javobni yuborish» tugmasini bosing.",
