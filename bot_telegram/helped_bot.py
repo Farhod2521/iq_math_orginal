@@ -12,22 +12,16 @@ from asgiref.sync import sync_to_async
 sys.path.append('/home/user/backend/iq_math_orginal')
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.production')
 
-try:
-    django.setup()
-    print("✅ Django ishga tushdi")
-except Exception as e:
-    print(f"❌ Django xatosi: {e}")
-    sys.exit(1)
+django.setup()
 
 from django_app.app_student.models import HelpRequestMessageLog
 
-BOT_TOKEN = "BOT_TOKENINGIZ"
+BOT_TOKEN = "7826335243:AAGXTZvtzJ8e8g35Hrx_Swy7mwmRPd3T7Po"
 BACKEND_ASSIGN_API = "https://api.iqmath.uz/api/v1/func_student/student/telegram/assign-teacher/"
 TELEGRAM_ID_API = "https://api.iqmath.uz/api/v1/func_student/student/student_id/telegram_id/"
-TEACHER_CHAT_IDS = [1858379541, 5467533504]  # O'qituvchilar chat IDlari
+TEACHER_CHAT_IDS = [1858379541, 5467533504]
 
-# ================= FUNKSIYALAR =================
-
+# Savolni yuborish
 def send_question_to_telegram(student_full_name, question_id, result_json):
     student_name_encoded = urllib.parse.quote(student_full_name)
     url = f"https://mentor.iqmath.uz/dashboard/teacher/student-examples/{question_id}?student_name={student_name_encoded}"
@@ -61,23 +55,14 @@ def send_question_to_telegram(student_full_name, question_id, result_json):
             "reply_markup": json.dumps(keyboard),
             "disable_web_page_preview": True
         }
-        try:
-            response = requests.post(
-                f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage",
-                data=payload,
-                timeout=10
+        r = requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage", data=payload)
+        if r.status_code == 200:
+            message_id = r.json()["result"]["message_id"]
+            HelpRequestMessageLog.objects.create(
+                help_request_id=question_id,
+                chat_id=chat_id,
+                message_id=message_id
             )
-            if response.status_code == 200:
-                message_id = response.json()["result"]["message_id"]
-                HelpRequestMessageLog.objects.create(
-                    help_request_id=question_id,
-                    chat_id=chat_id,
-                    message_id=message_id
-                )
-            else:
-                print(f"❌ Xatolik: {response.status_code}, {response.text}")
-        except Exception as e:
-            print(f"❌ Xabar yuborishda xatolik: {e}")
 
 @sync_to_async
 def get_logs(help_request_id):
@@ -92,8 +77,6 @@ async def get_student_telegram_id(student_id):
         return None
     return None
 
-# ================= CALLBACKLAR =================
-
 async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -104,7 +87,6 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         teacher_name = f"{query.from_user.first_name} {query.from_user.last_name or ''}".strip()
         telegram_id = query.from_user.id
 
-        # Backendga so'rov
         resp = requests.post(BACKEND_ASSIGN_API, data={
             "help_request_id": help_request_id,
             "telegram_id": telegram_id
@@ -167,18 +149,14 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.message.reply_text("❌ Avval reply qilib javob yozing")
             return
 
-        try:
-            await context.bot.send_message(
-                chat_id=student_telegram_id,
-                text=f"👨‍🏫 {assignment['teacher_name']}dan javob:\n\n{answer_text}"
-            )
-            await query.message.reply_text("✅ Javob yuborildi!")
-            del context.user_data['answer_text']
-            del context.user_data['active_assignment']
-        except Exception as e:
-            await query.message.reply_text(f"❌ Javob yuborilmadi: {e}")
+        await context.bot.send_message(
+            chat_id=student_telegram_id,
+            text=f"👨‍🏫 {assignment['teacher_name']}dan javob:\n\n{answer_text}"
+        )
+        await query.message.reply_text("✅ Javob yuborildi!")
+        context.user_data.pop('answer_text', None)
+        context.user_data.pop('active_assignment', None)
 
-# Javob yozish
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.message.reply_to_message and 'active_assignment' in context.user_data:
         context.user_data['answer_text'] = update.message.text
@@ -189,8 +167,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 [InlineKeyboardButton("📤 Javobni yuborish", callback_data=f"send_{help_request_id}")]
             ])
         )
-
-# ================= MAIN =================
 
 def main():
     app = Application.builder().token(BOT_TOKEN).build()
