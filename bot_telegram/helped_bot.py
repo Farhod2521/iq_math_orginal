@@ -24,7 +24,7 @@ TEACHER_CHAT_IDS = [1858379541, 5467533504]
 # Savolni yuborish
 def send_question_to_telegram(student_full_name, question_id, result_json):
     student_name_encoded = urllib.parse.quote(student_full_name)
-    url = f"https://mentor.iqmath.uz/dashboard/teacher/student-examples/{question_id}?student_name={student_name_encoded}"
+    url = f"https://iqmath.uz/dashboard/teacher/student-examples/{question_id}?student_name={student_name_encoded}"
 
     result = result_json[0] if result_json else {}
     total = result.get("total_answers", "-")
@@ -42,7 +42,7 @@ def send_question_to_telegram(student_full_name, question_id, result_json):
 
     keyboard = {
         "inline_keyboard": [
-            [ {"text": "✅ Javob berish", "callback_data": f"assign_{question_id}"} ],
+            [ {"text": "✅ Javob berish", "callback_data": f"{question_id}"} ],
             [ {"text": "🔗 Savolga o'tish", "url": url} ]
         ]
     }
