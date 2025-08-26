@@ -407,12 +407,23 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif data.startswith("send_"):
         help_request_id = int(data.split("_")[1])
         assignment = context.user_data.get('active_assignment', {})
-        
-        # if assignment.get('help_request_id') != help_request_id:
-        #     await query.message.reply_text("❌ Siz bu savolga javob berish huquqiga ega emassiz")
-        #     return
-        
-        student_telegram_id = assignment.get('student_telegram_id')
+
+        # API orqali telegram_id olish
+        try:
+            response = requests.post(
+                "https://api.iqmath.uz/api/v1/func_student/student/student_id/telegram_id/",
+                json={"topic_help_id": help_request_id},
+                timeout=5
+            )
+            if response.status_code == 200:
+                telegram_id = response.json().get("telegram_id")
+                assignment['student_telegram_id'] = telegram_id
+            else:
+                await query.message.reply_text("❌ Telegram ID topilmadi.")
+                return
+        except requests.RequestException as e:
+            await query.message.reply_text("❌ Server bilan bog‘lanishda xatolik.")
+            return
         
         if not student_telegram_id:
             # Agar student telegram ID bo'lmasa, qayta urinib ko'ramiz
