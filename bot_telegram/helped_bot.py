@@ -112,12 +112,19 @@ def update_message_log(help_request_id, chat_id, teacher_name):
         return False
 
 async def get_student_telegram_id(student_id):
+    """Student ID orqali student telegram ID sini olish"""
     try:
-        response = requests.post(TELEGRAM_ID_API, json={"student_id": student_id}, timeout=5)
+        response = requests.post(
+            TELEGRAM_ID_API,
+            json={"student_id": student_id},
+            timeout=5
+        )
         if response.status_code == 200:
-            return response.json().get("telegram_id")
+            data = response.json()
+            return data.get("telegram_id")
         return None
-    except:
+    except Exception as e:
+        print(f"❌ Telegram ID olishda xatolik: {e}")
         return None
 
 async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -138,9 +145,10 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             print(f"🌐 Backend API ga so'rov yuborilmoqda: {BACKEND_ASSIGN_API}")
             response = requests.post(
                 BACKEND_ASSIGN_API,
-                data={
+                json={
                     "help_request_id": help_request_id,
-                    "telegram_id": telegram_id
+                    "telegram_id": telegram_id,
+                    "teacher_name": teacher_name
                 },
                 timeout=10
             )
@@ -151,9 +159,15 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if response.status_code != 200:
                 await query.message.reply_text("❌ Server xatosi")
                 return
-                
-            result = response.json()
             
+            # JSON javobini tekshirish
+            try:
+                result = response.json()
+            except json.JSONDecodeError:
+                print(f"❌ Noto'g'ri JSON formati: {response.text}")
+                await query.message.reply_text("❌ Serverdan noto'g'ri javob qaytdi")
+                return
+                
         except Exception as e:
             error_msg = f"❌ Serverga ulanishda xatolik: {e}"
             print(error_msg)
@@ -161,13 +175,22 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
         
         if result.get("success"):
+            print(f"✅ Backend muvaffaqiyatli javob berdi. Teacher: {result.get('teacher_name')}")
+            
+            # Student ID ni olish
             student_id = result.get("student_id")
-            print(f"✅ Backend muvaffaqiyatli javob berdi. Talaba ID: {student_id}")
+            
+            # Student telegram ID sini olish
+            student_telegram_id = await get_student_telegram_id(student_id) if student_id else None
+            
+            if not student_telegram_id:
+                print("❌ Student telegram ID topilmadi")
             
             # O'qituvchi ma'lumotlarini saqlaymiz
             context.user_data['active_assignment'] = {
                 'help_request_id': help_request_id,
                 'student_id': student_id,
+                'student_telegram_id': student_telegram_id,
                 'teacher_name': teacher_name
             }
             
@@ -177,37 +200,19 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             
             url = f"https://iqmath.uz/dashboard/teacher/student-examples/{help_request_id}"
             
-            # Javob bergan o'qituvchi uchun yangi tugmalar
-            new_markup = InlineKeyboardMarkup([
-                [InlineKeyboardButton("👨‍🏫 Siz javob berayapsiz", callback_data=f"assigned_{help_request_id}")],
-                [InlineKeyboardButton("📤 Javobni yuborish", callback_data=f"send_{help_request_id}")],
-                [InlineKeyboardButton("🔗 Savolga o'tish", url=url)]
-            ])
-            
             # Xabarlarni yangilaymiz
+            success_count = 0
             for log in logs:
                 try:
-                    if log.chat_id != query.message.chat_id:
-                        # Boshqa o'qituvchilar uchun
-                        other_teachers_markup = InlineKeyboardMarkup([
-                            [InlineKeyboardButton("👨‍🏫 Javob berilmoqda", callback_data=f"taken_{help_request_id}")],
-                            [InlineKeyboardButton("🔗 Savolga o'tish", url=url)]
-                        ])
-                        
-                        new_text = query.message.text.replace("📥 Yangi savol!", f"👨‍🏫 {teacher_name} javob beryapti")
-                        
-                        await context.bot.edit_message_text(
-                            chat_id=log.chat_id,
-                            message_id=log.message_id,
-                            text=new_text,
-                            reply_markup=other_teachers_markup,
-                            parse_mode="HTML"
-                        )
-                        print(f"✏️ Boshqa o'qituvchi xabari yangilandi: {log.chat_id}")
-                        
-                    else:
+                    if log.chat_id == query.message.chat_id:
                         # Javob bergan o'qituvchi uchun
                         new_text = query.message.text.replace("📥 Yangi savol!", "✅ Siz javob berayapsiz")
+                        
+                        new_markup = InlineKeyboardMarkup([
+                            [InlineKeyboardButton("👨‍🏫 Siz javob berayapsiz", callback_data=f"assigned_{help_request_id}")],
+                            [InlineKeyboardButton("📤 Javobni yuborish", callback_data=f"send_{help_request_id}")],
+                            [InlineKeyboardButton("🔗 Savolga o'tish", url=url)]
+                        ])
                         
                         await context.bot.edit_message_text(
                             chat_id=log.chat_id,
@@ -227,9 +232,161 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                                 [InlineKeyboardButton("📤 Javobni yuborish", callback_data=f"send_{help_request_id}")]
                             ])
                         )
+                    else:
+                        # Boshqa o'qituvchilar uchun
+                        new_text = query.message.text.replace("📥 Yangi savol!", f"👨‍🏫 {teacher_name} javob beryapti")
+                        
+                        other_teachers_markup = InlineKeyboardMarkup([
+                            [InlineKeyboardButton("👨‍🏫 Javob berilmoqda", callback_data=f"taken_{help_request_id}")],
+                            [InlineKeyboardButton("🔄 O'zim javob qilaman", callback_data=f"takeover_{help_request_id}")],
+                            [InlineKeyboardButton("🔗 Savolga o'tish", url=url)]
+                        ])
+                        
+                        await context.bot.edit_message_text(
+                            chat_id=log.chat_id,
+                            message_id=log.message_id,
+                            text=new_text,
+                            reply_markup=other_teachers_markup,
+                            parse_mode="HTML"
+                        )
+                        print(f"✏️ Boshqa o'qituvchi xabari yangilandi: {log.chat_id}")
+                    
+                    success_count += 1
                         
                 except Exception as e:
                     print(f"❌ Xabar yangilashda xatolik (chat_id: {log.chat_id}): {e}")
+            
+            print(f"✅ {success_count}/{len(logs)} ta xabar yangilandi")
+            
+        else:
+            error_msg = result.get("message", "❌ Noma'lum xatolik")
+            print(f"❌ Backend xatosi: {error_msg}")
+            await query.message.reply_text(error_msg)
+    
+    elif data.startswith("takeover_"):
+        # O'zim javob qilaman tugmasi bosilganda
+        help_request_id = int(data.split("_")[1])
+        teacher_name = f"{query.from_user.first_name} {query.from_user.last_name or ''}".strip()
+        telegram_id = query.from_user.id
+        
+        print(f"👨‍🏫 O'qituvchi {teacher_name} ({telegram_id}) {help_request_id}-savolni o'ziga olmoqchi")
+        
+        try:
+            print(f"🌐 Backend API ga so'rov yuborilmoqda: {BACKEND_ASSIGN_API}")
+            response = requests.post(
+                BACKEND_ASSIGN_API,
+                json={
+                    "help_request_id": help_request_id,
+                    "telegram_id": telegram_id,
+                    "teacher_name": teacher_name
+                },
+                timeout=10
+            )
+            
+            print(f"📨 Backend javob kodi: {response.status_code}")
+            print(f"📨 Backend javob matni: {response.text}")
+            
+            if response.status_code != 200:
+                await query.message.reply_text("❌ Server xatosi")
+                return
+            
+            # JSON javobini tekshirish
+            try:
+                result = response.json()
+            except json.JSONDecodeError:
+                print(f"❌ Noto'g'ri JSON formati: {response.text}")
+                await query.message.reply_text("❌ Serverdan noto'g'ri javob qaytdi")
+                return
+                
+        except Exception as e:
+            error_msg = f"❌ Serverga ulanishda xatolik: {e}"
+            print(error_msg)
+            await query.message.reply_text("❌ Serverga ulanishda xatolik")
+            return
+        
+        if result.get("success"):
+            print(f"✅ Backend muvaffaqiyatli javob berdi. Teacher: {result.get('teacher_name')}")
+            
+            # Student ID ni olish
+            student_id = result.get("student_id")
+            
+            # Student telegram ID sini olish
+            student_telegram_id = await get_student_telegram_id(student_id) if student_id else None
+            
+            if not student_telegram_id:
+                print("❌ Student telegram ID topilmadi")
+            
+            # O'qituvchi ma'lumotlarini saqlaymiz
+            context.user_data['active_assignment'] = {
+                'help_request_id': help_request_id,
+                'student_id': student_id,
+                'student_telegram_id': student_telegram_id,
+                'teacher_name': teacher_name
+            }
+            
+            # Loglarni olamiz
+            logs = await get_logs(help_request_id)
+            print(f"📋 {len(logs)} ta log topildi")
+            
+            url = f"https://iqmath.uz/dashboard/teacher/student-examples/{help_request_id}"
+            
+            # Xabarlarni yangilaymiz
+            success_count = 0
+            for log in logs:
+                try:
+                    if log.chat_id == query.message.chat_id:
+                        # Javob bergan o'qituvchi uchun
+                        new_text = query.message.text.replace("👨‍🏫", "✅ Siz javob berayapsiz")
+                        
+                        new_markup = InlineKeyboardMarkup([
+                            [InlineKeyboardButton("👨‍🏫 Siz javob berayapsiz", callback_data=f"assigned_{help_request_id}")],
+                            [InlineKeyboardButton("📤 Javobni yuborish", callback_data=f"send_{help_request_id}")],
+                            [InlineKeyboardButton("🔗 Savolga o'tish", url=url)]
+                        ])
+                        
+                        await context.bot.edit_message_text(
+                            chat_id=log.chat_id,
+                            message_id=log.message_id,
+                            text=new_text,
+                            reply_markup=new_markup,
+                            parse_mode="HTML"
+                        )
+                        print(f"✏️ Javob bergan o'qituvchi xabari yangilandi: {log.chat_id}")
+                        
+                        # Yo'riqnoma xabarini yuboramiz
+                        await query.message.reply_text(
+                            "✅ Endi siz bu savolga javob berayapsiz.\n\n" +
+                            "Talabaga javob yuborish uchun shu xabarga 'reply' qilib yozing yoki " +
+                            "to'g'ridan-to'g'ri yozib, keyin 'Javobni yuborish' tugmasini bosing.",
+                            reply_markup=InlineKeyboardMarkup([
+                                [InlineKeyboardButton("📤 Javobni yuborish", callback_data=f"send_{help_request_id}")]
+                            ])
+                        )
+                    else:
+                        # Boshqa o'qituvchilar uchun
+                        new_text = query.message.text.replace("👨‍🏫", f"👨‍🏫 {teacher_name} javob beryapti")
+                        
+                        other_teachers_markup = InlineKeyboardMarkup([
+                            [InlineKeyboardButton("👨‍🏫 Javob berilmoqda", callback_data=f"taken_{help_request_id}")],
+                            [InlineKeyboardButton("🔄 O'zim javob qilaman", callback_data=f"takeover_{help_request_id}")],
+                            [InlineKeyboardButton("🔗 Savolga o'tish", url=url)]
+                        ])
+                        
+                        await context.bot.edit_message_text(
+                            chat_id=log.chat_id,
+                            message_id=log.message_id,
+                            text=new_text,
+                            reply_markup=other_teachers_markup,
+                            parse_mode="HTML"
+                        )
+                        print(f"✏️ Boshqa o'qituvchi xabari yangilandi: {log.chat_id}")
+                    
+                    success_count += 1
+                        
+                except Exception as e:
+                    print(f"❌ Xabar yangilashda xatolik (chat_id: {log.chat_id}): {e}")
+            
+            print(f"✅ {success_count}/{len(logs)} ta xabar yangilandi")
             
         else:
             error_msg = result.get("message", "❌ Noma'lum xatolik")
@@ -244,12 +401,17 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.message.reply_text("❌ Siz bu savolga javob berish huquqiga ega emassiz")
             return
         
-        student_id = assignment.get('student_id')
-        student_telegram_id = await get_student_telegram_id(student_id)
+        student_telegram_id = assignment.get('student_telegram_id')
         
         if not student_telegram_id:
-            await query.message.reply_text("❌ Talabaning Telegram ID sini topib bo'lmadi")
-            return
+            # Agar student telegram ID bo'lmasa, qayta urinib ko'ramiz
+            student_id = assignment.get('student_id')
+            if student_id:
+                student_telegram_id = await get_student_telegram_id(student_id)
+            
+            if not student_telegram_id:
+                await query.message.reply_text("❌ Talabaning Telegram ID sini topib bo'lmadi")
+                return
         
         if 'answer_text' not in context.user_data:
             await query.message.reply_text("❌ Avval javob matnini yuboring")
@@ -265,6 +427,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
             await query.message.reply_text("✅ Javobingiz talabaga yuborildi")
             
+            # Ma'lumotlarni tozalash
             if 'answer_text' in context.user_data:
                 del context.user_data['answer_text']
             if 'active_assignment' in context.user_data:
@@ -275,6 +438,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.message.reply_text("❌ Javob yuborishda xatolik yuz berdi")
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Agar xabar reply bo'lsa va active_assignment mavjud bo'lsa
     if update.message.reply_to_message and 'active_assignment' in context.user_data:
         context.user_data['answer_text'] = update.message.text
         help_request_id = context.user_data['active_assignment']['help_request_id']
@@ -285,6 +449,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 [InlineKeyboardButton("📤 Javobni yuborish", callback_data=f"send_{help_request_id}")]
             ])
         )
+    else:
+        # Agar oddiy xabar bo'lsa, uni e'tiborsiz qoldirish
+        pass
 
 def main():
     application = Application.builder().token(BOT_TOKEN).build()
