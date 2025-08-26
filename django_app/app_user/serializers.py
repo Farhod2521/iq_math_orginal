@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Student, UserSMSAttempt, Class, Teacher, Subject, Referral
+from .models import User, Student, UserSMSAttempt, Class, Teacher, Subject, Referral, Parent
 from django.core.cache import cache
 import random
 from .sms_service import send_sms, send_verification_email, send_login_parol_email# SMS sending function
@@ -335,3 +335,32 @@ class StudentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Student
         fields = '__all__'
+
+
+
+from django.contrib.auth.hashers import make_password
+
+class ParentCreateSerializer(serializers.ModelSerializer):
+    phone = serializers.CharField(write_only=True)
+    password = serializers.CharField(write_only=True)
+    students = serializers.PrimaryKeyRelatedField(queryset=Student.objects.all(), many=True)
+
+    class Meta:
+        model = Parent
+        fields = ['full_name', 'phone', 'password', 'students']
+
+    def create(self, validated_data):
+        phone = validated_data.pop('phone')
+        password = validated_data.pop('password')
+        students = validated_data.pop('students')
+
+        # Yangi User yaratish
+        user = User.objects.create(
+            phone=phone,
+            role='parent',
+            password=make_password(password)  # parolni hash qilish
+        )
+
+        parent = Parent.objects.create(user=user, **validated_data)
+        parent.students.set(students)
+        return parent

@@ -43,7 +43,7 @@ class User(AbstractUser):
     phone = models.CharField(max_length=15, unique=True, verbose_name="Telefon raqam")
     role = models.CharField(
         max_length=10,
-        choices=[('student', 'Student'), ('teacher', 'Teacher'), ('admin', 'Admin')],
+        choices=[('student', 'Student'), ('teacher', 'Teacher'), ('admin', 'Admin'), ('parent', 'Parent')],
         default='student',
         verbose_name="Foydalanuvchi roli"
     )
@@ -59,6 +59,9 @@ class User(AbstractUser):
     class Meta:
         verbose_name = "Foydalanuvchi"
         verbose_name_plural = "Foydalanuvchilar"
+
+
+
 class Teacher(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='teacher_profile', verbose_name="Foydalanuvchi") 
     full_name = models.CharField(max_length=200, verbose_name="To‘liq ism")
@@ -148,7 +151,21 @@ class Student(models.Model):
         verbose_name_plural = "O‘quvchilar"
 
 
+class Parent(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='parent_profile', verbose_name="Foydalanuvchi")
+    full_name = models.CharField(max_length=200, verbose_name="To‘liq ism")
+    students = models.ManyToManyField(Student, related_name='parents', verbose_name="Farzandlar") 
+    region = models.CharField(max_length=200, blank=True, null=True)
+    districts = models.CharField(max_length=200, blank=True, null=True)
+    address = models.CharField(max_length=500, blank=True, null=True)
+    parent_date = models.DateTimeField(auto_now=True, null=True, verbose_name="Ro‘yxatdan o‘tgan sana")
 
+    def __str__(self):
+        return self.full_name
+
+    class Meta:
+        verbose_name = "Ota-ona"
+        verbose_name_plural = "Ota-onalar"
 
 class UserSMSAttempt(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sms_attempts')

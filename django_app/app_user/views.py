@@ -4,7 +4,7 @@ from rest_framework import status
 from .serializers import (
 StudentRegisterSerializer, VerifySmsCodeSerializer, 
 LoginSerializer, StudentProfileSerializer, TeacherRegisterSerializer, Class_Serializer,
-TeacherVerifySmsCodeSerializer, TeacherSerializer, StudentSerializer
+TeacherVerifySmsCodeSerializer, TeacherSerializer, StudentSerializer, ParentCreateSerializer
 )
 from .models import Student, UserSMSAttempt, Teacher, Class, StudentLoginHistory
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -986,3 +986,22 @@ class TelegramIDCheckAPIView(APIView):
                 return Response({"detail": "O‘quvchi profili topilmadi."}, status=status.HTTP_404_NOT_FOUND)
 
         return Response({"detail": "Bunday rol aniqlanmadi."}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ParentCreateAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        # Faqat teacher yoki admin qo‘shishi mumkin
+        if request.user.role not in ['teacher', 'admin']:
+            return Response({"detail": "Sizda huquq yo‘q"}, status=status.HTTP_403_FORBIDDEN)
+
+        serializer = ParentCreateSerializer(data=request.data)
+        if serializer.is_valid():
+            parent = serializer.save()
+            return Response({
+                "message": "Ota-ona muvaffaqiyatli yaratildi",
+                "parent_id": parent.id,
+                "login": parent.user.phone
+            }, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
