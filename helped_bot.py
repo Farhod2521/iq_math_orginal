@@ -199,7 +199,8 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 'help_request_id': help_request_id,
                 'student_id': student_id,
                 'student_telegram_id': student_telegram_id,
-                'teacher_name': teacher_name
+                'teacher_name': teacher_name,
+                'teacher_id': telegram_id
             }
             
             # Loglarni olamiz
@@ -331,7 +332,8 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 'help_request_id': help_request_id,
                 'student_id': student_id,
                 'student_telegram_id': student_telegram_id,
-                'teacher_name': teacher_name
+                'teacher_name': teacher_name,
+                'teacher_id': telegram_id
             }
             
             # Loglarni olamiz
@@ -440,6 +442,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         # Har xil turdagi javoblarni yuborish
         teacher_name = assignment.get('teacher_name', 'O\'qituvchi')
+        teacher_id = assignment.get('teacher_id', query.from_user.id)
         
         try:
             if 'answer_text' in context.user_data:
@@ -449,7 +452,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     chat_id=student_telegram_id,
                     text=f"👨‍🏫 {teacher_name}dan javob:\n\n{answer_text}",
                     reply_markup=InlineKeyboardMarkup([
-                        [InlineKeyboardButton("❓ Yana savolim bor", callback_data=f"reply_{help_request_id}_{query.from_user.id}")]
+                        [InlineKeyboardButton("❓ Yana savolim bor", callback_data=f"reply_{help_request_id}_{teacher_id}")]
                     ])
                 )
             
@@ -462,7 +465,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     photo=photo_file_id,
                     caption=caption,
                     reply_markup=InlineKeyboardMarkup([
-                        [InlineKeyboardButton("❓ Yana savolim bor", callback_data=f"reply_{help_request_id}_{query.from_user.id}")]
+                        [InlineKeyboardButton("❓ Yana savolim bor", callback_data=f"reply_{help_request_id}_{teacher_id}")]
                     ])
                 )
             
@@ -475,7 +478,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     video=video_file_id,
                     caption=caption,
                     reply_markup=InlineKeyboardMarkup([
-                        [InlineKeyboardButton("❓ Yana savolim bor", callback_data=f"reply_{help_request_id}_{query.from_user.id}")]
+                        [InlineKeyboardButton("❓ Yana savolim bor", callback_data=f"reply_{help_request_id}_{teacher_id}")]
                     ])
                 )
             
@@ -488,7 +491,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     audio=audio_file_id,
                     caption=caption,
                     reply_markup=InlineKeyboardMarkup([
-                        [InlineKeyboardButton("❓ Yana savolim bor", callback_data=f"reply_{help_request_id}_{query.from_user.id}")]
+                        [InlineKeyboardButton("❓ Yana savolim bor", callback_data=f"reply_{help_request_id}_{teacher_id}")]
                     ])
                 )
             
@@ -501,7 +504,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     document=document_file_id,
                     caption=caption,
                     reply_markup=InlineKeyboardMarkup([
-                        [InlineKeyboardButton("❓ Yana savolim bor", callback_data=f"reply_{help_request_id}_{query.from_user.id}")]
+                        [InlineKeyboardButton("❓ Yana savolim bor", callback_data=f"reply_{help_request_id}_{teacher_id}")]
                     ])
                 )
             
@@ -530,8 +533,9 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         teacher_id = int(parts[2])
         
         # Talabaga javob yozish uchun so'rov yuboramiz
-        await query.message.reply_text(
-            "❓ Savolingizni yozing. O'qituvchi sizga javob beradi:",
+        await context.bot.send_message(
+            chat_id=query.from_user.id,
+            text="❓ Savolingizni yozing. O'qituvchi sizga javob beradi:",
             reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton("❌ Bekor qilish", callback_data="cancel_question")]
             ])
@@ -540,18 +544,19 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Talabaning holatini saqlaymiz
         context.user_data['waiting_for_question'] = {
             'help_request_id': help_request_id,
-            'teacher_id': teacher_id
+            'teacher_id': teacher_id,
+            'student_id': query.from_user.id
         }
     
     elif data == "cancel_question":
         # Talaba savol berishni bekor qilganda
         if 'waiting_for_question' in context.user_data:
             del context.user_data['waiting_for_question']
-        await query.message.reply_text("✅ Savol berish bekor qilindi.")
+        await query.message.edit_text("✅ Savol berish bekor qilindi.")
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Agar talaba savol yozayotgan bo'lsa
-    if 'waiting_for_question' in context.user_data and update.message.chat_id not in TEACHER_CHAT_IDS:
+    if 'waiting_for_question' in context.user_data and update.message.from_user.id == context.user_data['waiting_for_question']['student_id']:
         question_data = context.user_data['waiting_for_question']
         help_request_id = question_data['help_request_id']
         teacher_id = question_data['teacher_id']
@@ -622,7 +627,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("❌ Savolni yuborishda xatolik yuz berdi.")
     
     # Agar xabar reply bo'lsa va active_assignment mavjud bo'lsa (o'qituvchi javob yozyapti)
-    elif update.message.reply_to_message and 'active_assignment' in context.user_data and update.message.chat_id in TEACHER_CHAT_IDS:
+    elif update.message.reply_to_message and 'active_assignment' in context.user_data and update.message.from_user.id in TEACHER_CHAT_IDS:
         help_request_id = context.user_data['active_assignment']['help_request_id']
         
         # Matnli javob
@@ -684,7 +689,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
     
     # Agar oddiy xabar bo'lsa va active_assignment mavjud bo'lsa (o'qituvchi javob yozyapti)
-    elif 'active_assignment' in context.user_data and update.message.chat_id in TEACHER_CHAT_IDS:
+    elif 'active_assignment' in context.user_data and update.message.from_user.id in TEACHER_CHAT_IDS:
         help_request_id = context.user_data['active_assignment']['help_request_id']
         
         # Matnli javob
