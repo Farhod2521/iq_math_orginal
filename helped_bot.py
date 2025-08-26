@@ -615,10 +615,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def main():
     application = Application.builder().token(BOT_TOKEN).build()
     application.add_handler(CallbackQueryHandler(handle_callback))
-    application.add_handler(MessageHandler(filters.TEXT | filters.PHOTO | filters.VIDEO | filters.AUDIO | filters.DOCUMENT, handle_message))
+    
+    # Document filter ni alohida qo'shing
+    document_filter = filters.Document.ALL if hasattr(filters, 'Document') else filters.DOCUMENT
+    application.add_handler(MessageHandler(
+        filters.TEXT | filters.PHOTO | filters.VIDEO | filters.AUDIO | document_filter, 
+        handle_message
+    ))
     
     print("✅ Bot ishga tushdi...")
     application.run_polling()
-
-if __name__ == "__main__":
-    main()
