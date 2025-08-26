@@ -5,7 +5,7 @@ from .views import (
     ResetPasswordView, ResendSMSCodeView,
     LogoutDeviceAPIView, RegisterStudentAPIView, RegisterTeacherAPIView, TeacherVerifySmsCodeAPIView,
     ClassListView, TeacherLoginAPIView, TeacherProfileAPIView, UpdateStudentFieldAPIView, UserProfileAPIView,
-      LogoutAPIView, TelegramIDCheckAPIView, ParentCreateAPIView
+      LogoutAPIView, TelegramIDCheckAPIView, ParentCreateAPIView, UpdateTelegramIDAPIView
 
 )
 from rest_framework_simplejwt.views import (
@@ -51,6 +51,7 @@ urlpatterns = [
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('check-telegram-id/', TelegramIDCheckAPIView.as_view(), name='token_refresh'),
     path('parent/create/', ParentCreateAPIView.as_view(), name='parent-create'),
+    path('update-telegram-id/', UpdateTelegramIDAPIView.as_view(), name='update-telegram-id'),
 
 ]
 
