@@ -147,7 +147,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         teacher_name = f"{query.from_user.first_name} {query.from_user.last_name or ''}".strip()
         telegram_id = query.from_user.id
         
-        print(f"👨‍🏫 O'qituvchi {teacher_name} ({telegram_id}) {help_request_id}-savolga javob berishni boshladi")
+        print(f"👨‍🏫 O'qituvchi {response.text} {help_request_id}-savolga javob berishni boshladi")
         
         try:
             print(f"🌐 Backend API ga so'rov yuborilmoqda: {BACKEND_ASSIGN_API}")
