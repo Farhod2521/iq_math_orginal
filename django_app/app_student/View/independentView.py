@@ -7,7 +7,7 @@ from django_app.app_student.models import  TopicHelpRequestIndependent
 from django_app.app_student.serializers import  TopicHelpRequestIndependentSerializer
 from rest_framework.views import APIView
 from django.utils import timezone
-from telegram.helped_bot import send_question_to_telegram
+from bot_telegram.helped_bot import send_question_to_telegram
 from django_app.app_user.models import Teacher, Student
 
 class TopicHelpRequestCreateView(CreateAPIView):
