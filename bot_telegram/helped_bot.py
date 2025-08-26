@@ -33,7 +33,7 @@ def send_question_to_telegram(student_full_name, question_id, result_json, stude
     Savolni barcha o'qituvchilarga yuborish
     """
     student_name_encoded = urllib.parse.quote(student_full_name)
-    student_name_encoded = urllib.parse.quote(student_id)
+    student_name_encoded = urllib.parse.quote(str(student_id))
     url = f"https://mentor.iqmath.uz/dashboard/teacher/student-examples/{question_id}?student_name={student_name_encoded}"
 
     result = result_json[0] if result_json else {}
