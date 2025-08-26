@@ -1005,3 +1005,41 @@ class ParentCreateAPIView(APIView):
                 "login": parent.user.phone
             }, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+class UpdateTelegramIDAPIView(APIView):
+    """
+    POST:
+    {
+        "phone": 998911234567,
+        "telegram_id": 454465465
+    }
+    Agar phone mavjud bo'lsa, telegram_id yangilanadi.
+    Aks holda xatolik qaytaradi.
+    """
+
+    def post(self, request):
+        phone = request.data.get("phone")
+        telegram_id = request.data.get("telegram_id")
+
+        if not phone or not telegram_id:
+            return Response(
+                {"detail": "phone va telegram_id kiritilishi shart"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            user = User.objects.get(phone=str(phone))
+        except User.DoesNotExist:
+            return Response(
+                {"detail": "Ro'yhatdan o'tmagansiz"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        user.telegram_id = telegram_id
+        user.save(update_fields=["telegram_id"])
+
+        return Response(
+            {"detail": "Telegram ID muvaffaqiyatli yangilandi"},
+            status=status.HTTP_200_OK
+        )
