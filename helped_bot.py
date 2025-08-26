@@ -408,9 +408,9 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         help_request_id = int(data.split("_")[1])
         assignment = context.user_data.get('active_assignment', {})
         
-        if assignment.get('help_request_id') != help_request_id:
-            await query.message.reply_text("❌ Siz bu savolga javob berish huquqiga ega emassiz")
-            return
+        # if assignment.get('help_request_id') != help_request_id:
+        #     await query.message.reply_text("❌ Siz bu savolga javob berish huquqiga ega emassiz")
+        #     return
         
         student_telegram_id = assignment.get('student_telegram_id')
         
