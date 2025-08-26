@@ -92,18 +92,17 @@ class AssignTeacherAPIView(APIView):
                 "message": "O‘qituvchi topilmadi."
             }, status=status.HTTP_404_NOT_FOUND)
 
-class GetTelegramIdAPIView(APIView):
+class GetTelegramIdFromTopicHelpAPIView(APIView):
     def post(self, request, *args, **kwargs):
-        student_id = request.data.get("student_id")
+        topic_help_id = request.data.get("topic_help_id")
 
-        if not student_id:
-            return Response({"error": "student_id kiritilmadi"}, status=status.HTTP_400_BAD_REQUEST)
+        if not topic_help_id:
+            return Response({"error": "topic_help_id kiritilmadi"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Studentni topish (agar identification ishlatmoqchi bo'lsangiz, filterni shunga qarab o'zgartiring)
         try:
-            student = Student.objects.get(id=student_id)
-        except Student.DoesNotExist:
-            return Response({"error": "Student topilmadi"}, status=status.HTTP_404_NOT_FOUND)
+            topic_help = TopicHelpRequestIndependent.objects.select_related("student__user").get(id=topic_help_id)
+        except TopicHelpRequestIndependent.DoesNotExist:
+            return Response({"error": "TopicHelpRequestIndependent topilmadi"}, status=status.HTTP_404_NOT_FOUND)
 
-        telegram_id = student.user.telegram_id
+        telegram_id = topic_help.student.user.telegram_id
         return Response({"telegram_id": telegram_id}, status=status.HTTP_200_OK)
