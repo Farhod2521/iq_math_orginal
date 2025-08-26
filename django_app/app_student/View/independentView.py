@@ -8,7 +8,8 @@ from django_app.app_student.serializers import  TopicHelpRequestIndependentSeria
 from rest_framework.views import APIView
 from django.utils import timezone
 from .telegram_bot_service import send_question_to_telegram
-from django_app.app_teacher.models import Teacher
+from django_app.app_user.models import Teacher, Student
+
 class TopicHelpRequestCreateView(CreateAPIView):
     queryset = TopicHelpRequestIndependent.objects.all()
     serializer_class = TopicHelpRequestIndependentSerializer
@@ -89,3 +90,20 @@ class AssignTeacherAPIView(APIView):
                 "success": False,
                 "message": "O‘qituvchi topilmadi."
             }, status=status.HTTP_404_NOT_FOUND)
+        
+
+class GetTelegramIdAPIView(APIView):
+    def post(self, request, *args, **kwargs):
+        student_id = request.data.get("student_id")
+
+        if not student_id:
+            return Response({"error": "student_id kiritilmadi"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Studentni topish (agar identification ishlatmoqchi bo'lsangiz, filterni shunga qarab o'zgartiring)
+        try:
+            student = Student.objects.get(id=student_id)
+        except Student.DoesNotExist:
+            return Response({"error": "Student topilmadi"}, status=status.HTTP_404_NOT_FOUND)
+
+        telegram_id = student.user.telegram_id
+        return Response({"telegram_id": telegram_id}, status=status.HTTP_200_OK)
