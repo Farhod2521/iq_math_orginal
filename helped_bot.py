@@ -447,7 +447,10 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 answer_text = context.user_data['answer_text']
                 await context.bot.send_message(
                     chat_id=student_telegram_id,
-                    text=f"👨‍🏫 {teacher_name}dan javob:\n\n{answer_text}"
+                    text=f"👨‍🏫 {teacher_name}dan javob:\n\n{answer_text}",
+                    reply_markup=InlineKeyboardMarkup([
+                        [InlineKeyboardButton("❓ Yana savolim bor", callback_data=f"reply_{help_request_id}_{query.from_user.id}")]
+                    ])
                 )
             
             elif 'answer_photo' in context.user_data:
@@ -457,7 +460,10 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await context.bot.send_photo(
                     chat_id=student_telegram_id,
                     photo=photo_file_id,
-                    caption=caption
+                    caption=caption,
+                    reply_markup=InlineKeyboardMarkup([
+                        [InlineKeyboardButton("❓ Yana savolim bor", callback_data=f"reply_{help_request_id}_{query.from_user.id}")]
+                    ])
                 )
             
             elif 'answer_video' in context.user_data:
@@ -467,7 +473,10 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await context.bot.send_video(
                     chat_id=student_telegram_id,
                     video=video_file_id,
-                    caption=caption
+                    caption=caption,
+                    reply_markup=InlineKeyboardMarkup([
+                        [InlineKeyboardButton("❓ Yana savolim bor", callback_data=f"reply_{help_request_id}_{query.from_user.id}")]
+                    ])
                 )
             
             elif 'answer_audio' in context.user_data:
@@ -477,7 +486,10 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await context.bot.send_audio(
                     chat_id=student_telegram_id,
                     audio=audio_file_id,
-                    caption=caption
+                    caption=caption,
+                    reply_markup=InlineKeyboardMarkup([
+                        [InlineKeyboardButton("❓ Yana savolim bor", callback_data=f"reply_{help_request_id}_{query.from_user.id}")]
+                    ])
                 )
             
             elif 'answer_document' in context.user_data:
@@ -487,7 +499,10 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await context.bot.send_document(
                     chat_id=student_telegram_id,
                     document=document_file_id,
-                    caption=caption
+                    caption=caption,
+                    reply_markup=InlineKeyboardMarkup([
+                        [InlineKeyboardButton("❓ Yana savolim bor", callback_data=f"reply_{help_request_id}_{query.from_user.id}")]
+                    ])
                 )
             
             else:
@@ -501,16 +516,113 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 if key in context.user_data:
                     del context.user_data[key]
             
-            if 'active_assignment' in context.user_data:
-                del context.user_data['active_assignment']
+            # Faol topshiriqni saqlab qolamiz, chunki talaba yana savol berishi mumkin
+            context.user_data['active_assignment']['last_teacher_id'] = query.from_user.id
             
         except Exception as e:
             print(f"❌ Javob yuborishda xatolik: {e}")
             await query.message.reply_text("❌ Javob yuborishda xatolik yuz berdi")
+    
+    elif data.startswith("reply_"):
+        # Talaba yana savol berish tugmasini bosganda
+        parts = data.split("_")
+        help_request_id = int(parts[1])
+        teacher_id = int(parts[2])
+        
+        # Talabaga javob yozish uchun so'rov yuboramiz
+        await query.message.reply_text(
+            "❓ Savolingizni yozing. O'qituvchi sizga javob beradi:",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("❌ Bekor qilish", callback_data="cancel_question")]
+            ])
+        )
+        
+        # Talabaning holatini saqlaymiz
+        context.user_data['waiting_for_question'] = {
+            'help_request_id': help_request_id,
+            'teacher_id': teacher_id
+        }
+    
+    elif data == "cancel_question":
+        # Talaba savol berishni bekor qilganda
+        if 'waiting_for_question' in context.user_data:
+            del context.user_data['waiting_for_question']
+        await query.message.reply_text("✅ Savol berish bekor qilindi.")
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # Agar xabar reply bo'lsa va active_assignment mavjud bo'lsa
-    if update.message.reply_to_message and 'active_assignment' in context.user_data:
+    # Agar talaba savol yozayotgan bo'lsa
+    if 'waiting_for_question' in context.user_data and update.message.chat_id not in TEACHER_CHAT_IDS:
+        question_data = context.user_data['waiting_for_question']
+        help_request_id = question_data['help_request_id']
+        teacher_id = question_data['teacher_id']
+        
+        # Talabaning xabarini o'qituvchiga yuboramiz
+        try:
+            if update.message.text:
+                await context.bot.send_message(
+                    chat_id=teacher_id,
+                    text=f"❓ Talabadan qo'shimcha savol:\n\n{update.message.text}\n\n" +
+                         f"🆔 Savol ID: {help_request_id}",
+                    reply_markup=InlineKeyboardMarkup([
+                        [InlineKeyboardButton("📤 Javob berish", callback_data=f"send_{help_request_id}")]
+                    ])
+                )
+            
+            elif update.message.photo:
+                caption = update.message.caption or f"❓ Talabadan qo'shimcha savol (🆔 Savol ID: {help_request_id})"
+                await context.bot.send_photo(
+                    chat_id=teacher_id,
+                    photo=update.message.photo[-1].file_id,
+                    caption=caption,
+                    reply_markup=InlineKeyboardMarkup([
+                        [InlineKeyboardButton("📤 Javob berish", callback_data=f"send_{help_request_id}")]
+                    ])
+                )
+            
+            elif update.message.video:
+                caption = update.message.caption or f"❓ Talabadan qo'shimcha savol (🆔 Savol ID: {help_request_id})"
+                await context.bot.send_video(
+                    chat_id=teacher_id,
+                    video=update.message.video.file_id,
+                    caption=caption,
+                    reply_markup=InlineKeyboardMarkup([
+                        [InlineKeyboardButton("📤 Javob berish", callback_data=f"send_{help_request_id}")]
+                    ])
+                )
+            
+            elif update.message.audio:
+                caption = update.message.caption or f"❓ Talabadan qo'shimcha savol (🆔 Savol ID: {help_request_id})"
+                await context.bot.send_audio(
+                    chat_id=teacher_id,
+                    audio=update.message.audio.file_id,
+                    caption=caption,
+                    reply_markup=InlineKeyboardMarkup([
+                        [InlineKeyboardButton("📤 Javob berish", callback_data=f"send_{help_request_id}")]
+                    ])
+                )
+            
+            elif update.message.document:
+                caption = update.message.caption or f"❓ Talabadan qo'shimcha savol (🆔 Savol ID: {help_request_id})"
+                await context.bot.send_document(
+                    chat_id=teacher_id,
+                    document=update.message.document.file_id,
+                    caption=caption,
+                    reply_markup=InlineKeyboardMarkup([
+                        [InlineKeyboardButton("📤 Javob berish", callback_data=f"send_{help_request_id}")]
+                    ])
+                )
+            
+            await update.message.reply_text("✅ Savolingiz o'qituvchiga yuborildi. Tez orada javob olasiz.")
+            
+            # Holatni tozalaymiz
+            del context.user_data['waiting_for_question']
+            
+        except Exception as e:
+            print(f"❌ Savolni yuborishda xatolik: {e}")
+            await update.message.reply_text("❌ Savolni yuborishda xatolik yuz berdi.")
+    
+    # Agar xabar reply bo'lsa va active_assignment mavjud bo'lsa (o'qituvchi javob yozyapti)
+    elif update.message.reply_to_message and 'active_assignment' in context.user_data and update.message.chat_id in TEACHER_CHAT_IDS:
         help_request_id = context.user_data['active_assignment']['help_request_id']
         
         # Matnli javob
@@ -571,8 +683,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 ])
             )
     
-    # Agar oddiy xabar bo'lsa va active_assignment mavjud bo'lsa
-    elif 'active_assignment' in context.user_data:
+    # Agar oddiy xabar bo'lsa va active_assignment mavjud bo'lsa (o'qituvchi javob yozyapti)
+    elif 'active_assignment' in context.user_data and update.message.chat_id in TEACHER_CHAT_IDS:
         help_request_id = context.user_data['active_assignment']['help_request_id']
         
         # Matnli javob
@@ -646,5 +758,6 @@ def main():
     
     print("✅ Bot ishga tushdi...")
     application.run_polling()
+
 if __name__ == "__main__":
     main()
