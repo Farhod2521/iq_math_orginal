@@ -1,6 +1,5 @@
 import os
 import django
-import logging
 import requests
 import sys
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
@@ -23,9 +22,6 @@ from django_app.app_student.models import HelpRequestMessageLog
 BOT_TOKEN = "7826335243:AAGXTZvtzJ8e8g35Hrx_Swy7mwmRPd3T7Po"
 BACKEND_ASSIGN_API = "https://api.iqmath.uz/api/v1/func_student/student/telegram/assign-teacher/"
 TELEGRAM_ID_API = "https://api.iqmath.uz/api/v1/func_student/student/student_id/telegram_id/"
-
-# Loggerni o'chirib qo'yamiz
-logging.basicConfig(level=logging.CRITICAL)
 
 @sync_to_async
 def get_logs(help_request_id):
@@ -55,19 +51,24 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     data = query.data
     
+    print(f"Tugma bosildi: {data}")
+    
     if data.startswith("assign_"):
         help_request_id = int(data.split("_")[1])
-        telegram_id = query.from_user.id
         teacher_name = f"{query.from_user.first_name}"
+        
+        print(f"O'qituvchi {teacher_name} {help_request_id} savoliga javob berishni boshladi")
         
         try:
             response = requests.post(BACKEND_ASSIGN_API, data={
                 "help_request_id": help_request_id,
-                "telegram_id": telegram_id
+                "telegram_id": query.from_user.id
             }, timeout=5)
             result = response.json()
-        except:
+            print(f"Backend javobi: {result}")
+        except Exception as e:
             await query.message.reply_text("❌ Serverga ulanishda xatolik")
+            print(f"Server xatosi: {e}")
             return
         
         if result.get("success"):
