@@ -6,7 +6,7 @@ StudentRegisterSerializer, VerifySmsCodeSerializer,
 LoginSerializer, StudentProfileSerializer, TeacherRegisterSerializer, Class_Serializer,
 TeacherVerifySmsCodeSerializer, TeacherSerializer, StudentSerializer, ParentCreateSerializer
 )
-from .models import Student, UserSMSAttempt, Teacher, Class, StudentLoginHistory
+from .models import Student, UserSMSAttempt, Teacher, Class, StudentLoginHistory, Parent
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.settings import api_settings
 from datetime import timedelta
@@ -862,8 +862,26 @@ class LoginAPIView(APIView):
                 except Teacher.DoesNotExist:
                     return Response({"detail": "Teacher profile not found."}, status=status.HTTP_404_NOT_FOUND)
 
+            elif user.role == 'parent':
+                try:
+                    parent = Parent.objects.get(user=user)
+                    access_token['parent_id'] = parent.id
+                    # Farzandlar ro‘yxatini ham yuborish mumkin
+                    children = parent.students.values("id", "full_name")
+                    profile_data = {
+                        "id": parent.id,
+                        "full_name": parent.full_name,
+                        "phone": user.phone,
+                        "role": user.role,
+                        "children": list(children),
+                        "access_token": str(access_token),
+                        "refresh_token": str(refresh),
+                        "expires_in": expires_in,
+                    }
+                except Parent.DoesNotExist:
+                    return Response({"detail": "Parent profile not found."}, status=status.HTTP_404_NOT_FOUND)
+
             elif user.role == 'admin':
-                # Admin uchun oddiy profil javobi
                 profile_data = {
                     "id": user.id,
                     "full_name": f"{user.first_name} {user.last_name}".strip(),
