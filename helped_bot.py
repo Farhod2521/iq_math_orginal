@@ -4,8 +4,8 @@ import requests
 import sys
 import urllib.parse
 import json
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, InputFile
-from telegram.ext import Application, CallbackQueryHandler, ContextTypes, MessageHandler, filters
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, InputFile, KeyboardButton, ReplyKeyboardMarkup
+from telegram.ext import Application, CallbackQueryHandler, ContextTypes, MessageHandler, filters, CommandHandler
 from asgiref.sync import sync_to_async
 import tempfile
 
@@ -26,6 +26,10 @@ BOT_TOKEN = "7826335243:AAGXTZvtzJ8e8g35Hrx_Swy7mwmRPd3T7Po"
 BACKEND_ASSIGN_API = "https://api.iqmath.uz/api/v1/func_student/student/telegram/assign-teacher/"
 TELEGRAM_ID_API = "https://api.iqmath.uz/api/v1/func_student/student/student_id/telegram_id/"
 TEACHER_CHAT_IDS = [1858379541, 5467533504]  # O'qituvchilar chat ID lari
+
+# Yangi API URL lar
+CHECK_TELEGRAM_ID_API = "https://api.iqmath.uz/api/v1/auth/check-telegram-id/"
+UPDATE_TELEGRAM_ID_API = "https://api.iqmath.uz/api/v1/auth/update-telegram-id/"
 
 # ================= TELEGRAM SERVICE FUNCTIONS =================
 
@@ -96,6 +100,157 @@ def send_question_to_telegram(student_full_name, question_id, result_json, stude
                 
         except Exception as e:
             print(f"❌ Xabar yuborishda xatolik: {e}")
+
+# ================= YANGI FUNKSIYALAR =================
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Start komandasi bilan ishlovchi funksiya"""
+    user = update.effective_user
+    print(f"🚀 Start bosildi: {user.id}, {user.first_name}")
+    
+    # Telegram ID ni API ga yuborib tekshiramiz
+    try:
+        response = requests.post(
+            CHECK_TELEGRAM_ID_API,
+            json={"telegram_id": user.id},
+            timeout=5
+        )
+        
+        if response.status_code == 200:
+            data = response.json()
+            role = data.get("role")
+            
+            if role == "teacher":
+                # O'qituvchi uchun menu
+                keyboard = [
+                    [InlineKeyboardButton("📬 Menga kelgan murojaatlar", callback_data='teacher_applications')],
+                    [InlineKeyboardButton("📊 Murojaatlar statistikasi", callback_data='teacher_stats')]
+                ]
+                reply_markup = InlineKeyboardMarkup(keyboard)
+                await update.message.reply_text(
+                    f"👨‍🏫 Assalomu alaykum, {data.get('data', {}).get('full_name', 'O\'qituvchi')}!\n"
+                    f"O'qituvchi paneliga xush kelibsiz.",
+                    reply_markup=reply_markup
+                )
+                
+            elif role == "student":
+                # O'quvchi uchun menu
+                keyboard = [
+                    [InlineKeyboardButton("📬 Men yuborgan murojaatlar", callback_data='student_applications')]
+                ]
+                reply_markup = InlineKeyboardMarkup(keyboard)
+                await update.message.reply_text(
+                    f"👨‍🎓 Assalomu alaykum, {data.get('data', {}).get('full_name', 'O\'quvchi')}!\n"
+                    f"O'quvchi paneliga xush kelibsiz.",
+                    reply_markup=reply_markup
+                )
+                
+            else:
+                # Role aniqlanmagan yoki boshqa holat
+                await ask_for_phone(update, context)
+                
+        elif response.status_code == 404:
+            # Foydalanuvchi topilmadi, telefon raqam so'raymiz
+            await ask_for_phone(update, context)
+        else:
+            # Boshqa xatolik
+            await update.message.reply_text("❌ Server xatosi. Iltimos, keyinroq urunib ko'ring.")
+            
+    except Exception as e:
+        print(f"❌ Start funksiyasida xatolik: {e}")
+        await update.message.reply_text("❌ Xatolik yuz berdi. Iltimos, keyinroq urunib ko'ring.")
+
+async def ask_for_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Telefon raqam so'rovchi funksiya"""
+    # Kontakt yuborish tugmasi
+    keyboard = [[KeyboardButton("📞 Telefon raqamni yuborish", request_contact=True)]]
+    reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True, one_time_keyboard=True)
+    
+    await update.message.reply_text(
+        "👋 Assalomu alaykum! Botdan foydalanish uchun ro'yxatdan o'tishingiz kerak.\n\n"
+        "Iltimos, telefon raqamingizni yuboring:",
+        reply_markup=reply_markup
+    )
+    
+    # Holatni saqlaymiz
+    context.user_data['waiting_for_phone'] = True
+
+async def handle_contact(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Foydalanuvchi kontakt yuborganda ishlaydigan funksiya"""
+    if 'waiting_for_phone' not in context.user_data:
+        return
+    
+    contact = update.message.contact
+    phone_number = contact.phone_number
+    telegram_id = update.effective_user.id
+    
+    # + ni olib tashlaymiz agar mavjud bo'lsa
+    if phone_number.startswith('+'):
+        phone_number = phone_number[1:]
+    
+    print(f"📞 Telefon raqam qabul qilindi: {phone_number}, Telegram ID: {telegram_id}")
+    
+    # API ga telefon va telegram_id ni yuboramiz
+    try:
+        response = requests.post(
+            UPDATE_TELEGRAM_ID_API,
+            json={
+                "phone": phone_number,
+                "telegram_id": telegram_id
+            },
+            timeout=5
+        )
+        
+        if response.status_code == 200:
+            data = response.json()
+            role = data.get("role")
+            
+            if role == "teacher":
+                keyboard = [
+                    [InlineKeyboardButton("📬 Menga kelgan murojaatlar", callback_data='teacher_applications')],
+                    [InlineKeyboardButton("📊 Murojaatlar statistikasi", callback_data='teacher_stats')]
+                ]
+                reply_markup = InlineKeyboardMarkup(keyboard)
+                await update.message.reply_text(
+                    f"👨‍🏫 Assalomu alaykum, {data.get('data', {}).get('full_name', 'O\'qituvchi')}!\n"
+                    f"O'qituvchi paneliga xush kelibsiz.",
+                    reply_markup=reply_markup
+                )
+                
+            elif role == "student":
+                keyboard = [
+                    [InlineKeyboardButton("📬 Men yuborgan murojaatlar", callback_data='student_applications')]
+                ]
+                reply_markup = InlineKeyboardMarkup(keyboard)
+                await update.message.reply_text(
+                    f"👨‍🎓 Assalomu alaykum, {data.get('data', {}).get('full_name', 'O\'quvchi')}!\n"
+                    f"O'quvchi paneliga xush kelibsiz.",
+                    reply_markup=reply_markup
+                )
+                
+            else:
+                await update.message.reply_text(
+                    "❌ Profilingiz topilmadi. Iltimos, avval veb-saytda ro'yxatdan o'ting."
+                )
+                
+        elif response.status_code == 404:
+            await update.message.reply_text(
+                "❌ Telefon raqamingiz topilmadi. Iltimos, avval veb-saytda ro'yxatdan o'ting."
+            )
+        else:
+            await update.message.reply_text(
+                "❌ Xatolik yuz berdi. Iltimos, keyinroq urunib ko'ring."
+            )
+            
+        # Holatni tozalaymiz
+        if 'waiting_for_phone' in context.user_data:
+            del context.user_data['waiting_for_phone']
+            
+    except Exception as e:
+        print(f"❌ Kontaktni qayta ishlashda xatolik: {e}")
+        await update.message.reply_text(
+            "❌ Xatolik yuz berdi. Iltimos, keyinroq urunib ko'ring."
+        )
 
 # ================= BOT HANDLER FUNCTIONS =================
 
@@ -553,6 +708,16 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if 'waiting_for_question' in context.user_data:
             del context.user_data['waiting_for_question']
         await query.message.edit_text("✅ Savol berish bekor qilindi.")
+    
+    # Yangi tugmalar uchun handlerlar
+    elif data == 'teacher_applications':
+        await query.message.reply_text("📬 Menga kelgan murojaatlar bo'limi. Hozircha bu funksiya ishlamaydi.")
+    
+    elif data == 'teacher_stats':
+        await query.message.reply_text("📊 Murojaatlar statistikasi bo'limi. Hozircha bu funksiya ishlamaydi.")
+    
+    elif data == 'student_applications':
+        await query.message.reply_text("📬 Men yuborgan murojaatlar bo'limi. Hozircha bu funksiya ishlamaydi.")
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Agar talaba savol yozayotgan bo'lsa

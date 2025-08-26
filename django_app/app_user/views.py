@@ -1014,8 +1014,7 @@ class UpdateTelegramIDAPIView(APIView):
         "phone": 998911234567,
         "telegram_id": 454465465
     }
-    Agar phone mavjud bo'lsa, telegram_id yangilanadi.
-    Aks holda xatolik qaytaradi.
+    phone bo'lsa telegram_id yangilanadi va foydalanuvchi role'iga qarab data qaytariladi
     """
 
     def post(self, request):
@@ -1036,10 +1035,29 @@ class UpdateTelegramIDAPIView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
+        # Telegram ID ni yangilash
         user.telegram_id = telegram_id
         user.save(update_fields=["telegram_id"])
 
+        # Role bo'yicha profilni olish
+        data = None
+        if user.role == "teacher":
+            try:
+                teacher = user.teacher_profile
+                data = TeacherSerializer(teacher).data
+            except Teacher.DoesNotExist:
+                data = None
+        elif user.role == "student":
+            try:
+                student = user.student_profile
+                data = StudentSerializer(student).data
+            except Student.DoesNotExist:
+                data = None
+
         return Response(
-            {"detail": "Telegram ID muvaffaqiyatli yangilandi"},
+            {
+                "role": user.role,
+                "data": data
+            },
             status=status.HTTP_200_OK
         )
