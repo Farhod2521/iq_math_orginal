@@ -34,6 +34,7 @@ class TopicHelpRequestCreateView(CreateAPIView):
 
         if student and telegram_id and telegram_id != 0:
             send_question_to_telegram(
+                student_id=student.id,
                 student_full_name=student.full_name,
                 question_id=instance.id,
                 result_json=instance.result_json
