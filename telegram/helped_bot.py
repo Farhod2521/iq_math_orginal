@@ -9,9 +9,8 @@ from asgiref.sync import sync_to_async
 import sys
 sys.path.append('/home/user/backend/iq_math_orginal')
 
-# Django sozlamasi
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'iq_math_orginal.config.settings.production')
-
+# 2. Django sozlamasini ko‘rsatamiz
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.production')
 
 try:
     django.setup()
