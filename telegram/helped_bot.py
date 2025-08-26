@@ -6,9 +6,18 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CallbackQueryHandler, ContextTypes, MessageHandler, filters
 from asgiref.sync import sync_to_async
 
+import sys
+sys.path.append('/home/user/backend/iq_math_orginal')
+
 # Django sozlamasi
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.production')
-django.setup()
+
+try:
+    django.setup()
+    print("✅ Django muvaffaqiyatli ishga tushdi")
+except Exception as e:
+    print(f"❌ Django ishga tushirishda xatolik: {e}")
+    sys.exit(1)
 
 from django_app.app_student.models import HelpRequestMessageLog
 
