@@ -425,6 +425,8 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.message.reply_text("❌ Server bilan bog‘lanishda xatolik.")
             return
         
+        student_telegram_id = telegram_id
+        
         if not student_telegram_id:
             # Agar student telegram ID bo'lmasa, qayta urinib ko'ramiz
             student_id = assignment.get('student_id')
