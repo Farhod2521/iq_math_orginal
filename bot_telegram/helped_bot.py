@@ -138,7 +138,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             print(f"🌐 Backend API ga so'rov yuborilmoqda: {BACKEND_ASSIGN_API}")
             response = requests.post(
                 BACKEND_ASSIGN_API,
-                data={
+                json={  # JSON formatida yuborish
                     "help_request_id": help_request_id,
                     "telegram_id": telegram_id
                 },
@@ -151,9 +151,15 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if response.status_code != 200:
                 await query.message.reply_text("❌ Server xatosi")
                 return
-                
-            result = response.json()
             
+            # JSON javobini tekshirish
+            try:
+                result = response.json()
+            except json.JSONDecodeError:
+                print(f"❌ Noto'g'ri JSON formati: {response.text}")
+                await query.message.reply_text("❌ Serverdan noto'g'ri javob qaytdi")
+                return
+                
         except Exception as e:
             error_msg = f"❌ Serverga ulanishda xatolik: {e}"
             print(error_msg)
