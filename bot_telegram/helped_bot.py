@@ -4,10 +4,9 @@ import requests
 import sys
 import urllib.parse
 import json
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, InputFile
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CallbackQueryHandler, ContextTypes, MessageHandler, filters
 from asgiref.sync import sync_to_async
-import tempfile
 
 # Loyiha yo'lini qo'shish
 sys.path.append('/home/user/backend/iq_math_orginal')
@@ -228,9 +227,8 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                         # Yo'riqnoma xabarini yuboramiz
                         await query.message.reply_text(
                             "✅ Endi siz bu savolga javob berayapsiz.\n\n" +
-                            "Talabaga javob yuborish uchun istalgan turdagi kontent yuboring:\n" +
-                            "📝 Matn xabari\n🖼 Rasm\n🎥 Video\n🎵 Audio\n\n" +
-                            "Yoki shu xabarga 'reply' qilib yuboring, so'ngra '📤 Javobni yuborish' tugmasini bosing.",
+                            "Talabaga javob yuborish uchun shu xabarga 'reply' qilib yozing yoki " +
+                            "to'g'ridan-to'g'ri yozib, keyin 'Javobni yuborish' tugmasini bosing.",
                             reply_markup=InlineKeyboardMarkup([
                                 [InlineKeyboardButton("📤 Javobni yuborish", callback_data=f"send_{help_request_id}")]
                             ])
@@ -359,9 +357,8 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                         # Yo'riqnoma xabarini yuboramiz
                         await query.message.reply_text(
                             "✅ Endi siz bu savolga javob berayapsiz.\n\n" +
-                            "Talabaga javob yuborish uchun istalgan turdagi kontent yuboring:\n" +
-                            "📝 Matn xabari\n🖼 Rasm\n🎥 Video\n🎵 Audio\n\n" +
-                            "Yoki shu xabarga 'reply' qilib yuboring, so'ngra '📤 Javobni yuborish' tugmasini bosing.",
+                            "Talabaga javob yuborish uchun shu xabarga 'reply' qilib yozing yoki " +
+                            "to'g'ridan-to'g'ri yozib, keyin 'Javobni yuborish' tugmasini bosing.",
                             reply_markup=InlineKeyboardMarkup([
                                 [InlineKeyboardButton("📤 Javobni yuborish", callback_data=f"send_{help_request_id}")]
                             ])
@@ -417,69 +414,23 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await query.message.reply_text("❌ Talabaning Telegram ID sini topib bo'lmadi")
                 return
         
-        # Har xil turdagi javoblarni yuborish
+        if 'answer_text' not in context.user_data:
+            await query.message.reply_text("❌ Avval javob matnini yuboring")
+            return
+        
+        answer_text = context.user_data['answer_text']
         teacher_name = assignment.get('teacher_name', 'O\'qituvchi')
         
         try:
-            if 'answer_text' in context.user_data:
-                # Matnli javob
-                answer_text = context.user_data['answer_text']
-                await context.bot.send_message(
-                    chat_id=student_telegram_id,
-                    text=f"👨‍🏫 {teacher_name}dan javob:\n\n{answer_text}"
-                )
-            
-            elif 'answer_photo' in context.user_data:
-                # Rasmli javob
-                photo_file_id = context.user_data['answer_photo']
-                caption = context.user_data.get('answer_caption', f"👨‍🏫 {teacher_name}dan javob")
-                await context.bot.send_photo(
-                    chat_id=student_telegram_id,
-                    photo=photo_file_id,
-                    caption=caption
-                )
-            
-            elif 'answer_video' in context.user_data:
-                # Videoli javob
-                video_file_id = context.user_data['answer_video']
-                caption = context.user_data.get('answer_caption', f"👨‍🏫 {teacher_name}dan javob")
-                await context.bot.send_video(
-                    chat_id=student_telegram_id,
-                    video=video_file_id,
-                    caption=caption
-                )
-            
-            elif 'answer_audio' in context.user_data:
-                # Audioli javob
-                audio_file_id = context.user_data['answer_audio']
-                caption = context.user_data.get('answer_caption', f"👨‍🏫 {teacher_name}dan javob")
-                await context.bot.send_audio(
-                    chat_id=student_telegram_id,
-                    audio=audio_file_id,
-                    caption=caption
-                )
-            
-            elif 'answer_document' in context.user_data:
-                # Hujjatli javob
-                document_file_id = context.user_data['answer_document']
-                caption = context.user_data.get('answer_caption', f"👨‍🏫 {teacher_name}dan javob")
-                await context.bot.send_document(
-                    chat_id=student_telegram_id,
-                    document=document_file_id,
-                    caption=caption
-                )
-            
-            else:
-                await query.message.reply_text("❌ Avval javob yuboring")
-                return
-            
+            await context.bot.send_message(
+                chat_id=student_telegram_id,
+                text=f"👨‍🏫 {teacher_name}dan javob:\n\n{answer_text}"
+            )
             await query.message.reply_text("✅ Javobingiz talabaga yuborildi")
             
             # Ma'lumotlarni tozalash
-            for key in ['answer_text', 'answer_photo', 'answer_video', 'answer_audio', 'answer_document', 'answer_caption']:
-                if key in context.user_data:
-                    del context.user_data[key]
-            
+            if 'answer_text' in context.user_data:
+                del context.user_data['answer_text']
             if 'active_assignment' in context.user_data:
                 del context.user_data['active_assignment']
             
@@ -490,132 +441,23 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Agar xabar reply bo'lsa va active_assignment mavjud bo'lsa
     if update.message.reply_to_message and 'active_assignment' in context.user_data:
+        context.user_data['answer_text'] = update.message.text
         help_request_id = context.user_data['active_assignment']['help_request_id']
         
-        # Matnli javob
-        if update.message.text:
-            context.user_data['answer_text'] = update.message.text
-            await update.message.reply_text(
-                "✅ Matnli javobingiz qabul qilindi. «📤 Javobni yuborish» tugmasini bosing.",
-                reply_markup=InlineKeyboardMarkup([
-                    [InlineKeyboardButton("📤 Javobni yuborish", callback_data=f"send_{help_request_id}")]
-                ])
-            )
-        
-        # Rasmli javob
-        elif update.message.photo:
-            context.user_data['answer_photo'] = update.message.photo[-1].file_id
-            if update.message.caption:
-                context.user_data['answer_caption'] = update.message.caption
-            await update.message.reply_text(
-                "✅ Rasmli javobingiz qabul qilindi. «📤 Javobni yuborish» tugmasini bosing.",
-                reply_markup=InlineKeyboardMarkup([
-                    [InlineKeyboardButton("📤 Javobni yuborish", callback_data=f"send_{help_request_id}")]
-                ])
-            )
-        
-        # Videoli javob
-        elif update.message.video:
-            context.user_data['answer_video'] = update.message.video.file_id
-            if update.message.caption:
-                context.user_data['answer_caption'] = update.message.caption
-            await update.message.reply_text(
-                "✅ Videoli javobingiz qabul qilindi. «📤 Javobni yuborish» tugmasini bosing.",
-                reply_markup=InlineKeyboardMarkup([
-                    [InlineKeyboardButton("📤 Javobni yuborish", callback_data=f"send_{help_request_id}")]
-                ])
-            )
-        
-        # Audioli javob
-        elif update.message.audio:
-            context.user_data['answer_audio'] = update.message.audio.file_id
-            if update.message.caption:
-                context.user_data['answer_caption'] = update.message.caption
-            await update.message.reply_text(
-                "✅ Audioli javobingiz qabul qilindi. «📤 Javobni yuborish» tugmasini bosing.",
-                reply_markup=InlineKeyboardMarkup([
-                    [InlineKeyboardButton("📤 Javobni yuborish", callback_data=f"send_{help_request_id}")]
-                ])
-            )
-        
-        # Hujjatli javob
-        elif update.message.document:
-            context.user_data['answer_document'] = update.message.document.file_id
-            if update.message.caption:
-                context.user_data['answer_caption'] = update.message.caption
-            await update.message.reply_text(
-                "✅ Hujjatli javobingiz qabul qilindi. «📤 Javobni yuborish» tugmasini bosing.",
-                reply_markup=InlineKeyboardMarkup([
-                    [InlineKeyboardButton("📤 Javobni yuborish", callback_data=f"send_{help_request_id}")]
-                ])
-            )
-    
-    # Agar oddiy xabar bo'lsa va active_assignment mavjud bo'lsa
-    elif 'active_assignment' in context.user_data:
-        help_request_id = context.user_data['active_assignment']['help_request_id']
-        
-        # Matnli javob
-        if update.message.text:
-            context.user_data['answer_text'] = update.message.text
-            await update.message.reply_text(
-                "✅ Matnli javobingiz qabul qilindi. «📤 Javobni yuborish» tugmasini bosing.",
-                reply_markup=InlineKeyboardMarkup([
-                    [InlineKeyboardButton("📤 Javobni yuborish", callback_data=f"send_{help_request_id}")]
-                ])
-            )
-        
-        # Rasmli javob
-        elif update.message.photo:
-            context.user_data['answer_photo'] = update.message.photo[-1].file_id
-            if update.message.caption:
-                context.user_data['answer_caption'] = update.message.caption
-            await update.message.reply_text(
-                "✅ Rasmli javobingiz qabul qilindi. «📤 Javobni yuborish» tugmasini bosing.",
-                reply_markup=InlineKeyboardMarkup([
-                    [InlineKeyboardButton("📤 Javobni yuborish", callback_data=f"send_{help_request_id}")]
-                ])
-            )
-        
-        # Videoli javob
-        elif update.message.video:
-            context.user_data['answer_video'] = update.message.video.file_id
-            if update.message.caption:
-                context.user_data['answer_caption'] = update.message.caption
-            await update.message.reply_text(
-                "✅ Videoli javobingiz qabul qilindi. «📤 Javobni yuborish» tugmasini bosing.",
-                reply_markup=InlineKeyboardMarkup([
-                    [InlineKeyboardButton("📤 Javobni yuborish", callback_data=f"send_{help_request_id}")]
-                ])
-            )
-        
-        # Audioli javob
-        elif update.message.audio:
-            context.user_data['answer_audio'] = update.message.audio.file_id
-            if update.message.caption:
-                context.user_data['answer_caption'] = update.message.caption
-            await update.message.reply_text(
-                "✅ Audioli javobingiz qabul qilindi. «📤 Javobni yuborish» tugmasini bosing.",
-                reply_markup=InlineKeyboardMarkup([
-                    [InlineKeyboardButton("📤 Javobni yuborish", callback_data=f"send_{help_request_id}")]
-                ])
-            )
-        
-        # Hujjatli javob
-        elif update.message.document:
-            context.user_data['answer_document'] = update.message.document.file_id
-            if update.message.caption:
-                context.user_data['answer_caption'] = update.message.caption
-            await update.message.reply_text(
-                "✅ Hujjatli javobingiz qabul qilindi. «📤 Javobni yuborish» tugmasini bosing.",
-                reply_markup=InlineKeyboardMarkup([
-                    [InlineKeyboardButton("📤 Javobni yuborish", callback_data=f"send_{help_request_id}")]
-                ])
-            )
+        await update.message.reply_text(
+            "✅ Javobingiz qabul qilindi. «📤 Javobni yuborish» tugmasini bosing.",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("📤 Javobni yuborish", callback_data=f"send_{help_request_id}")]
+            ])
+        )
+    else:
+        # Agar oddiy xabar bo'lsa, uni e'tiborsiz qoldirish
+        pass
 
 def main():
     application = Application.builder().token(BOT_TOKEN).build()
     application.add_handler(CallbackQueryHandler(handle_callback))
-    application.add_handler(MessageHandler(filters.TEXT | filters.PHOTO | filters.VIDEO | filters.AUDIO | filters.DOCUMENT, handle_message))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     
     print("✅ Bot ishga tushdi...")
     application.run_polling()
