@@ -625,3 +625,5 @@ def main():
     
     print("✅ Bot ishga tushdi...")
     application.run_polling()
+if __name__ == "__main__":
+    main()
