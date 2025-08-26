@@ -410,6 +410,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not student_telegram_id:
             # Agar student telegram ID bo'lmasa, qayta urinib ko'ramiz
             student_id = assignment.get('student_id')
+            print(student_id)
             if student_id:
                 student_telegram_id = await get_student_telegram_id(student_id)
             
