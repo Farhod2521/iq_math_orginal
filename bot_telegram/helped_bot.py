@@ -33,8 +33,17 @@ async def send_question_to_telegram(student_full_name, question_id, result_json,
     """
     Savolni barcha o'qituvchilarga yuborish
     """
+    # Agar student_full_name bytes bo'lsa, stringga o'zgartirish
+    if isinstance(student_full_name, bytes):
+        student_full_name = student_full_name.decode("utf-8")
+    
+    # Agar student_id bytes bo'lsa
+    if isinstance(student_id, bytes):
+        student_id = student_id.decode("utf-8")
+
     student_name_encoded = urllib.parse.quote(student_full_name)
     student_id_encoded = urllib.parse.quote(str(student_id))
+
     url = f"https://mentor.iqmath.uz/dashboard/teacher/student-examples/{question_id}?student_name={student_name_encoded}&student_id={student_id_encoded}"
 
     result = result_json[0] if result_json else {}
