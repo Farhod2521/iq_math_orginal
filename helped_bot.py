@@ -317,6 +317,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             print(f"✅ Backend muvaffaqiyatli javob berdi. Teacher: {result.get('teacher_name')}")
             
             # Student ID ni olish
+            print(help_request_id)
             student_id = result.get("student_id")
             
             # Student telegram ID sini olish
