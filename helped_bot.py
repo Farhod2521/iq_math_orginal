@@ -29,13 +29,13 @@ TEACHER_CHAT_IDS = [1858379541, 5467533504]  # O'qituvchilar chat ID lari
 
 # ================= TELEGRAM SERVICE FUNCTIONS =================
 
-async def send_question_to_telegram(student_full_name, question_id, result_json, student_id):
+def send_question_to_telegram(student_full_name, question_id, result_json, student_id):
     """
     Savolni barcha o'qituvchilarga yuborish
     """
     student_name_encoded = urllib.parse.quote(student_full_name)
-    student_id_encoded = urllib.parse.quote(str(student_id))
-    url = f"https://mentor.iqmath.uz/dashboard/teacher/student-examples/{question_id}?student_name={student_name_encoded}&student_id={student_id_encoded}"
+    student_name_encoded = urllib.parse.quote(str(student_id))
+    url = f"https://mentor.iqmath.uz/dashboard/teacher/student-examples/{question_id}?student_name={student_name_encoded}"
 
     result = result_json[0] if result_json else {}
     total = result.get("total_answers", "-")
@@ -44,42 +44,56 @@ async def send_question_to_telegram(student_full_name, question_id, result_json,
 
     text = (
         f"📥 <b>Yangi savol!</b>\n"
-        f"👤 <b>O'quvchi:</b> {student_id}--{student_full_name}\n"
+        f"👤 <b>O'quvchi:</b>{student_id}--{student_full_name}\n"
         f"🆔 <b>Savol ID:</b> {question_id}\n\n"
         f"📊 <b>Natija:</b>\n"
         f"➕ To'g'ri: <b>{correct}</b> / {total}\n"
         f"⭐️ Ball: <b>{score}</b>\n\n"
     )
 
-    # InlineKeyboard yaratish
-    keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("✅ Javob berish", callback_data=f"assign_{question_id}")],
-        [InlineKeyboardButton("🔗 Savolga o'tish", url=url)]
-    ])
+    # Keyboard format
+    keyboard = {
+        "inline_keyboard": [
+            [
+                {"text": "✅ Javob berish", "callback_data": f"assign_{question_id}"},
+            ],
+            [
+                {"text": "🔗 Savolga o'tish", "url": url}
+            ]
+        ]
+    }
 
     # Har bir o'qituvchiga yuboramiz
     for chat_id in TEACHER_CHAT_IDS:
+        payload = {
+            "chat_id": chat_id,
+            "text": text,
+            "parse_mode": "HTML",
+            "reply_markup": json.dumps(keyboard),
+            "disable_web_page_preview": True
+        }
+
         try:
-            # Bot instance yaratish
-            from telegram import Bot
-            bot = Bot(token=BOT_TOKEN)
-            
-            message = await bot.send_message(
-                chat_id=chat_id,
-                text=text,
-                parse_mode="HTML",
-                reply_markup=keyboard,
-                disable_web_page_preview=True
+            response = requests.post(
+                f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage",
+                data=payload,
+                timeout=10
             )
 
-            # Bazaga log yozish
-            await sync_to_async(HelpRequestMessageLog.objects.create)(
-                help_request_id=question_id,
-                chat_id=chat_id,
-                message_id=message.message_id
-            )
-            print(f"✅ Xabar yuborildi: chat_id={chat_id}, message_id={message.message_id}")
-            
+            if response.status_code == 200:
+                res_data = response.json()
+                message_id = res_data["result"]["message_id"]
+
+                # Bazaga log yozish
+                HelpRequestMessageLog.objects.create(
+                    help_request_id=question_id,
+                    chat_id=chat_id,
+                    message_id=message_id
+                )
+                print(f"✅ Xabar yuborildi: chat_id={chat_id}, message_id={message_id}")
+            else:
+                print(f"❌ Xatolik: {response.status_code}, {response.text}")
+                
         except Exception as e:
             print(f"❌ Xabar yuborishda xatolik: {e}")
 
@@ -194,7 +208,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 try:
                     if log.chat_id == query.message.chat_id:
                         # Javob bergan o'qituvchi uchun
-                        new_text = query.message.text.replace("📥 <b>Yangi savol!</b>", "✅ <b>Siz javob berayapsiz</b>")
+                        new_text = query.message.text.replace("📥 Yangi savol!", "✅ Siz javob berayapsiz")
                         
                         new_markup = InlineKeyboardMarkup([
                             [InlineKeyboardButton("👨‍🏫 Siz javob berayapsiz", callback_data=f"assigned_{help_request_id}")],
@@ -223,7 +237,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                         )
                     else:
                         # Boshqa o'qituvchilar uchun
-                        new_text = query.message.text.replace("📥 <b>Yangi savol!</b>", f"👨‍🏫 <b>{teacher_name} javob beryapti</b>")
+                        new_text = query.message.text.replace("📥 Yangi savol!", f"👨‍🏫 {teacher_name} javob beryapti")
                         
                         other_teachers_markup = InlineKeyboardMarkup([
                             [InlineKeyboardButton("👨‍🏫 Javob berilmoqda", callback_data=f"taken_{help_request_id}")],
