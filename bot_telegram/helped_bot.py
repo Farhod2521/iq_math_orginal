@@ -34,7 +34,7 @@ def send_question_to_telegram(student_full_name, question_id, result_json, stude
     """
     student_name_encoded = urllib.parse.quote(student_full_name)
     student_name_encoded = urllib.parse.quote(str(student_id))
-    url = f"https://mentor.iqmath.uz/dashboard/teacher/student-examples/{question_id}?student_name={student_name_encoded}"
+    url = f"https://iqmath.uz/dashboard/teacher/student-examples/{question_id}?student_name={student_name_encoded}"
 
     result = result_json[0] if result_json else {}
     total = result.get("total_answers", "-")
@@ -132,7 +132,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     data = query.data
-    
+    print("SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS")
     print(f"🔔 Tugma bosildi: {data}")
     
     if data.startswith("assign_"):
