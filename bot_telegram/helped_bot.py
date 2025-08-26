@@ -111,14 +111,22 @@ def update_message_log(help_request_id, chat_id, teacher_name):
     except:
         return False
 
-async def get_student_telegram_id(student_id):
+async def get_student_telegram_id(help_request_id):
+    """Help request ID orqali student telegram ID sini olish"""
     try:
-        response = requests.post(TELEGRAM_ID_API, json={"student_id": student_id}, timeout=5)
+        # Bu API endpoint ni backend developer bilan tekshirib ko'ring
+        response = requests.post(
+            "https://api.iqmath.uz/api/v1/func_student/student/telegram/get-student-id/",
+            json={"help_request_id": help_request_id},
+            timeout=5
+        )
         if response.status_code == 200:
-            return response.json().get("telegram_id")
-        return None
-    except:
-        return None
+            data = response.json()
+            return data.get("telegram_id"), data.get("student_id")
+        return None, None
+    except Exception as e:
+        print(f"❌ Telegram ID olishda xatolik: {e}")
+        return None, None
 
 async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -138,9 +146,10 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             print(f"🌐 Backend API ga so'rov yuborilmoqda: {BACKEND_ASSIGN_API}")
             response = requests.post(
                 BACKEND_ASSIGN_API,
-                json={  # JSON formatida yuborish
+                json={
                     "help_request_id": help_request_id,
-                    "telegram_id": telegram_id
+                    "telegram_id": telegram_id,
+                    "teacher_name": teacher_name
                 },
                 timeout=10
             )
@@ -167,13 +176,21 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
         
         if result.get("success"):
-            student_id = result.get("student_id")
-            print(f"✅ Backend muvaffaqiyatli javob berdi. Talaba ID: {student_id}")
+            print(f"✅ Backend muvaffaqiyatli javob berdi. Teacher: {result.get('teacher_name')}")
+            
+            # Student telegram ID sini olish
+            student_telegram_id, student_id = await get_student_telegram_id(help_request_id)
+            
+            if not student_telegram_id:
+                print("❌ Student telegram ID topilmadi")
+                # Loglarni yangilash bilan davom etamiz, lekin student ID siz
+                student_id = None
             
             # O'qituvchi ma'lumotlarini saqlaymiz
             context.user_data['active_assignment'] = {
                 'help_request_id': help_request_id,
                 'student_id': student_id,
+                'student_telegram_id': student_telegram_id,
                 'teacher_name': teacher_name
             }
             
@@ -191,6 +208,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             ])
             
             # Xabarlarni yangilaymiz
+            success_count = 0
             for log in logs:
                 try:
                     if log.chat_id != query.message.chat_id:
@@ -233,9 +251,13 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                                 [InlineKeyboardButton("📤 Javobni yuborish", callback_data=f"send_{help_request_id}")]
                             ])
                         )
+                    
+                    success_count += 1
                         
                 except Exception as e:
                     print(f"❌ Xabar yangilashda xatolik (chat_id: {log.chat_id}): {e}")
+            
+            print(f"✅ {success_count}/{len(logs)} ta xabar yangilandi")
             
         else:
             error_msg = result.get("message", "❌ Noma'lum xatolik")
@@ -250,12 +272,14 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.message.reply_text("❌ Siz bu savolga javob berish huquqiga ega emassiz")
             return
         
-        student_id = assignment.get('student_id')
-        student_telegram_id = await get_student_telegram_id(student_id)
+        student_telegram_id = assignment.get('student_telegram_id')
         
         if not student_telegram_id:
-            await query.message.reply_text("❌ Talabaning Telegram ID sini topib bo'lmadi")
-            return
+            # Agar student telegram ID bo'lmasa, qayta urinib ko'ramiz
+            student_telegram_id, student_id = await get_student_telegram_id(help_request_id)
+            if not student_telegram_id:
+                await query.message.reply_text("❌ Talabaning Telegram ID sini topib bo'lmadi")
+                return
         
         if 'answer_text' not in context.user_data:
             await query.message.reply_text("❌ Avval javob matnini yuboring")
@@ -271,6 +295,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
             await query.message.reply_text("✅ Javobingiz talabaga yuborildi")
             
+            # Ma'lumotlarni tozalash
             if 'answer_text' in context.user_data:
                 del context.user_data['answer_text']
             if 'active_assignment' in context.user_data:
