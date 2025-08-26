@@ -60,14 +60,14 @@ class AssignTeacherAPIView(APIView):
         try:
             help_request = TopicHelpRequestIndependent.objects.get(id=help_request_id)
 
-            # Agar allaqachon biriktirilgan bo‘lsa, boshqa o‘qituvchilarga ruxsat bermaymiz
+            # Agar allaqachon biriktirilgan bo‘lsa
             if help_request.teacher:
                 return Response({
                     "success": False,
                     "message": f"Savolga hozirda {help_request.teacher.full_name} javob beryapti."
                 }, status=status.HTTP_403_FORBIDDEN)
 
-            teacher = Teacher.objects.get(telegram_id=telegram_id)
+            teacher = Teacher.objects.get(user__telegram_id=telegram_id)
 
             help_request.teacher = teacher
             help_request.status = "reviewing"
@@ -90,7 +90,6 @@ class AssignTeacherAPIView(APIView):
                 "success": False,
                 "message": "O‘qituvchi topilmadi."
             }, status=status.HTTP_404_NOT_FOUND)
-        
 
 class GetTelegramIdAPIView(APIView):
     def post(self, request, *args, **kwargs):
