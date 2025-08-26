@@ -306,6 +306,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.message.reply_text("❌ Javob yuborishda xatolik yuz berdi")
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Agar xabar reply bo'lsa va active_assignment mavjud bo'lsa
     if update.message.reply_to_message and 'active_assignment' in context.user_data:
         context.user_data['answer_text'] = update.message.text
         help_request_id = context.user_data['active_assignment']['help_request_id']
@@ -316,6 +317,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 [InlineKeyboardButton("📤 Javobni yuborish", callback_data=f"send_{help_request_id}")]
             ])
         )
+    else:
+        # Agar oddiy xabar bo'lsa, uni e'tiborsiz qoldirish
+        pass
 
 def main():
     application = Application.builder().token(BOT_TOKEN).build()
