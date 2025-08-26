@@ -125,36 +125,56 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     data = query.data
     
-    print(f"Tugma bosildi: {data}")
+    print(f"🔔 Tugma bosildi: {data}")
     
     if data.startswith("assign_"):
         help_request_id = int(data.split("_")[1])
-        teacher_name = f"{query.from_user.first_name}"
+        teacher_name = f"{query.from_user.first_name} {query.from_user.last_name or ''}".strip()
+        telegram_id = query.from_user.id
         
-        print(f"O'qituvchi {teacher_name} {help_request_id} savoliga javob berishni boshladi")
+        print(f"👨‍🏫 O'qituvchi {teacher_name} ({telegram_id}) {help_request_id}-savolga javob berishni boshladi")
         
         try:
-            response = requests.post(BACKEND_ASSIGN_API, data={
-                "help_request_id": help_request_id,
-                "telegram_id": query.from_user.id
-            }, timeout=5)
+            print(f"🌐 Backend API ga so'rov yuborilmoqda: {BACKEND_ASSIGN_API}")
+            response = requests.post(
+                BACKEND_ASSIGN_API,
+                data={
+                    "help_request_id": help_request_id,
+                    "telegram_id": telegram_id
+                },
+                timeout=10
+            )
+            
+            print(f"📨 Backend javob kodi: {response.status_code}")
+            print(f"📨 Backend javob matni: {response.text}")
+            
+            if response.status_code != 200:
+                await query.message.reply_text("❌ Server xatosi")
+                return
+                
             result = response.json()
-            print(f"Backend javobi: {result}")
+            
         except Exception as e:
+            error_msg = f"❌ Serverga ulanishda xatolik: {e}"
+            print(error_msg)
             await query.message.reply_text("❌ Serverga ulanishda xatolik")
-            print(f"Server xatosi: {e}")
             return
         
         if result.get("success"):
             student_id = result.get("student_id")
+            print(f"✅ Backend muvaffaqiyatli javob berdi. Talaba ID: {student_id}")
             
+            # O'qituvchi ma'lumotlarini saqlaymiz
             context.user_data['active_assignment'] = {
                 'help_request_id': help_request_id,
                 'student_id': student_id,
                 'teacher_name': teacher_name
             }
             
+            # Loglarni olamiz
             logs = await get_logs(help_request_id)
+            print(f"📋 {len(logs)} ta log topildi")
+            
             url = f"https://iqmath.uz/dashboard/teacher/student-examples/{help_request_id}"
             
             # Javob bergan o'qituvchi uchun yangi tugmalar
@@ -164,12 +184,11 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 [InlineKeyboardButton("🔗 Savolga o'tish", url=url)]
             ])
             
-            await update_message_log(help_request_id, query.message.chat_id, teacher_name)
-            
+            # Xabarlarni yangilaymiz
             for log in logs:
                 try:
                     if log.chat_id != query.message.chat_id:
-                        # Boshqa o'qituvchilar uchun yangi tugmalar
+                        # Boshqa o'qituvchilar uchun
                         other_teachers_markup = InlineKeyboardMarkup([
                             [InlineKeyboardButton("👨‍🏫 Javob berilmoqda", callback_data=f"taken_{help_request_id}")],
                             [InlineKeyboardButton("🔗 Savolga o'tish", url=url)]
@@ -184,7 +203,10 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                             reply_markup=other_teachers_markup,
                             parse_mode="HTML"
                         )
+                        print(f"✏️ Boshqa o'qituvchi xabari yangilandi: {log.chat_id}")
+                        
                     else:
+                        # Javob bergan o'qituvchi uchun
                         new_text = query.message.text.replace("📥 Yangi savol!", "✅ Siz javob berayapsiz")
                         
                         await context.bot.edit_message_text(
@@ -194,7 +216,9 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                             reply_markup=new_markup,
                             parse_mode="HTML"
                         )
+                        print(f"✏️ Javob bergan o'qituvchi xabari yangilandi: {log.chat_id}")
                         
+                        # Yo'riqnoma xabarini yuboramiz
                         await query.message.reply_text(
                             "✅ Endi siz bu savolga javob berayapsiz.\n\n" +
                             "Talabaga javob yuborish uchun shu xabarga 'reply' qilib yozing yoki " +
@@ -205,10 +229,12 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                         )
                         
                 except Exception as e:
-                    print(f"Xabar yangilashda xatolik: {e}")
+                    print(f"❌ Xabar yangilashda xatolik (chat_id: {log.chat_id}): {e}")
             
         else:
-            await query.message.reply_text("❌ Xatolik yuz berdi")
+            error_msg = result.get("message", "❌ Noma'lum xatolik")
+            print(f"❌ Backend xatosi: {error_msg}")
+            await query.message.reply_text(error_msg)
     
     elif data.startswith("send_"):
         help_request_id = int(data.split("_")[1])
@@ -244,28 +270,24 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if 'active_assignment' in context.user_data:
                 del context.user_data['active_assignment']
             
-        except:
+        except Exception as e:
+            print(f"❌ Javob yuborishda xatolik: {e}")
             await query.message.reply_text("❌ Javob yuborishda xatolik yuz berdi")
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.message.reply_to_message and 'active_assignment' in context.user_data:
-        reply_text = update.message.reply_to_message.text or ""
+        context.user_data['answer_text'] = update.message.text
+        help_request_id = context.user_data['active_assignment']['help_request_id']
         
-        if "savolga javob berayapsiz" in reply_text or "Javobni yuborish" in reply_text:
-            context.user_data['answer_text'] = update.message.text
-            
-            help_request_id = context.user_data['active_assignment']['help_request_id']
-            
-            await update.message.reply_text(
-                "✅ Javobingiz qabul qilindi. «📤 Javobni yuborish» tugmasini bosing.",
-                reply_markup=InlineKeyboardMarkup([
-                    [InlineKeyboardButton("📤 Javobni yuborish", callback_data=f"send_{help_request_id}")]
-                ])
-            )
+        await update.message.reply_text(
+            "✅ Javobingiz qabul qilindi. «📤 Javobni yuborish» tugmasini bosing.",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("📤 Javobni yuborish", callback_data=f"send_{help_request_id}")]
+            ])
+        )
 
 def main():
     application = Application.builder().token(BOT_TOKEN).build()
-    
     application.add_handler(CallbackQueryHandler(handle_callback))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     
