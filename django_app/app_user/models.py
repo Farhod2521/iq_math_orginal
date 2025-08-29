@@ -43,7 +43,7 @@ class User(AbstractUser):
     phone = models.CharField(max_length=15, unique=True, verbose_name="Telefon raqam")
     role = models.CharField(
         max_length=10,
-        choices=[('student', 'Student'), ('teacher', 'Teacher'), ('admin', 'Admin'), ('parent', 'Parent')],
+        choices=[('student', 'Student'), ('teacher', 'Teacher'), ('admin', 'Admin'), ('parent', 'Parent'), ('tutor', 'Tutor'),],
         default='student',
         verbose_name="Foydalanuvchi roli"
     )
@@ -60,6 +60,21 @@ class User(AbstractUser):
         verbose_name = "Foydalanuvchi"
         verbose_name_plural = "Foydalanuvchilar"
 
+
+class Tutor(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='tutor_profile', verbose_name="Foydalanuvchi")
+    full_name = models.CharField(max_length=200, verbose_name="To‘liq ism")
+    region = models.CharField(max_length=200, blank=True, null=True)
+    districts = models.CharField(max_length=200, blank=True, null=True)
+    address = models.CharField(max_length=500, blank=True, null=True)
+    tutor_date = models.DateTimeField(auto_now=True, null=True, verbose_name="Ro‘yxatdan o‘tgan sana")
+
+    def __str__(self):
+        return self.full_name
+
+    class Meta:
+        verbose_name = "O'qtuvchi"
+        verbose_name_plural = "O'qtuvchi"
 
 
 class Teacher(models.Model):

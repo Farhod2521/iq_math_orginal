@@ -3,7 +3,7 @@ from .views import (
       StudentVerifySmsCodeAPIView, LoginAPIView, 
      StudentProfileAPIView, StudentsListView, ForgotPasswordView, VerifySMSCodeView,
     ResetPasswordView, ResendSMSCodeView,
-    LogoutDeviceAPIView, RegisterStudentAPIView, RegisterTeacherAPIView, TeacherVerifySmsCodeAPIView,
+    LogoutDeviceAPIView, RegisterAPIView, RegisterTeacherAPIView, TeacherVerifySmsCodeAPIView,
     ClassListView, TeacherLoginAPIView, TeacherProfileAPIView, UpdateStudentFieldAPIView, UserProfileAPIView,
       LogoutAPIView, TelegramIDCheckAPIView, ParentCreateAPIView, UpdateTelegramIDAPIView
 
@@ -16,7 +16,7 @@ urlpatterns = [
     ###################################################################################
     #########################  STUDENT  ################################################
     ###################################################################################
-    path('student/register/', RegisterStudentAPIView.as_view(), name='register_student'),
+    path('student/register/', RegisterAPIView.as_view(), name='register_student'),
     path('student/register-verify-sms/', StudentVerifySmsCodeAPIView.as_view(), name='verify_sms'),#register
     path('student/login/', LoginAPIView.as_view(), name='login'),
     path('student/logout/', LogoutAPIView.as_view(), name='login'),

@@ -140,78 +140,83 @@ class TeacherRegisterSerializer(serializers.Serializer):
 ##############################################################
 ###################     STUNDENT    REGISTER   ###############
 ##############################################################
-class StudentRegisterSerializer(serializers.Serializer):
+class UniversalRegisterSerializer(serializers.Serializer):
     full_name = serializers.CharField(required=True)
     phone = serializers.CharField(required=True)
-    class_name = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all(), required=True)
+    role = serializers.ChoiceField(choices=['student', 'parent', 'tutor'], required=True)
+    class_name = serializers.PrimaryKeyRelatedField(
+        queryset=Subject.objects.all(), required=False, allow_null=True
+    )
     referral_code = serializers.CharField(required=False, allow_blank=True)
 
     def validate_user_data(self, phone):
         user = User.objects.filter(phone=phone).first()
         if user:
-            student = getattr(user, "student_profile", None)
-            if student and not student.status:
-                # 5 daqiqalik limit
-                time_diff = now() - student.student_date
-                remaining_time = 300 - int(time_diff.total_seconds())
-
-                if remaining_time > 0:
-                    minutes = remaining_time // 60
-                    seconds = remaining_time % 60
-                    raise serializers.ValidationError(
-                        f"Qayta urinib ko‘rish uchun {minutes} daqiqa {seconds} soniya kuting."
-                    )
-                user.delete()
-            else:
-                raise serializers.ValidationError("Bu telefon raqam allaqachon ro'yxatdan o'tgan.")
+            raise serializers.ValidationError("Bu telefon raqam allaqachon ro'yxatdan o'tgan.")
 
     def validate(self, attrs):
         self.validate_user_data(attrs.get("phone"))
+        role = attrs.get("role")
+
+        # student bo'lsa class_name majburiy
+        if role == "student" and not attrs.get("class_name"):
+            raise serializers.ValidationError({"class_name": "Student uchun sinf tanlash shart."})
         return attrs
 
     def create(self, validated_data):
         phone = validated_data['phone']
-        class_name = validated_data.pop('class_name')
+        role = validated_data['role']
+        full_name = validated_data['full_name']
+        class_name = validated_data.pop('class_name', None)
         referral_code = validated_data.pop('referral_code', None)
 
-        student_data = {
-            'full_name': validated_data.pop('full_name'),
-            'class_name': class_name,
-            'status': False,
-            'student_date': now()
-        }
-
         # 1. User yaratish
-        user = User.objects.create(phone=phone, role='student')
-
-        # 2. SMS code
+        user = User.objects.create(phone=phone, role=role)
         sms_code = str(random.randint(10000, 99999))
         user.sms_code = sms_code
         user.set_unusable_password()
         user.save()
 
-        # 3. Student yaratish
-        student_data['user'] = user
-        student = Student.objects.create(**student_data)
+        # 2. Role bo‘yicha profillar
+        if role == "student":
+            student = Student.objects.create(
+                user=user,
+                full_name=full_name,
+                class_name=class_name,
+                status=False,
+                student_date=now()
+            )
 
-        # 4. Obuna
-        free_days = SubscriptionSetting.objects.first().free_trial_days
-        Subscription.objects.create(
-            student=student,
-            start_date=now(),
-            end_date=now() + timedelta(days=free_days),
-            is_paid=False
-        )
+            # trial subscription
+            free_days = SubscriptionSetting.objects.first().free_trial_days
+            Subscription.objects.create(
+                student=student,
+                start_date=now(),
+                end_date=now() + timedelta(days=free_days),
+                is_paid=False
+            )
 
-        # 5. Faqat referral yozuvi (ball YO‘Q!)
-        if referral_code:
-            try:
-                referrer_student = Student.objects.get(identification=referral_code)
-                StudentReferral.objects.create(referrer=referrer_student, referred=student)
-            except Student.DoesNotExist:
-                pass
+            # referral
+            if referral_code:
+                try:
+                    referrer_student = Student.objects.get(identification=referral_code)
+                    StudentReferral.objects.create(referrer=referrer_student, referred=student)
+                except Student.DoesNotExist:
+                    pass
 
-        # 6. SMS yuborish
+        elif role == "parent":
+            Parent.objects.create(
+                user=user,
+                full_name=full_name,
+            )
+
+        elif role == "tutor":
+            Tutor.objects.create(
+                user=user,
+                full_name=full_name,
+            )
+
+        # 3. SMS yuborish
         send_sms(phone, sms_code)
 
         return user
