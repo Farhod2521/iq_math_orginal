@@ -6,7 +6,7 @@ UniversalRegisterSerializer, VerifySmsCodeSerializer,
 LoginSerializer, StudentProfileSerializer, TeacherRegisterSerializer, Class_Serializer,
 TeacherVerifySmsCodeSerializer, TeacherSerializer, StudentSerializer, ParentCreateSerializer
 )
-from .models import Student, UserSMSAttempt, Teacher, Class, StudentLoginHistory, Parent
+from .models import Student, UserSMSAttempt, Teacher, Class, StudentLoginHistory, Parent, Tutor
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.settings import api_settings
 from datetime import timedelta
@@ -864,6 +864,22 @@ class LoginAPIView(APIView):
                     }
                 except Teacher.DoesNotExist:
                     return Response({"detail": "Teacher profile not found."}, status=status.HTTP_404_NOT_FOUND)
+
+            elif user.role == 'tutor':
+                try:
+                    tutor = Tutor.objects.get(user=user)
+                    access_token['tutor_id'] = tutor.id
+                    profile_data = {
+                        "id": tutor.id,
+                        "full_name": tutor.full_name,
+                        "phone": user.phone,
+                        "role": user.role,
+                        "access_token": str(access_token),
+                        "refresh_token": str(refresh),
+                        "expires_in": expires_in,
+                    }
+                except Tutor.DoesNotExist:
+                    return Response({"detail": "Tutor profile not found."}, status=status.HTTP_404_NOT_FOUND)
 
             elif user.role == 'parent':
                 try:
