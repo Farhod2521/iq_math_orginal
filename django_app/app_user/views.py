@@ -2,7 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from .serializers import (
-StudentRegisterSerializer, VerifySmsCodeSerializer, 
+UniversalRegisterSerializer, VerifySmsCodeSerializer, 
 LoginSerializer, StudentProfileSerializer, TeacherRegisterSerializer, Class_Serializer,
 TeacherVerifySmsCodeSerializer, TeacherSerializer, StudentSerializer, ParentCreateSerializer
 )
@@ -156,12 +156,15 @@ class TeacherProfileAPIView(APIView):
 ##############################################################
 ###################     STUNDENT    REGISTER   ###############
 ##############################################################
-class RegisterStudentAPIView(APIView):
+class RegisterAPIView(APIView):
     def post(self, request, *args, **kwargs):
-        serializer = StudentRegisterSerializer(data=request.data)
+        serializer = UniversalRegisterSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response({"message": "Telefon raqamga SMS kodi yuborildi. Kodni tasdiqlang."}, status=status.HTTP_200_OK)
+            return Response(
+                {"message": "Telefon raqamga SMS kodi yuborildi. Kodni tasdiqlang."},
+                status=status.HTTP_200_OK
+            )
         return Response({"errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 ##############################################################
