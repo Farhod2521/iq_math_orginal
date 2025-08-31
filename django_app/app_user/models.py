@@ -169,7 +169,6 @@ class Student(models.Model):
 class Parent(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='parent_profile', verbose_name="Foydalanuvchi")
     full_name = models.CharField(max_length=200, verbose_name="To‘liq ism")
-    students = models.ManyToManyField(Student, related_name='parents', verbose_name="Farzandlar") 
     region = models.CharField(max_length=200, blank=True, null=True)
     districts = models.CharField(max_length=200, blank=True, null=True)
     address = models.CharField(max_length=500, blank=True, null=True)
@@ -181,6 +180,23 @@ class Parent(models.Model):
     class Meta:
         verbose_name = "Ota-ona"
         verbose_name_plural = "Ota-onalar"
+
+
+
+class ParentStudentRelation(models.Model):
+    parent = models.ForeignKey(Parent, on_delete=models.CASCADE, related_name="children_relations")
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name="parent_relations")
+    is_confirmed = models.BooleanField(default=False, verbose_name="Tasdiqlanganmi")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        status = "✅" if self.is_confirmed else "⏳"
+        return f"{self.parent.full_name} ↔ {self.student.full_name} ({status})"
+
+    class Meta:
+        verbose_name = "Ota-ona va farzand bog‘lanishi"
+        verbose_name_plural = "Ota-ona va farzand bog‘lanishlari"
+        unique_together = ('parent', 'student')
 
 class UserSMSAttempt(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sms_attempts')
