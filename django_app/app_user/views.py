@@ -1184,3 +1184,26 @@ class ConfirmChildAPIView(APIView):
             relation.save()
 
         return Response({"detail": "Farzand ota-onaga muvaffaqiyatli qo‘shildi"}, status=status.HTTP_200_OK)
+    
+
+class ParentChildrenListAPIView(APIView):
+    """
+    Ota-ona qo‘shgan va tasdiqlangan farzandlar ro‘yxati
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        parent_user = request.user
+        if parent_user.role != "parent":
+            return Response(
+                {"detail": "Faqat ota-onalar uchun ruxsat berilgan"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        parent = parent_user.parent_profile
+        relations = ParentStudentRelation.objects.filter(parent=parent, is_confirmed=True)
+
+        students = [relation.student for relation in relations]
+        serializer = StudentSerializer(students, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
