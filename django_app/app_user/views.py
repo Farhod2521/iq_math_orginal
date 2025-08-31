@@ -6,7 +6,7 @@ UniversalRegisterSerializer, VerifySmsCodeSerializer,
 LoginSerializer, StudentProfileSerializer, TeacherRegisterSerializer, Class_Serializer,
 TeacherVerifySmsCodeSerializer, TeacherSerializer, StudentSerializer, ParentCreateSerializer
 )
-from .models import Student, UserSMSAttempt, Teacher, Class, StudentLoginHistory, Parent, Tutor
+from .models import Student, UserSMSAttempt, Teacher, Class, StudentLoginHistory, Parent, Tutor, ParentStudentRelation
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.settings import api_settings
 from datetime import timedelta
@@ -1098,3 +1098,89 @@ class UpdateTelegramIDAPIView(APIView):
             },
             status=status.HTTP_200_OK
         )
+    
+
+
+class AddChildRequestAPIView(APIView):
+    """
+    Ota-ona farzand qo‘shishni boshlaydi (SMS yuboriladi)
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        parent_user = request.user
+        if parent_user.role != "parent":
+            return Response({"detail": "Faqat ota-onalar farzand qo‘sha oladi"}, status=status.HTTP_403_FORBIDDEN)
+
+        phone = request.data.get("phone")
+        if not phone:
+            return Response({"detail": "Telefon raqam kerak"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Student userni topamiz
+        try:
+            student_user = User.objects.get(phone=phone, role="student")
+        except User.DoesNotExist:
+            return Response({"detail": "Bunday student topilmadi"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Tasodifiy SMS kod generatsiya qilamiz
+        sms_code = str(random.randint(10000, 99999))
+        student_user.sms_code = sms_code
+        student_user.save()
+
+        # SMS yuboramiz
+        if send_sms(student_user.phone, sms_code):
+            # Parent va Student orasida munosabat yaratiladi (pending)
+            parent = parent_user.parent_profile
+            student = student_user.student_profile
+            relation, created = ParentStudentRelation.objects.get_or_create(
+                parent=parent,
+                student=student,
+                defaults={"is_confirmed": False}
+            )
+
+            return Response(
+                {"detail": "SMS yuborildi", "relation_id": relation.id},
+                status=status.HTTP_200_OK
+            )
+        else:
+            return Response({"detail": "SMS yuborishda xatolik"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+
+class ConfirmChildAPIView(APIView):
+    """
+    Student SMS kodini kiritib, ota-onani tasdiqlaydi
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        phone = request.data.get("phone")
+        code = request.data.get("code")
+
+        if not phone or not code:
+            return Response({"detail": "Telefon va kod kerak"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            student_user = User.objects.get(phone=phone, role="student")
+        except User.DoesNotExist:
+            return Response({"detail": "Student topilmadi"}, status=status.HTTP_404_NOT_FOUND)
+
+        if student_user.sms_code != code:
+            return Response({"detail": "Kod noto‘g‘ri"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Kod to‘g‘ri bo‘lsa → tasdiqlaymiz
+        student_user.sms_code = None
+        student_user.save()
+
+        student = student_user.student_profile
+        # Parent bilan bog‘langan relationni topamiz
+        relations = ParentStudentRelation.objects.filter(student=student, is_confirmed=False)
+        if not relations.exists():
+            return Response({"detail": "Tasdiqlashga kutayotgan ota-ona topilmadi"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Hamma kutayotgan parentlarni tasdiqlash mumkin (yoki faqat bittasini)
+        for relation in relations:
+            relation.is_confirmed = True
+            relation.save()
+
+        return Response({"detail": "Farzand ota-onaga muvaffaqiyatli qo‘shildi"}, status=status.HTTP_200_OK)
