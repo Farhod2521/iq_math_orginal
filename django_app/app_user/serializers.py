@@ -239,8 +239,14 @@ class VerifySmsCodeSerializer(serializers.Serializer):
         sms_code = data.get("sms_code")
 
         try:
-            user = User.objects.get(phone=phone, sms_code=sms_code)
+            user = User.objects.get(phone=phone)
         except User.DoesNotExist:
+            raise serializers.ValidationError({
+                "non_field_errors": ["Bunday foydalanuvchi topilmadi."]
+            })
+
+        # Kodni solishtirish
+        if not user.sms_code or str(user.sms_code) != str(sms_code):
             raise serializers.ValidationError({
                 "non_field_errors": ["Telefon raqam yoki kod noto'g'ri."]
             })
@@ -250,66 +256,35 @@ class VerifySmsCodeSerializer(serializers.Serializer):
         password = "".join(random.choice(chars) for _ in range(8))
 
         user.set_password(password)
-        user.sms_code = None
+        user.sms_code = None  # ❗️ Kod bir marta ishlatiladi
         user.save()
 
         # Agar email bo‘lsa login parol yuborish
         if user.email:
             send_login_parol_email(user.email, phone, password)
 
-        # Role bo‘yicha profil tekshirish
+        # Role bo‘yicha profil tekshirish va statusni yoqish
         if user.role == "student":
-            try:
-                student = Student.objects.get(user=user)
-                student.status = True
-                student.save()
-
-                # ✳️ Referral ball berish
-                try:
-                    referral = StudentReferral.objects.get(referred=student)
-                    referrer = referral.referrer
-
-                    settings = ReferralAndCouponSettings.objects.first()
-                    student_bonus = settings.student_referral_bonus_points
-                    referrer_bonus = settings.student_referral_bonus_points
-
-                    # Referrer uchun
-                    ref_score, _ = StudentScore.objects.get_or_create(student=referrer)
-                    ref_score.score += referrer_bonus
-                    ref_score.save()
-
-                    # Referred uchun
-                    my_score, _ = StudentScore.objects.get_or_create(student=student)
-                    my_score.score += student_bonus
-                    my_score.save()
-
-                except StudentReferral.DoesNotExist:
-                    pass
-
-            except Student.DoesNotExist:
-                raise serializers.ValidationError({
-                    "non_field_errors": ["Student profili topilmadi."]
-                })
+            student = Student.objects.filter(user=user).first()
+            if not student:
+                raise serializers.ValidationError({"non_field_errors": ["Student profili topilmadi."]})
+            student.status = True
+            student.save()
+            # referral kodlarini shu yerda ishlatasiz...
 
         elif user.role == "parent":
-            try:
-                parent = Parent.objects.get(user=user)
-                parent.status = True
-                parent.save()
-            except Parent.DoesNotExist:
-                raise serializers.ValidationError({
-                    "non_field_errors": ["Parent profili topilmadi."]
-                })
+            parent = Parent.objects.filter(user=user).first()
+            if not parent:
+                raise serializers.ValidationError({"non_field_errors": ["Parent profili topilmadi."]})
+            parent.status = True
+            parent.save()
 
         elif user.role == "tutor":
-            try:
-                tutor = Tutor.objects.get(user=user)
-                tutor.status = True
-                tutor.save()
-            except Tutor.DoesNotExist:
-                raise serializers.ValidationError({
-                    "non_field_errors": ["Tutor profili topilmadi."]
-                })
+            tutor = Tutor.objects.filter(user=user).first()
+            if not tutor:
+                raise serializers.ValidationError({"non_field_errors": ["Tutor profili topilmadi."]})
+            tutor.status = True
+            tutor.save()
 
         else:
             raise serializers.ValidationError({
@@ -317,6 +292,7 @@ class VerifySmsCodeSerializer(serializers.Serializer):
             })
 
         return {"phone": phone, "password": password, "user": user}
+
 
 
 
