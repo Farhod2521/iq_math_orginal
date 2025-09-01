@@ -1,6 +1,6 @@
 from django.contrib import admin
 from modeltranslation.admin import TranslationAdmin
-from .models import Student, User, UserSMSAttempt, Class,Teacher, Referral
+from .models import Student, User, UserSMSAttempt, Class,Teacher, Referral, Parent
 from django.contrib.admin.models import LogEntry
 
 
@@ -28,7 +28,12 @@ class StudentAdmin(admin.ModelAdmin):
 admin.site.register(Student, StudentAdmin)
 
 
-
+@admin.register(Parent)
+class ParentAdmin(admin.ModelAdmin):
+    list_display = ("id", "full_name", "user", "region", "districts", "address", "parent_date")
+    list_filter = ("region", "districts")
+    search_fields = ("full_name", "user__phone", "user__email")
+    ordering = ("-parent_date",)
 
 
 class UserAdmin(admin.ModelAdmin):
