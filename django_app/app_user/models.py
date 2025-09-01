@@ -68,6 +68,7 @@ class Tutor(models.Model):
     districts = models.CharField(max_length=200, blank=True, null=True)
     address = models.CharField(max_length=500, blank=True, null=True)
     tutor_date = models.DateTimeField(auto_now=True, null=True, verbose_name="Ro‘yxatdan o‘tgan sana")
+    status = models.BooleanField(default=False, verbose_name="Holat")
 
     def __str__(self):
         return self.full_name
@@ -173,6 +174,7 @@ class Parent(models.Model):
     districts = models.CharField(max_length=200, blank=True, null=True)
     address = models.CharField(max_length=500, blank=True, null=True)
     parent_date = models.DateTimeField(auto_now=True, null=True, verbose_name="Ro‘yxatdan o‘tgan sana")
+    status = models.BooleanField(default=False, verbose_name="Holat")
 
     def __str__(self):
         return self.full_name

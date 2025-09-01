@@ -212,27 +212,31 @@ class UniversalVerifySmsCodeAPIView(APIView):
         if serializer.is_valid():
             user = serializer.validated_data["user"]
 
+            # Profilni olish
             profile_data = {}
             if user.role == "student":
-                try:
-                    student = Student.objects.get(user=user)
-                    profile_data = {"student_id": student.id, "full_name": student.full_name}
-                except Student.DoesNotExist:
-                    return Response({"detail": "Student profile not found."}, status=status.HTTP_404_NOT_FOUND)
+                student = Student.objects.get(user=user)
+                profile_data = {
+                    "student_id": student.id,
+                    "full_name": student.full_name,
+                    "status": student.status
+                }
 
             elif user.role == "parent":
-                try:
-                    parent = Parent.objects.get(user=user)
-                    profile_data = {"parent_id": parent.id, "full_name": parent.full_name}
-                except Parent.DoesNotExist:
-                    return Response({"detail": "Parent profile not found."}, status=status.HTTP_404_NOT_FOUND)
+                parent = Parent.objects.get(user=user)
+                profile_data = {
+                    "parent_id": parent.id,
+                    "full_name": parent.full_name,
+                    "status": parent.status
+                }
 
             elif user.role == "tutor":
-                try:
-                    tutor = Tutor.objects.get(user=user)
-                    profile_data = {"tutor_id": tutor.id, "full_name": tutor.full_name}
-                except Tutor.DoesNotExist:
-                    return Response({"detail": "Tutor profile not found."}, status=status.HTTP_404_NOT_FOUND)
+                tutor = Tutor.objects.get(user=user)
+                profile_data = {
+                    "tutor_id": tutor.id,
+                    "full_name": tutor.full_name,
+                    "status": tutor.status
+                }
 
             else:
                 return Response({"detail": "Noma'lum role."}, status=status.HTTP_400_BAD_REQUEST)
@@ -246,7 +250,7 @@ class UniversalVerifySmsCodeAPIView(APIView):
             expires_in = timedelta(hours=13).total_seconds()
 
             return Response({
-                "message": "Ro'yxatdan o'tish muvaffaqiyatli yakunlandi.",
+                "message": "Telefon raqam va SMS kod tasdiqlandi.",
                 "login": serializer.validated_data["phone"],
                 "password": serializer.validated_data["password"],
                 "access_token": str(access_token),
@@ -256,17 +260,6 @@ class UniversalVerifySmsCodeAPIView(APIView):
             }, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-
-
-
-
-
-
-
-
-
 
 
 

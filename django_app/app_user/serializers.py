@@ -256,21 +256,20 @@ class VerifySmsCodeSerializer(serializers.Serializer):
         password = "".join(random.choice(chars) for _ in range(8))
 
         user.set_password(password)
-        user.sms_code = None  # ❗️ Kod bir marta ishlatiladi
+        user.sms_code = None  # ❗️ Kod bir martalik
         user.save()
 
-        # Agar email bo‘lsa login parol yuborish
+        # Agar email bo‘lsa login-parol yuborish
         if user.email:
             send_login_parol_email(user.email, phone, password)
 
-        # Role bo‘yicha profil tekshirish va statusni yoqish
+        # Role bo‘yicha profil statusni yoqish
         if user.role == "student":
             student = Student.objects.filter(user=user).first()
             if not student:
                 raise serializers.ValidationError({"non_field_errors": ["Student profili topilmadi."]})
             student.status = True
             student.save()
-            # referral kodlarini shu yerda ishlatasiz...
 
         elif user.role == "parent":
             parent = Parent.objects.filter(user=user).first()
@@ -292,6 +291,7 @@ class VerifySmsCodeSerializer(serializers.Serializer):
             })
 
         return {"phone": phone, "password": password, "user": user}
+
 
 
 
