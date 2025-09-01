@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Student, UserSMSAttempt, Class, Teacher, Subject, Referral, Parent
+from .models import User, Student, UserSMSAttempt, Class, Teacher, Subject, Referral, Parent, Tutor
 from django.core.cache import cache
 import random
 from .sms_service import send_sms, send_verification_email, send_login_parol_email# SMS sending function
@@ -235,8 +235,8 @@ class VerifySmsCodeSerializer(serializers.Serializer):
     sms_code = serializers.CharField(required=True)
 
     def validate(self, data):
-        phone = data.get('phone')
-        sms_code = data.get('sms_code')
+        phone = data.get("phone")
+        sms_code = data.get("sms_code")
 
         try:
             user = User.objects.get(phone=phone, sms_code=sms_code)
@@ -247,49 +247,77 @@ class VerifySmsCodeSerializer(serializers.Serializer):
 
         # Random parol generatsiya
         chars = string.ascii_letters + string.digits
-        password = ''.join(random.choice(chars) for _ in range(8))
+        password = "".join(random.choice(chars) for _ in range(8))
 
         user.set_password(password)
         user.sms_code = None
         user.save()
 
-        # Parolni emailga yuborish
+        # Agar email bo‘lsa login parol yuborish
         if user.email:
             send_login_parol_email(user.email, phone, password)
 
-        try:
-            student = Student.objects.get(user=user)
-            student.status = True
-            student.save()
-
-            # ✳️ Referral bo‘lsa ball beriladi
+        # Role bo‘yicha profil tekshirish
+        if user.role == "student":
             try:
-                referral = StudentReferral.objects.get(referred=student)
-                referrer = referral.referrer
+                student = Student.objects.get(user=user)
+                student.status = True
+                student.save()
 
-                settings = ReferralAndCouponSettings.objects.first()
-                student_bonus = settings.student_referral_bonus_points
-                referrer_bonus = settings.student_referral_bonus_points
+                # ✳️ Referral ball berish
+                try:
+                    referral = StudentReferral.objects.get(referred=student)
+                    referrer = referral.referrer
 
-                # Referrer uchun
-                ref_score, _ = StudentScore.objects.get_or_create(student=referrer)
-                ref_score.score += referrer_bonus
-                ref_score.save()
+                    settings = ReferralAndCouponSettings.objects.first()
+                    student_bonus = settings.student_referral_bonus_points
+                    referrer_bonus = settings.student_referral_bonus_points
 
-                # Referred uchun
-                my_score, _ = StudentScore.objects.get_or_create(student=student)
-                my_score.score += student_bonus
-                my_score.save()
+                    # Referrer uchun
+                    ref_score, _ = StudentScore.objects.get_or_create(student=referrer)
+                    ref_score.score += referrer_bonus
+                    ref_score.save()
 
-            except StudentReferral.DoesNotExist:
-                pass
+                    # Referred uchun
+                    my_score, _ = StudentScore.objects.get_or_create(student=student)
+                    my_score.score += student_bonus
+                    my_score.save()
 
-        except Student.DoesNotExist:
+                except StudentReferral.DoesNotExist:
+                    pass
+
+            except Student.DoesNotExist:
+                raise serializers.ValidationError({
+                    "non_field_errors": ["Student profili topilmadi."]
+                })
+
+        elif user.role == "parent":
+            try:
+                parent = Parent.objects.get(user=user)
+                parent.status = True
+                parent.save()
+            except Parent.DoesNotExist:
+                raise serializers.ValidationError({
+                    "non_field_errors": ["Parent profili topilmadi."]
+                })
+
+        elif user.role == "tutor":
+            try:
+                tutor = Tutor.objects.get(user=user)
+                tutor.status = True
+                tutor.save()
+            except Tutor.DoesNotExist:
+                raise serializers.ValidationError({
+                    "non_field_errors": ["Tutor profili topilmadi."]
+                })
+
+        else:
             raise serializers.ValidationError({
-                "non_field_errors": ["Student profili topilmadi."]
+                "non_field_errors": ["Noma'lum role."]
             })
 
         return {"phone": phone, "password": password, "user": user}
+
 
 
 class TeacherVerifySmsCodeSerializer(serializers.Serializer):
