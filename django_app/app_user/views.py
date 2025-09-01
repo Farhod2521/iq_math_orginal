@@ -205,31 +205,54 @@ class TeacherVerifySmsCodeAPIView(APIView):
 ##############################################################
 ###################     STUNDENT    VERIFY SMS   #############
 ##############################################################
-class StudentVerifySmsCodeAPIView(APIView):
+class UniversalVerifySmsCodeAPIView(APIView):
     def post(self, request, *args, **kwargs):
         serializer = VerifySmsCodeSerializer(data=request.data)
 
         if serializer.is_valid():
             user = serializer.validated_data["user"]
 
-            try:
-                student = Student.objects.get(user=user)
-            except Student.DoesNotExist:
-                return Response({"detail": "Student profile not found."}, status=status.HTTP_404_NOT_FOUND)
+            profile_data = {}
+            if user.role == "student":
+                try:
+                    student = Student.objects.get(user=user)
+                    profile_data = {"student_id": student.id, "full_name": student.full_name}
+                except Student.DoesNotExist:
+                    return Response({"detail": "Student profile not found."}, status=status.HTTP_404_NOT_FOUND)
 
+            elif user.role == "parent":
+                try:
+                    parent = Parent.objects.get(user=user)
+                    profile_data = {"parent_id": parent.id, "full_name": parent.full_name}
+                except Parent.DoesNotExist:
+                    return Response({"detail": "Parent profile not found."}, status=status.HTTP_404_NOT_FOUND)
+
+            elif user.role == "tutor":
+                try:
+                    tutor = Tutor.objects.get(user=user)
+                    profile_data = {"tutor_id": tutor.id, "full_name": tutor.full_name}
+                except Tutor.DoesNotExist:
+                    return Response({"detail": "Tutor profile not found."}, status=status.HTTP_404_NOT_FOUND)
+
+            else:
+                return Response({"detail": "Noma'lum role."}, status=status.HTTP_400_BAD_REQUEST)
+
+            # 🔑 Token yaratish
             refresh = RefreshToken.for_user(user)
             access_token = refresh.access_token
             access_token.set_exp(lifetime=timedelta(hours=13))
-            access_token['student_id'] = student.id
+            access_token["role"] = user.role
+            access_token.update(profile_data)
             expires_in = timedelta(hours=13).total_seconds()
 
             return Response({
                 "message": "Ro'yxatdan o'tish muvaffaqiyatli yakunlandi.",
-                "login": serializer.validated_data['phone'],
-                "password": serializer.validated_data['password'],
+                "login": serializer.validated_data["phone"],
+                "password": serializer.validated_data["password"],
                 "access_token": str(access_token),
                 "expires_in": expires_in,
-                "role": user.role  # mana shu qator qo‘shildi
+                "role": user.role,
+                "profile": profile_data
             }, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
