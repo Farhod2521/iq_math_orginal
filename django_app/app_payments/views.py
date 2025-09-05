@@ -246,3 +246,47 @@ class MyPaymentsAPIView(APIView):
         payments = Payment.objects.filter(student=student)
         serializer = PaymentSerializer(payments, many=True)
         return Response(serializer.data)
+    
+
+class CheckCouponAPIView(APIView):
+    def post(self, request, *args, **kwargs):
+        code = request.data.get("code")
+        if not code:
+            return Response(
+                {"error": "Kupon kodi kiritilmadi"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            coupon = SystemCoupon.objects.get(code=code)
+        except SystemCoupon.DoesNotExist:
+            return Response(
+                {"active": False, "message": "Kupon topilmadi"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Kuponni tekshirish shartlari
+        if not coupon.is_active or coupon.valid_until < timezone.now():
+            return Response(
+                {"active": False, "message": "Kupon muddati tugagan yoki faol emas"},
+                status=status.HTTP_200_OK
+            )
+
+        # Asosiy narxni olish
+        monthly_payment = MonthlyPayment.objects.first()
+        base_price = monthly_payment.price if monthly_payment else 0
+
+        # Chegirma hisoblash
+        discount_price = base_price - (base_price * coupon.discount_percent // 100)
+
+        return Response(
+            {
+                "active": True,
+                "code": coupon.code,
+                "discount_percent": coupon.discount_percent,
+                "original_price": base_price,
+                "discounted_price": discount_price,
+                "valid_until": coupon.valid_until,
+            },
+            status=status.HTTP_200_OK
+        )
