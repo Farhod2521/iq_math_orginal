@@ -286,7 +286,6 @@ class CheckCouponAPIView(APIView):
                 "discount_percent": coupon.discount_percent,
                 "original_price": base_price,
                 "discounted_price": discount_price,
-                "valid_until": coupon.valid_until,
             },
             status=status.HTTP_200_OK
         )
