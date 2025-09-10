@@ -98,7 +98,7 @@ class ProductExchangeListView(APIView):
         for exchange in exchanges:
             data.append({
                 'product_name': exchange.product.name,
-                'used_coin': exchange.used_score,  # modeldagi field nomi hali used_score deb turgan bo‘lsa
+                'used_coin': exchange.used_coin,  # modeldagi field nomi hali used_score deb turgan bo‘lsa
                 'status': exchange.status,
                 'created_at': exchange.created_at.strftime('%Y-%m-%d %H:%M'),
             })
