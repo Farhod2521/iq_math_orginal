@@ -20,9 +20,12 @@ class PaymentSerializer(serializers.ModelSerializer):
             'receipt_url'           # Chek havolasi
         ]
 
+
 class SubscriptionPlanSerializer(serializers.ModelSerializer):
-    price_total = serializers.SerializerMethodField()  # jami narx (chegirmasiz)
-    sale_price = serializers.SerializerMethodField()  # chegirma bilan
+    price_per_month = serializers.DecimalField(  # modeldagi qiymatni ham chiqaramiz
+        max_digits=10, decimal_places=2, read_only=True
+    )
+    sale_price = serializers.SerializerMethodField()  # chegirmali oylik narx
 
     class Meta:
         model = SubscriptionPlan
@@ -31,19 +34,20 @@ class SubscriptionPlanSerializer(serializers.ModelSerializer):
             'months',
             'get_months_display',
             'discount_percent',
-            'price_total',    # yangi – jami narx
-            'sale_price',    # chegirmali narx
+            'price_per_month',  # modeldagi narx
+            'sale_price',       # chegirmali narx (oylik)
             'is_active',
             'created_at',
             'updated_at',
         ]
 
-    def get_price_total(self, obj):
-        """Chegirmasiz jami narx"""
-        return float(obj.months * obj.price_per_month)
-
     def get_sale_price(self, obj):
-        """Chegirmali jami narx"""
-        full_price = obj.months * obj.price_per_month
-        discount_amount = (full_price * obj.discount_percent) / 100
-        return float(full_price - discount_amount)
+        """
+        Chegirmali oylik narx (faqat 1 oy uchun).
+        """
+        # 1 oylik narx
+        monthly_price = float(obj.price_per_month)
+        # chegirma summasi
+        discount_amount = (monthly_price * obj.discount_percent) / 100
+        # chegirmali oylik narx
+        return float(monthly_price - discount_amount)
