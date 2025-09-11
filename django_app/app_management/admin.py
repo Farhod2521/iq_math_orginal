@@ -95,18 +95,18 @@ class CouponAdmin(admin.ModelAdmin):
     )
     list_filter = (
         'is_active',
-        'created_by_teacher',
+        'created_by_tutor',
         'created_by_student',
     )
     search_fields = (
         'code',
-        'created_by_teacher__full_name',
+        'created_by_tutor__full_name',
         'created_by_student__full_name',
     )
 
     def created_by(self, obj):
-        if obj.created_by_teacher:
-            return f"👨‍🏫 {obj.created_by_teacher.full_name}"
+        if obj.created_by_tutor:
+            return f"👨‍🏫 {obj.created_by_tutor.full_name}"
         elif obj.created_by_student:
             return f"🧑‍🎓 {obj.created_by_student.full_name}"
         return "Noma’lum"
