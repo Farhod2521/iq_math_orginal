@@ -66,3 +66,52 @@ class MonthlyPayment(models.Model):
     class Meta:
         verbose_name = "Oylik to‘lov"
         verbose_name_plural = "Oylik to‘lov"
+
+
+
+class SubscriptionPlan(models.Model):
+    PLAN_CHOICES = (
+        (1, '1 oylik'),
+        (3, '3 oylik'),
+        (6, '6 oylik'),
+        (12, '12 oylik'),
+    )
+
+    months = models.PositiveIntegerField(
+        choices=PLAN_CHOICES,
+        verbose_name="Davomiylik (oy)"
+    )
+    discount_percent = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Chegirma foizi"
+    )
+    price_per_month = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name="Oyiga narx"
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name="Faolmi"
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Yaratilgan vaqti"
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name="Yangilangan vaqti"
+    )
+
+    def total_price(self):
+        """Chegirmadan keyingi umumiy narx"""
+        full_price = self.months * self.price_per_month
+        discount_amount = (full_price * self.discount_percent) / 100
+        return full_price - discount_amount
+
+    def __str__(self):
+        return f"{self.get_months_display()} (chegirma: {self.discount_percent}%)"
+
+    class Meta:
+        verbose_name = "Obuna rejasi"
+        verbose_name_plural = "Obuna rejalar"
