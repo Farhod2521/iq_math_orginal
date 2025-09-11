@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import SubscriptionSetting, Subscription, Payment, MonthlyPayment
+from .models import SubscriptionSetting, Subscription, Payment, MonthlyPayment, SubscriptionPlan
 
 @admin.register(SubscriptionSetting)
 class SubscriptionSettingAdmin(admin.ModelAdmin):
@@ -37,3 +37,31 @@ class MonthlyPaymentAdmin(admin.ModelAdmin):
     # Delete qilishni ham cheklash (ixtiyoriy)
     def has_delete_permission(self, request, obj=None):
         return False
+    
+
+@admin.register(SubscriptionPlan)
+class SubscriptionPlanAdmin(admin.ModelAdmin):
+    list_display = (
+        'get_plan_name',     # tarif nomi (1 oylik, 3 oylik ...)
+        'price_per_month',   # oyiga narx
+        'discount_percent',  # chegirma %
+        'total_price',       # umumiy narx (hisoblanadi)
+        'is_active',         # faolmi
+        'created_at',
+    )
+    list_filter = ('is_active', 'months',)
+    search_fields = ('months',)
+    ordering = ('months',)
+    readonly_fields = ('created_at', 'updated_at')
+    fieldsets = (
+        (None, {
+            'fields': ('months', 'price_per_month', 'discount_percent', 'is_active')
+        }),
+        ('Vaqt maʼlumotlari', {
+            'fields': ('created_at', 'updated_at'),
+        }),
+    )
+
+    def get_plan_name(self, obj):
+        return obj.get_months_display()
+    get_plan_name.short_description = "Tarif nomi (oylar)"  # Admin ustun nomi
