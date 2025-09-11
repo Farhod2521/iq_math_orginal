@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     "django_app.app_student",
     "django_app.app_payments",
     "django_app.app_management",
+    "django_app.app_tutor",
 ]
 
 MIDDLEWARE = [
