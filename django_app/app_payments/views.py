@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.utils import timezone
 from django.conf import settings
-from .models import Payment, Subscription, SubscriptionSetting, MonthlyPayment
+from .models import Payment, Subscription, SubscriptionSetting, MonthlyPayment, SubscriptionPlan
 from datetime import timedelta
 import hashlib
 from .utils import get_multicard_token 
@@ -14,7 +14,7 @@ import uuid
 from rest_framework.permissions import IsAuthenticated
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
-from .serializers import PaymentSerializer
+from .serializers import PaymentSerializer, SubscriptionPlanSerializer
 from  django_app.app_management.models import SystemCoupon
 
 URL_TEST = "https://dev-mesh.multicard.uz"
@@ -289,3 +289,11 @@ class CheckCouponAPIView(APIView):
             },
             status=status.HTTP_200_OK
         )
+    
+
+
+class SubscriptionPlanListAPIView(APIView):
+    def get(self, request):
+        plans = SubscriptionPlan.objects.filter(is_active=True).order_by('months')
+        serializer = SubscriptionPlanSerializer(plans, many=True)
+        return Response(serializer.data)
