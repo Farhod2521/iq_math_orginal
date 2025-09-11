@@ -176,4 +176,4 @@ class CouponUsage(models.Model):
     class Meta:
         verbose_name = "Kupon ishlatilishi"
         verbose_name_plural = "Kupon ishlatilishlari"
-        unique_together = ('coupon', 'used_by_student', 'used_by_teacher')
+        unique_together = ('coupon', 'used_by_student', 'used_by_tutor')
