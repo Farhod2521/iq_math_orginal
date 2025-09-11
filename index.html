@@ -1,44 +1,154 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="uz">
 <head>
-  <meta charset="UTF-8">
-  <title>O‘quvchilar ro‘yxatini yuklab olish</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Savol — Javob (index.html)</title>
+  <style>
+    :root{font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;}
+    body{display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f3f4f6;margin:0;padding:20px;}
+    .card{width:100%;max-width:720px;background:white;border-radius:12px;box-shadow:0 6px 18px rgba(15,23,42,0.08);padding:20px;}
+    h1{margin:0 0 12px;font-size:20px}
+    .row{display:flex;gap:12px;align-items:start;}
+    textarea{width:100%;min-height:120px;padding:12px;border-radius:8px;border:1px solid #e6e7ea;font-size:15px;resize:vertical}
+    button{padding:10px 14px;border-radius:8px;border:0;background:#0ea5a4;color:white;font-weight:600;cursor:pointer}
+    button:disabled{opacity:0.6;cursor:not-allowed}
+    .answer{margin-top:14px;padding:14px;border-radius:10px;background:#f8fafc;border:1px solid #eef2f7;min-height:60px;white-space:pre-wrap}
+    .meta{display:flex;gap:8px;align-items:center;margin-top:12px;font-size:13px;color:#6b7280}
+    .history{margin-top:16px;max-height:200px;overflow:auto;border-top:1px dashed #eef2f7;padding-top:12px}
+    .item{padding:8px;border-radius:8px;margin-bottom:8px;background:#ffffff;border:1px solid #f1f5f9}
+    .item .q{font-weight:700}
+    .item .a{margin-top:6px;color:#374151}
+  </style>
 </head>
 <body>
-  <h2>O‘quvchilar ro‘yxatini Excel fayl sifatida yuklab olish</h2>
-  <button onclick="downloadExcel()">Yuklab olish</button>
+  <div class="card" role="main">
+    <h1>Savol yozing — Javobni oling</h1>
+
+    <div class="row" style="flex-direction:column;">
+      <label for="q" style="font-size:14px;color:#374151;margin-bottom:6px">Savol:</label>
+      <textarea id="q" placeholder="Savolingizni bu yerga yozing... (masalan: 'Bugun ob-havo qanday?' yoki '2+2 necha?')"></textarea>
+
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <button id="askBtn">So‘rash</button>
+        <button id="clearBtn" style="background:#ef4444">Tozalash</button>
+      </div>
+
+      <div class="meta">
+        <span id="status">Holat: tayyor</span>
+      </div>
+
+      <div class="answer" id="answer">Javob shu yerda chiqadi...</div>
+
+      <div class="history" id="history" aria-live="polite"></div>
+    </div>
+  </div>
 
   <script>
-    function downloadExcel() {
-      const url = 'https://api.iqmath.uz/api/v1/auth/student/student_list/?export=excel';
-      const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzUzMzc0OTM2LCJpYXQiOjE3NTMzMjgxMzYsImp0aSI6IjM0YmIwZWNmMThjNjQzOTA5MzZhNmNkN2IxNzc5MmE3IiwidXNlcl9pZCI6MTAwLCJzdHVkZW50X2lkIjo4M30.k3MVdC9lYBQQL9EozNIP9nRlIO4e3hnKDj6Pg-DluGA';
+    const qEl = document.getElementById('q');
+    const askBtn = document.getElementById('askBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const ansEl = document.getElementById('answer');
+    const histEl = document.getElementById('history');
+    const statusEl = document.getElementById('status');
 
-      fetch(url, {
-        method: 'GET',
-        headers: {
-          'Authorization': 'Bearer ' + token
+    // Oddiy "engine": savolni tekshiradi, so'ng javob beradi.
+    // Bu demo: matematik ifodalarni yechadi, salomlashishga javob beradi,
+    // yoki default javob qaytaradi.
+    function generateAnswer(question) {
+      const q = (question || '').trim();
+      if (!q) return "Savol yozilmadi. Iltimos, savolingizni kiriting.";
+
+      // pastga tushirish
+      const lower = q.toLowerCase();
+
+      // salomlashish
+      if (/(salom|assalomu|hello|hi)\b/.test(lower)) {
+        return "Va alaykum assalom! Qanday yordam bera olishim mumkin?";
+      }
+
+      // oddiy math: agar faqat raqamlar va + - * / ^ ( ) . bo'lsa, hisoblab beradi
+      // xavfsizlik uchun eval ishlatmaymiz: oddiy parser (faqat + - * / va . raqamlar)
+      const mathMatch = lower.match(/^[0-9\.\s\+\-\*\/\^\(\)]+$/);
+      if (mathMatch) {
+        try {
+          // ^ ni ** ga o'zgartiramiz
+          const expr = lower.replace(/\^/g, '**');
+          // eslatma: Function(...) xavfi, ammo biz faqat ruxsatli belgilarni oldindan tekshirdik
+          const result = Function('"use strict"; return (' + expr + ')')();
+          if (typeof result === 'number' && isFinite(result)) {
+            return "Hisoblash natijasi: " + result;
+          } else {
+            return "Ifoda murakkab yoki hisoblab bo'lmadi.";
+          }
+        } catch (e) {
+          return "Ifodani hisoblashda xatolik: " + e.message;
         }
-      })
-      .then(response => {
-        if (!response.ok) {
-          throw new Error('Yuklab olishda xatolik: ' + response.status);
-        }
-        return response.blob();
-      })
-      .then(blob => {
-        const downloadUrl = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = downloadUrl;
-        a.download = 'Oquvchilar_royxati.xlsx';
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        window.URL.revokeObjectURL(downloadUrl);
-      })
-      .catch(error => {
-        alert('Xatolik: ' + error.message);
-      });
+      }
+
+      // oddiy fakt so'rovlari (kalit so'zlar bilan)
+      if (lower.includes('bugun') && lower.includes('ob-havo')) {
+        return "Men ob-havoni onlayn tekshira olmayman (bu demo). Lekin hududingiz uchun ob-havo saytiga qarab tekshiring.";
+      }
+      if (lower.includes('vaqt') || lower.includes('soat')) {
+        const now = new Date();
+        return "Hozirgi vaqt: " + now.toLocaleString();
+      }
+
+      // default — interaktiv jokey: so'rovni qaytarib, taklif bilan
+      return "Siz so'radingiz: \"" + question + "\"\n\nMen bu demo versiyasiman — haqiqiy javob olish uchun men bilan server orqali OpenAI yoki boshqa xizmatga ulashingiz mumkin. Xohlasangiz, shu sahifaga OpenAI integratsiyasi qanday qo‘shilishini ham ko‘rsatib beraman.";
     }
+
+    function addHistory(question, answer) {
+      const item = document.createElement('div');
+      item.className = 'item';
+      const qdiv = document.createElement('div');
+      qdiv.className = 'q';
+      qdiv.textContent = 'Savol: ' + question;
+      const adiv = document.createElement('div');
+      adiv.className = 'a';
+      adiv.textContent = 'Javob: ' + answer;
+      item.appendChild(qdiv);
+      item.appendChild(adiv);
+      histEl.prepend(item);
+    }
+
+    askBtn.addEventListener('click', () => {
+      const question = qEl.value;
+      askBtn.disabled = true;
+      clearBtn.disabled = true;
+      statusEl.textContent = 'Holat: ishlanmoqda...';
+
+      // "o'ylash" effektini ko'rsatamiz
+      ansEl.textContent = 'Ishlanyapti... iltimos kuting (demo)...';
+
+      // kichik kechikish bilan javob ko'rsatish (UX uchun)
+      setTimeout(() => {
+        const answer = generateAnswer(question);
+        ansEl.textContent = answer;
+        addHistory(question, answer);
+        statusEl.textContent = 'Holat: tayyor';
+        askBtn.disabled = false;
+        clearBtn.disabled = false;
+      }, 600);
+    });
+
+    clearBtn.addEventListener('click', () => {
+      qEl.value = '';
+      ansEl.textContent = 'Javob shu yerda chiqadi...';
+      statusEl.textContent = 'Holat: tozalandi';
+      setTimeout(()=> statusEl.textContent = 'Holat: tayyor', 800);
+    });
+
+    // enter+ctrl/shift to submit
+    qEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+        askBtn.click();
+      }
+    });
+
+    // accessibility: fokusni savolga joylash
+    qEl.focus();
   </script>
 </body>
 </html>
