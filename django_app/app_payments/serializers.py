@@ -22,7 +22,7 @@ class PaymentSerializer(serializers.ModelSerializer):
 
 class SubscriptionPlanSerializer(serializers.ModelSerializer):
     price_total = serializers.SerializerMethodField()  # jami narx (chegirmasiz)
-    total_price = serializers.SerializerMethodField()  # chegirma bilan
+    sale_price = serializers.SerializerMethodField()  # chegirma bilan
 
     class Meta:
         model = SubscriptionPlan
@@ -32,7 +32,7 @@ class SubscriptionPlanSerializer(serializers.ModelSerializer):
             'get_months_display',
             'discount_percent',
             'price_total',    # yangi – jami narx
-            'total_price',    # chegirmali narx
+            'sale_price',    # chegirmali narx
             'is_active',
             'created_at',
             'updated_at',
@@ -42,7 +42,7 @@ class SubscriptionPlanSerializer(serializers.ModelSerializer):
         """Chegirmasiz jami narx"""
         return float(obj.months * obj.price_per_month)
 
-    def get_total_price(self, obj):
+    def get_sale_price(self, obj):
         """Chegirmali jami narx"""
         full_price = obj.months * obj.price_per_month
         discount_amount = (full_price * obj.discount_percent) / 100
