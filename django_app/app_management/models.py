@@ -6,7 +6,7 @@ import uuid
 from django.utils import timezone
 from datetime import timedelta
 
-from django_app.app_user.models import  Student, Teacher
+from django_app.app_user.models import  Student, Teacher, Tutor
 class SystemSettings(models.Model):
     logo = models.ImageField(upload_to='system/logo/', blank=True, null=True, verbose_name="Logo")
     about =  RichTextField(verbose_name="Biz Haqimizda")
@@ -146,7 +146,7 @@ class Coupon(models.Model):
     valid_from = models.DateTimeField(default=timezone.now)
     valid_until = models.DateTimeField()
     created_by_student = models.ForeignKey(Student, on_delete=models.SET_NULL, null=True, blank=True)
-    created_by_teacher = models.ForeignKey(Teacher, on_delete=models.SET_NULL, null=True, blank=True)
+    created_by_tutor= models.ForeignKey(Tutor, on_delete=models.SET_NULL, null=True, blank=True)
     is_active = models.BooleanField(default=True, verbose_name="Faolmi")
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -167,7 +167,7 @@ class Coupon(models.Model):
 class CouponUsage(models.Model):
     coupon = models.ForeignKey(Coupon, on_delete=models.CASCADE, related_name='usages')
     used_by_student = models.ForeignKey(Student, on_delete=models.SET_NULL, null=True, blank=True)
-    used_by_teacher = models.ForeignKey(Teacher, on_delete=models.SET_NULL, null=True, blank=True)
+    used_by_tutor = models.ForeignKey(Tutor, on_delete=models.SET_NULL, null=True, blank=True)
     used_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
