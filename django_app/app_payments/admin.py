@@ -45,7 +45,7 @@ class SubscriptionPlanAdmin(admin.ModelAdmin):
         'get_plan_name',     # tarif nomi (1 oylik, 3 oylik ...)
         'price_per_month',   # oyiga narx
         'discount_percent',  # chegirma %
-        'get_total_price',   # umumiy narx (chegirma bilan)
+  
         'is_active',         # faolmi
         'created_at',
     )
@@ -67,10 +67,4 @@ class SubscriptionPlanAdmin(admin.ModelAdmin):
         return obj.get_months_display()
     get_plan_name.short_description = "Tarif nomi (oylar)"  # Admin ustun nomi
 
-    def get_total_price(self, obj):
-        """Chegirmali umumiy narx (months * price_per_month - chegirma)"""
-        full_price = obj.months * obj.price_per_month
-        discount_amount = (full_price * obj.discount_percent) / 100
-        total_price = full_price - discount_amount
-        return f"{total_price:,.0f}"  # 1,417,770 ko‘rinishda chiqaradi
-    get_total_price.short_description = "Umumiy narx (chegirma bilan)"
+ 
