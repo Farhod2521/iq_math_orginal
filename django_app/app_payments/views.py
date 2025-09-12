@@ -221,13 +221,13 @@ class PaymentCallbackAPIView(APIView):
             return Response({"error": "Payment not found"}, status=status.HTTP_404_NOT_FOUND)
 
         # Update payment status
-        payment.status = "success"
-        payment.payment_date = timezone.now()
-        payment.payment_time = payment_time
-        payment.uuid = uuid_val
+        payment.store_id = store_id
         payment.invoice_uuid = invoice_uuid
+        payment.uuid = uuid_val
         payment.billing_id = billing_id
         payment.sign = received_sign
+        payment.status = "success"
+        payment.payment_date = timezone.now()
         payment.receipt_url = f"{URL_DEV}/invoice/{uuid_val}"
         payment.save()
 
@@ -236,39 +236,52 @@ class PaymentCallbackAPIView(APIView):
             cashback_settings = ReferralAndCouponSettings.objects.first()
             
             if payment.coupon_type == "tutor" and payment.coupon.created_by_tutor:
+                # Tutor kupon tranzaksiyasi - faqat tutorga keshbek
                 TutorCouponTransaction.objects.create(
                     student=payment.student,
                     tutor=payment.coupon.created_by_tutor,
                     coupon=payment.coupon,
                     payment_amount=payment.amount,
-                    student_cashback_amount=payment.student_cashback_amount,
-                    teacher_cashback_amount=payment.teacher_cashback_amount
+                    cashback_amount=payment.teacher_cashback_amount  # Tutorga berilgan keshbek
                 )
                 
                 # Add cashback to tutor's balance
                 if payment.teacher_cashback_amount > 0:
-                    payment.coupon.created_by_tutor.balance += payment.teacher_cashback_amount
-                    payment.coupon.created_by_tutor.save()
+                    tutor = payment.coupon.created_by_tutor
+                    tutor.balance += payment.teacher_cashback_amount
+                    tutor.save()
 
             elif payment.coupon_type == "student" and payment.coupon.created_by_student:
+                # Student kupon tranzaksiyasi - faqat studentga (kupon egasi) keshbek
                 StudentCouponTransaction.objects.create(
                     student=payment.student,
                     by_student=payment.coupon.created_by_student,
                     coupon=payment.coupon,
                     payment_amount=payment.amount,
-                    student_cashback_amount=payment.student_cashback_amount,
-                    teacher_cashback_amount=payment.teacher_cashback_amount
+                    cashback_amount=payment.student_cashback_amount  # Studentga (kupon egasi) berilgan keshbek
                 )
                 
-                # Add cashback to student's balance
+                # Add cashback to student's balance (kupon egasi)
                 if payment.student_cashback_amount > 0:
-                    payment.coupon.created_by_student.balance += payment.student_cashback_amount
-                    payment.coupon.created_by_student.save()
+                    student_owner = payment.coupon.created_by_student
+                    student_owner.balance += payment.student_cashback_amount
+                    student_owner.save()
 
-            # Add cashback to paying student
-            if payment.student_cashback_amount > 0:
+            # To'lov qilgan studentga keshbek qo'shish (agar system kupon bo'lsa)
+            if payment.coupon_type == "system" and payment.student_cashback_amount > 0:
                 payment.student.balance += payment.student_cashback_amount
                 payment.student.save()
+
+        # Agar kupon ishlatilgan bo'lsa, foydalanish tarixini yozish
+        if payment.coupon:
+            student_id = payment.coupon.created_by_student.id if payment.coupon.created_by_student else None
+            tutor_id = payment.coupon.created_by_tutor.id if payment.coupon.created_by_tutor else None
+            
+            CouponUsage_Tutor_Student.objects.create(
+                coupon=payment.coupon,
+                used_by_student=payment.student if student_id else None,
+                used_by_tutor=payment.coupon.created_by_tutor if tutor_id else None
+            )
 
         # Create or update subscription
         subscription, created = Subscription.objects.get_or_create(student=payment.student)
@@ -276,19 +289,18 @@ class PaymentCallbackAPIView(APIView):
         
         if created:
             subscription.start_date = now
-            subscription.end_date = now + relativedelta(months=payment.subscription_months or 1)
+            subscription.end_date = now + relativedelta(months=payment.subscription_months)
         else:
             if subscription.end_date > now:
-                subscription.end_date += relativedelta(months=payment.subscription_months or 1)
+                subscription.end_date += relativedelta(months=payment.subscription_months)
             else:
-                subscription.end_date = now + relativedelta(months=payment.subscription_months or 1)
+                subscription.end_date = now + relativedelta(months=payment.subscription_months)
 
-        subscription.next_payment_date = subscription.end_date + relativedelta(months=1)
+        subscription.next_payment_date = subscription.end_date
         subscription.is_paid = True
         subscription.save()
 
         return Response({"status": "ok"}, status=status.HTTP_200_OK)
-
 
 
 
