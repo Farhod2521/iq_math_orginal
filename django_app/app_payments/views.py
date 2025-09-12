@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.utils import timezone
 from django.conf import settings
-from .models import Payment, Subscription, SubscriptionSetting, MonthlyPayment, SubscriptionPlan, UserPayment
+from .models import  Subscription, SubscriptionSetting, MonthlyPayment, SubscriptionPlan, UserPayment
 from django_app.app_management.models import  Coupon_Tutor_Student, CouponUsage_Tutor_Student, ReferralAndCouponSettings
 from datetime import timedelta
 import hashlib
@@ -216,7 +216,7 @@ class PaymentCallbackAPIView(APIView):
 
         try:
             payment = UserPayment.objects.get(transaction_id=invoice_id)
-        except Payment.DoesNotExist:
+        except UserPayment.DoesNotExist:
             return Response({"error": "Payment not found"}, status=status.HTTP_404_NOT_FOUND)
 
         # Update payment status
