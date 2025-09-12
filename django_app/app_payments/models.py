@@ -39,7 +39,6 @@ class Payment(models.Model):
     sign = models.CharField(max_length=100, null=True, blank=True, verbose_name="MD5 HASH")
     amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="To'lov summasi")
     original_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name="Chegirmasiz summa")
-    payment_date = models.DateTimeField(auto_now_add=True)
     transaction_id = models.CharField(max_length=100, verbose_name="Tranzaksiya ID")
     status = models.CharField(max_length=20, choices=[
         ("pending", "Kutilmoqda"),
@@ -50,7 +49,7 @@ class Payment(models.Model):
     receipt_url = models.URLField(null=True, blank=True, verbose_name="To'lov chek havolasi")
     
     # Coupon related fields
-    coupon = models.ForeignKey(Coupon_Tutor_Student, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Ishlatilgan kupon")
+    coupon = models.ForeignKey('Coupon_Tutor_Student', on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Ishlatilgan kupon")
     coupon_type = models.CharField(max_length=10, choices=[
         ('tutor', 'Tutor'),
         ('student', 'Student'),
@@ -63,8 +62,10 @@ class Payment(models.Model):
     student_cashback_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Studentga keshbek")
     teacher_cashback_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Teacherga keshbek")
     
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    # Date fields - default qiymatlarni to'g'rilaymiz
+    payment_date = models.DateTimeField(null=True, blank=True, verbose_name="To'lov sanasi")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Yaratilgan sana")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Yangilangan sana")
 
     def __str__(self):
         return f"{self.student.full_name} - {self.amount} - {self.status}"
@@ -72,7 +73,7 @@ class Payment(models.Model):
     class Meta:
         verbose_name = "To'lov"
         verbose_name_plural = "To'lovlar"
-
+        ordering = ['-created_at']
 
 class MonthlyPayment(models.Model):
     price = models.PositiveIntegerField(default=1000, help_text="Oylik to‘lov summasi (so‘m)")
