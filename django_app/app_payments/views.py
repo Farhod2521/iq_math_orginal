@@ -255,26 +255,24 @@ class CheckCouponAPIView(APIView):
     """
     def post(self, request, *args, **kwargs):
         code = request.data.get("code")
-        student_id = request.data.get("student_id")  # optional
-        tutor_id = request.data.get("tutor_id")      # optional
+        subscription_id = request.data.get("subscription_id")  # foydalanuvchi tanlagan tarif
+        student_id = request.data.get("student_id")  
+        tutor_id = request.data.get("tutor_id")      
 
         if not code:
             return Response({"error": "Kupon kodi kiritilmadi"},
                             status=status.HTTP_400_BAD_REQUEST)
 
-        # 1️⃣ Kuponni izlash
         try:
             coupon = Coupon_Tutor_Student.objects.get(code=code)
         except Coupon_Tutor_Student.DoesNotExist:
             return Response({"active": False, "message": "Kupon topilmadi"},
                             status=status.HTTP_404_NOT_FOUND)
 
-        # 2️⃣ Faollik va muddatni tekshirish
         if not coupon.is_active or not coupon.is_valid():
             return Response({"active": False, "message": "Kupon muddati tugagan yoki faol emas"},
                             status=status.HTTP_200_OK)
 
-        # 3️⃣ Oldin ishlatilganmi tekshirish (xohlasangiz)
         already_used = CouponUsage_Tutor_Student.objects.filter(
             coupon=coupon,
             used_by_student_id=student_id if student_id else None,
@@ -285,14 +283,17 @@ class CheckCouponAPIView(APIView):
             return Response({"active": False, "message": "Kupon avval ishlatilgan"},
                             status=status.HTTP_200_OK)
 
-        # 4️⃣ Asosiy narxni olish
-        monthly_payment = MonthlyPayment.objects.first()
-        base_price = monthly_payment.price if monthly_payment else 0
+        # Tanlangan tarifni olish
+        try:
+            plan = SubscriptionPlan.objects.get(id=subscription_id)
+        except SubscriptionPlan.DoesNotExist:
+            return Response({"error": "Tarif topilmadi"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # 5️⃣ Chegirma hisoblash
-        discount_price = base_price - (base_price * coupon.discount_percent // 100)
+        # Chegirma faqat 1 oylik tarifga tegishli
+        one_month_discount = (plan.price_per_month * coupon.discount_percent) / 100
+        sale_price = plan.total_price() - one_month_discount
 
-        # 6️⃣ Foydalanish tarixini yozish
+        # Foydalanish tarixini yozish
         CouponUsage_Tutor_Student.objects.create(
             coupon=coupon,
             used_by_student_id=student_id if student_id else None,
@@ -303,11 +304,9 @@ class CheckCouponAPIView(APIView):
             "active": True,
             "code": coupon.code,
             "discount_percent": coupon.discount_percent,
-            "original_price": base_price,
-            "discounted_price": discount_price,
-            "coupon_type": (
-                "tutor/student" if coupon.created_by_tutor or coupon.created_by_student else "system"
-            )
+            "original_price": plan.total_price(),
+            "sale_price": sale_price,
+            "coupon_type": "tutor/student" if coupon.created_by_tutor or coupon.created_by_student else "system"
         }, status=status.HTTP_200_OK)
 
 
