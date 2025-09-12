@@ -113,7 +113,7 @@ class UserPayment(models.Model):
     
     # Date fields - default qiymatlarni to'g'rilaymiz
     payment_date = models.DateTimeField(null=True, blank=True, verbose_name="To'lov sanasi")
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Yaratilgan sana")
+    created_at = models.DateTimeField(auto_now=True, verbose_name="Yaratilgan sana")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Yangilangan sana")
 
     def __str__(self):
