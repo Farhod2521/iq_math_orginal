@@ -49,7 +49,7 @@ class Payment(models.Model):
     receipt_url = models.URLField(null=True, blank=True, verbose_name="To'lov chek havolasi")
     
     # Coupon related fields
-    coupon = models.ForeignKey('Coupon_Tutor_Student', on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Ishlatilgan kupon")
+    coupon = models.ForeignKey(Coupon_Tutor_Student, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Ishlatilgan kupon")
     coupon_type = models.CharField(max_length=10, choices=[
         ('tutor', 'Tutor'),
         ('student', 'Student'),
