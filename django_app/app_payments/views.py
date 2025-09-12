@@ -5,6 +5,7 @@ from rest_framework import status
 from django.utils import timezone
 from django.conf import settings
 from .models import Payment, Subscription, SubscriptionSetting, MonthlyPayment, SubscriptionPlan
+from django_app.app_management.models import  Coupon, CouponUsage
 from datetime import timedelta
 import hashlib
 from .utils import get_multicard_token 
@@ -249,47 +250,65 @@ class MyPaymentsAPIView(APIView):
     
 
 class CheckCouponAPIView(APIView):
+    """
+    Kupon kodini tekshiradi: tizimniki ham, tutor/studentniki ham.
+    """
     def post(self, request, *args, **kwargs):
         code = request.data.get("code")
+        student_id = request.data.get("student_id")  # optional
+        tutor_id = request.data.get("tutor_id")      # optional
+
         if not code:
-            return Response(
-                {"error": "Kupon kodi kiritilmadi"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"error": "Kupon kodi kiritilmadi"},
+                            status=status.HTTP_400_BAD_REQUEST)
 
+        # 1️⃣ Kuponni izlash
         try:
-            coupon = SystemCoupon.objects.get(code=code)
-        except SystemCoupon.DoesNotExist:
-            return Response(
-                {"active": False, "message": "Kupon topilmadi"},
-                status=status.HTTP_404_NOT_FOUND
-            )
+            coupon = Coupon.objects.get(code=code)
+        except Coupon.DoesNotExist:
+            return Response({"active": False, "message": "Kupon topilmadi"},
+                            status=status.HTTP_404_NOT_FOUND)
 
-        # Kuponni tekshirish shartlari
-        if not coupon.is_active or coupon.valid_until < timezone.now():
-            return Response(
-                {"active": False, "message": "Kupon muddati tugagan yoki faol emas"},
-                status=status.HTTP_200_OK
-            )
+        # 2️⃣ Faollik va muddatni tekshirish
+        if not coupon.is_active or not coupon.is_valid():
+            return Response({"active": False, "message": "Kupon muddati tugagan yoki faol emas"},
+                            status=status.HTTP_200_OK)
 
-        # Asosiy narxni olish
+        # 3️⃣ Oldin ishlatilganmi tekshirish (xohlasangiz)
+        already_used = CouponUsage.objects.filter(
+            coupon=coupon,
+            used_by_student_id=student_id if student_id else None,
+            used_by_tutor_id=tutor_id if tutor_id else None
+        ).exists()
+
+        if already_used:
+            return Response({"active": False, "message": "Kupon avval ishlatilgan"},
+                            status=status.HTTP_200_OK)
+
+        # 4️⃣ Asosiy narxni olish
         monthly_payment = MonthlyPayment.objects.first()
         base_price = monthly_payment.price if monthly_payment else 0
 
-        # Chegirma hisoblash
+        # 5️⃣ Chegirma hisoblash
         discount_price = base_price - (base_price * coupon.discount_percent // 100)
 
-        return Response(
-            {
-                "active": True,
-                "code": coupon.code,
-                "discount_percent": coupon.discount_percent,
-                "original_price": base_price,
-                "discounted_price": discount_price,
-            },
-            status=status.HTTP_200_OK
+        # 6️⃣ Foydalanish tarixini yozish
+        CouponUsage.objects.create(
+            coupon=coupon,
+            used_by_student_id=student_id if student_id else None,
+            used_by_tutor_id=tutor_id if tutor_id else None
         )
-    
+
+        return Response({
+            "active": True,
+            "code": coupon.code,
+            "discount_percent": coupon.discount_percent,
+            "original_price": base_price,
+            "discounted_price": discount_price,
+            "coupon_type": (
+                "tutor/student" if coupon.created_by_tutor or coupon.created_by_student else "system"
+            )
+        }, status=status.HTTP_200_OK)
 
 
 class SubscriptionPlanListAPIView(APIView):
