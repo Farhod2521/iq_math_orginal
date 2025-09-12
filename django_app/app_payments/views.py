@@ -73,10 +73,10 @@ class InitiatePaymentAPIView(APIView):
                 # Kupon turini aniqlash
                 if coupon_obj.created_by_tutor:
                     coupon_type = "tutor"
-                    coupon_owner_name = coupon_obj.created_by_tutor.user.full_name
+                    coupon_owner_name = coupon_obj.created_by_tutor.full_name  # Tutorning o'zidagi full_name
                 elif coupon_obj.created_by_student:
                     coupon_type = "student"
-                    coupon_owner_name = coupon_obj.created_by_student.user.full_name
+                    coupon_owner_name = coupon_obj.created_by_student.full_name  # Studentning o'zidagi full_name
                 else:
                     coupon_type = "system"
                 
@@ -189,7 +189,6 @@ class InitiatePaymentAPIView(APIView):
                 "subscription_name": plan.get_months_display()
             }
         }, status=200)
-    
 
 class PaymentCallbackAPIView(APIView):
     authentication_classes = []
