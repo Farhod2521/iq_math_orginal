@@ -5,7 +5,7 @@ from rest_framework import status
 from django.utils import timezone
 from django.conf import settings
 from .models import Payment, Subscription, SubscriptionSetting, MonthlyPayment, SubscriptionPlan
-from django_app.app_management.models import  Coupon_Tutor_Student, CouponUsage_Tutor_Student
+from django_app.app_management.models import  Coupon_Tutor_Student, CouponUsage_Tutor_Student, ReferralAndCouponSettings
 from datetime import timedelta
 import hashlib
 from .utils import get_multicard_token 
@@ -16,7 +16,8 @@ from rest_framework.permissions import IsAuthenticated
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from .serializers import PaymentSerializer, SubscriptionPlanSerializer
-from  django_app.app_management.models import SystemCoupon
+from django_app.app_student.models import  StudentCouponTransaction
+from django_app.app_tutor.models import TutorCouponTransaction
 
 URL_TEST = "https://dev-mesh.multicard.uz"
 URL_DEV = "https://mesh.multicard.uz"
@@ -25,56 +26,46 @@ class InitiatePaymentAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        # Bazadan oylik to'lov narxini olish
-        monthly_payment = MonthlyPayment.objects.first()
-        base_amount = monthly_payment.price if monthly_payment else 1000
+        student = Student.objects.get(user=request.user)
+        subscription_id = request.data.get("subscription_id")
+        coupon_code = request.data.get("coupon_code")
+        coupon_type = request.data.get("coupon_type")  # tutor/student/system
 
-        # request.data dan amount olish, agar yuborilmagan bo'lsa bazadagi qiymat
-        amount = request.data.get('amount', base_amount)
-
-        coupon_code = request.data.get('coupon', None)
-
-        if not amount:
-            return Response({"error": "amount kerak"}, status=status.HTTP_400_BAD_REQUEST)
-
+        # SubscriptionPlan olish
         try:
-            student = Student.objects.get(user=request.user)
-        except Student.DoesNotExist:
-            return Response({"error": "Talaba topilmadi"}, status=status.HTTP_404_NOT_FOUND)
+            subscription = SubscriptionPlan.objects.get(id=subscription_id)
+        except SubscriptionPlan.DoesNotExist:
+            return Response({"error": "Subscription topilmadi"}, status=404)
 
+        # Chegirma foizi va coupon_text
         discount_percent = 0
-        coupon_text = "IQMATH.UZ oylik to'lov"
+        coupon_text = f"IQMATH.UZ {subscription.get_months_display()} oylik to'lov"
+        coupon = None
 
-        # Kupon kodni tekshirish
         if coupon_code:
             try:
-                coupon = SystemCoupon.objects.get(code=coupon_code, is_active=True)
-                if coupon.valid_until > timezone.now():
+                coupon = Coupon_Tutor_Student.objects.get(code=coupon_code, is_active=True)
+                if coupon.is_valid():
                     discount_percent = coupon.discount_percent
-                    coupon_text = f"IQMATH {discount_percent}% chegirma asosida oylik to'lov"
+                    coupon_text = f"IQMATH {discount_percent}% chegirma asosida {subscription.get_months_display()} to‘lov"
                 else:
-                    return Response({"error": "Kupon muddati tugagan"}, status=status.HTTP_400_BAD_REQUEST)
-            except SystemCoupon.DoesNotExist:
-                return Response({"error": "Kupon topilmadi yoki faolligi yo‘q"}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response({"error": "Kupon muddati tugagan yoki faol emas"}, status=400)
+            except Coupon_Tutor_Student.DoesNotExist:
+                return Response({"error": "Kupon topilmadi"}, status=404)
 
-        # Chegirmadan so‘ng hisoblash
-        discounted_amount = float(amount)
+        # Sale price hisoblash
+        sale_price = subscription.total_price()
         if discount_percent > 0:
-            discounted_amount = discounted_amount * (1 - discount_percent / 100)
+            sale_price = sale_price * (1 - discount_percent / 100)
 
-        # Token olish va to‘lov yaratish jarayoni...
-
+        # Multicard token olish
         try:
             token = get_multicard_token()
         except Exception as e:
             return Response({"error": "Token olishda xatolik", "details": str(e)}, status=500)
 
         transaction_id = str(uuid.uuid4())
-        headers = {
-            "Authorization": f"Bearer {token}"
-        }
-
-        amount_in_tiyin = int(discounted_amount * 100)
+        amount_in_tiyin = int(sale_price * 100)
 
         data = {
             "store_id": 1915,
@@ -95,32 +86,36 @@ class InitiatePaymentAPIView(APIView):
             ]
         }
 
+        headers = {"Authorization": f"Bearer {token}"}
+
         try:
-            response = requests.post(
-                f"{URL_DEV}/payment/invoice",
-                headers=headers,
-                json=data
-            )
+            response = requests.post(f"{URL_DEV}/payment/invoice", headers=headers, json=data)
         except requests.exceptions.RequestException as e:
             return Response({"error": "Multicard bilan bog‘lanishda xatolik", "details": str(e)}, status=500)
 
         if response.status_code != 200:
             return Response({"error": "To‘lov yaratilishda xatolik", "details": response.text}, status=500)
 
-        Payment.objects.create(
+        # Payment yozish
+        payment = Payment.objects.create(
             student=student,
-            amount=discounted_amount,
+            amount=sale_price,
             transaction_id=transaction_id,
             status="pending",
             payment_gateway="multicard",
+            coupon_code=coupon_code if coupon else None,
+            coupon_type=coupon_type if coupon else None
         )
 
-        return Response(response.json(), status=200)
-
-
+        return Response({
+            "transaction_id": transaction_id,
+            "amount": sale_price,
+            "coupon_text": coupon_text,
+            "multicard_response": response.json()
+        }, status=200)
 
 class PaymentCallbackAPIView(APIView):
-    authentication_classes = []  # Multicard tashqi server bo‘lganligi uchun
+    authentication_classes = []  # Multicard tashqi server
     permission_classes = []
 
     def generate_sign(self, store_id, invoice_id, amount, secret):
@@ -129,63 +124,287 @@ class PaymentCallbackAPIView(APIView):
 
     def post(self, request):
         data = request.data
-
-        # Kelgan ma'lumotlarni olish
         store_id = str(data.get("store_id"))
         invoice_id = str(data.get("invoice_id"))
-        amount = str(data.get("amount"))
+        amount = float(data.get("amount")) / 100  # tiyindan so'mga
         received_sign = data.get("sign")
         payment_time = data.get("payment_time")
         uuid = data.get("uuid")
         invoice_uuid = data.get("invoice_uuid")
-        billing_id = data.get("billing_id")  # Null bo'lishi mumkin
-        sign = data.get("sign")
+        billing_id = data.get("billing_id")
 
-        # Sizning secret keyingiz
         SECRET_KEY = "b7lydo1mu8abay9x"
-        EXPECTED_SIGN = self.generate_sign(store_id, invoice_id, amount, SECRET_KEY)
+        EXPECTED_SIGN = self.generate_sign(store_id, invoice_id, data.get("amount"), SECRET_KEY)
 
-        # Imzo tekshirish
         if received_sign != EXPECTED_SIGN:
             return Response({"error": "Invalid sign"}, status=status.HTTP_400_BAD_REQUEST)
+
         try:
             payment = Payment.objects.get(transaction_id=invoice_id)
         except Payment.DoesNotExist:
             return Response({"error": "Payment not found"}, status=status.HTTP_404_NOT_FOUND)
+
         payment.status = "success"
         payment.payment_date = timezone.now()
         payment.payment_time = payment_time
         payment.uuid = uuid
         payment.invoice_uuid = invoice_uuid
         payment.billing_id = billing_id
-        payment.sign = sign
         payment.receipt_url = f"{URL_DEV}/invoice/{uuid}"
         payment.save()
 
-        # Obunani yaratish yoki olish
+        # Obunani yaratish yoki yangilash
         subscription, created = Subscription.objects.get_or_create(student=payment.student)
-
         now = timezone.now()
 
-        if created:
-            # Agar yangi bo‘lsa, hozirgi vaqtdan boshlab 1 oy qo‘shiladi
+        if created or subscription.end_date <= now:
             subscription.start_date = now
             subscription.end_date = now + relativedelta(months=1)
         else:
-            # Agar mavjud bo‘lsa, end_date tekshiriladi
-            if subscription.end_date > now:
-                # Obuna muddati hali tugamagan bo‘lsa, end_date ga 1 oy qo‘shiladi
-                subscription.end_date += relativedelta(months=1)
-            else:
-                # Obuna muddati tugagan bo‘lsa, hozirgi vaqtdan boshlab 1 oy belgilanadi
-                subscription.end_date = now + relativedelta(months=1)
-
-        # next_payment_date yangi end_date ga 1 oy qo‘shib belgilanadi
+            subscription.end_date += relativedelta(months=1)
         subscription.next_payment_date = subscription.end_date + relativedelta(months=1)
         subscription.is_paid = True
         subscription.save()
 
+        # -----------------------------
+        # Kupon va tranzaksiya yozish
+        coupon_code = payment.coupon_code  # Agar Payment modelda saqlangan bo'lsa
+        coupon_type = payment.coupon_type  # tutor/student/system
+
+        if coupon_code:
+            try:
+                coupon = Coupon_Tutor_Student.objects.get(code=coupon_code)
+            except Coupon_Tutor_Student.DoesNotExist:
+                coupon = None
+
+            if coupon and coupon.is_valid():
+                settings = ReferralAndCouponSettings.objects.last()
+
+                student_cashback = (amount * settings.coupon_student_cashback_percent) / 100
+                teacher_cashback = (amount * settings.coupon_teacher_cashback_percent) / 100
+
+                if coupon_type == "tutor":
+                    TutorCouponTransaction.objects.create(
+                        student=payment.student,
+                        tutor=coupon.created_by_tutor,
+                        coupon=coupon,
+                        payment_amount=amount,
+                        student_cashback_amount=student_cashback,
+                        teacher_cashback_amount=teacher_cashback
+                    )
+                elif coupon_type == "student":
+                    StudentCouponTransaction.objects.create(
+                        student=payment.student,
+                        by_student=coupon.created_by_student,
+                        coupon=coupon,
+                        payment_amount=amount,
+                        student_cashback_amount=student_cashback,
+                        teacher_cashback_amount=teacher_cashback
+                    )
+                # Kuponni deaktiv qilamiz
+                coupon.is_active = False
+                coupon.save()
+
         return Response({"status": "ok"}, status=status.HTTP_200_OK)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# class InitiatePaymentAPIView(APIView):
+#     permission_classes = [IsAuthenticated]
+
+#     def post(self, request):
+#         # Bazadan oylik to'lov narxini olish
+#         monthly_payment = MonthlyPayment.objects.first()
+#         base_amount = monthly_payment.price if monthly_payment else 1000
+
+#         # request.data dan amount olish, agar yuborilmagan bo'lsa bazadagi qiymat
+#         amount = request.data.get('amount', base_amount)
+
+#         coupon_code = request.data.get('coupon', None)
+
+#         if not amount:
+#             return Response({"error": "amount kerak"}, status=status.HTTP_400_BAD_REQUEST)
+
+#         try:
+#             student = Student.objects.get(user=request.user)
+#         except Student.DoesNotExist:
+#             return Response({"error": "Talaba topilmadi"}, status=status.HTTP_404_NOT_FOUND)
+
+#         discount_percent = 0
+#         coupon_text = "IQMATH.UZ oylik to'lov"
+
+#         # Kupon kodni tekshirish
+#         if coupon_code:
+#             try:
+#                 coupon = SystemCoupon.objects.get(code=coupon_code, is_active=True)
+#                 if coupon.valid_until > timezone.now():
+#                     discount_percent = coupon.discount_percent
+#                     coupon_text = f"IQMATH {discount_percent}% chegirma asosida oylik to'lov"
+#                 else:
+#                     return Response({"error": "Kupon muddati tugagan"}, status=status.HTTP_400_BAD_REQUEST)
+#             except SystemCoupon.DoesNotExist:
+#                 return Response({"error": "Kupon topilmadi yoki faolligi yo‘q"}, status=status.HTTP_400_BAD_REQUEST)
+
+#         # Chegirmadan so‘ng hisoblash
+#         discounted_amount = float(amount)
+#         if discount_percent > 0:
+#             discounted_amount = discounted_amount * (1 - discount_percent / 100)
+
+#         # Token olish va to‘lov yaratish jarayoni...
+
+#         try:
+#             token = get_multicard_token()
+#         except Exception as e:
+#             return Response({"error": "Token olishda xatolik", "details": str(e)}, status=500)
+
+#         transaction_id = str(uuid.uuid4())
+#         headers = {
+#             "Authorization": f"Bearer {token}"
+#         }
+
+#         amount_in_tiyin = int(discounted_amount * 100)
+
+#         data = {
+#             "store_id": 1915,
+#             "amount": amount_in_tiyin,
+#             "invoice_id": transaction_id,
+#             "return_url": "https://iqmath.uz/",
+#             "callback_url": "https://backend.iqmath.uz/api/v1/payments/payment-callback/",
+#             "ofd": [
+#                 {
+#                     "vat": 0,
+#                     "price": amount_in_tiyin,
+#                     "qty": 1,
+#                     "name": coupon_text,
+#                     "package_code": "1508099",
+#                     "mxik": "10202001002000000",
+#                     "total": amount_in_tiyin
+#                 }
+#             ]
+#         }
+
+#         try:
+#             response = requests.post(
+#                 f"{URL_DEV}/payment/invoice",
+#                 headers=headers,
+#                 json=data
+#             )
+#         except requests.exceptions.RequestException as e:
+#             return Response({"error": "Multicard bilan bog‘lanishda xatolik", "details": str(e)}, status=500)
+
+#         if response.status_code != 200:
+#             return Response({"error": "To‘lov yaratilishda xatolik", "details": response.text}, status=500)
+
+#         Payment.objects.create(
+#             student=student,
+#             amount=discounted_amount,
+#             transaction_id=transaction_id,
+#             status="pending",
+#             payment_gateway="multicard",
+#         )
+
+#         return Response(response.json(), status=200)
+
+
+
+# class PaymentCallbackAPIView(APIView):
+#     authentication_classes = []  # Multicard tashqi server bo‘lganligi uchun
+#     permission_classes = []
+
+#     def generate_sign(self, store_id, invoice_id, amount, secret):
+#         raw = f"{store_id}{invoice_id}{amount}{secret}"
+#         return hashlib.md5(raw.encode()).hexdigest()
+
+#     def post(self, request):
+#         data = request.data
+
+#         # Kelgan ma'lumotlarni olish
+#         store_id = str(data.get("store_id"))
+#         invoice_id = str(data.get("invoice_id"))
+#         amount = str(data.get("amount"))
+#         received_sign = data.get("sign")
+#         payment_time = data.get("payment_time")
+#         uuid = data.get("uuid")
+#         invoice_uuid = data.get("invoice_uuid")
+#         billing_id = data.get("billing_id")  # Null bo'lishi mumkin
+#         sign = data.get("sign")
+
+#         # Sizning secret keyingiz
+#         SECRET_KEY = "b7lydo1mu8abay9x"
+#         EXPECTED_SIGN = self.generate_sign(store_id, invoice_id, amount, SECRET_KEY)
+
+#         # Imzo tekshirish
+#         if received_sign != EXPECTED_SIGN:
+#             return Response({"error": "Invalid sign"}, status=status.HTTP_400_BAD_REQUEST)
+#         try:
+#             payment = Payment.objects.get(transaction_id=invoice_id)
+#         except Payment.DoesNotExist:
+#             return Response({"error": "Payment not found"}, status=status.HTTP_404_NOT_FOUND)
+#         payment.status = "success"
+#         payment.payment_date = timezone.now()
+#         payment.payment_time = payment_time
+#         payment.uuid = uuid
+#         payment.invoice_uuid = invoice_uuid
+#         payment.billing_id = billing_id
+#         payment.sign = sign
+#         payment.receipt_url = f"{URL_DEV}/invoice/{uuid}"
+#         payment.save()
+
+#         # Obunani yaratish yoki olish
+#         subscription, created = Subscription.objects.get_or_create(student=payment.student)
+
+#         now = timezone.now()
+
+#         if created:
+#             # Agar yangi bo‘lsa, hozirgi vaqtdan boshlab 1 oy qo‘shiladi
+#             subscription.start_date = now
+#             subscription.end_date = now + relativedelta(months=1)
+#         else:
+#             # Agar mavjud bo‘lsa, end_date tekshiriladi
+#             if subscription.end_date > now:
+#                 # Obuna muddati hali tugamagan bo‘lsa, end_date ga 1 oy qo‘shiladi
+#                 subscription.end_date += relativedelta(months=1)
+#             else:
+#                 # Obuna muddati tugagan bo‘lsa, hozirgi vaqtdan boshlab 1 oy belgilanadi
+#                 subscription.end_date = now + relativedelta(months=1)
+
+#         # next_payment_date yangi end_date ga 1 oy qo‘shib belgilanadi
+#         subscription.next_payment_date = subscription.end_date + relativedelta(months=1)
+#         subscription.is_paid = True
+#         subscription.save()
+
+#         return Response({"status": "ok"}, status=status.HTTP_200_OK)
 
 
 
