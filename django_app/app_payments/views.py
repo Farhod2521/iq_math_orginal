@@ -250,52 +250,50 @@ class MyPaymentsAPIView(APIView):
     
 
 class CheckCouponAPIView(APIView):
-    """
-    Kupon kodini tekshiradi: tizimniki ham, tutor/studentniki ham.
-    """
     def post(self, request, *args, **kwargs):
         code = request.data.get("code")
-        subscription_id = request.data.get("subscription_id")  # foydalanuvchi tanlagan tarif
+        subscription_id = request.data.get("subscription_id")  
 
         if not code:
-            return Response({"error": "Kupon kodi kiritilmadi"},
-                            status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Kupon kodi kiritilmadi"}, status=400)
 
         # Kuponni olish
         try:
             coupon = Coupon_Tutor_Student.objects.get(code=code)
         except Coupon_Tutor_Student.DoesNotExist:
-            return Response({"active": False, "message": "Kupon topilmadi"},
-                            status=status.HTTP_404_NOT_FOUND)
+            return Response({"active": False, "message": "Kupon topilmadi"}, status=404)
 
         if not coupon.is_active or not coupon.is_valid():
-            return Response({"active": False, "message": "Kupon muddati tugagan yoki faol emas"},
-                            status=status.HTTP_200_OK)
+            return Response({"active": False, "message": "Kupon muddati tugagan yoki faol emas"}, status=200)
 
         # Kuponni kim yaratganini aniqlash
         student_id = coupon.created_by_student.id if coupon.created_by_student else None
         tutor_id = coupon.created_by_tutor.id if coupon.created_by_tutor else None
 
-        # Kupon allaqachon ishlatilganmi
+        # Allaqachon ishlatilganmi
         # already_used = CouponUsage_Tutor_Student.objects.filter(
         #     coupon=coupon,
         #     used_by_student_id=student_id,
         #     used_by_tutor_id=tutor_id
         # ).exists()
-
         # if already_used:
-        #     return Response({"active": False, "message": "Kupon avval ishlatilgan"},
-        #                     status=status.HTTP_200_OK)
+        #     return Response({"active": False, "message": "Kupon avval ishlatilgan"}, status=200)
 
-        # Tanlangan tarifni olish
+        # Tarifni olish
         try:
             plan = SubscriptionPlan.objects.get(id=subscription_id)
         except SubscriptionPlan.DoesNotExist:
-            return Response({"error": "Tarif topilmadi"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Tarif topilmadi"}, status=400)
 
-        # Chegirma faqat 1 oylik tarifga tegishli
-        one_month_discount = (plan.price_per_month * coupon.discount_percent) / 100
-        sale_price = plan.total_price() - one_month_discount
+        # 1️⃣ Dastlabki sale_price (faqat kupon foiziga asoslangan)
+        initial_sale_price = plan.total_price() - (plan.total_price() * coupon.discount_percent / 100)
+
+        # 2️⃣ 1 oylik chegirma (faqat 1 oylik narxdan)
+        one_month_plan = SubscriptionPlan.objects.filter(months=1).first()
+        one_month_discount = (one_month_plan.price_per_month * coupon.discount_percent / 100) if one_month_plan else 0
+
+        # 3️⃣ Oxirgi sale_price = sale_price - 1 oylik chegirma
+        final_sale_price = initial_sale_price - one_month_discount
 
         # Foydalanish tarixini yozish
         CouponUsage_Tutor_Student.objects.create(
@@ -304,15 +302,17 @@ class CheckCouponAPIView(APIView):
             used_by_tutor_id=tutor_id
         )
 
+        saved_amount = plan.total_price() - final_sale_price
+
         return Response({
             "active": True,
             "code": coupon.code,
             "discount_percent": coupon.discount_percent,
-            "original_price": plan.total_price(),
-            "sale_price": sale_price,
+            "original_price": initial_sale_price,
+            "sale_price": final_sale_price,
+            "saved_amount": saved_amount,
             "coupon_type": "tutor/student" if student_id or tutor_id else "system"
-        }, status=status.HTTP_200_OK)
-
+        }, status=200)
 
 
 class SubscriptionPlanListAPIView(APIView):
