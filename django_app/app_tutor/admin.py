@@ -9,8 +9,7 @@ class TutorCouponTransactionAdmin(admin.ModelAdmin):
         'tutor', 
         'coupon', 
         'payment_amount', 
-        'student_cashback_amount', 
-        'teacher_cashback_amount', 
+        'cashback_amount', 
         'used_at'
     )
     list_filter = ('tutor', 'used_at', 'coupon')
