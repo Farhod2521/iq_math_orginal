@@ -206,7 +206,7 @@ class Coupon_Tutor_Student(models.Model):
 
 
 class CouponUsage_Tutor_Student(models.Model):
-    coupon = models.ForeignKey(Coupon, on_delete=models.CASCADE, related_name='usages')
+    coupon = models.ForeignKey(Coupon_Tutor_Student, on_delete=models.CASCADE, related_name='usages')
     used_by_student = models.ForeignKey(Student, on_delete=models.SET_NULL, null=True, blank=True)
     used_by_tutor = models.ForeignKey(Tutor, on_delete=models.SET_NULL, null=True, blank=True)
     used_at = models.DateTimeField(auto_now_add=True)
