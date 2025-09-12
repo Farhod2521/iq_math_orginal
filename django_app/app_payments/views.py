@@ -249,8 +249,7 @@ class MyPaymentsAPIView(APIView):
         return Response(serializer.data)
     
 
-
- class CheckCouponAPIView(APIView):
+class CheckCouponAPIView(APIView):
     """
     Kupon kodini tekshiradi va 1 oylik chegirmani alohida hisoblaydi.
     """
@@ -312,7 +311,6 @@ class MyPaymentsAPIView(APIView):
             used_by_student_id=student_id,
             used_by_tutor_id=tutor_id
         )
-
         return Response({
             "active": True,
             "code": coupon.code,
