@@ -177,3 +177,43 @@ class CouponUsage(models.Model):
         verbose_name = "Kupon ishlatilishi"
         verbose_name_plural = "Kupon ishlatilishlari"
         unique_together = ('coupon', 'used_by_student', 'used_by_tutor')
+
+
+
+
+class Coupon_Tutor_Student(models.Model):
+    code = models.CharField(max_length=20, unique=True)
+    discount_percent = models.PositiveIntegerField(default=10, verbose_name="Chegirma foizi")
+    valid_from = models.DateTimeField(default=timezone.now)
+    valid_until = models.DateTimeField()
+    created_by_student = models.ForeignKey(Student, on_delete=models.SET_NULL, null=True, blank=True)
+    created_by_tutor = models.ForeignKey(Tutor, on_delete=models.SET_NULL, null=True, blank=True)
+    is_active = models.BooleanField(default=True, verbose_name="Faolmi")
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def is_valid(self):
+        now = timezone.now()
+        return self.is_active and self.valid_from <= now <= self.valid_until
+
+    def __str__(self):
+        return self.code
+
+    class Meta:
+        verbose_name = "Kupon"
+        verbose_name_plural = "Kuponlar"
+
+
+class CouponUsage_Tutor_Student(models.Model):
+    coupon = models.ForeignKey(Coupon, on_delete=models.CASCADE, related_name='usages')
+    used_by_student = models.ForeignKey(Student, on_delete=models.SET_NULL, null=True, blank=True)
+    used_by_tutor = models.ForeignKey(Tutor, on_delete=models.SET_NULL, null=True, blank=True)
+    used_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.coupon.code} used on {self.used_at.date()}"
+
+    class Meta:
+        verbose_name = "Kupon ishlatilishi"
+        verbose_name_plural = "Kupon ishlatilishlari"
