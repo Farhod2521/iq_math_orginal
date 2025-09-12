@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import SystemSettings, FAQ, Product, ReferralAndCouponSettings, Banner, Coupon, SystemCoupon,ConversionRate
+from .models import SystemSettings, FAQ, Product, ReferralAndCouponSettings, Banner, Coupon_Tutor_Student, SystemCoupon,ConversionRate
 from modeltranslation.admin import TranslationAdmin
 from django.utils.html import format_html
 
@@ -82,8 +82,8 @@ class ConversionRateAdmin(admin.ModelAdmin):
 
 
 
-@admin.register(Coupon)
-class CouponAdmin(admin.ModelAdmin):
+@admin.register(Coupon_Tutor_Student)
+class Coupon_Tutor_StudentAdmin(admin.ModelAdmin):
     list_display = (
         'code',
         'discount_percent',
