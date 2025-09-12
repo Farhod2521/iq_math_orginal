@@ -288,16 +288,15 @@ class CheckCouponAPIView(APIView):
         except SubscriptionPlan.DoesNotExist:
             return Response({"error": "Tarif topilmadi"}, status=400)
 
-        # Original price = price_per_month (allaqachon jami narx)
-        original_price = plan.price_per_month
+        original_price = plan.price_per_month - (plan.price_per_month * plan.discount_percent / 100)
 
-        # 1 oylik tarifdan chegirma
+        # 1 oylik tarifdan kupon chegirmasi
         one_month_plan = SubscriptionPlan.objects.filter(months=1).first()
         one_month_discount = 0
         if one_month_plan:
             one_month_discount = one_month_plan.price_per_month * coupon.discount_percent / 100
 
-        # Sale price = original_price - 1 oylik chegirma
+        # Sale price = original_price - 1 oylik kupon chegirma
         sale_price = original_price - one_month_discount
 
         # Tejalgan summa
