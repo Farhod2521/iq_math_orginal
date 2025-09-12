@@ -93,16 +93,7 @@ class CouponAdmin(admin.ModelAdmin):
         'is_active',
         'created_at'
     )
-    list_filter = (
-        'is_active',
-        'created_by_tutor',
-        'created_by_student',
-    )
-    search_fields = (
-        'code',
-        'created_by_tutor__full_name',
-        'created_by_student__full_name',
-    )
+
 
     def created_by(self, obj):
         if obj.created_by_tutor:
