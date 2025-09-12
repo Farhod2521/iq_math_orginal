@@ -176,7 +176,7 @@ class HelpRequestMessageLog(models.Model):
 class StudentCouponTransaction(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='used_student', verbose_name="Kuponni ishlatgan student")
     by_student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='coupon_transactions_student', verbose_name="Kupon egasi (Tutor)")
-    coupon = models.ForeignKey(Coupon_Tutor_Student, on_delete=models.CASCADE, related_name='transactions', verbose_name="Kupon kodi")
+    coupon = models.ForeignKey(Coupon_Tutor_Student, on_delete=models.CASCADE, related_name='student_transactions', verbose_name="Kupon kodi")
     payment_amount = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="To‘lov summasi")
     student_cashback_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Studentga berilgan keshbek")
     teacher_cashback_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Teacherga berilgan keshbek")
