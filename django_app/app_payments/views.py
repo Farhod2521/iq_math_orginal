@@ -308,7 +308,12 @@ class CheckCouponAPIView(APIView):
             used_by_student_id=student_id,
             used_by_tutor_id=tutor_id
         )
-
+        if coupon.created_by_student:
+            coupon_type = "student"
+        elif coupon.created_by_tutor:
+            coupon_type = "tutor"
+        else:
+            coupon_type = "system"
         return Response({
             "active": True,
             "code": coupon.code,
@@ -317,7 +322,7 @@ class CheckCouponAPIView(APIView):
             "original_price": original_price,
             "sale_price": sale_price,
             "saved_amount": saved_amount,
-            "coupon_type": "tutor/student" if student_id or tutor_id else "system"
+            "coupon_type": coupon_type
         }, status=200)
 
 
