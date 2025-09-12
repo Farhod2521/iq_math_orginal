@@ -301,7 +301,7 @@ class CheckCouponAPIView(APIView):
 
         # Tejalgan summa
         saved_amount = plan.price_per_month - sale_price
-
+        price = plan.price_per_month
         # Foydalanish tarixini yozish
         CouponUsage_Tutor_Student.objects.create(
             coupon=coupon,
@@ -313,6 +313,7 @@ class CheckCouponAPIView(APIView):
             "active": True,
             "code": coupon.code,
             "discount_percent": coupon.discount_percent,
+            "price": price,
             "original_price": original_price,
             "sale_price": sale_price,
             "saved_amount": saved_amount,
