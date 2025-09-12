@@ -95,7 +95,7 @@ class InitiatePaymentAPIView(APIView):
                 
                 # Matnni yaratish
                 if coupon_owner_name:
-                    coupon_text = f"IQMATH {discount_percent}% chegirma asosida {plan.get_months_display()} to'lov ({coupon_type.capitalize()}: {coupon_owner_name})"
+                    coupon_text = f"IQMATH {discount_percent}% chegirma asosida {plan.get_months_display()} to'lov"
                 else:
                     coupon_text = f"IQMATH {discount_percent}% chegirma asosida {plan.get_months_display()} to'lov"
                     
