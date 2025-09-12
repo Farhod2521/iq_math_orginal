@@ -8,8 +8,7 @@ class TutorCouponTransaction(models.Model):
     tutor = models.ForeignKey(Tutor, on_delete=models.CASCADE, related_name='coupon_transactions', verbose_name="Kupon egasi (Tutor)")
     coupon = models.ForeignKey(Coupon_Tutor_Student, on_delete=models.CASCADE, related_name='transactions', verbose_name="Kupon kodi")
     payment_amount = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="To‘lov summasi")
-    student_cashback_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Studentga berilgan keshbek")
-    teacher_cashback_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Teacherga berilgan keshbek")
+    cashback_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="O'qtuvchiga berilgan keshbek")
     used_at = models.DateTimeField(auto_now_add=True, verbose_name="Kupon ishlatilgan sana")
 
     class Meta:
