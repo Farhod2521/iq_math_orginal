@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import SubscriptionSetting, Subscription, Payment, MonthlyPayment, SubscriptionPlan
+from .models import SubscriptionSetting, Subscription, UserPayment, MonthlyPayment, SubscriptionPlan
 
 @admin.register(SubscriptionSetting)
 class SubscriptionSettingAdmin(admin.ModelAdmin):
@@ -15,8 +15,8 @@ class SubscriptionAdmin(admin.ModelAdmin):
     autocomplete_fields = ("student",)
     date_hierarchy = "start_date"
 
-@admin.register(Payment)
-class PaymentAdmin(admin.ModelAdmin):
+@admin.register(UserPayment)
+class UserPaymentAdmin(admin.ModelAdmin):
     list_display = ("student", "amount", "payment_date", "status", "transaction_id")
     list_filter = ("status", "payment_date")
     search_fields = ("student__full_name", "transaction_id")
