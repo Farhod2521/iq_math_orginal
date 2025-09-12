@@ -26,47 +26,90 @@ class InitiatePaymentAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        student = Student.objects.get(user=request.user)
-        subscription_id = request.data.get("subscription_id")
-        coupon_code = request.data.get("coupon_code")
-        coupon_type = request.data.get("coupon_type")  # tutor/student/system
-
-        # SubscriptionPlan olish
+        # Get subscription plan
+        subscription_id = request.data.get('subscription_id')
+        coupon_code = request.data.get('coupon', None)
+        
         try:
-            subscription = SubscriptionPlan.objects.get(id=subscription_id)
-        except SubscriptionPlan.DoesNotExist:
-            return Response({"error": "Subscription topilmadi"}, status=404)
+            student = Student.objects.get(user=request.user)
+        except Student.DoesNotExist:
+            return Response({"error": "Talaba topilmadi"}, status=status.HTTP_404_NOT_FOUND)
 
-        # Chegirma foizi va coupon_text
+        # Get subscription plan or use default monthly
+        if subscription_id:
+            try:
+                subscription_plan = SubscriptionPlan.objects.get(id=subscription_id, is_active=True)
+                base_amount = float(subscription_plan.total_price())
+                months = subscription_plan.months
+            except SubscriptionPlan.DoesNotExist:
+                return Response({"error": "Obuna rejasi topilmadi"}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            # Default monthly payment
+            monthly_payment = MonthlyPayment.objects.first()
+            base_amount = float(monthly_payment.price) if monthly_payment else 1000
+            months = 1
+
         discount_percent = 0
-        coupon_text = f"IQMATH.UZ {subscription.get_months_display()} oylik to'lov"
-        coupon = None
+        coupon_type = None
+        coupon_obj = None
+        coupon_owner = None
+        
+        # Default text for monthly payment
+        coupon_text = f"IQMATH.UZ {months} oylik obuna to'lovi"
 
+        # Check coupon code
         if coupon_code:
             try:
-                coupon = Coupon_Tutor_Student.objects.get(code=coupon_code, is_active=True)
-                if coupon.is_valid():
-                    discount_percent = coupon.discount_percent
-                    coupon_text = f"IQMATH {discount_percent}% chegirma asosida {subscription.get_months_display()} to‘lov"
+                coupon_obj = Coupon_Tutor_Student.objects.get(
+                    code=coupon_code, 
+                    is_active=True,
+                    valid_from__lte=timezone.now(),
+                    valid_until__gte=timezone.now()
+                )
+                
+                discount_percent = coupon_obj.discount_percent
+                
+                # Determine coupon type and owner
+                if coupon_obj.created_by_tutor:
+                    coupon_type = "tutor"
+                    coupon_owner = coupon_obj.created_by_tutor
+                    coupon_text = f"IQMATH {discount_percent}% chegirma asosida {months} oylik to'lov (Tutor: {coupon_owner.user.full_name})"
+                elif coupon_obj.created_by_student:
+                    coupon_type = "student"
+                    coupon_owner = coupon_obj.created_by_student
+                    coupon_text = f"IQMATH {discount_percent}% chegirma asosida {months} oylik to'lov (Student: {coupon_owner.user.full_name})"
                 else:
-                    return Response({"error": "Kupon muddati tugagan yoki faol emas"}, status=400)
+                    coupon_type = "system"
+                    coupon_text = f"IQMATH {discount_percent}% chegirma asosida {months} oylik to'lov"
+                    
             except Coupon_Tutor_Student.DoesNotExist:
-                return Response({"error": "Kupon topilmadi"}, status=404)
+                return Response({"error": "Kupon topilmadi yoki muddati tugagan"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Sale price hisoblash
-        sale_price = subscription.total_price()
+        # Calculate discounted amount
+        discounted_amount = base_amount
         if discount_percent > 0:
-            sale_price = sale_price * (1 - discount_percent / 100)
+            discounted_amount = base_amount * (1 - discount_percent / 100)
 
-        # Multicard token olish
+        # Get cashback settings
+        cashback_settings = ReferralAndCouponSettings.objects.first()
+        student_cashback_percent = cashback_settings.coupon_student_cashback_percent if cashback_settings else 0
+        teacher_cashback_percent = cashback_settings.coupon_teacher_cashback_percent if cashback_settings else 0
+
+        # Calculate cashback amounts
+        student_cashback_amount = discounted_amount * student_cashback_percent / 100
+        teacher_cashback_amount = discounted_amount * teacher_cashback_percent / 100
+
+        # Get token and create payment
         try:
             token = get_multicard_token()
         except Exception as e:
             return Response({"error": "Token olishda xatolik", "details": str(e)}, status=500)
 
         transaction_id = str(uuid.uuid4())
-        amount_in_tiyin = int(sale_price * 100)
-
+        headers = {"Authorization": f"Bearer {token}"}
+        
+        amount_in_tiyin = int(discounted_amount * 100)
+        
         data = {
             "store_id": 1915,
             "amount": amount_in_tiyin,
@@ -86,36 +129,35 @@ class InitiatePaymentAPIView(APIView):
             ]
         }
 
-        headers = {"Authorization": f"Bearer {token}"}
-
         try:
             response = requests.post(f"{URL_DEV}/payment/invoice", headers=headers, json=data)
         except requests.exceptions.RequestException as e:
-            return Response({"error": "Multicard bilan bog‘lanishda xatolik", "details": str(e)}, status=500)
+            return Response({"error": "Multicard bilan bog'lanishda xatolik", "details": str(e)}, status=500)
 
         if response.status_code != 200:
-            return Response({"error": "To‘lov yaratilishda xatolik", "details": response.text}, status=500)
+            return Response({"error": "To'lov yaratilishda xatolik", "details": response.text}, status=500)
 
-        # Payment yozish
+        # Create payment with coupon information
         payment = Payment.objects.create(
             student=student,
-            amount=sale_price,
+            amount=discounted_amount,
             transaction_id=transaction_id,
             status="pending",
             payment_gateway="multicard",
-            coupon_code=coupon_code if coupon else None,
-            coupon_type=coupon_type if coupon else None
+            coupon=coupon_obj,
+            coupon_type=coupon_type,
+            original_amount=base_amount,
+            discount_percent=discount_percent,
+            student_cashback_amount=student_cashback_amount,
+            teacher_cashback_amount=teacher_cashback_amount,
+            subscription_months=months
         )
 
-        return Response({
-            "transaction_id": transaction_id,
-            "amount": sale_price,
-            "coupon_text": coupon_text,
-            "multicard_response": response.json()
-        }, status=200)
+        return Response(response.json(), status=200)
+    
 
 class PaymentCallbackAPIView(APIView):
-    authentication_classes = []  # Multicard tashqi server
+    authentication_classes = []
     permission_classes = []
 
     def generate_sign(self, store_id, invoice_id, amount, secret):
@@ -126,15 +168,15 @@ class PaymentCallbackAPIView(APIView):
         data = request.data
         store_id = str(data.get("store_id"))
         invoice_id = str(data.get("invoice_id"))
-        amount = float(data.get("amount")) / 100  # tiyindan so'mga
+        amount = str(data.get("amount"))
         received_sign = data.get("sign")
         payment_time = data.get("payment_time")
-        uuid = data.get("uuid")
+        uuid_val = data.get("uuid")
         invoice_uuid = data.get("invoice_uuid")
         billing_id = data.get("billing_id")
 
         SECRET_KEY = "b7lydo1mu8abay9x"
-        EXPECTED_SIGN = self.generate_sign(store_id, invoice_id, data.get("amount"), SECRET_KEY)
+        EXPECTED_SIGN = self.generate_sign(store_id, invoice_id, amount, SECRET_KEY)
 
         if received_sign != EXPECTED_SIGN:
             return Response({"error": "Invalid sign"}, status=status.HTTP_400_BAD_REQUEST)
@@ -144,66 +186,72 @@ class PaymentCallbackAPIView(APIView):
         except Payment.DoesNotExist:
             return Response({"error": "Payment not found"}, status=status.HTTP_404_NOT_FOUND)
 
+        # Update payment status
         payment.status = "success"
         payment.payment_date = timezone.now()
         payment.payment_time = payment_time
-        payment.uuid = uuid
+        payment.uuid = uuid_val
         payment.invoice_uuid = invoice_uuid
         payment.billing_id = billing_id
-        payment.receipt_url = f"{URL_DEV}/invoice/{uuid}"
+        payment.sign = received_sign
+        payment.receipt_url = f"{URL_DEV}/invoice/{uuid_val}"
         payment.save()
 
-        # Obunani yaratish yoki yangilash
+        # Create coupon transaction if coupon was used
+        if payment.coupon and payment.coupon_type:
+            cashback_settings = ReferralAndCouponSettings.objects.first()
+            
+            if payment.coupon_type == "tutor" and payment.coupon.created_by_tutor:
+                TutorCouponTransaction.objects.create(
+                    student=payment.student,
+                    tutor=payment.coupon.created_by_tutor,
+                    coupon=payment.coupon,
+                    payment_amount=payment.amount,
+                    student_cashback_amount=payment.student_cashback_amount,
+                    teacher_cashback_amount=payment.teacher_cashback_amount
+                )
+                
+                # Add cashback to tutor's balance
+                if payment.teacher_cashback_amount > 0:
+                    payment.coupon.created_by_tutor.balance += payment.teacher_cashback_amount
+                    payment.coupon.created_by_tutor.save()
+
+            elif payment.coupon_type == "student" and payment.coupon.created_by_student:
+                StudentCouponTransaction.objects.create(
+                    student=payment.student,
+                    by_student=payment.coupon.created_by_student,
+                    coupon=payment.coupon,
+                    payment_amount=payment.amount,
+                    student_cashback_amount=payment.student_cashback_amount,
+                    teacher_cashback_amount=payment.teacher_cashback_amount
+                )
+                
+                # Add cashback to student's balance
+                if payment.student_cashback_amount > 0:
+                    payment.coupon.created_by_student.balance += payment.student_cashback_amount
+                    payment.coupon.created_by_student.save()
+
+            # Add cashback to paying student
+            if payment.student_cashback_amount > 0:
+                payment.student.balance += payment.student_cashback_amount
+                payment.student.save()
+
+        # Create or update subscription
         subscription, created = Subscription.objects.get_or_create(student=payment.student)
         now = timezone.now()
-
-        if created or subscription.end_date <= now:
+        
+        if created:
             subscription.start_date = now
-            subscription.end_date = now + relativedelta(months=1)
+            subscription.end_date = now + relativedelta(months=payment.subscription_months or 1)
         else:
-            subscription.end_date += relativedelta(months=1)
+            if subscription.end_date > now:
+                subscription.end_date += relativedelta(months=payment.subscription_months or 1)
+            else:
+                subscription.end_date = now + relativedelta(months=payment.subscription_months or 1)
+
         subscription.next_payment_date = subscription.end_date + relativedelta(months=1)
         subscription.is_paid = True
         subscription.save()
-
-        # -----------------------------
-        # Kupon va tranzaksiya yozish
-        coupon_code = payment.coupon_code  # Agar Payment modelda saqlangan bo'lsa
-        coupon_type = payment.coupon_type  # tutor/student/system
-
-        if coupon_code:
-            try:
-                coupon = Coupon_Tutor_Student.objects.get(code=coupon_code)
-            except Coupon_Tutor_Student.DoesNotExist:
-                coupon = None
-
-            if coupon and coupon.is_valid():
-                settings = ReferralAndCouponSettings.objects.last()
-
-                student_cashback = (amount * settings.coupon_student_cashback_percent) / 100
-                teacher_cashback = (amount * settings.coupon_teacher_cashback_percent) / 100
-
-                if coupon_type == "tutor":
-                    TutorCouponTransaction.objects.create(
-                        student=payment.student,
-                        tutor=coupon.created_by_tutor,
-                        coupon=coupon,
-                        payment_amount=amount,
-                        student_cashback_amount=student_cashback,
-                        teacher_cashback_amount=teacher_cashback
-                    )
-                elif coupon_type == "student":
-                    StudentCouponTransaction.objects.create(
-                        student=payment.student,
-                        by_student=coupon.created_by_student,
-                        coupon=coupon,
-                        payment_amount=amount,
-                        student_cashback_amount=student_cashback,
-                        teacher_cashback_amount=teacher_cashback
-                    )
-                # Kuponni deaktiv qilamiz
-                coupon.is_active = False
-                coupon.save()
 
         return Response({"status": "ok"}, status=status.HTTP_200_OK)
 
