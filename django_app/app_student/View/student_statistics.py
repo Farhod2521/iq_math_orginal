@@ -2,7 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Sum, Count, Max
-from django_app.app_payments.models import UserPayment
+from django_app.app_payments.models import Payment
 from django_app.app_student.models import StudentScore,  Diagnost_Student, TopicProgress, StudentReferral
 from django_app.app_user.models import Student, Subject
 from django.shortcuts import get_object_or_404
@@ -14,7 +14,7 @@ class StudentStatisticsDetailAPIView(APIView):
     def get(self, request, student_id):
         student = get_object_or_404(Student, id=student_id)
         score_data = StudentScore.objects.filter(student=student).first()
-        all_payments = UserPayment.objects.filter(student=student)
+        all_payments = Payment.objects.filter(student=student)
 
         # Payment status counts
         success_payments = all_payments.filter(status='success')

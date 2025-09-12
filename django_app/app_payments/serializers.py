@@ -1,9 +1,9 @@
 from rest_framework import serializers
-from .models import UserPayment, SubscriptionPlan
+from .models import Payment, SubscriptionPlan
 
-class UserPaymentSerializer(serializers.ModelSerializer):
+class PaymentSerializer(serializers.ModelSerializer):
     class Meta:
-        model = UserPayment
+        model = Payment
         fields = [
             'id',
             'store_id',             # Multicard ID raqami
