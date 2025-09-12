@@ -26,38 +26,39 @@ class InitiatePaymentAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        # Get subscription plan
+        # Ma'lumotlarni olish
         subscription_id = request.data.get('subscription_id')
-        coupon_code = request.data.get('coupon', None)
+        coupon_code = request.data.get('coupon_code', None)
         
         try:
             student = Student.objects.get(user=request.user)
         except Student.DoesNotExist:
             return Response({"error": "Talaba topilmadi"}, status=status.HTTP_404_NOT_FOUND)
 
-        # Get subscription plan or use default monthly
-        if subscription_id:
-            try:
-                subscription_plan = SubscriptionPlan.objects.get(id=subscription_id, is_active=True)
-                base_amount = float(subscription_plan.total_price())
-                months = subscription_plan.months
-            except SubscriptionPlan.DoesNotExist:
-                return Response({"error": "Obuna rejasi topilmadi"}, status=status.HTTP_400_BAD_REQUEST)
-        else:
-            # Default monthly payment
-            monthly_payment = MonthlyPayment.objects.first()
-            base_amount = float(monthly_payment.price) if monthly_payment else 1000
-            months = 1
+        # Subscription plan tekshirish
+        if not subscription_id:
+            return Response({"error": "subscription_id kiritilmadi"}, status=status.HTTP_400_BAD_REQUEST)
 
+        try:
+            plan = SubscriptionPlan.objects.get(id=subscription_id, is_active=True)
+        except SubscriptionPlan.DoesNotExist:
+            return Response({"error": "Obuna rejasi topilmadi"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Asl narxni hisoblash (planning o'zidagi chegirma bilan)
+        original_price = float(plan.months * plan.price_per_month)
+        if plan.discount_percent > 0:
+            original_price = original_price * (1 - plan.discount_percent / 100)
+
+        # Kupon tekshirish
         discount_percent = 0
         coupon_type = None
         coupon_obj = None
-        coupon_owner = None
+        coupon_owner_name = None
+        sale_price = original_price
         
-        # Default text for monthly payment
-        coupon_text = f"IQMATH.UZ {months} oylik obuna to'lovi"
+        # Standart matn
+        coupon_text = f"IQMATH.UZ {plan.get_months_display()} obuna to'lovi"
 
-        # Check coupon code
         if coupon_code:
             try:
                 coupon_obj = Coupon_Tutor_Student.objects.get(
@@ -69,47 +70,59 @@ class InitiatePaymentAPIView(APIView):
                 
                 discount_percent = coupon_obj.discount_percent
                 
-                # Determine coupon type and owner
+                # Kupon turini aniqlash
                 if coupon_obj.created_by_tutor:
                     coupon_type = "tutor"
-                    coupon_owner = coupon_obj.created_by_tutor
-                    coupon_text = f"IQMATH {discount_percent}% chegirma asosida {months} oylik to'lov (Tutor: {coupon_owner.user.full_name})"
+                    coupon_owner_name = coupon_obj.created_by_tutor.user.full_name
                 elif coupon_obj.created_by_student:
                     coupon_type = "student"
-                    coupon_owner = coupon_obj.created_by_student
-                    coupon_text = f"IQMATH {discount_percent}% chegirma asosida {months} oylik to'lov (Student: {coupon_owner.user.full_name})"
+                    coupon_owner_name = coupon_obj.created_by_student.user.full_name
                 else:
                     coupon_type = "system"
-                    coupon_text = f"IQMATH {discount_percent}% chegirma asosida {months} oylik to'lov"
+                
+                # Sale price hisoblash (CheckCouponAPIView dagi logika)
+                # 1 oylik tarifdan kupon chegirmasi
+                one_month_plan = SubscriptionPlan.objects.filter(months=1, is_active=True).first()
+                one_month_discount = 0
+                if one_month_plan:
+                    one_month_price = float(one_month_plan.price_per_month)
+                    if one_month_plan.discount_percent > 0:
+                        one_month_price = one_month_price * (1 - one_month_plan.discount_percent / 100)
+                    one_month_discount = one_month_price * discount_percent / 100
+
+                # Sale price = original_price - 1 oylik kupon chegirma
+                sale_price = original_price - one_month_discount
+                
+                # Matnni yaratish
+                if coupon_owner_name:
+                    coupon_text = f"IQMATH {discount_percent}% chegirma asosida {plan.get_months_display()} to'lov ({coupon_type.capitalize()}: {coupon_owner_name})"
+                else:
+                    coupon_text = f"IQMATH {discount_percent}% chegirma asosida {plan.get_months_display()} to'lov"
                     
             except Coupon_Tutor_Student.DoesNotExist:
                 return Response({"error": "Kupon topilmadi yoki muddati tugagan"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Calculate discounted amount
-        discounted_amount = base_amount
-        if discount_percent > 0:
-            discounted_amount = base_amount * (1 - discount_percent / 100)
-
-        # Get cashback settings
+        # Keshbek sozlamalari
         cashback_settings = ReferralAndCouponSettings.objects.first()
         student_cashback_percent = cashback_settings.coupon_student_cashback_percent if cashback_settings else 0
         teacher_cashback_percent = cashback_settings.coupon_teacher_cashback_percent if cashback_settings else 0
 
-        # Calculate cashback amounts
-        student_cashback_amount = discounted_amount * student_cashback_percent / 100
-        teacher_cashback_amount = discounted_amount * teacher_cashback_percent / 100
+        # Keshbek summalarini hisoblash (sale_price asosida)
+        student_cashback_amount = sale_price * student_cashback_percent / 100
+        teacher_cashback_amount = sale_price * teacher_cashback_percent / 100
 
-        # Get token and create payment
+        # Token olish
         try:
             token = get_multicard_token()
         except Exception as e:
             return Response({"error": "Token olishda xatolik", "details": str(e)}, status=500)
 
+        # Tranzaksiya ID yaratish
         transaction_id = str(uuid.uuid4())
         headers = {"Authorization": f"Bearer {token}"}
+        amount_in_tiyin = int(sale_price * 100)
         
-        amount_in_tiyin = int(discounted_amount * 100)
-        
+        # Multicardga jo'natiladigan ma'lumotlar
         data = {
             "store_id": 1915,
             "amount": amount_in_tiyin,
@@ -129,6 +142,7 @@ class InitiatePaymentAPIView(APIView):
             ]
         }
 
+        # Multicardga so'rov yuborish
         try:
             response = requests.post(f"{URL_DEV}/payment/invoice", headers=headers, json=data)
         except requests.exceptions.RequestException as e:
@@ -137,23 +151,44 @@ class InitiatePaymentAPIView(APIView):
         if response.status_code != 200:
             return Response({"error": "To'lov yaratilishda xatolik", "details": response.text}, status=500)
 
-        # Create payment with coupon information
-        payment = Payment.objects.create(
+        # To'lovni bazaga yozish
+        Payment.objects.create(
             student=student,
-            amount=discounted_amount,
+            amount=sale_price,
+            original_amount=original_price,
             transaction_id=transaction_id,
             status="pending",
             payment_gateway="multicard",
             coupon=coupon_obj,
             coupon_type=coupon_type,
-            original_amount=base_amount,
             discount_percent=discount_percent,
             student_cashback_amount=student_cashback_amount,
             teacher_cashback_amount=teacher_cashback_amount,
-            subscription_months=months
+            subscription_months=plan.months
         )
 
-        return Response(response.json(), status=200)
+        # Agar kupon ishlatilgan bo'lsa, foydalanish tarixini yozish
+        if coupon_obj:
+            student_id = coupon_obj.created_by_student.id if coupon_obj.created_by_student else None
+            tutor_id = coupon_obj.created_by_tutor.id if coupon_obj.created_by_tutor else None
+            
+            CouponUsage_Tutor_Student.objects.create(
+                coupon=coupon_obj,
+                used_by_student=student if student_id else None,
+                used_by_tutor=coupon_obj.created_by_tutor if tutor_id else None
+            )
+
+        return Response({
+            "payment_data": response.json(),
+            "price_details": {
+                "original_price": original_price,
+                "sale_price": sale_price,
+                "discount_percent": discount_percent,
+                "coupon_type": coupon_type,
+                "subscription_months": plan.months,
+                "subscription_name": plan.get_months_display()
+            }
+        }, status=200)
     
 
 class PaymentCallbackAPIView(APIView):
