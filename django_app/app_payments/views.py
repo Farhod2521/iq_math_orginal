@@ -45,7 +45,7 @@ class InitiatePaymentAPIView(APIView):
             return Response({"error": "Obuna rejasi topilmadi"}, status=status.HTTP_400_BAD_REQUEST)
 
         # Asl narxni hisoblash (planning o'zidagi chegirma bilan)
-        original_price = float(plan.months * plan.price_per_month)
+        original_price = float(plan.price_per_month)
         if plan.discount_percent > 0:
             original_price = original_price * (1 - plan.discount_percent / 100)
 
