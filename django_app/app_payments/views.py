@@ -256,13 +256,12 @@ class CheckCouponAPIView(APIView):
     def post(self, request, *args, **kwargs):
         code = request.data.get("code")
         subscription_id = request.data.get("subscription_id")  # foydalanuvchi tanlagan tarif
-        student_id = request.data.get("student_id")  
-        tutor_id = request.data.get("tutor_id")      
 
         if not code:
             return Response({"error": "Kupon kodi kiritilmadi"},
                             status=status.HTTP_400_BAD_REQUEST)
 
+        # Kuponni olish
         try:
             coupon = Coupon_Tutor_Student.objects.get(code=code)
         except Coupon_Tutor_Student.DoesNotExist:
@@ -273,10 +272,15 @@ class CheckCouponAPIView(APIView):
             return Response({"active": False, "message": "Kupon muddati tugagan yoki faol emas"},
                             status=status.HTTP_200_OK)
 
+        # Kuponni kim yaratganini aniqlash
+        student_id = coupon.created_by_student.id if coupon.created_by_student else None
+        tutor_id = coupon.created_by_tutor.id if coupon.created_by_tutor else None
+
+        # Kupon allaqachon ishlatilganmi
         already_used = CouponUsage_Tutor_Student.objects.filter(
             coupon=coupon,
-            used_by_student_id=student_id if student_id else None,
-            used_by_tutor_id=tutor_id if tutor_id else None
+            used_by_student_id=student_id,
+            used_by_tutor_id=tutor_id
         ).exists()
 
         if already_used:
@@ -296,8 +300,8 @@ class CheckCouponAPIView(APIView):
         # Foydalanish tarixini yozish
         CouponUsage_Tutor_Student.objects.create(
             coupon=coupon,
-            used_by_student_id=student_id if student_id else None,
-            used_by_tutor_id=tutor_id if tutor_id else None
+            used_by_student_id=student_id,
+            used_by_tutor_id=tutor_id
         )
 
         return Response({
@@ -306,8 +310,9 @@ class CheckCouponAPIView(APIView):
             "discount_percent": coupon.discount_percent,
             "original_price": plan.total_price(),
             "sale_price": sale_price,
-            "coupon_type": "tutor/student" if coupon.created_by_tutor or coupon.created_by_student else "system"
+            "coupon_type": "tutor/student" if student_id or tutor_id else "system"
         }, status=status.HTTP_200_OK)
+
 
 
 class SubscriptionPlanListAPIView(APIView):
