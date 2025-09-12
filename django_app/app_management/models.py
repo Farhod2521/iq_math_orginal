@@ -70,16 +70,7 @@ class ReferralAndCouponSettings(models.Model):
         help_text="Kupon kodi amal qilish muddati (kunlarda)",
         verbose_name="Kupon amal qilish muddati (kun)"
     )
-    coupon_student_cashback_percent = models.PositiveIntegerField(
-        default=0,
-        help_text="Kupon ishlatilganda studentga beriladigan keshbek foizi",
-        verbose_name="Student keshbek (%)"
-    )
-    coupon_teacher_cashback_percent = models.PositiveIntegerField(
-        default=0,
-        help_text="Kupon ishlatilganda teacherga beriladigan keshbek foizi",
-        verbose_name="Teacher keshbek (%)"
-    )
+
     created_at = models.DateTimeField(
         auto_now_add=True,
         verbose_name="Yaratilgan vaqti"
