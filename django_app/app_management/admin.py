@@ -91,7 +91,7 @@ class CouponAdmin(admin.ModelAdmin):
         'valid_until',
 
         'is_active',
-        'created_at'
+
     )
 
 
