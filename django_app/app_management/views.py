@@ -2,7 +2,7 @@ from rest_framework.generics import ListAPIView
 from .models import SystemSettings, FAQ, Product, Banner
 from .serializers import SystemSettingsSerializer, FAQSerializer, ProductSerializer, BannerSerializer
 from django_app.app_user.models import User, Teacher, Student
-from django_app.app_payments.models import Subscription, UserPayment
+from django_app.app_payments.models import Subscription, Payment
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
@@ -45,10 +45,10 @@ class StatisticsAPIView(APIView):
         ).count()
 
         # To'lov statistikasi
-        total_payments = UserPayment.objects.count()
-        pending_payments = UserPayment.objects.filter(status='pending').count()
-        success_payments = UserPayment.objects.filter(status='success').count()
-        failed_payments = UserPayment.objects.filter(status='failed').count()
+        total_payments = Payment.objects.count()
+        pending_payments = Payment.objects.filter(status='pending').count()
+        success_payments = Payment.objects.filter(status='success').count()
+        failed_payments = Payment.objects.filter(status='failed').count()
 
         data = {
             "total_teachers": total_teachers,

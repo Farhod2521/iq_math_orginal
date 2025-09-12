@@ -30,58 +30,9 @@ class Subscription(models.Model):
         verbose_name_plural = "Obunalar"
 
 
-# class Payment(models.Model):
-#     store_id = models.CharField(max_length=100, null=True, blank=True, verbose_name="Multicard ID raqami")
-#     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name="payments")
-#     invoice_uuid = models.CharField(max_length=100, null=True, blank=True, verbose_name="Invoys ID raqami")
-#     uuid = models.CharField(max_length=100, null=True, blank=True, verbose_name="To'lov tranzaksiyasining ID raqami")
-#     billing_id = models.CharField(max_length=100, null=True, blank=True, verbose_name="Hamkor billing tizimidagi tranzaksiyaning ID raqami")
-#     sign = models.CharField(max_length=100, null=True, blank=True, verbose_name="MD5 HASH")
-#     amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="To'lov summasi")
-#     original_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name="Chegirmasiz summa")
-#     transaction_id = models.CharField(max_length=100, verbose_name="Tranzaksiya ID")
-#     status = models.CharField(max_length=20, choices=[
-#         ("pending", "Kutilmoqda"),
-#         ("success", "Muvaffaqiyatli"),
-#         ("failed", "Muvaffaqiyatsiz")
-#     ], default="pending", verbose_name="Holat")
-#     payment_gateway = models.CharField(max_length=50, null=True, blank=True, verbose_name="To'lov tizimi")
-#     receipt_url = models.URLField(null=True, blank=True, verbose_name="To'lov chek havolasi")
-    
-#     # Coupon related fields
-#     coupon = models.ForeignKey(Coupon_Tutor_Student, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Ishlatilgan kupon")
-#     coupon_type = models.CharField(max_length=10, choices=[
-#         ('tutor', 'Tutor'),
-#         ('student', 'Student'),
-#         ('system', 'System')
-#     ], null=True, blank=True, verbose_name="Kupon turi")
-#     discount_percent = models.PositiveIntegerField(default=0, verbose_name="Chegirma foizi")
-#     subscription_months = models.PositiveIntegerField(default=1, verbose_name="Obuna muddati (oy)")
-    
-#     # Cashback fields
-#     student_cashback_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Studentga keshbek")
-#     teacher_cashback_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Teacherga keshbek")
-    
-#     # Date fields - default qiymatlarni to'g'rilaymiz
-#     payment_date = models.DateTimeField(null=True, blank=True, verbose_name="To'lov sanasi")
-#     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Yaratilgan sana")
-#     updated_at = models.DateTimeField(auto_now=True, verbose_name="Yangilangan sana")
-
-#     def __str__(self):
-#         return f"{self.student.full_name} - {self.amount} - {self.status}"
-
-#     class Meta:
-#         verbose_name = "To'lov"
-#         verbose_name_plural = "To'lovlar"
-#         ordering = ['-created_at']
-
-
-
-
-
-class UserPayment(models.Model):
+class Payment(models.Model):
     store_id = models.CharField(max_length=100, null=True, blank=True, verbose_name="Multicard ID raqami")
-    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name="userpayments")
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name="payments")
     invoice_uuid = models.CharField(max_length=100, null=True, blank=True, verbose_name="Invoys ID raqami")
     uuid = models.CharField(max_length=100, null=True, blank=True, verbose_name="To'lov tranzaksiyasining ID raqami")
     billing_id = models.CharField(max_length=100, null=True, blank=True, verbose_name="Hamkor billing tizimidagi tranzaksiyaning ID raqami")
@@ -113,7 +64,7 @@ class UserPayment(models.Model):
     
     # Date fields - default qiymatlarni to'g'rilaymiz
     payment_date = models.DateTimeField(null=True, blank=True, verbose_name="To'lov sanasi")
-    created_at = models.DateTimeField(auto_now=True, verbose_name="Yaratilgan sana")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Yaratilgan sana")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Yangilangan sana")
 
     def __str__(self):
@@ -123,6 +74,11 @@ class UserPayment(models.Model):
         verbose_name = "To'lov"
         verbose_name_plural = "To'lovlar"
         ordering = ['-created_at']
+
+
+
+
+
 class MonthlyPayment(models.Model):
     price = models.PositiveIntegerField(default=1000, help_text="Oylik to‘lov summasi (so‘m)")
 
