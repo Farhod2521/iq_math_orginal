@@ -173,7 +173,7 @@ class HelpRequestMessageLog(models.Model):
 
 
 
-class TutorCouponTransaction(models.Model):
+class StudentCouponTransaction(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='used_coupons', verbose_name="Kuponni ishlatgan student")
     tutor = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='coupon_transactions', verbose_name="Kupon egasi (Tutor)")
     coupon = models.ForeignKey(Coupon_Tutor_Student, on_delete=models.CASCADE, related_name='transactions', verbose_name="Kupon kodi")
