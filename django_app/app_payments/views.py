@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.utils import timezone
 from django.conf import settings
-from .models import Payment, Subscription, SubscriptionSetting, MonthlyPayment, SubscriptionPlan
+from .models import Payment, Subscription, SubscriptionSetting, MonthlyPayment, SubscriptionPlan, UserPayment
 from django_app.app_management.models import  Coupon_Tutor_Student, CouponUsage_Tutor_Student, ReferralAndCouponSettings
 from datetime import timedelta
 import hashlib
@@ -15,7 +15,7 @@ import uuid
 from rest_framework.permissions import IsAuthenticated
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
-from .serializers import PaymentSerializer, SubscriptionPlanSerializer
+from .serializers import UserPaymentSerializer, SubscriptionPlanSerializer
 from django_app.app_student.models import  StudentCouponTransaction
 from django_app.app_tutor.models import TutorCouponTransaction
 
@@ -152,7 +152,7 @@ class InitiatePaymentAPIView(APIView):
             return Response({"error": "To'lov yaratilishda xatolik", "details": response.text}, status=500)
 
         # To'lovni bazaga yozish
-        Payment.objects.create(
+        UserPayment.objects.create(
             student=student,
             amount=sale_price,
             original_amount=original_price,
@@ -215,7 +215,7 @@ class PaymentCallbackAPIView(APIView):
             return Response({"error": "Invalid sign"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            payment = Payment.objects.get(transaction_id=invoice_id)
+            payment = UserPayment.objects.get(transaction_id=invoice_id)
         except Payment.DoesNotExist:
             return Response({"error": "Payment not found"}, status=status.HTTP_404_NOT_FOUND)
 
@@ -407,7 +407,7 @@ class PaymentCallbackAPIView(APIView):
 #         if response.status_code != 200:
 #             return Response({"error": "To‘lov yaratilishda xatolik", "details": response.text}, status=500)
 
-#         Payment.objects.create(
+#         UserPayment.objects.create(
 #             student=student,
 #             amount=discounted_amount,
 #             transaction_id=transaction_id,
@@ -449,7 +449,7 @@ class PaymentCallbackAPIView(APIView):
 #         if received_sign != EXPECTED_SIGN:
 #             return Response({"error": "Invalid sign"}, status=status.HTTP_400_BAD_REQUEST)
 #         try:
-#             payment = Payment.objects.get(transaction_id=invoice_id)
+#             payment = UserPayment.objects.get(transaction_id=invoice_id)
 #         except Payment.DoesNotExist:
 #             return Response({"error": "Payment not found"}, status=status.HTTP_404_NOT_FOUND)
 #         payment.status = "success"
@@ -544,8 +544,8 @@ class MyPaymentsAPIView(APIView):
 
     def get(self, request):
         student = request.user.student_profile    # Agar Student modelida OneToOneField bo'lsa
-        payments = Payment.objects.filter(student=student)
-        serializer = PaymentSerializer(payments, many=True)
+        payments = UserPayment.objects.filter(student=student)
+        serializer = UserPaymentSerializer(payments, many=True)
         return Response(serializer.data)
     
 class CheckCouponAPIView(APIView):
