@@ -89,20 +89,12 @@ class CouponAdmin(admin.ModelAdmin):
         'discount_percent',
         'valid_from',
         'valid_until',
-        'created_by',
+
         'is_active',
         'created_at'
     )
 
 
-    def created_by(self, obj):
-        if obj.created_by_tutor:
-            return f"👨‍🏫 {obj.created_by_tutor.full_name}"
-        elif obj.created_by_student:
-            return f"🧑‍🎓 {obj.created_by_student.full_name}"
-        return "Noma’lum"
-    
-    created_by.short_description = "Yaratuvchi"
 
 
 @admin.register(SystemCoupon)
