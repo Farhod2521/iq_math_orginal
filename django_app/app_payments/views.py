@@ -277,15 +277,15 @@ class CheckCouponAPIView(APIView):
         tutor_id = coupon.created_by_tutor.id if coupon.created_by_tutor else None
 
         # Kupon allaqachon ishlatilganmi
-        already_used = CouponUsage_Tutor_Student.objects.filter(
-            coupon=coupon,
-            used_by_student_id=student_id,
-            used_by_tutor_id=tutor_id
-        ).exists()
+        # already_used = CouponUsage_Tutor_Student.objects.filter(
+        #     coupon=coupon,
+        #     used_by_student_id=student_id,
+        #     used_by_tutor_id=tutor_id
+        # ).exists()
 
-        if already_used:
-            return Response({"active": False, "message": "Kupon avval ishlatilgan"},
-                            status=status.HTTP_200_OK)
+        # if already_used:
+        #     return Response({"active": False, "message": "Kupon avval ishlatilgan"},
+        #                     status=status.HTTP_200_OK)
 
         # Tanlangan tarifni olish
         try:
