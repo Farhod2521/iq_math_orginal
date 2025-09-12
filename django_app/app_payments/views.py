@@ -5,7 +5,7 @@ from rest_framework import status
 from django.utils import timezone
 from django.conf import settings
 from .models import Payment, Subscription, SubscriptionSetting, MonthlyPayment, SubscriptionPlan
-from django_app.app_management.models import  Coupon, CouponUsage
+from django_app.app_management.models import  Coupon_Tutor_Student, CouponUsage_Tutor_Student
 from datetime import timedelta
 import hashlib
 from .utils import get_multicard_token 
@@ -264,8 +264,8 @@ class CheckCouponAPIView(APIView):
 
         # 1️⃣ Kuponni izlash
         try:
-            coupon = Coupon.objects.get(code=code)
-        except Coupon.DoesNotExist:
+            coupon = Coupon_Tutor_Student.objects.get(code=code)
+        except Coupon_Tutor_Student.DoesNotExist:
             return Response({"active": False, "message": "Kupon topilmadi"},
                             status=status.HTTP_404_NOT_FOUND)
 
@@ -275,7 +275,7 @@ class CheckCouponAPIView(APIView):
                             status=status.HTTP_200_OK)
 
         # 3️⃣ Oldin ishlatilganmi tekshirish (xohlasangiz)
-        already_used = CouponUsage.objects.filter(
+        already_used = CouponUsage_Tutor_Student.objects.filter(
             coupon=coupon,
             used_by_student_id=student_id if student_id else None,
             used_by_tutor_id=tutor_id if tutor_id else None
@@ -293,7 +293,7 @@ class CheckCouponAPIView(APIView):
         discount_price = base_price - (base_price * coupon.discount_percent // 100)
 
         # 6️⃣ Foydalanish tarixini yozish
-        CouponUsage.objects.create(
+        CouponUsage_Tutor_Student.objects.create(
             coupon=coupon,
             used_by_student_id=student_id if student_id else None,
             used_by_tutor_id=tutor_id if tutor_id else None
