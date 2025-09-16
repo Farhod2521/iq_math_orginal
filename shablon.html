@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>F03 - Boshqaruv Ko'rish Arxitektura Diagrammasi</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #eee;
+        }
+        
+        /* Diagramma uslublari */
+        .architecture {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 30px;
+            margin: 40px 0;
+        }
+        
+        .layer {
+            width: 90%;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        
+        .layer-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+        }
+        
+        .layer-icon {
+            margin-right: 10px;
+            font-size: 24px;
+        }
+        
+        .components {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+        }
+        
+        .component {
+            flex: 1;
+            min-width: 200px;
+            padding: 15px;
+            border-radius: 8px;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: transform 0.3s ease;
+        }
+        
+        .component:hover {
+            transform: translateY(-5px);
+        }
+        
+        .component-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px dashed #ddd;
+        }
+        
+        .component-details {
+            font-size: 14px;
+        }
+        
+        .component-details ul {
+            padding-left: 20px;
+            margin: 8px 0;
+        }
+        
+        .component-details li {
+            margin-bottom: 5px;
+        }
+        
+        /* Qatlamlar ranglari */
+        .presentation-layer {
+            background: linear-gradient(to right, #3498db, #2980b9);
+            color: white;
+        }
+        
+        .business-layer {
+            background: linear-gradient(to right, #2ecc71, #27ae60);
+            color: white;
+        }
+        
+        .data-layer {
+            background: linear-gradient(to right, #e74c3c, #c0392b);
+            color: white;
+        }
+        
+        /* Komponentlar ranglari */
+        .login-component {
+            border-left: 4px solid #3498db;
+        }
+        
+        .documents-component {
+            border-left: 4px solid #2ecc71;
+        }
+        
+        .selection-component {
+            border-left: 4px solid #f39c12;
+        }
+        
+        .actions-component {
+            border-left: 4px solid #9b59b6;
+        }
+        
+        .comments-component {
+            border-left: 4px solid #1abc9c;
+        }
+        
+        .users-component {
+            border-left: 4px solid #e74c3c;
+        }
+        
+        .arrows {
+            position: relative;
+            width: 90%;
+            height: 40px;
+            margin: 10px 0;
+        }
+        
+        .arrow-down {
+            width: 0;
+            height: 0;
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-top: 30px solid #95a5a6;
+            margin: 0 auto;
+        }
+        
+        .info-box {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 5px solid #3498db;
+        }
+        
+        @media (max-width: 768px) {
+            .components {
+                flex-direction: column;
+            }
+            
+            .component {
+                min-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>F03 - Boshqaruv Ko'rish Arxitektura Diagrammasi</h1>
+        
+        <div class="info-box">
+            <p><strong>Ishga tushirish shartlari:</strong> Administrator dasturiy ilovani tegishli login va parollar orqali kiritgan holda kiradi.</p>
+            <p><strong>Asosiy faoliyat ko'rsatuvchi shaxs:</strong> Administrator</p>
+        </div>
+
+        <div class="architecture">
+            <!-- Presentation Layer -->
+            <div class="layer presentation-layer">
+                <div class="layer-title">
+                    <span class="layer-icon">💻</span>
+                    Interfeys Qatlami (Presentation Layer)
+                </div>
+                <div class="components">
+                    <div class="component login-component">
+                        <div class="component-title">Kirish Interfeysi</div>
+                        <div class="component-details">
+                            <ul>
+                                <li>Login va parol maydonlari</li>
+                                <li>Tizimga kirish tugmasi</li>
+                                <li>Xavfsizlik kapitchani tekshirish</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="component documents-component">
+                        <div class="component-title">Hujjatlar Boshqaruvi Interfeysi</div>
+                        <div class="component-details">
+                            <ul>
+                                <li>Hujjat turini tanlash (ro'yxatdan)</li>
+                                <li>Norma raqamini kiritish maydoni</li>
+                                <li>Yuborish tugmasi</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="arrows">
+                <div class="arrow-down"></div>
+            </div>
+            
+            <!-- Business Layer -->
+            <div class="layer business-layer">
+                <div class="layer-title">
+                    <span class="layer-icon">⚙️</span>
+                    Biznes Logika Qatlami (Business Layer)
+                </div>
+                <div class="components">
+                    <div class="component selection-component">
+                        <div class="component-title">Autentifikatsiya Moduli</div>
+                        <div class="component-details">
+                            <ul>
+                                <li>Foydalanuvchi ma'lumotlarini tekshirish</li>
+                                <li>Session boshqaruv</li>
+                                <li>Kirish huquqini tekshirish</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="component actions-component">
+                        <div class="component-title">Hujjatlar Boshqaruvi Moduli</div>
+                        <div class="component-details">
+                            <ul>
+                                <li>Hujjat qo'shish logikasi</li>
+                                <li>Hujjatni tahrirlash logikasi</li>
+                                <li>Hujjatni o'chirish logikasi</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="component comments-component">
+                        <div class="component-title">Izohlar Moduli</div>
+                        <div class="component-details">
+                            <ul>
+                                <li>Izoh qoldirish imkoniyati</li>
+                                <li>Izohlarga javob berish</li>
+                                <li>Izohlar moderatsiyasi</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="arrows">
+                <div class="arrow-down"></div>
+            </div>
+            
+            <!-- Data Layer -->
+            <div class="layer data-layer">
+                <div class="layer-title">
+                    <span class="layer-icon">💾</span>
+                    Ma'lumotlar Qatlami (Data Layer)
+                </div>
+                <div class="components">
+                    <div class="component users-component">
+                        <div class="component-title">Foydalanuvchilar Ma'lumotlar Bazasi</div>
+                        <div class="component-details">
+                            <ul>
+                                <li>Login va parollar</li>
+                                <li>Foydalanuvchi profillari</li>
+                                <li>Huquq va rollar</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="component documents-component">
+                        <div class="component-title">Hujjatlar Ma'lumotlar Bazasi</div>
+                        <div class="component-details">
+                            <ul>
+                                <li>Normativ hujjatlar</li>
+                                <li>Yangiliklar</li>
+                                <li>Tarix va versiyalar</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="component comments-component">
+                        <div class="component-title">Izohlar Ma'lumotlar Bazasi</div>
+                        <div class="component-details">
+                            <ul>
+                                <li>Foydalanuvchi izohlari</li>
+                                <li>Administrator javoblari</li>
+                                <li>Vaqt belgilari</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="info-box">
+            <h3>Ssenariyni bajarish tartibi:</h3>
+            <ol>
+                <li>Dasturiy ilovaga login parol orqali admin panelga kiradi;</li>
+                <li>Normativ hujjatlar va yangiliklarni qo'shish, o'chirish va tahrirlash;
+                    <ul>
+                        <li>Hujjatni turi tanlang - Ro'yxatdan tanlanadi</li>
+                        <li>Norma raqamini kiritiladi - Qo'lda kiritiladi</li>
+                    </ul>
+                </li>
+                <li>Raqam tanlab bosiladi;</li>
+                <li>Quyidagi ma'lumotlar chiqadi:
+                    <ul>
+                        <li>Tahrirlash - Ma'lumotlar o'zgartirish ko'rsatiladi</li>
+                        <li>O'chirish - Ma'lumot o'chirish</li>
+                    </ul>
+                </li>
+                <li>Qoldirilgan izohlarga javob yozish;</li>
+                <li>Foydalanuvchilar ro'yxatini va ma'lumotlarini ko'rib chiqish.</li>
+            </ol>
+        </div>
+    </div>
+</body>
+</html>
