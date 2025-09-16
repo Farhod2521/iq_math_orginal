@@ -11,7 +11,7 @@ class SubscriptionSettingAdmin(admin.ModelAdmin):
 class SubscriptionAdmin(admin.ModelAdmin):
     list_display = ("student", "start_date", "end_date", "is_paid")
     list_filter = ("is_paid", "start_date", "end_date")
-    search_fields = ("student__full_name", "student__user__username", "student__user__phone")
+    search_fields = ("student__full_name", "student__user__phone")
     autocomplete_fields = ("student",)
     date_hierarchy = "start_date"
 
