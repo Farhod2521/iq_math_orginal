@@ -170,14 +170,46 @@ class UniversalRegisterSerializer(serializers.Serializer):
         class_name = validated_data.pop('class_name', None)
         referral_code = validated_data.pop('referral_code', None)
 
-        # 1. User yaratish
-        user = User.objects.create(phone=phone, role=role)
+        # 1. Mavjud userni tekshiramiz
+        user = User.objects.filter(phone=phone, role=role).first()
+
+        # SMS code generatsiya
         sms_code = str(random.randint(10000, 99999))
+
+        if user:
+            # Agar mavjud bo'lsa va status hali tasdiqlanmagan bo'lsa – sms_code yangilanadi
+            if hasattr(user, 'student_profile'):
+                profile = user.student_profile
+                if not profile.status:  # status False
+                    user.sms_code = sms_code
+                    user.save(update_fields=['sms_code'])
+                    send_sms(phone, sms_code)
+                    return user  # qayta profil yaratmaymiz
+            elif hasattr(user, 'parent_profile'):
+                profile = user.parent_profile
+                if not profile.status:
+                    user.sms_code = sms_code
+                    user.save(update_fields=['sms_code'])
+                    send_sms(phone, sms_code)
+                    return user
+            elif hasattr(user, 'tutor_profile'):
+                profile = user.tutor_profile
+                if not profile.status:
+                    user.sms_code = sms_code
+                    user.save(update_fields=['sms_code'])
+                    send_sms(phone, sms_code)
+                    return user
+
+            # Agar status True bo'lsa — demak tasdiqlangan, xatolik
+            raise serializers.ValidationError("Bu telefon raqam allaqachon ro'yxatdan o'tgan.")
+
+        # 2. Yangi User yaratish
+        user = User.objects.create(phone=phone, role=role)
         user.sms_code = sms_code
         user.set_unusable_password()
         user.save()
 
-        # 2. Role bo‘yicha profillar
+        # 3. Role bo‘yicha profillar
         if role == "student":
             student = Student.objects.create(
                 user=user,
@@ -208,15 +240,17 @@ class UniversalRegisterSerializer(serializers.Serializer):
             Parent.objects.create(
                 user=user,
                 full_name=full_name,
+                status=False  # parent ham status bilan bo‘lishi kerak
             )
 
         elif role == "tutor":
             Tutor.objects.create(
                 user=user,
                 full_name=full_name,
+                status=False
             )
 
-        # 3. SMS yuborish
+        # 4. SMS yuborish
         send_sms(phone, sms_code)
 
         return user
