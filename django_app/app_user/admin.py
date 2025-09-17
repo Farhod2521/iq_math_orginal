@@ -1,6 +1,6 @@
 from django.contrib import admin
 from modeltranslation.admin import TranslationAdmin
-from .models import Student, User, UserSMSAttempt, Class,Teacher, Referral, Parent
+from .models import Student, User, UserSMSAttempt, Class,Teacher, Referral, Parent, Tutor
 from django.contrib.admin.models import LogEntry
 
 
@@ -35,6 +35,14 @@ class ParentAdmin(admin.ModelAdmin):
     search_fields = ("full_name", "user__phone", "user__email")
     ordering = ("-parent_date",)
 
+
+
+@admin.register(Tutor)
+class TutorAdmin(admin.ModelAdmin):
+    list_display = ("id", "full_name", "user", "region", "districts", "address", "tutor_date")
+    list_filter = ("region", "districts")
+    search_fields = ("full_name", "user__phone", "user__email")
+    ordering = ("-tutor_date",)
 
 class UserAdmin(admin.ModelAdmin):
     list_filter = ('phone',  'sms_code',)  # Status bo‘yicha filter qo‘shish
