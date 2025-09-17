@@ -43,12 +43,15 @@ class FAQAdmin(admin.ModelAdmin):
 @admin.register(ReferralAndCouponSettings)
 class ReferralAndCouponSettingsAdmin(admin.ModelAdmin):
     list_display = (
-     
+        'teacher_referral_bonus_points',
+        'student_referral_bonus_points',
         'coupon_discount_percent',
         'coupon_valid_days',
+        'coupon_student_cashback_percent',
+        'coupon_teacher_cashback_percent',
+        'created_at',
         'updated_at',
     )
-
 
 
 @admin.register(Product)
