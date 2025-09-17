@@ -153,14 +153,37 @@ class UniversalRegisterSerializer(serializers.Serializer):
         phone = attrs.get("phone")
         role = attrs.get("role")
 
-        user = User.objects.filter(phone=phone, role=role).first()
+        user = User.objects.filter(phone=phone).first()
         if user:
-            if hasattr(user, 'student_profile') and user.student_profile.status:
-                raise serializers.ValidationError("Bu telefon raqam allaqachon ro'yxatdan o'tgan.")
-            if hasattr(user, 'parent_profile') and user.parent_profile.status:
-                raise serializers.ValidationError("Bu telefon raqam allaqachon ro'yxatdan o'tgan.")
-            if hasattr(user, 'tutor_profile') and user.tutor_profile.status:
-                raise serializers.ValidationError("Bu telefon raqam allaqachon ro'yxatdan o'tgan.")
+            # userning haqiqiy roli
+            existing_role = user.role
+
+            # student status check
+            if hasattr(user, 'student_profile'):
+                if user.student_profile.status:
+                    raise serializers.ValidationError("Bu telefon raqam allaqachon ro'yxatdan o'tgan.")
+                if existing_role != role:
+                    raise serializers.ValidationError(
+                        f"Siz faqat '{existing_role}' roli orqali ro'yxatdan o'tishingiz mumkin."
+                    )
+
+            # parent status check
+            elif hasattr(user, 'parent_profile'):
+                if user.parent_profile.status:
+                    raise serializers.ValidationError("Bu telefon raqam allaqachon ro'yxatdan o'tgan.")
+                if existing_role != role:
+                    raise serializers.ValidationError(
+                        f"Siz faqat '{existing_role}' roli orqali ro'yxatdan o'tishingiz mumkin."
+                    )
+
+            # tutor status check
+            elif hasattr(user, 'tutor_profile'):
+                if user.tutor_profile.status:
+                    raise serializers.ValidationError("Bu telefon raqam allaqachon ro'yxatdan o'tgan.")
+                if existing_role != role:
+                    raise serializers.ValidationError(
+                        f"Siz faqat '{existing_role}' roli orqali ro'yxatdan o'tishingiz mumkin."
+                    )
 
         # student bo'lsa class_name majburiy
         if role == "student" and not attrs.get("class_name"):
@@ -178,7 +201,7 @@ class UniversalRegisterSerializer(serializers.Serializer):
         sms_code = str(random.randint(10000, 99999))
 
         # 1. Mavjud userni tekshiramiz
-        user = User.objects.filter(phone=phone, role=role).first()
+        user = User.objects.filter(phone=phone).first()
 
         if user:
             # Agar mavjud bo'lsa va status hali tasdiqlanmagan bo'lsa – sms_code yangilanadi
@@ -255,6 +278,7 @@ class UniversalRegisterSerializer(serializers.Serializer):
         send_sms(phone, sms_code)
 
         return user
+
 
         
 class Class_Serializer(serializers.ModelSerializer):
