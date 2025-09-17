@@ -75,7 +75,7 @@ class Tutor(models.Model):
 
     class Meta:
         verbose_name = "O'qtuvchi"
-        verbose_name_plural = "O'qtuvchi"
+        verbose_name_plural = "O'qtuvchilar"
 
 
 class Teacher(models.Model):
@@ -96,8 +96,8 @@ class Teacher(models.Model):
         return self.full_name
 
     class Meta:
-        verbose_name = "O‘qituvchi"
-        verbose_name_plural = "O‘qituvchilar"
+        verbose_name = "Mentor"
+        verbose_name_plural = "Mentor"
 
 
 class Class(models.Model):
