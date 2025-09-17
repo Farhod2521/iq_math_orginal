@@ -30,7 +30,7 @@ admin.site.register(Student, StudentAdmin)
 
 @admin.register(Parent)
 class ParentAdmin(admin.ModelAdmin):
-    list_display = ("id", "full_name", "user", "region", "districts", "address", "parent_date")
+    list_display = ("id", "full_name", "user", "parent_date", 'status')
     list_filter = ("region", "districts")
     search_fields = ("full_name", "user__phone", "user__email")
     ordering = ("-parent_date",)
@@ -39,7 +39,7 @@ class ParentAdmin(admin.ModelAdmin):
 
 @admin.register(Tutor)
 class TutorAdmin(admin.ModelAdmin):
-    list_display = ("id", "full_name", "user", "region", "districts", "address", "tutor_date")
+    list_display = ("id", "full_name", "user", "tutor_date", 'status')
     list_filter = ("region", "districts")
     search_fields = ("full_name", "user__phone", "user__email")
     ordering = ("-tutor_date",)
