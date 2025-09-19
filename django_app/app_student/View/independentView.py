@@ -141,7 +141,7 @@ class StudentTopicHelpRequestListView(APIView):
 
         paginated_qs = queryset[start:end]
 
-        serializer = TopicHelpRequestIndependentSerializer(paginated_qs, many=True)
+        serializer = MyTopicHelpRequestIndependentSerializer(paginated_qs, many=True)
 
         return Response({
             "page": page,
