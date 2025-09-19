@@ -108,21 +108,45 @@ class GetTelegramIdFromTopicHelpAPIView(APIView):
         return Response({"telegram_id": telegram_id}, status=status.HTTP_200_OK)
     
 
-
+from math import ceil
 class StudentTopicHelpRequestListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         user = request.user
+
+        # Studentni topish
         try:
-            student = user.student_profile  # Agar siz Student modelini user bilan OneToOne bog‘lagan bo‘lsangiz
+            student = user.student_profile
         except:
             return Response(
                 {"error": "Faqat talaba uchun ruxsat berilgan"},
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        requests_qs = TopicHelpRequestIndependent.objects.filter(student=student).order_by('-created_at')
-        
-        serializer = MyTopicHelpRequestIndependentSerializer(requests_qs, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        # Pagination parametrlari
+        page = int(request.GET.get('page', 1))  # default 1
+        size = int(request.GET.get('size', 10))  # default 10
+
+        queryset = TopicHelpRequestIndependent.objects.filter(
+            student=student
+        ).order_by('-created_at')
+
+        total_count = queryset.count()
+        total_pages = ceil(total_count / size)
+
+        # Boshlanish va tugash indekslari
+        start = (page - 1) * size
+        end = start + size
+
+        paginated_qs = queryset[start:end]
+
+        serializer = TopicHelpRequestIndependentSerializer(paginated_qs, many=True)
+
+        return Response({
+            "page": page,
+            "size": size,
+            "total": total_count,
+            "total_pages": total_pages,
+            "results": serializer.data
+        }, status=status.HTTP_200_OK)
