@@ -106,3 +106,23 @@ class GetTelegramIdFromTopicHelpAPIView(APIView):
 
         telegram_id = topic_help.student.user.telegram_id
         return Response({"telegram_id": telegram_id}, status=status.HTTP_200_OK)
+    
+
+
+class StudentTopicHelpRequestListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        try:
+            student = user.student_profile  # Agar siz Student modelini user bilan OneToOne bog‘lagan bo‘lsangiz
+        except:
+            return Response(
+                {"error": "Faqat talaba uchun ruxsat berilgan"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        requests_qs = TopicHelpRequestIndependent.objects.filter(student=student).order_by('-created_at')
+        
+        serializer = TopicHelpRequestIndependentSerializer(requests_qs, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

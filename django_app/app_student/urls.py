@@ -9,7 +9,7 @@ from .View.app_diagnost import StudentDiagnostSubjectsAPIView, SubjectChaptersAP
 from .View.product_exchange import ProductExchangeView, ProductExchangeListView
 from  .View.unsolvedquestioncreateView import UnsolvedQuestionCreateView, UnsolvedQuestionReportListView
 from .View.student_statistics import StudentStatisticsDetailAPIView, SubjectListWithMasteryAPIView, ChapterTopicProgressAPIView, DiagnostSubjectListAPIView, MyReferralsAPIView ,DiagnostChapterTopicProgressAPIView
-from .View.independentView import  TopicHelpRequestCreateView, AssignTeacherAPIView, GetTelegramIdFromTopicHelpAPIView
+from .View.independentView import  TopicHelpRequestCreateView, AssignTeacherAPIView, GetTelegramIdFromTopicHelpAPIView, StudentTopicHelpRequestListView
 from .View.student_login_history import  StudentLoginHistoryListAPIView
 
 urlpatterns = [
@@ -52,6 +52,7 @@ urlpatterns = [
     path('student-independent/', TopicHelpRequestCreateView.as_view()),
     path("student/telegram/assign-teacher/", AssignTeacherAPIView.as_view(), name="assign_teacher"),
     path("student/student_id/telegram_id/", GetTelegramIdFromTopicHelpAPIView.as_view(), name="assign_teacher"),
+    path("my-independent/", StudentTopicHelpRequestListView.as_view(), name="independent"),
 
 
 
