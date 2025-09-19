@@ -96,9 +96,16 @@ class ProductExchangeListView(APIView):
 
         data = []
         for exchange in exchanges:
+            product_image_url = (
+                request.build_absolute_uri(exchange.product.image.url)
+                if exchange.product.image
+                else None
+            )
+
             data.append({
                 'product_name': exchange.product.name,
-                'used_coin': exchange.used_coin,  # modeldagi field nomi hali used_score deb turgan bo‘lsa
+                'product_image': product_image_url,  
+                'used_coin': exchange.used_coin,     
                 'status': exchange.status,
                 'created_at': exchange.created_at.strftime('%Y-%m-%d %H:%M'),
             })
