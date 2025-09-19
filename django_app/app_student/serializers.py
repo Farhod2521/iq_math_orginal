@@ -337,7 +337,10 @@ class TopicHelpRequestIndependentSerializer(serializers.ModelSerializer):
         instance.topics.set([topic])
         return instance
 
-
+class MyTopicHelpRequestIndependentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TopicHelpRequestIndependent
+        fields = '__all__'
 
 class ReferredStudentSerializer(serializers.ModelSerializer):
     full_name = serializers.CharField(source='referred.full_name')
