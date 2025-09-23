@@ -6,6 +6,7 @@ from telegram.ext import (
 )
 from config import API_URL, BOT_TOKEN
 from teacher import teacher_menu, handle_teacher_callback
+from urllib.parse import quote
 
 # Log konfiguratsiyasi
 logging.basicConfig(
@@ -14,10 +15,99 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-
-
 API_URL = "https://api.iqmath.uz/api/v1/func_student/id-independent"
+TEACHER_CHAT_IDS = [1858379541, 5467533504]  # O'qituvchilar chat ID lari
 
+def send_question_to_telegram(student_id, student_full_name, question_id):
+    """
+    O'qituvchilarga savolni yuborish funksiyasi
+    """
+    try:
+        # 1. Savol ma'lumotlarini API dan olish
+        resp = requests.get(f"{API_URL}/{question_id}/", timeout=10)
+        if resp.status_code != 200:
+            print(f"API dan ma'lumot olishda xatolik: {resp.status_code}")
+            return False
+        
+        data = resp.json()
+        
+        # 2. Ma'lumotlarni olish
+        subject_name = data.get("subject_name_uz", "-")
+        chapters = data.get("chapter_name_uz", [])
+        topics = data.get("topic_name_uz", [])
+        
+        chapter_name = ", ".join(chapters) if chapters else "-"
+        topic_name = ", ".join(topics) if topics else "-"
+        
+        # 3. Test natijalarini olish
+        result = data.get("result", [])
+        if result:
+            result = result[0]
+            score = result.get("score", 0)
+            total_answers = result.get("total_answers", 0)
+            correct_answers = result.get("correct_answers", 0)
+            percentage = (correct_answers / total_answers * 100) if total_answers else 0
+        else:
+            score = total_answers = correct_answers = percentage = 0
+        
+        # 4. URL encode qilish
+        student_name_encoded = quote(student_full_name)
+        student_id_encoded = quote(str(student_id))
+        
+        url = f"https://iqmath.uz/dashboard/teacher/student-examples/{question_id}?student_name={student_name_encoded}&student_id={student_id_encoded}"
+        
+        # 5. Rang-barang matn (HTML format)
+        text = (
+            "📥 <b>Yangi savol keldi!</b>\n"
+            "━━━━━━━━━━━━━━━━━━━━━\n"
+            f"👤 <b>O'quvchi:</b> {student_full_name} (ID: {student_id})\n"
+            f"🆔 <b>Savol ID:</b> {question_id}\n\n"
+            "📚 <b>Mavzu ma'lumotlari:</b>\n"
+            f"• 📖 Fan: <b>{subject_name}</b>\n"
+            f"• 📚 Bo'lim: <b>{chapter_name}</b>\n"
+            f"• 📝 Mavzu: <b>{topic_name}</b>\n\n"
+            "📊 <b>Test natijasi:</b>\n"
+            f"• ❓ Jami savollar: <b>{total_answers}</b>\n"
+            f"• ✅ To'g'ri javoblar: <b>{correct_answers}</b>\n"
+            f"• 📈 Foiz: <b>{percentage:.1f}%</b>\n"
+            f"• ⭐ Ball: <b>{score}</b>\n\n"
+            "ℹ️ <i>Iltimos savolni ko'rib chiqing va javob bering</i>"
+        )
+        
+        # 6. Inline keyboard
+        keyboard = [
+            [
+                InlineKeyboardButton("✅ Javob berish", callback_data=f"assign_{question_id}"),
+            ],
+            [
+                InlineKeyboardButton("🔗 Savolga o'tish", url=url)
+            ]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        
+        # 7. Barcha o'qituvchilarga xabarni yuborish
+        from main import application  # Application obyektini import qilish
+        
+        success_count = 0
+        for chat_id in TEACHER_CHAT_IDS:
+            try:
+                application.bot.send_message(
+                    chat_id=chat_id,
+                    text=text,
+                    parse_mode="HTML",
+                    reply_markup=reply_markup
+                )
+                success_count += 1
+                print(f"Xabar {chat_id} ga yuborildi")
+            except Exception as e:
+                print(f"Xabar {chat_id} ga yuborishda xatolik: {e}")
+        
+        print(f"Jami {success_count} ta o'qituvchiga xabar yuborildi")
+        return success_count > 0
+        
+    except Exception as e:
+        print(f"send_question_to_telegram funksiyasida xatolik: {e}")
+        return False
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     telegram_id = update.effective_user.id
@@ -39,12 +129,12 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 if resp.status_code == 200:
                     data = resp.json()
 
-                    # 🔹 Ma’lumotlarni API dan olamiz
+                    # 🔹 Ma'lumotlarni API dan olamiz
                     subject = data.get("subject_name_uz", "-")
                     chapters = ", ".join(data.get("chapter_name_uz", []))
                     topics = ", ".join(data.get("topic_name_uz", []))
 
-                    # 🔹 STATUS ni olib emoji bilan qo‘shamiz
+                    # 🔹 STATUS ni olib emoji bilan qo'shamiz
                     status = data.get("status", "")
                     if status == "sent":
                         header = "📩 Yangi murojaat"
@@ -107,9 +197,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await update.message.reply_text("Tizimda xatolik yuz berdi.")
             return
 
-    # payload bo‘lmasa – oddiy javob
+    # payload bo'lmasa - oddiy javob
     await update.message.reply_text("Assalomu alaykum! Xush kelibsiz.")
-
 
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -126,20 +215,23 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         try:
             # Student ma'lumotlarini olish
             student_resp = requests.get(f"{API_URL}/students/{student_id}/", timeout=5)
+            student_full_name = "O'quvchi"
+            
             if student_resp.status_code == 200:
                 student_data = student_resp.json()
-                student_full_name = student_data.get('full_name', '')
-                
-                # send_question_to_telegram funksiyasini chaqiramiz
-                send_question_to_telegram(
-                    student_id=student_id,
-                    student_full_name=student_full_name,
-                    question_id=help_request_id,
-                )
-                
-                # Foydalanuvchaga xabar beramiz
+                student_full_name = student_data.get('full_name', 'O\'quvchi')
+            
+            # send_question_to_telegram funksiyasini chaqiramiz
+            success = send_question_to_telegram(
+                student_id=student_id,
+                student_full_name=student_full_name,
+                question_id=help_request_id,
+            )
+            
+            # Foydalanuvchaga xabar beramiz
+            if success:
                 await query.edit_message_text(
-                    text=query.message.text + "\n\n✅ <b>Murojaat o'qituvchiga yuborildi!</b>",
+                    text=query.message.text + "\n\n✅ <b>Murojaat o'qituvchilarga yuborildi!</b>",
                     parse_mode="HTML"
                 )
             else:
@@ -165,7 +257,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE):
     logger.error(f'Xatolik: {context.error}', exc_info=context.error)
 
-
 def main():
     application = ApplicationBuilder().token(BOT_TOKEN).build()
 
@@ -176,7 +267,6 @@ def main():
 
     logger.info("Bot ishga tushdi...")
     application.run_polling()
-
 
 if __name__ == '__main__':
     main()
