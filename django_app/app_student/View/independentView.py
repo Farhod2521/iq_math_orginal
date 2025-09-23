@@ -8,10 +8,14 @@ from django_app.app_student.serializers import  TopicHelpRequestIndependentSeria
 from rest_framework.views import APIView
 from django.utils import timezone
 from bot_telegram.helped_bot import send_question_to_telegram
-from django_app.app_user.models import Teacher, Student
+from django_app.app_user.models import Teacher, Student, Subject
 from urllib.parse import quote
-
+from django_app.app_teacher.models import  Chapter, Topic
 BOT_USERNAME = "iq_mathbot"
+
+from urllib.parse import quote
+import json
+
 class TopicHelpRequestCreateView(CreateAPIView):
     queryset = TopicHelpRequestIndependent.objects.all()
     serializer_class = TopicHelpRequestIndependentSerializer
@@ -32,24 +36,88 @@ class TopicHelpRequestCreateView(CreateAPIView):
         student = getattr(request.user, 'student_profile', None)
         telegram_id = getattr(request.user, 'telegram_id', None)
 
-        # deep link payload yaratamiz
-        payload = f"{instance.id}_{student.id}"  # yoki JSON encode qilib qo‘ying
-        payload_encoded = quote(payload)
+        # Ma'lumotlarni olish
+        subject_id = instance.info.get('subject', {}).get('id')
+        chapter_id = instance.info.get('chapter', {}).get('id')
+        topic_id = instance.info.get('topic', {}).get('id')
+        
+        # Modellardan nomlarni olish
+        subject_name_uz = ""
+        chapter_name_uz = ""
+        topic_name_uz = ""
+        
+        try:
+            if subject_id:
+                subject = Subject.objects.get(id=subject_id)
+                subject_name_uz = getattr(subject, 'name_uz', '')
+        except Subject.DoesNotExist:
+            subject_name_uz = ""
+        
+        try:
+            if chapter_id:
+                chapter = Chapter.objects.get(id=chapter_id)
+                chapter_name_uz = getattr(chapter, 'name_uz', '')
+        except Chapter.DoesNotExist:
+            chapter_name_uz = ""
+        
+        try:
+            if topic_id:
+                topic = Topic.objects.get(id=topic_id)
+                topic_name_uz = getattr(topic, 'name_uz', '')
+        except Topic.DoesNotExist:
+            topic_name_uz = ""
+
+        # Result ma'lumotlarini olish
+        result_data = instance.result_json or []
+        total_answers = 0
+        correct_answers = 0
+        score = 0
+        
+        if result_data and len(result_data) > 0:
+            result = result_data[0]
+            total_answers = result.get('total_answers', 0)
+            correct_answers = result.get('correct_answers', 0)
+            score = result.get('score', 0)
+
+        # Deep link payload yaratamiz
+        payload_data = {
+            'instance_id': instance.id,
+            'student_id': student.id if student else None,
+            'subject_name_uz': subject_name_uz,
+            'chapter_name_uz': chapter_name_uz,
+            'topic_name_uz': topic_name_uz,
+            'total_answers': total_answers,
+            'correct_answers': correct_answers,
+            'score': score
+        }
+        
+        payload_encoded = quote(json.dumps(payload_data, ensure_ascii=False))
         deep_link = f"https://t.me/{BOT_USERNAME}?start={payload_encoded}"
 
-        # bu yerdan keyin send_question_to_telegram() – o‘qituvchiga yuborish
+        # Telegramga xabar yuborish
         if student and telegram_id and telegram_id != 0:
             send_question_to_telegram(
                 student_id=student.id,
                 student_full_name=student.full_name,
                 question_id=instance.id,
-                result_json=instance.result_json
+                result_json=instance.result_json,
+                subject_name=subject_name_uz,
+                chapter_name=chapter_name_uz,
+                topic_name=topic_name_uz
             )
 
         return Response({
             "success": True,
-            "message": "O‘qituvchiga yuborildi",
-            "telegram_link": deep_link  # frontendga qaytadi
+            "message": "O'qituvchiga yuborildi",
+            "telegram_link": deep_link,
+            "subject_name_uz": subject_name_uz,
+            "chapter_name_uz": chapter_name_uz,
+            "topic_name_uz": topic_name_uz,
+            "result": {
+                "total_answers": total_answers,
+                "correct_answers": correct_answers,
+                "score": score
+            }
         }, status=status.HTTP_201_CREATED)
 
 
