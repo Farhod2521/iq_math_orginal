@@ -45,7 +45,7 @@ class TopicHelpRequestCreateView(CreateAPIView):
                 student_id=student.id,
                 student_full_name=student.full_name,
                 question_id=instance.id,
-                result_json=instance.result_json
+
             )
 
         return Response({
