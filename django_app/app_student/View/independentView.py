@@ -36,10 +36,12 @@ class TopicHelpRequestCreateView(CreateAPIView):
         student = getattr(request.user, 'student_profile', None)
         telegram_id = getattr(request.user, 'telegram_id', None)
 
-        # Ma'lumotlarni olish
-        subject_id = instance.info.get('subject', {}).get('id')
-        chapter_id = instance.info.get('chapter', {}).get('id')
-        topic_id = instance.info.get('topic', {}).get('id')
+        # Request.data dan ma'lumotlarni olish (agar frontend dan kelayotgan bo'lsa)
+        info_data = request.data.get('info', {})
+        
+        subject_id = info_data.get('subject', {}).get('id')
+        chapter_id = info_data.get('chapter', {}).get('id')
+        topic_id = info_data.get('topic', {}).get('id')
         
         # Modellardan nomlarni olish
         subject_name_uz = ""
