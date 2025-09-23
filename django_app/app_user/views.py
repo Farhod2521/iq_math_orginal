@@ -40,7 +40,19 @@ class ClassListView(ListAPIView):
     serializer_class = Class_Serializer
 
 
+class TeacherTelegramIdListView(APIView):
+    # permission_classes = [IsAuthenticated]  # xohlovga qarab qo'yasiz
 
+    def get(self, request):
+        # Teacher -> User -> telegram_id
+        telegram_ids = list(
+            Teacher.objects.values_list('user__telegram_id', flat=True)
+        )
+
+        # 0 bo‘lganlarni chiqarib tashlash (xohlovga qarab)
+        telegram_ids = [int(tg_id) for tg_id in telegram_ids if tg_id]
+
+        return Response({"telegram_ids": telegram_ids})
 
 
 
