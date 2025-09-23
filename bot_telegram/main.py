@@ -1,6 +1,6 @@
 import logging
 import requests
-from telegram import Update
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
 )
@@ -89,7 +89,15 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                         f"⭐️ <b>Ball:</b> {score}\n\n"
                         f"<b>{footer}</b>"
                     )
-                    await update.message.reply_text(text, parse_mode="HTML")
+                    keyboard = [
+                        [
+                            InlineKeyboardButton("✅ Yuborish", callback_data=f"send_{help_request_id}_{student_id}"),
+                            InlineKeyboardButton("❌ Bekor qilish", callback_data=f"cancel_{help_request_id}_{student_id}")
+                        ]
+                    ]
+                    reply_markup = InlineKeyboardMarkup(keyboard)
+                    
+                    await update.message.reply_text(text, parse_mode="HTML", reply_markup=reply_markup)
 
                 else:
                     await update.message.reply_text("Ma'lumot topilmadi.")
