@@ -38,9 +38,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     f"{API_URL}/{help_request_id}/",
                     timeout=5
                 )
-                await update.message.reply_text("sorov yuborildi")
+                
                 if resp.status_code == 200:
-
+                    await update.message.reply_text("sorov yuborildi")
                     data = resp.json()
 
                     # Mavzu, bo‘limlar list bo‘lsa join qilib chiqaramiz
