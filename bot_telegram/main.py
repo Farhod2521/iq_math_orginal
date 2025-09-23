@@ -6,7 +6,7 @@ from telegram.ext import (
 )
 from config import API_URL, BOT_TOKEN
 from teacher import teacher_menu, handle_teacher_callback
-from .helped_bot import  send_question_to_telegram
+
 # Log konfiguratsiyasi
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
