@@ -49,12 +49,15 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     if status == "sent":
                         header = "📩 Yangi murojaat"
                         footer = "💬 Murojaatingiz tez orada ko'rib chiqiladi!"
+                        status_body = "📩 O'qtuvchiga yuborildi"
                     elif status == "reviewing":
                         header = "⏳ Muhokama bo'lmoqda"
                         footer = "💬 O'qituvchi sizning murojaatingizni ko'rib chiqmoqda."
+                        status_body = "⏳ Muhokama bo'lmoqda"
                     elif status == "answered":
                         header = "✅ Javob berilgan"
                         footer = "💬 Sizning murojaatingizga javob berildi!"
+                        status_body = "✅ Javob berilgan"
                     else:
                         header = "ℹ️ Ma'lumot"
                         footer = ""
@@ -77,7 +80,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                         f"📖 <b>Fan:</b> {subject}\n"
                         f"📚 <b>Bo'lim:</b> {chapters}\n"
                         f"📝 <b>Mavzu:</b> {topics}\n"
-                        f"📌 <b>Holati:</b> {header}\n\n"
+                        f"📌 <b>Holati:</b> {status_body}\n\n"
                         f"📊 <b>Test natijasi</b>\n"
                         f"━━━━━━━━━━━━━━━━\n"
                         f"❌ <b>Jami savollar:</b> {total_answers}\n"
