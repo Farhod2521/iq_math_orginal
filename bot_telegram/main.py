@@ -35,7 +35,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             # API chaqiramiz
             try:
                 resp = requests.get(
-                    f"{API_URL}/{student_id}/{help_request_id}/",
+                    f"{API_URL}/{help_request_id}/",
                     timeout=5
                 )
                 if resp.status_code == 200:
