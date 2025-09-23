@@ -124,14 +124,16 @@ class BotManager:
                             f"⭐️ <b>Ball:</b> {score}\n\n"
                             f"<b>{footer}</b>"
                         )
-                        keyboard = [
-                            [
-                                InlineKeyboardButton("✅ Yuborish", callback_data=f"send_{help_request_id}_{student_id}"),
-                                InlineKeyboardButton("❌ Bekor qilish", callback_data=f"cancel_{help_request_id}_{student_id}")
+                        reply_markup = None
+                        if status not in ["answered", "reviewing"]:
+                            keyboard = [
+                                [
+                                    InlineKeyboardButton("✅ Yuborish", callback_data=f"send_{help_request_id}_{student_id}"),
+                                    InlineKeyboardButton("❌ Bekor qilish", callback_data=f"cancel_{help_request_id}_{student_id}")
+                                ]
                             ]
-                        ]
-                        reply_markup = InlineKeyboardMarkup(keyboard)
-                        
+                            reply_markup = InlineKeyboardMarkup(keyboard)
+
                         await update.message.reply_text(text, parse_mode="HTML", reply_markup=reply_markup)
 
                     else:
