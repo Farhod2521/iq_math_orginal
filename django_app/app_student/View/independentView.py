@@ -16,6 +16,7 @@ BOT_USERNAME = "iq_mathbot"
 from urllib.parse import quote
 import json
 
+
 class TopicHelpRequestCreateView(CreateAPIView):
     queryset = TopicHelpRequestIndependent.objects.all()
     serializer_class = TopicHelpRequestIndependentSerializer
@@ -36,7 +37,7 @@ class TopicHelpRequestCreateView(CreateAPIView):
         student = getattr(request.user, 'student_profile', None)
         telegram_id = getattr(request.user, 'telegram_id', None)
 
-        # Request.data dan ma'lumotlarni olish (agar frontend dan kelayotgan bo'lsa)
+        # Request.data dan ma'lumotlarni olish
         info_data = request.data.get('info', {})
         
         subject_id = info_data.get('subject', {}).get('id')
@@ -81,34 +82,42 @@ class TopicHelpRequestCreateView(CreateAPIView):
             correct_answers = result.get('correct_answers', 0)
             score = result.get('score', 0)
 
-        # Deep link payload yaratamiz
+        # ✅ TO'G'RILANGAN QISM: Soddaroq deep link yaratamiz
+        # 1-variant: Faqat ID larni yuborish (ishlaydi)
+        simple_payload = f"{instance.id}_{student.id if student else 0}"
+        deep_link = f"https://t.me/{BOT_USERNAME}?start={simple_payload}"
+
+        # 2-variant: JSON ni bo'shliqsiz yuborish
         payload_data = {
-            'instance_id': instance.id,
-            'student_id': student.id if student else None,
-            'subject_name_uz': subject_name_uz,
-            'chapter_name_uz': chapter_name_uz,
-            'topic_name_uz': topic_name_uz,
-            'total_answers': total_answers,
-            'correct_answers': correct_answers,
-            'score': score
+            'i': instance.id,  # qisqartirilgan kalitlar
+            's': student.id if student else 0,
+            'sub': subject_name_uz,
+            'ch': chapter_name_uz,
+            'top': topic_name_uz,
+            'ta': total_answers,
+            'ca': correct_answers,
+            'sc': score
         }
         
-        payload_encoded = quote(json.dumps(payload_data, ensure_ascii=False))
-        deep_link = f"https://t.me/{BOT_USERNAME}?start={payload_encoded}"
+        # JSON ni bo'shliqsiz va bir qatorda yozamiz
+        json_payload = json.dumps(payload_data, ensure_ascii=False, separators=(',', ':'))
+        json_payload_encoded = quote(json_payload)
+        deep_link_json = f"https://t.me/{BOT_USERNAME}?start={json_payload_encoded}"
 
-        # Telegramga xabar yuborish
+        # Telegramga xabar yuborish (qo'shimcha ma'lumotlar bilan)
         if student and telegram_id and telegram_id != 0:
             send_question_to_telegram(
                 student_id=student.id,
                 student_full_name=student.full_name,
                 question_id=instance.id,
-                result_json=instance.result_json
+                result_json=instance.result_json,
             )
 
         return Response({
             "success": True,
             "message": "O'qituvchiga yuborildi",
-            "telegram_link": deep_link,
+            "telegram_link": deep_link,  # Soddaroq versiyani qaytaramiz
+            "telegram_link_json": deep_link_json,  # JSON versiyasi ham
             "subject_name_uz": subject_name_uz,
             "chapter_name_uz": chapter_name_uz,
             "topic_name_uz": topic_name_uz,
