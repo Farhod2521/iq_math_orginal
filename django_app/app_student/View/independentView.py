@@ -140,7 +140,7 @@ class StudentTopicHelpRequestListView(APIView):
         ).order_by('-created_at')
 
         total_count = queryset.count()
-        total_pages = ceil(total_count / size)
+        total_pages = ceil(total_count / size) if size > 0 else 1
 
         # Boshlanish va tugash indekslari
         start = (page - 1) * size
@@ -148,7 +148,8 @@ class StudentTopicHelpRequestListView(APIView):
 
         paginated_qs = queryset[start:end]
 
-        serializer = MyTopicHelpRequestIndependentSerializer(paginated_qs, many=True)
+        # 🔹 Yangi serializer
+        serializer = TopicHelpRequestIndependentDetailSerializer(paginated_qs, many=True)
 
         return Response({
             "page": page,
