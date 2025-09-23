@@ -42,25 +42,33 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 if resp.status_code == 200:
                     
                     data = resp.json()
-                    await update.message.reply_text(data)
-                    # Mavzu, bo‘limlar list bo‘lsa join qilib chiqaramiz
+                    subject = data.get("subject_name_uz")
                     chapters = ", ".join(data.get("chapter_name_uz", []))
                     topics = ", ".join(data.get("topic_name_uz", []))
+
+                    # result massivdan 1-chi elementni olamiz
+                    result = data.get("result", [])
+                    if result:
+                        result = result[0]
+                        score = result.get("score", 0)
+                        total_answers = result.get("total_answers", 0)
+                        correct_answers = result.get("correct_answers", 0)
+                        # Foizni o'zimiz hisoblaymiz
+                        percentage = (correct_answers / total_answers * 100) if total_answers else 0
+                    else:
+                        score = total_answers = correct_answers = percentage = 0
 
                     # Xabarni formatlaymiz
                     text = (
                         f"📋 Ma'lumotlar:\n"
-                        f"├─ 👨‍🎓 Student ID: {data.get('student_id')}\n"
-                        f"├─ 🆔 Savol ID: {data.get('instance_id')}\n\n"
-                        f"📚 Mavzu ma'lumotlari:\n"
-                        f"├─ 📖 Fan: {data.get('subject_name_uz')}\n"
+                        f"├─ 📖 Fan: {subject}\n"
                         f"├─ 📚 Bo'lim: {chapters}\n"
                         f"└─ 📝 Mavzu: {topics}\n\n"
                         f"📊 Test natijasi:\n"
-                        f"├─ ❌ Jami savollar: {data.get('total_answers')}\n"
-                        f"├─ ✅ To'g'ri javoblar: {data.get('correct_answers')}\n"
-                        f"├─ 📈 Foiz: {data.get('percentage'):.1f}%\n"
-                        f"└─ ⭐ Ball: {data.get('score')}"
+                        f"├─ ❌ Jami savollar: {total_answers}\n"
+                        f"├─ ✅ To'g'ri javoblar: {correct_answers}\n"
+                        f"├─ 📈 Foiz: {percentage:.1f}%\n"
+                        f"└─ ⭐ Ball: {score}"
                     )
 
                     await update.message.reply_text(text)
