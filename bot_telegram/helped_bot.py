@@ -28,6 +28,23 @@ TELEGRAM_ID_API = "https://api.iqmath.uz/api/v1/func_student/student/student_id/
 TEACHER_CHAT_IDS = [1858379541, 5467533504]  # O'qituvchilar chat ID lari
 
 # ================= TELEGRAM SERVICE FUNCTIONS =================
+from telegram.ext import CommandHandler
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    args = context.args  # /start dan keyingi payload
+    if args:
+        payload = args[0]
+        # masalan payload = "123_45" (help_request_id_student_id)
+        help_request_id, student_id = payload.split("_")
+        # bu yerda student_id va help_request_id bo‘yicha ma’lumot olish
+        # result_json bazadan yoki API orqali olish mumkin
+        await update.message.reply_text(
+            f"Salom! Siz {help_request_id}-savolni o‘qituvchiga yubordingiz. "
+            f"Tez orada javob olasiz."
+        )
+    else:
+        await update.message.reply_text("Salom! Bu bot IQMath uchun.")
+        
 
 def send_question_to_telegram(student_full_name, question_id, result_json, student_id):
     """
@@ -753,7 +770,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def main():
     application = Application.builder().token(BOT_TOKEN).build()
     application.add_handler(CallbackQueryHandler(handle_callback))
-    
+    application.add_handler(CommandHandler("start", start))
     # Document filter ni alohida qo'shing
     document_filter = filters.Document.ALL if hasattr(filters, 'Document') else filters.DOCUMENT
     application.add_handler(MessageHandler(

@@ -11,7 +11,7 @@ from bot_telegram.helped_bot import send_question_to_telegram
 from django_app.app_user.models import Teacher, Student
 from urllib.parse import quote
 
-BOT_USERNAME = "@iq_mathbot"
+BOT_USERNAME = "iq_mathbot"
 class TopicHelpRequestCreateView(CreateAPIView):
     queryset = TopicHelpRequestIndependent.objects.all()
     serializer_class = TopicHelpRequestIndependentSerializer
