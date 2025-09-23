@@ -72,22 +72,21 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
                     # 🔹 Xabarni formatlaymiz
                     text = (
-                        f"{header}\n"
+                        f"<b>{header}</b>\n"
                         f"━━━━━━━━━━━━━━━━\n"
-                        f"📖 Fan: {subject}\n"
+                        f"📖 <b>Fan:</b> {subject}\n"
                         f"📚 <b>Bo'lim:</b> {chapters}\n"
-                        f"📝 Mavzu: {topics}\n"
-                        f"📌 Holati: ⏳ Muhokamada\n\n"
-                        f"📊 Test natijasi\n"
+                        f"📝 <b>Mavzu:</b> {topics}\n"
+                        f"📌 <b>Holati:</b> ⏳ Muhokamada\n\n"
+                        f"📊 <b>Test natijasi</b>\n"
                         f"━━━━━━━━━━━━━━━━\n"
-                        f"❌ Jami savollar: {total_answers}\n"
-                        f"✅ To'g'ri javoblar: {correct_answers}\n"
-                        f"📈 Foiz: {percentage:.1f}%\n"
-                        f"⭐️ Ball: {score}\n\n"
-                        f"{footer}"
+                        f"❌ <b>Jami savollar:</b> {total_answers}\n"
+                        f"✅ <b>To'g'ri javoblar:</b> {correct_answers}\n"
+                        f"📈 <b>Foiz:</b> {percentage:.1f}%\n"
+                        f"⭐️ <b>Ball:</b> {score}\n\n"
+                        f"<b>{footer}</b>"
                     )
-
-                    await update.message.reply_text(text)
+                    await update.message.reply_text(text, parse_mode="HTML")
 
                 else:
                     await update.message.reply_text("Ma'lumot topilmadi.")
