@@ -382,7 +382,7 @@ class StudentLoginHistorySerializer(serializers.ModelSerializer):
     
 
 class TopicHelpRequestIndependentDetailSerializer(serializers.ModelSerializer):
-    subject_name_uz = serializers.CharField(source='subject.name_uz', read_only=True)
+    subject_name_uz = serializers.SerializerMethodField()  # 🔹 endi method orqali
     chapter_name_uz = serializers.SerializerMethodField()
     topic_name_uz = serializers.SerializerMethodField()
     result = serializers.JSONField(source='result_json', read_only=True)
@@ -395,6 +395,15 @@ class TopicHelpRequestIndependentDetailSerializer(serializers.ModelSerializer):
             'topic_name_uz',
             'result',
         ]
+
+    # 🔹 subject_name_uz ni sinf bilan birga qaytarish
+    def get_subject_name_uz(self, obj):
+        subject = obj.subject
+        if subject and subject.classes:  # sinf bor bo‘lsa
+            return f"{subject.classes.name}-sinf {subject.name}"
+        elif subject:
+            return subject.name
+        return None
 
     def get_chapter_name_uz(self, obj):
         return [ch.name_uz for ch in obj.chapters.all()]
