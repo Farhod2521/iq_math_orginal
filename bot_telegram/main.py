@@ -1,14 +1,12 @@
 import logging
 import requests
-
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
 )
 from config import API_URL, BOT_TOKEN
 from teacher import teacher_menu, handle_teacher_callback
-from helped_bot import send_question_to_telegram
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-
+from helped_bot import  send_question_to_telegram
 # Log konfiguratsiyasi
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -41,12 +39,12 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 if resp.status_code == 200:
                     data = resp.json()
 
-                    # 🔹 Ma'lumotlarni API dan olamiz
+                    # 🔹 Ma’lumotlarni API dan olamiz
                     subject = data.get("subject_name_uz", "-")
                     chapters = ", ".join(data.get("chapter_name_uz", []))
                     topics = ", ".join(data.get("topic_name_uz", []))
 
-                    # 🔹 STATUS ni olib emoji bilan qo'shamiz
+                    # 🔹 STATUS ni olib emoji bilan qo‘shamiz
                     status = data.get("status", "")
                     if status == "sent":
                         header = "📩 Yangi murojaat"
@@ -91,8 +89,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                         f"⭐️ <b>Ball:</b> {score}\n\n"
                         f"<b>{footer}</b>"
                     )
-                    
-                    # 🔥 YANGI: Tugmalarni qo'shamiz
                     keyboard = [
                         [
                             InlineKeyboardButton("✅ Yuborish", callback_data=f"send_{help_request_id}_{student_id}"),
@@ -111,10 +107,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await update.message.reply_text("Tizimda xatolik yuz berdi.")
             return
 
-    # payload bo'lmasa - oddiy javob
+    # payload bo‘lmasa – oddiy javob
     await update.message.reply_text("Assalomu alaykum! Xush kelibsiz.")
-
-# 🔥 YANGI: Callback handler qo'shamiz
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -165,8 +159,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             text=query.message.text + "\n\n❌ <b>Murojaat bekor qilindi.</b>",
             parse_mode="HTML"
         )
-
-
 async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE):
     logger.error(f'Xatolik: {context.error}', exc_info=context.error)
 
@@ -175,7 +167,7 @@ def main():
     application = ApplicationBuilder().token(BOT_TOKEN).build()
 
     application.add_handler(CommandHandler('start', start))
-    
+    application.add_handler(CallbackQueryHandler(button_handler))
     application.add_handler(CallbackQueryHandler(handle_teacher_callback))
     application.add_error_handler(error_handler)
 
