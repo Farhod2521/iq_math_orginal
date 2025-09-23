@@ -111,56 +111,56 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Assalomu alaykum! Xush kelibsiz.")
 
 
-async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
+# async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+#     query = update.callback_query
+#     await query.answer()
     
-    callback_data = query.data
-    print(f"Callback data: {callback_data}")
+#     callback_data = query.data
+#     print(f"Callback data: {callback_data}")
     
-    if callback_data.startswith("send_"):
-        # Yuborish tugmasi bosilganda
-        _, help_request_id, student_id = callback_data.split("_")
+#     if callback_data.startswith("send_"):
+#         # Yuborish tugmasi bosilganda
+#         _, help_request_id, student_id = callback_data.split("_")
         
-        # 🔥 send_question_to_telegram funksiyasini chaqiramiz
-        try:
-            # Student ma'lumotlarini olish
-            student_resp = requests.get(f"{API_URL}/students/{student_id}/", timeout=5)
-            if student_resp.status_code == 200:
-                student_data = student_resp.json()
-                student_full_name = student_data.get('full_name', '')
+#         # 🔥 send_question_to_telegram funksiyasini chaqiramiz
+#         try:
+#             # Student ma'lumotlarini olish
+#             student_resp = requests.get(f"{API_URL}/students/{student_id}/", timeout=5)
+#             if student_resp.status_code == 200:
+#                 student_data = student_resp.json()
+#                 student_full_name = student_data.get('full_name', '')
                 
-                # send_question_to_telegram funksiyasini chaqiramiz
-                send_question_to_telegram(
-                    student_id=student_id,
-                    student_full_name=student_full_name,
-                    question_id=help_request_id,
-                )
+#                 # send_question_to_telegram funksiyasini chaqiramiz
+#                 send_question_to_telegram(
+#                     student_id=student_id,
+#                     student_full_name=student_full_name,
+#                     question_id=help_request_id,
+#                 )
                 
-                # Foydalanuvchaga xabar beramiz
-                await query.edit_message_text(
-                    text=query.message.text + "\n\n✅ <b>Murojaat o'qituvchiga yuborildi!</b>",
-                    parse_mode="HTML"
-                )
-            else:
-                await query.edit_message_text(
-                    text=query.message.text + "\n\n❌ <b>Xatolik yuz berdi. Qayta urinib ko'ring.</b>",
-                    parse_mode="HTML"
-                )
+#                 # Foydalanuvchaga xabar beramiz
+#                 await query.edit_message_text(
+#                     text=query.message.text + "\n\n✅ <b>Murojaat o'qituvchiga yuborildi!</b>",
+#                     parse_mode="HTML"
+#                 )
+#             else:
+#                 await query.edit_message_text(
+#                     text=query.message.text + "\n\n❌ <b>Xatolik yuz berdi. Qayta urinib ko'ring.</b>",
+#                     parse_mode="HTML"
+#                 )
                 
-        except Exception as e:
-            print(f"Xatolik: {e}")
-            await query.edit_message_text(
-                text=query.message.text + "\n\n❌ <b>Xatolik yuz berdi. Qayta urinib ko'ring.</b>",
-                parse_mode="HTML"
-            )
+#         except Exception as e:
+#             print(f"Xatolik: {e}")
+#             await query.edit_message_text(
+#                 text=query.message.text + "\n\n❌ <b>Xatolik yuz berdi. Qayta urinib ko'ring.</b>",
+#                 parse_mode="HTML"
+#             )
     
-    elif callback_data.startswith("cancel_"):
-        # Bekor qilish tugmasi bosilganda
-        await query.edit_message_text(
-            text=query.message.text + "\n\n❌ <b>Murojaat bekor qilindi.</b>",
-            parse_mode="HTML"
-        )
+#     elif callback_data.startswith("cancel_"):
+#         # Bekor qilish tugmasi bosilganda
+#         await query.edit_message_text(
+#             text=query.message.text + "\n\n❌ <b>Murojaat bekor qilindi.</b>",
+#             parse_mode="HTML"
+#         )
 
 async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE):
     logger.error(f'Xatolik: {context.error}', exc_info=context.error)
@@ -170,7 +170,7 @@ def main():
     application = ApplicationBuilder().token(BOT_TOKEN).build()
 
     application.add_handler(CommandHandler('start', start))
-    application.add_handler(CallbackQueryHandler(button_handler))
+    # application.add_handler(CallbackQueryHandler(button_handler))
     application.add_handler(CallbackQueryHandler(handle_teacher_callback))
     application.add_error_handler(error_handler)
 
