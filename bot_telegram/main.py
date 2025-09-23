@@ -6,7 +6,7 @@ from telegram.ext import (
 )
 from config import API_URL, BOT_TOKEN
 from teacher import teacher_menu, handle_teacher_callback
-from helped_bot import  send_question_to_telegram
+# from helped_bot import  send_question_to_telegram
 # Log konfiguratsiyasi
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -170,7 +170,7 @@ def main():
     application = ApplicationBuilder().token(BOT_TOKEN).build()
 
     application.add_handler(CommandHandler('start', start))
-    # application.add_handler(CallbackQueryHandler(button_handler))
+
     application.add_handler(CallbackQueryHandler(handle_teacher_callback))
     application.add_error_handler(error_handler)
 
