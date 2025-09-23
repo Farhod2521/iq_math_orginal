@@ -60,7 +60,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
                     # Xabarni formatlaymiz
                     text = (
-                        "📩 <b>Yangi murojaat</b>\n\n"
+                        "📩 *Yangi murojaat*\n"
                         "━━━━━━━━━━━━━━━━\n"
                         f"📖 *Fan:* `{subject}`\n"
                         f"📚 *Bo'lim:* `{chapters}`\n"
