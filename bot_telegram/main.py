@@ -167,9 +167,9 @@ def main():
     application = ApplicationBuilder().token(BOT_TOKEN).build()
 
     application.add_handler(CommandHandler('start', start))
-    application.add_handler(CallbackQueryHandler(button_handler))
-    # application.add_handler(CallbackQueryHandler(handle_teacher_callback))
-    # application.add_error_handler(error_handler)
+    # application.add_handler(CallbackQueryHandler(button_handler))
+    application.add_handler(CallbackQueryHandler(handle_teacher_callback))
+    application.add_error_handler(error_handler)
 
     logger.info("Bot ishga tushdi...")
     application.run_polling()
