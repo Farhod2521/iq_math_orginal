@@ -379,3 +379,25 @@ class StudentLoginHistorySerializer(serializers.ModelSerializer):
             logout_local = obj.logout_time.astimezone(tz)
             return logout_local.strftime('%H:%M')
         return None
+    
+
+class TopicHelpRequestIndependentDetailSerializer(serializers.ModelSerializer):
+    subject_name_uz = serializers.CharField(source='subject.name_uz', read_only=True)
+    chapter_name_uz = serializers.SerializerMethodField()
+    topic_name_uz = serializers.SerializerMethodField()
+    result = serializers.JSONField(source='result_json', read_only=True)
+
+    class Meta:
+        model = TopicHelpRequestIndependent
+        fields = [
+            'subject_name_uz',
+            'chapter_name_uz',
+            'topic_name_uz',
+            'result',
+        ]
+
+    def get_chapter_name_uz(self, obj):
+        return [ch.name_uz for ch in obj.chapters.all()]
+
+    def get_topic_name_uz(self, obj):
+        return [tp.name_uz for tp in obj.topics.all()]

@@ -4,19 +4,16 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.utils.timezone import now
 from django_app.app_student.models import  TopicHelpRequestIndependent
-from django_app.app_student.serializers import  TopicHelpRequestIndependentSerializer, MyTopicHelpRequestIndependentSerializer
+from django_app.app_student.serializers import  TopicHelpRequestIndependentSerializer, MyTopicHelpRequestIndependentSerializer, TopicHelpRequestIndependentDetailSerializer
 from rest_framework.views import APIView
 from django.utils import timezone
 from bot_telegram.helped_bot import send_question_to_telegram
-from django_app.app_user.models import Teacher, Student, Subject
+from django_app.app_user.models import Teacher, Student
 from urllib.parse import quote
-from django_app.app_teacher.models import  Chapter, Topic
+from django.shortcuts import get_object_or_404
+
+
 BOT_USERNAME = "iq_mathbot"
-
-from urllib.parse import quote
-import json
-
-
 class TopicHelpRequestCreateView(CreateAPIView):
     queryset = TopicHelpRequestIndependent.objects.all()
     serializer_class = TopicHelpRequestIndependentSerializer
@@ -37,95 +34,24 @@ class TopicHelpRequestCreateView(CreateAPIView):
         student = getattr(request.user, 'student_profile', None)
         telegram_id = getattr(request.user, 'telegram_id', None)
 
-        # Request.data dan ma'lumotlarni olish
-        info_data = request.data.get('info', {})
-        
-        subject_id = info_data.get('subject', {}).get('id')
-        chapter_id = info_data.get('chapter', {}).get('id')
-        topic_id = info_data.get('topic', {}).get('id')
-        
-        # Modellardan nomlarni olish
-        subject_name_uz = ""
-        chapter_name_uz = ""
-        topic_name_uz = ""
-        
-        try:
-            if subject_id:
-                subject = Subject.objects.get(id=subject_id)
-                subject_name_uz = getattr(subject, 'name_uz', '')
-        except Subject.DoesNotExist:
-            subject_name_uz = ""
-        
-        try:
-            if chapter_id:
-                chapter = Chapter.objects.get(id=chapter_id)
-                chapter_name_uz = getattr(chapter, 'name_uz', '')
-        except Chapter.DoesNotExist:
-            chapter_name_uz = ""
-        
-        try:
-            if topic_id:
-                topic = Topic.objects.get(id=topic_id)
-                topic_name_uz = getattr(topic, 'name_uz', '')
-        except Topic.DoesNotExist:
-            topic_name_uz = ""
+        # deep link payload yaratamiz
+        payload = f"{instance.id}_{student.id}"  # yoki JSON encode qilib qo‘ying
+        payload_encoded = quote(payload)
+        deep_link = f"https://t.me/{BOT_USERNAME}?start={payload_encoded}"
 
-        # Result ma'lumotlarini olish
-        result_data = instance.result_json or []
-        total_answers = 0
-        correct_answers = 0
-        score = 0
-        
-        if result_data and len(result_data) > 0:
-            result = result_data[0]
-            total_answers = result.get('total_answers', 0)
-            correct_answers = result.get('correct_answers', 0)
-            score = result.get('score', 0)
-
-        # ✅ TO'G'RILANGAN QISM: Soddaroq deep link yaratamiz
-        # 1-variant: Faqat ID larni yuborish (ishlaydi)
-        simple_payload = f"{instance.id}_{student.id if student else 0}"
-        deep_link = f"https://t.me/{BOT_USERNAME}?start={simple_payload}"
-
-        # 2-variant: JSON ni bo'shliqsiz yuborish
-        payload_data = {
-            'i': instance.id,  # qisqartirilgan kalitlar
-            's': student.id if student else 0,
-            'sub': subject_name_uz,
-            'ch': chapter_name_uz,
-            'top': topic_name_uz,
-            'ta': total_answers,
-            'ca': correct_answers,
-            'sc': score
-        }
-        
-        # JSON ni bo'shliqsiz va bir qatorda yozamiz
-        json_payload = json.dumps(payload_data, ensure_ascii=False, separators=(',', ':'))
-        json_payload_encoded = quote(json_payload)
-        deep_link_json = f"https://t.me/{BOT_USERNAME}?start={json_payload_encoded}"
-
-        # Telegramga xabar yuborish (qo'shimcha ma'lumotlar bilan)
+        # bu yerdan keyin send_question_to_telegram() – o‘qituvchiga yuborish
         if student and telegram_id and telegram_id != 0:
             send_question_to_telegram(
                 student_id=student.id,
                 student_full_name=student.full_name,
                 question_id=instance.id,
-                result_json=instance.result_json,
+                result_json=instance.result_json
             )
 
         return Response({
             "success": True,
-            "message": "O'qituvchiga yuborildi",
-            "telegram_link": deep_link,  # Soddaroq versiyani qaytaramiz
-            "telegram_link_json": deep_link_json,  # JSON versiyasi ham
-            "subject_name_uz": subject_name_uz,
-            "chapter_name_uz": chapter_name_uz,
-            "topic_name_uz": topic_name_uz,
-            "result": {
-                "total_answers": total_answers,
-                "correct_answers": correct_answers,
-                "score": score
-            }
+            "message": "O‘qituvchiga yuborildi",
+            "telegram_link": deep_link  # frontendga qaytadi
         }, status=status.HTTP_201_CREATED)
 
 
@@ -232,3 +158,15 @@ class StudentTopicHelpRequestListView(APIView):
             "total_pages": total_pages,
             "results": serializer.data
         }, status=status.HTTP_200_OK)
+    
+
+
+
+
+
+
+class TopicHelpRequestIndependentDetailAPIView(APIView):
+    def get(self, request, pk):
+        instance = get_object_or_404(TopicHelpRequestIndependent, pk=pk)
+        serializer = TopicHelpRequestIndependentDetailSerializer(instance)
+        return Response(serializer.data, status=status.HTTP_200_OK)
