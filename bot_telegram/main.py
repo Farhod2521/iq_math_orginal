@@ -16,7 +16,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 API_URL = "https://api.iqmath.uz/api/v1/func_student/id-independent"
-TEACHER_CHAT_IDS = [1858379541, 5467533504]  # O'qituvchilar chat ID lari
+TEACHER_CHAT_IDS = [5467533504]  # O'qituvchilar chat ID lari
 
 # Global application o'zgaruvchisi
 application = None
