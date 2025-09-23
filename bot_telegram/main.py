@@ -77,7 +77,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                         f"📖 <b>Fan:</b> {subject}\n"
                         f"📚 <b>Bo'lim:</b> {chapters}\n"
                         f"📝 <b>Mavzu:</b> {topics}\n"
-                        f"📌 <b>Holati:</b> ⏳ Muhokamada\n\n"
+                        f"📌 <b>Holati:</b> {header}\n\n"
                         f"📊 <b>Test natijasi</b>\n"
                         f"━━━━━━━━━━━━━━━━\n"
                         f"❌ <b>Jami savollar:</b> {total_answers}\n"
