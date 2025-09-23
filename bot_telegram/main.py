@@ -18,18 +18,26 @@ logger = logging.getLogger(__name__)
 API_URL = "https://api.iqmath.uz/api/v1/func_student/id-independent"
 TEACHER_CHAT_IDS = [1858379541, 5467533504]  # O'qituvchilar chat ID lari
 
+# Global application o'zgaruvchisi
+application = None
+
 def send_question_to_telegram(student_id, student_full_name, question_id):
     """
     O'qituvchilarga savolni yuborish funksiyasi
     """
     try:
+        print(f"Savol yuborish boshlandi: student_id={student_id}, question_id={question_id}")
+        
         # 1. Savol ma'lumotlarini API dan olish
         resp = requests.get(f"{API_URL}/{question_id}/", timeout=10)
+        print(f"API javobi: {resp.status_code}")
+        
         if resp.status_code != 200:
             print(f"API dan ma'lumot olishda xatolik: {resp.status_code}")
             return False
         
         data = resp.json()
+        print(f"API ma'lumotlari: {data}")
         
         # 2. Ma'lumotlarni olish
         subject_name = data.get("subject_name_uz", "-")
@@ -42,10 +50,10 @@ def send_question_to_telegram(student_id, student_full_name, question_id):
         # 3. Test natijalarini olish
         result = data.get("result", [])
         if result:
-            result = result[0]
-            score = result.get("score", 0)
-            total_answers = result.get("total_answers", 0)
-            correct_answers = result.get("correct_answers", 0)
+            result_data = result[0] if isinstance(result, list) else result
+            score = result_data.get("score", 0)
+            total_answers = result_data.get("total_answers", 0)
+            correct_answers = result_data.get("correct_answers", 0)
             percentage = (correct_answers / total_answers * 100) if total_answers else 0
         else:
             score = total_answers = correct_answers = percentage = 0
@@ -86,8 +94,12 @@ def send_question_to_telegram(student_id, student_full_name, question_id):
         reply_markup = InlineKeyboardMarkup(keyboard)
         
         # 7. Barcha o'qituvchilarga xabarni yuborish
-        from main import application  # Application obyektini import qilish
+        global application
         
+        if application is None:
+            print("Application obyekti topilmadi!")
+            return False
+            
         success_count = 0
         for chat_id in TEACHER_CHAT_IDS:
             try:
@@ -119,20 +131,24 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if "_" in payload:
             try:
                 help_request_id, student_id = payload.split("_")
+                print(f"Payload: help_request_id={help_request_id}, student_id={student_id}")
             except ValueError:
                 await update.message.reply_text("Xato payload formati.")
                 return
 
             # API chaqiramiz
             try:
-                resp = requests.get(f"{API_URL}/{help_request_id}/", timeout=5)
+                resp = requests.get(f"{API_URL}/{help_request_id}/", timeout=10)
+                print(f"Start API javobi: {resp.status_code}")
+                
                 if resp.status_code == 200:
                     data = resp.json()
+                    print(f"Start API ma'lumotlari: {data}")
 
                     # 🔹 Ma'lumotlarni API dan olamiz
                     subject = data.get("subject_name_uz", "-")
-                    chapters = ", ".join(data.get("chapter_name_uz", []))
-                    topics = ", ".join(data.get("topic_name_uz", []))
+                    chapters = ", ".join(data.get("chapter_name_uz", [])) if data.get("chapter_name_uz") else "-"
+                    topics = ", ".join(data.get("topic_name_uz", [])) if data.get("topic_name_uz") else "-"
 
                     # 🔹 STATUS ni olib emoji bilan qo'shamiz
                     status = data.get("status", "")
@@ -151,14 +167,15 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     else:
                         header = "ℹ️ Ma'lumot"
                         footer = ""
+                        status_body = status
 
                     # 🔹 result massivdan birinchi elementni olamiz
                     result = data.get("result", [])
                     if result:
-                        result = result[0]
-                        score = result.get("score", 0)
-                        total_answers = result.get("total_answers", 0)
-                        correct_answers = result.get("correct_answers", 0)
+                        result_data = result[0] if isinstance(result, list) else result
+                        score = result_data.get("score", 0)
+                        total_answers = result_data.get("total_answers", 0)
+                        correct_answers = result_data.get("correct_answers", 0)
                         percentage = (correct_answers / total_answers * 100) if total_answers else 0
                     else:
                         score = total_answers = correct_answers = percentage = 0
@@ -210,16 +227,25 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if callback_data.startswith("send_"):
         # Yuborish tugmasi bosilganda
         _, help_request_id, student_id = callback_data.split("_")
+        print(f"Yuborish: help_request_id={help_request_id}, student_id={student_id}")
         
-        # 🔥 send_question_to_telegram funksiyasini chaqiramiz
         try:
             # Student ma'lumotlarini olish
-            student_resp = requests.get(f"{API_URL}/students/{student_id}/", timeout=5)
             student_full_name = "O'quvchi"
-            
-            if student_resp.status_code == 200:
-                student_data = student_resp.json()
-                student_full_name = student_data.get('full_name', 'O\'quvchi')
+            try:
+                # Student API manzilini to'g'rilaymiz
+                student_api_url = f"https://api.iqmath.uz/api/v1/students/{student_id}/"
+                student_resp = requests.get(student_api_url, timeout=5)
+                print(f"Student API javobi: {student_resp.status_code}")
+                
+                if student_resp.status_code == 200:
+                    student_data = student_resp.json()
+                    student_full_name = student_data.get('full_name', 'O\'quvchi')
+                    print(f"Student nomi: {student_full_name}")
+                else:
+                    print(f"Student ma'lumotlari topilmadi, default nom ishlatiladi")
+            except Exception as e:
+                print(f"Student ma'lumotlarini olishda xatolik: {e}")
             
             # send_question_to_telegram funksiyasini chaqiramiz
             success = send_question_to_telegram(
@@ -241,7 +267,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 )
                 
         except Exception as e:
-            print(f"Xatolik: {e}")
+            print(f"Button handler xatolik: {e}")
             await query.edit_message_text(
                 text=query.message.text + "\n\n❌ <b>Xatolik yuz berdi. Qayta urinib ko'ring.</b>",
                 parse_mode="HTML"
@@ -258,6 +284,7 @@ async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE):
     logger.error(f'Xatolik: {context.error}', exc_info=context.error)
 
 def main():
+    global application
     application = ApplicationBuilder().token(BOT_TOKEN).build()
 
     application.add_handler(CommandHandler('start', start))
