@@ -40,9 +40,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 )
                 
                 if resp.status_code == 200:
-                    await update.message.reply_text("sorov yuborildi")
+                    
                     data = resp.json()
-
+                    await update.message.reply_text(data)
                     # Mavzu, bo‘limlar list bo‘lsa join qilib chiqaramiz
                     chapters = ", ".join(data.get("chapter_name_uz", []))
                     topics = ", ".join(data.get("topic_name_uz", []))
