@@ -9,7 +9,9 @@ from rest_framework.views import APIView
 from django.utils import timezone
 from bot_telegram.helped_bot import send_question_to_telegram
 from django_app.app_user.models import Teacher, Student
+from urllib.parse import quote
 
+BOT_USERNAME = "@iq_mathbot"
 class TopicHelpRequestCreateView(CreateAPIView):
     queryset = TopicHelpRequestIndependent.objects.all()
     serializer_class = TopicHelpRequestIndependentSerializer
@@ -24,14 +26,18 @@ class TopicHelpRequestCreateView(CreateAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
-
-        # Status = sent deb saqlanadi
         instance.status = 'sent'
         instance.save()
 
         student = getattr(request.user, 'student_profile', None)
         telegram_id = getattr(request.user, 'telegram_id', None)
 
+        # deep link payload yaratamiz
+        payload = f"{instance.id}_{student.id}"  # yoki JSON encode qilib qo‘ying
+        payload_encoded = quote(payload)
+        deep_link = f"https://t.me/{BOT_USERNAME}?start={payload_encoded}"
+
+        # bu yerdan keyin send_question_to_telegram() – o‘qituvchiga yuborish
         if student and telegram_id and telegram_id != 0:
             send_question_to_telegram(
                 student_id=student.id,
@@ -42,9 +48,9 @@ class TopicHelpRequestCreateView(CreateAPIView):
 
         return Response({
             "success": True,
-            "message": "O‘qituvchiga yuborildi"
+            "message": "O‘qituvchiga yuborildi",
+            "telegram_link": deep_link  # frontendga qaytadi
         }, status=status.HTTP_201_CREATED)
-
 
 
 class AssignTeacherAPIView(APIView):
