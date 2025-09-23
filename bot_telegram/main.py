@@ -60,18 +60,20 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
                     # Xabarni formatlaymiz
                     text = (
-                        f"📋 Ma'lumotlar:\n"
-                        f"├─ 📖 Fan: {subject}\n"
-                        f"├─ 📚 Bo'lim: {chapters}\n"
-                        f"└─ 📝 Mavzu: {topics}\n\n"
-                        f"📊 Test natijasi:\n"
-                        f"├─ ❌ Jami savollar: {total_answers}\n"
-                        f"├─ ✅ To'g'ri javoblar: {correct_answers}\n"
-                        f"├─ 📈 Foiz: {percentage:.1f}%\n"
-                        f"└─ ⭐ Ball: {score}"
+                        "📩 <b>Yangi murojaat</b>\n\n"
+                        "━━━━━━━━━━━━━━━━\n"
+                        f"📖 *Fan:* `{subject}`\n"
+                        f"📚 *Bo'lim:* `{chapters}`\n"
+                        f"📝 *Mavzu:* `{topics}`\n\n"
+                        "📊 *Test natijasi*\n"
+                        "━━━━━━━━━━━━━━━━\n"
+                        f"❌ Jami savollar: `{total_answers}`\n"
+                        f"✅ To'g'ri javoblar: `{correct_answers}`\n"
+                        f"📈 Foiz: `{percentage:.1f}%`\n"
+                        f"⭐ Ball: `{score}`\n\n"
+                        "💬 _Murojaatingiz tez orada ko'rib chiqiladi!_"
                     )
-
-                    await update.message.reply_text(text)
+                    await update.message.reply_text(text, parse_mode="Markdown")
                 else:
                     await update.message.reply_text("Ma'lumot topilmadi.")
             except requests.exceptions.RequestException as e:
