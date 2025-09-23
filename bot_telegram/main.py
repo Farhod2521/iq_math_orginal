@@ -38,13 +38,22 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     f"{API_URL}/{help_request_id}/",
                     timeout=5
                 )
-                
+
                 if resp.status_code == 200:
-                    
                     data = resp.json()
+
                     subject = data.get("subject_name_uz")
                     chapters = ", ".join(data.get("chapter_name_uz", []))
                     topics = ", ".join(data.get("topic_name_uz", []))
+
+                    # 🔹 STATUS ni olib emoji bilan qo‘shamiz
+                    status = data.get("status", "")
+                    status_emojis = {
+                        "sent": "📩 Yuborilgan",
+                        "reviewing": "⏳ Muhokamada",
+                        "answered": "✅ Javob berildi"
+                    }
+                    status_text = status_emojis.get(status, "❓ Noma’lum")
 
                     # result massivdan 1-chi elementni olamiz
                     result = data.get("result", [])
@@ -53,7 +62,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                         score = result.get("score", 0)
                         total_answers = result.get("total_answers", 0)
                         correct_answers = result.get("correct_answers", 0)
-                        # Foizni o'zimiz hisoblaymiz
                         percentage = (correct_answers / total_answers * 100) if total_answers else 0
                     else:
                         score = total_answers = correct_answers = percentage = 0
@@ -64,7 +72,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                         "━━━━━━━━━━━━━━━━\n"
                         f"📖 *Fan:* `{subject}`\n"
                         f"📚 *Bo'lim:* `{chapters}`\n"
-                        f"📝 *Mavzu:* `{topics}`\n\n"
+                        f"📝 *Mavzu:* `{topics}`\n"
+                        f"📌 *Holati:* `{status_text}`\n\n"  # 🔹 qo‘shildi
                         "📊 *Test natijasi*\n"
                         "━━━━━━━━━━━━━━━━\n"
                         f"❌ Jami savollar: `{total_answers}`\n"
@@ -74,8 +83,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                         "💬 _Murojaatingiz tez orada ko'rib chiqiladi!_"
                     )
                     await update.message.reply_text(text, parse_mode="Markdown")
+
                 else:
                     await update.message.reply_text("Ma'lumot topilmadi.")
+
             except requests.exceptions.RequestException as e:
                 logger.error(f"API xatolik: {e}")
                 await update.message.reply_text("Tizimda xatolik yuz berdi.")
