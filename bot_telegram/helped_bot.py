@@ -29,29 +29,60 @@ TEACHER_CHAT_IDS = [1858379541, 5467533504]  # O'qituvchilar chat ID lari
 
 # ================= TELEGRAM SERVICE FUNCTIONS =================
 
-def send_question_to_telegram(student_full_name, question_id, result_json, student_id):
+API_URL = "https://api.iqmath.uz/api/v1/func_student/id-independent"
+
+def send_question_to_telegram(student_full_name, student_id, question_id):
     """
-    Savolni barcha o'qituvchilarga yuborish
+    API dan ma'lumot olib, savolni barcha o'qituvchilarga yuborish (emoji + rang-barang)
     """
-    student_name_encoded = urllib.parse.quote(student_full_name)
-    student_name_encoded = urllib.parse.quote(str(student_id))
-    url = f"https://mentor.iqmath.uz/dashboard/teacher/student-examples/{question_id}?student_name={student_name_encoded}"
+    # 🔹 1. API’dan ma’lumot olish
+    try:
+        resp = requests.get(f"{API_URL}/{question_id}/", timeout=5)
+        if resp.status_code != 200:
+            return "❌ API ma'lumot topilmadi.", None
+        data = resp.json()
+    except requests.exceptions.RequestException as e:
+        return f"❌ API xatolik: {e}", None
+
+    # 🔹 2. API natijasini parchalash
+    subject_name = data.get("subject_name_uz", "-")
+    chapter_list = data.get("chapter_name_uz", [])
+    topic_list = data.get("topic_name_uz", [])
+    result_json = data.get("result", [])
+
+    chapter_name = ", ".join(chapter_list) if isinstance(chapter_list, list) else chapter_list
+    topic_name = ", ".join(topic_list) if isinstance(topic_list, list) else topic_list
 
     result = result_json[0] if result_json else {}
     total = result.get("total_answers", "-")
     correct = result.get("correct_answers", "-")
     score = result.get("score", "-")
+    percentage = (correct / total * 100) if total not in ("-", 0, None) else 0
 
+    # 🔹 3. URL yaratish
+    student_name_encoded = urllib.parse.quote(str(student_full_name))
+    student_id_encoded = urllib.parse.quote(str(student_id))
+    url = f"https://iqmath.uz/dashboard/teacher/student-examples/{question_id}?student_name={student_name_encoded}&student_id={student_id_encoded}"
+
+    # 🔹 4. Rang-barang matn (HTML format)
     text = (
-        f"📥 <b>Yangi savol!</b>\n"
-        f"👤 <b>O'quvchi:</b>{student_id}--{student_full_name}\n"
+        "📥 <b>Yangi savol keldi!</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━━\n"
+        f"👤 <b>O'quvchi:</b> {student_full_name} (ID: {student_id})\n"
         f"🆔 <b>Savol ID:</b> {question_id}\n\n"
-        f"📊 <b>Natija:</b>\n"
-        f"➕ To'g'ri: <b>{correct}</b> / {total}\n"
-        f"⭐️ Ball: <b>{score}</b>\n\n"
+        "📚 <b>Mavzu ma'lumotlari:</b>\n"
+        f"• 📖 Fan: <b>{subject_name}</b>\n"
+        f"• 📚 Bo'lim: <b>{chapter_name}</b>\n"
+        f"• 📝 Mavzu: <b>{topic_name}</b>\n\n"
+        "📊 <b>Test natijasi:</b>\n"
+        f"• ❓ Jami savollar: <b>{total}</b>\n"
+        f"• ✅ To'g'ri javoblar: <b>{correct}</b>\n"
+        f"• 📈 Foiz: <b>{percentage:.1f}%</b>\n"
+        f"• ⭐ Ball: <b>{score}</b>\n\n"
+        "ℹ️ <i>Iltimos savolni ko‘rib chiqing va javob bering</i>"
     )
 
-    # Keyboard format
+    # 🔹 5. Inline keyboard – o‘qituvchiga tezkor tugmalar
     keyboard = {
         "inline_keyboard": [
             [
@@ -62,7 +93,6 @@ def send_question_to_telegram(student_full_name, question_id, result_json, stude
             ]
         ]
     }
-
     # Har bir o'qituvchiga yuboramiz
     for chat_id in TEACHER_CHAT_IDS:
         payload = {
