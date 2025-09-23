@@ -22,7 +22,7 @@ API_URL = "https://api.iqmath.uz/api/v1/func_student/id-independent"
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     telegram_id = update.effective_user.id
     print(f"Foydalanuvchi {telegram_id} /start buyrug'ini yubordi")
-
+    await update.message.reply_text("Assalomu alaykum! Xush kelibsiz.")
     args = context.args
     if args:
         payload = args[0]  # masalan "209_83"
@@ -106,9 +106,11 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 print(f"API xatolik: {e}")
                 await update.message.reply_text("Tizimda xatolik yuz berdi.")
             return
-
     # payload bo‘lmasa – oddiy javob
-    await update.message.reply_text("Assalomu alaykum! Xush kelibsiz.")
+    
+
+
+
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
