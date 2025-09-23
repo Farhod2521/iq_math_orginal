@@ -97,16 +97,7 @@ class TopicHelpRequestCreateView(CreateAPIView):
         deep_link = f"https://t.me/{BOT_USERNAME}?start={payload_encoded}"
 
         # Telegramga xabar yuborish
-        if student and telegram_id and telegram_id != 0:
-            send_question_to_telegram(
-                student_id=student.id,
-                student_full_name=student.full_name,
-                question_id=instance.id,
-                result_json=instance.result_json,
-                subject_name=subject_name_uz,
-                chapter_name=chapter_name_uz,
-                topic_name=topic_name_uz
-            )
+
 
         return Response({
             "success": True,
