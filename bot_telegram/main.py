@@ -1,11 +1,13 @@
 import logging
 import requests
-from telegram import Update
+
 from telegram.ext import (
     ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
 )
 from config import API_URL, BOT_TOKEN
 from teacher import teacher_menu, handle_teacher_callback
+from helped_bot import send_question_to_telegram
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 
 # Log konfiguratsiyasi
 logging.basicConfig(
@@ -39,12 +41,12 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 if resp.status_code == 200:
                     data = resp.json()
 
-                    # 🔹 Ma’lumotlarni API dan olamiz
+                    # 🔹 Ma'lumotlarni API dan olamiz
                     subject = data.get("subject_name_uz", "-")
                     chapters = ", ".join(data.get("chapter_name_uz", []))
                     topics = ", ".join(data.get("topic_name_uz", []))
 
-                    # 🔹 STATUS ni olib emoji bilan qo‘shamiz
+                    # 🔹 STATUS ni olib emoji bilan qo'shamiz
                     status = data.get("status", "")
                     if status == "sent":
                         header = "📩 Yangi murojaat"
@@ -89,7 +91,17 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                         f"⭐️ <b>Ball:</b> {score}\n\n"
                         f"<b>{footer}</b>"
                     )
-                    await update.message.reply_text(text, parse_mode="HTML")
+                    
+                    # 🔥 YANGI: Tugmalarni qo'shamiz
+                    keyboard = [
+                        [
+                            InlineKeyboardButton("✅ Yuborish", callback_data=f"send_{help_request_id}_{student_id}"),
+                            InlineKeyboardButton("❌ Bekor qilish", callback_data=f"cancel_{help_request_id}_{student_id}")
+                        ]
+                    ]
+                    reply_markup = InlineKeyboardMarkup(keyboard)
+                    
+                    await update.message.reply_text(text, parse_mode="HTML", reply_markup=reply_markup)
 
                 else:
                     await update.message.reply_text("Ma'lumot topilmadi.")
@@ -99,8 +111,61 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await update.message.reply_text("Tizimda xatolik yuz berdi.")
             return
 
-    # payload bo‘lmasa – oddiy javob
+    # payload bo'lmasa - oddiy javob
     await update.message.reply_text("Assalomu alaykum! Xush kelibsiz.")
+
+# 🔥 YANGI: Callback handler qo'shamiz
+async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    
+    callback_data = query.data
+    print(f"Callback data: {callback_data}")
+    
+    if callback_data.startswith("send_"):
+        # Yuborish tugmasi bosilganda
+        _, help_request_id, student_id = callback_data.split("_")
+        
+        # 🔥 send_question_to_telegram funksiyasini chaqiramiz
+        try:
+            # Student ma'lumotlarini olish
+            student_resp = requests.get(f"{API_URL}/students/{student_id}/", timeout=5)
+            if student_resp.status_code == 200:
+                student_data = student_resp.json()
+                student_full_name = student_data.get('full_name', '')
+                
+                # send_question_to_telegram funksiyasini chaqiramiz
+                send_question_to_telegram(
+                    student_id=student_id,
+                    student_full_name=student_full_name,
+                    question_id=help_request_id,
+                )
+                
+                # Foydalanuvchaga xabar beramiz
+                await query.edit_message_text(
+                    text=query.message.text + "\n\n✅ <b>Murojaat o'qituvchiga yuborildi!</b>",
+                    parse_mode="HTML"
+                )
+            else:
+                await query.edit_message_text(
+                    text=query.message.text + "\n\n❌ <b>Xatolik yuz berdi. Qayta urinib ko'ring.</b>",
+                    parse_mode="HTML"
+                )
+                
+        except Exception as e:
+            print(f"Xatolik: {e}")
+            await query.edit_message_text(
+                text=query.message.text + "\n\n❌ <b>Xatolik yuz berdi. Qayta urinib ko'ring.</b>",
+                parse_mode="HTML"
+            )
+    
+    elif callback_data.startswith("cancel_"):
+        # Bekor qilish tugmasi bosilganda
+        await query.edit_message_text(
+            text=query.message.text + "\n\n❌ <b>Murojaat bekor qilindi.</b>",
+            parse_mode="HTML"
+        )
+
 
 async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE):
     logger.error(f'Xatolik: {context.error}', exc_info=context.error)

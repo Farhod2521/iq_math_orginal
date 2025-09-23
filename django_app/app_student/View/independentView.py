@@ -35,22 +35,21 @@ class TopicHelpRequestCreateView(CreateAPIView):
         telegram_id = getattr(request.user, 'telegram_id', None)
 
         # deep link payload yaratamiz
-        payload = f"{instance.id}_{student.id}"  # yoki JSON encode qilib qo‘ying
+        payload = f"{instance.id}_{student.id}"
         payload_encoded = quote(payload)
         deep_link = f"https://t.me/{BOT_USERNAME}?start={payload_encoded}"
 
-        # bu yerdan keyin send_question_to_telegram() – o‘qituvchiga yuborish
-        if student and telegram_id and telegram_id != 0:
-            send_question_to_telegram(
-                student_id=student.id,
-                student_full_name=student.full_name,
-                question_id=instance.id,
-
-            )
+        # 🔥 BU QISMI OLIB TASHLASH - O'QITUVCHIGA AVTOMATIK YUBORILMASIN
+        # if student and telegram_id and telegram_id != 0:
+        #     send_question_to_telegram(
+        #         student_id=student.id,
+        #         student_full_name=student.full_name,
+        #         question_id=instance.id,
+        #     )
 
         return Response({
             "success": True,
-            "message": "O‘qituvchiga yuborildi",
+            "message": "Murojaat yaratildi. Telegram orqali yuborishingiz mumkin.",
             "telegram_link": deep_link  # frontendga qaytadi
         }, status=status.HTTP_201_CREATED)
 
