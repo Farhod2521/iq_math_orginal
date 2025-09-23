@@ -16,7 +16,27 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 API_URL = "https://api.iqmath.uz/api/v1/func_student/id-independent"
-TEACHER_CHAT_IDS = [1858379541, 5467533504]  # O'qituvchilar chat ID lari
+
+
+def get_teacher_chat_ids():
+    try:
+        url = "https://api.iqmath.uz/api/v1/auth/teacher-telegram-id/list/"
+        response = requests.get(url, timeout=5)
+        if response.status_code == 200:
+            data = response.json()
+            # {"telegram_ids": [1858379541, 79451684]}
+            telegram_ids = data.get("telegram_ids", [])
+            # intga aylantirib olish
+            return [int(tg_id) for tg_id in telegram_ids]
+        else:
+            print("API xato:", response.status_code)
+            return []
+    except Exception as e:
+        print("APIga ulanib bo‘lmadi:", e)
+        return []
+
+# endi shu funksiyani chaqirib listni olamiz
+TEACHER_CHAT_IDS = get_teacher_chat_ids()
 
 class BotManager:
     def __init__(self, bot_token):
