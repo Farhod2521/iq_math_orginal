@@ -386,6 +386,7 @@ class TopicHelpRequestIndependentDetailSerializer(serializers.ModelSerializer):
     chapter_name_uz = serializers.SerializerMethodField()
     topic_name_uz = serializers.SerializerMethodField()
     result = serializers.JSONField(source='result_json', read_only=True)
+    url = serializers.SerializerMethodField()  # 🔹 qo‘shildi
 
     class Meta:
         model = TopicHelpRequestIndependent
@@ -395,6 +396,7 @@ class TopicHelpRequestIndependentDetailSerializer(serializers.ModelSerializer):
             'topic_name_uz',
             'result',
             'status',  # 🔹 Qo‘shildi
+            'url',     # 🔹 Qo‘shildi
         ]
 
     def get_subject_name_uz(self, obj):
@@ -410,3 +412,9 @@ class TopicHelpRequestIndependentDetailSerializer(serializers.ModelSerializer):
 
     def get_topic_name_uz(self, obj):
         return [tp.name_uz for tp in obj.topics.all()]
+
+    def get_url(self, obj):
+        # 🔹 model id + student id
+        model_id = obj.id
+        student_id = obj.student.id if obj.student else ''
+        return f"https://t.me/iq_mathbot?start={model_id}_{student_id}"
