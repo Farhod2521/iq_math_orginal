@@ -9,6 +9,7 @@ from .views import (
       ConfirmChildAPIView, ParentChildrenListAPIView, TeacherTelegramIdListView
 
 )
+from .all_role_listview import All_Role_ListView
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
@@ -23,7 +24,7 @@ urlpatterns = [
     path('student/logout/', LogoutAPIView.as_view(), name='login'),
     path('student/profile/', StudentProfileAPIView.as_view(), name='profile'),
     path('student/profile-update/', UpdateStudentFieldAPIView.as_view(), name='profile'),
-    path('student/student_list/', StudentsListView.as_view(), name='student_list'),
+    path('student/student_list/', All_Role_ListView.as_view(), name='student_list'),
     path('student/forgot-password/', ForgotPasswordView.as_view(), name='forgot_password'),
     path('student/verify-sms-code/', VerifySMSCodeView.as_view(), name='verify-sms-code'),###foget-pasword
     path('student/reset-password/', ResetPasswordView.as_view(), name='reset-password'),
