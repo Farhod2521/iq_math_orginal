@@ -780,19 +780,7 @@ class StudentsListView(APIView):
                 "ID": idx,
                 "F.I.Sh.": student.full_name,
                 "Telefon": student.user.phone,
-                # "Email": student.user.email,
-                # "Viloyat": student.region,
-                # "Tuman": student.districts,
-                # "Manzil": student.address,
-                # "Tug‘ilgan sana": student.brithday,
-                # "Ta'lim muassasasi": student.academy_or_school,
-                # "Muassasa nomi": student.academy_or_school_name,
                 "Sinf": student.class_name.classes.name if student.class_name else None,
-                # "Fan (UZ)": student.class_name.name_uz if student.class_name else None,
-                # "Fan (RU)": student.class_name.name_ru if student.class_name else None,
-                # "Hujjat turi": student.document_type,
-                # "Hujjat raqami": student.document,
-                # "Ta'lim turi": student.type_of_education,
                 "Ro‘yxatga olingan sana": student_date,
                 "Ro‘yxatga olingan vaqt": student_time,
                 "Oxirgi tizimga kirgan vaqt": last_login_formatted
@@ -1247,3 +1235,15 @@ class ParentChildrenListAPIView(APIView):
         serializer = StudentSerializer(students, many=True)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+
+
+
+
+
+
+
+
+
+
+    
