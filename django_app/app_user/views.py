@@ -926,13 +926,13 @@ class LoginAPIView(APIView):
                     parent = Parent.objects.get(user=user)
                     access_token['parent_id'] = parent.id
                     # Farzandlar ro‘yxatini ham yuborish mumkin
-                    children = parent.students.values("id", "full_name")
+                    # children = parent.students.values("id", "full_name")
                     profile_data = {
                         "id": parent.id,
                         "full_name": parent.full_name,
                         "phone": user.phone,
                         "role": user.role,
-                        "children": list(children),
+                        # "children": list(children),
                         "access_token": str(access_token),
                         "refresh_token": str(refresh),
                         "expires_in": expires_in,
