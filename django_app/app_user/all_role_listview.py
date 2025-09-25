@@ -1,6 +1,6 @@
 from django.http import HttpResponse
 from django.core.paginator import Paginator, EmptyPage
-from django.utils.http import urlquote
+from django.utils.http import quote
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -13,8 +13,7 @@ from .models import User, Student, Teacher, Parent, Tutor, StudentLoginHistory
 
 def escape_uri_path(path):
     """Fayl nomini URLga moslashtirish"""
-    return urlquote(path)
-
+    return quote(path)
 class All_Role_ListView(APIView):
     permission_classes = [IsAuthenticated]
 
