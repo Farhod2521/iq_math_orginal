@@ -1,29 +1,40 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status, permissions
+from rest_framework import viewsets, permissions, status
 from django.utils import timezone
 from datetime import timedelta
 from django_app.app_management.models import  Coupon_Tutor_Student, ReferralAndCouponSettings, Referral_Tutor_Student
-from .serializers import CouponCreateSerializer, ReferralCreateSerializer
+from .serializers import (
+    CouponCreateSerializer, ReferralCreateSerializer, 
+      TutorCouponTransactionSerializer, TutorReferralTransactionSerializer,
+      CouponSerializer, ReferralSerializer)
 from django.db import IntegrityError
+from rest_framework.exceptions import PermissionDenied
+from .models import TutorCouponTransaction, TutorReferralTransaction
 
-class TutorCreateCouponAPIView(APIView):
+class TutorCouponViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = CouponSerializer
 
-    def post(self, request, *args, **kwargs):
+    def get_queryset(self):
+        tutor = getattr(self.request.user, 'tutor_profile', None)
+        if tutor is None:
+            raise PermissionDenied("Foydalanuvchi o‘qituvchi emas")
+        return Coupon_Tutor_Student.objects.filter(created_by_tutor=tutor)
+
+    def create(self, request, *args, **kwargs):
+        # CouponCreateSerializer bilan validatsiya
         try:
             settings = ReferralAndCouponSettings.objects.latest('updated_at')
         except ReferralAndCouponSettings.DoesNotExist:
             return Response({"error": "ReferralAndCouponSettings topilmadi"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # ❗️context berish
         serializer = CouponCreateSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
 
         valid_from = timezone.now()
         valid_until = valid_from + timedelta(days=settings.coupon_valid_days)
 
-        # validated_data ichida already created_by_tutor bor
         coupon = serializer.save(
             discount_percent=settings.coupon_discount_percent,
             valid_from=valid_from,
@@ -31,21 +42,20 @@ class TutorCreateCouponAPIView(APIView):
             is_active=True
         )
 
-        return Response({
-            "message": "Kupon muvaffaqiyatli yaratildi",
-            "coupon": {
-                "code": coupon.code,
-                "discount_percent": coupon.discount_percent,
-                "valid_from": coupon.valid_from,
-                "valid_until": coupon.valid_until
-            }
-        }, status=status.HTTP_201_CREATED)
+        return Response(CouponSerializer(coupon).data, status=status.HTTP_201_CREATED)
 
 
-class TutorCreateReferralAPIView(APIView):
+class TutorReferralViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = ReferralSerializer
 
-    def post(self, request, *args, **kwargs):
+    def get_queryset(self):
+        tutor = getattr(self.request.user, 'tutor_profile', None)
+        if tutor is None:
+            raise PermissionDenied("Foydalanuvchi o‘qituvchi emas")
+        return Referral_Tutor_Student.objects.filter(created_by_tutor=tutor)
+
+    def create(self, request, *args, **kwargs):
         try:
             settings = ReferralAndCouponSettings.objects.latest('updated_at')
         except ReferralAndCouponSettings.DoesNotExist:
@@ -64,12 +74,32 @@ class TutorCreateReferralAPIView(APIView):
             is_active=True
         )
 
-        return Response({
-            "message": "Referal link muvaffaqiyatli yaratildi",
-            "referral": {
-                "code": referral.code,
-                "bonus_percent": referral.bonus_percent,
-                "valid_from": referral.valid_from,
-                "valid_until": referral.valid_until
-            }
-        }, status=status.HTTP_201_CREATED)
+        return Response(ReferralSerializer(referral).data, status=status.HTTP_201_CREATED)
+
+
+
+
+class TutorCouponTransactionListAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        tutor = getattr(request.user, 'tutor_profile', None)
+        if tutor is None:
+            return Response({"error": "Foydalanuvchi O‘qituvchi emas"}, status=status.HTTP_403_FORBIDDEN)
+
+        transactions = TutorCouponTransaction.objects.filter(tutor=tutor).select_related('student', 'coupon')
+        serializer = TutorCouponTransactionSerializer(transactions, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class TutorReferralTransactionListAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        tutor = getattr(request.user, 'tutor_profile', None)
+        if tutor is None:
+            return Response({"error": "Foydalanuvchi O‘qituvchi emas"}, status=status.HTTP_403_FORBIDDEN)
+
+        transactions = TutorReferralTransaction.objects.filter(tutor=tutor).select_related('student', 'referral')
+        serializer = TutorReferralTransactionSerializer(transactions, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
