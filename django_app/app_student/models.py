@@ -1,7 +1,7 @@
 from django.db import models
 from django_app.app_user.models import Student, Teacher
 from django_app.app_teacher.models import Topic, Question, Chapter
-from django_app.app_management.models import Product, Coupon_Tutor_Student
+from django_app.app_management.models import Product, Coupon_Tutor_Student, Referral_Tutor_Student
 from django_app.app_user.models import Subject
 
 class Diagnost_Student(models.Model):
@@ -187,3 +187,45 @@ class StudentCouponTransaction(models.Model):
 
     def __str__(self):
         return f"{self.student} → {self.coupon.code} ({self.payment_amount} so‘m)"
+    
+class StudentReferralTransaction(models.Model):
+    student = models.ForeignKey(
+        Student,
+        on_delete=models.CASCADE,
+        related_name='used_student_referrals',
+        verbose_name="Referal link orqali kelgan student"
+    )
+    by_student = models.ForeignKey(
+        Student,
+        on_delete=models.CASCADE,
+        related_name='referral_transactions_student',
+        verbose_name="Referal link egasi (student)"
+    )
+    referral = models.ForeignKey(
+        Referral_Tutor_Student,
+        on_delete=models.CASCADE,
+        related_name='student_transactions',
+        verbose_name="Referal kodi"
+    )
+    payment_amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        verbose_name="To‘lov summasi"
+    )
+    bonus_amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=0,
+        verbose_name="Studentga berilgan bonus"
+    )
+    used_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Referal ishlatilgan sana"
+    )
+
+    class Meta:
+        verbose_name = "Student referal tranzaksiyasi"
+        verbose_name_plural = "Student referal tranzaksiyalari"
+
+    def __str__(self):
+        return f"{self.student} → {self.referral.code} ({self.payment_amount} so‘m)"

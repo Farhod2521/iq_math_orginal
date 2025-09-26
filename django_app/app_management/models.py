@@ -214,6 +214,41 @@ class Coupon_Tutor_Student(models.Model):
         verbose_name = "Kupon"
         verbose_name_plural = "Kuponlar"
 
+class Referral_Tutor_Student(models.Model):
+    code = models.CharField(max_length=50, unique=True, verbose_name="Referal kodi")
+    bonus_percent = models.PositiveIntegerField(default=5, verbose_name="Bonus foizi")
+    valid_from = models.DateTimeField(default=timezone.now)
+    valid_until = models.DateTimeField()
+    created_by_student = models.ForeignKey(
+        Student,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Referalni yaratgan student"
+    )
+    created_by_tutor = models.ForeignKey(
+        Tutor,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Referalni yaratgan tutor"
+    )
+    is_active = models.BooleanField(default=True, verbose_name="Faolmi")
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def is_valid(self):
+        now = timezone.now()
+        return self.is_active and self.valid_from <= now <= self.valid_until
+
+    def __str__(self):
+        return self.code
+
+    class Meta:
+        verbose_name = "Referal link"
+        verbose_name_plural = "Referal linklar"
+
 
 class CouponUsage_Tutor_Student(models.Model):
     coupon = models.ForeignKey(Coupon_Tutor_Student, on_delete=models.CASCADE, related_name='usages')
