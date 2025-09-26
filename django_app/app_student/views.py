@@ -23,7 +23,7 @@ from django.shortcuts import get_object_or_404
 from django.utils.timezone import now
 from django_app.app_payments.models import Subscription
 from random import sample
-from .math_answer_check import compare_answers
+from .math_answer_check import advanced_math_check
 class GenerateTestAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -154,6 +154,7 @@ class GenerateCheckAnswersAPIView(APIView):
             index += 1
 
         # COMPOSITE - BU QISMI O'ZGARDI!
+        # COMPOSITE qismi - to'liq tuzatilgan
         for answer in serializer.validated_data.get('composite_answers', []):
             question = Question.objects.filter(id=answer['question_id'], question_type='composite').first()
             if not question:
@@ -165,7 +166,7 @@ class GenerateCheckAnswersAPIView(APIView):
             # Har bir sub question uchun javoblarni solishtiramiz
             all_correct = True
             for i, (student_ans, sub_question) in enumerate(zip(student_answers, correct_subs)):
-                if not compare_answers(str(student_ans), str(sub_question.correct_answer)):
+                if not advanced_math_check(str(student_ans), str(sub_question.correct_answer)):
                     all_correct = False
                     break
 
