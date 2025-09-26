@@ -23,6 +23,7 @@ from django.shortcuts import get_object_or_404
 from django.utils.timezone import now
 from django_app.app_payments.models import Subscription
 from random import sample
+from django_app.app_management.models import SolutionStatus
 from .math_answer_check import advanced_math_check
 class GenerateTestAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -336,16 +337,30 @@ class QuestionListByTopicAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, topic_id):
-        level = request.query_params.get('level', None) 
-        
+        level = request.query_params.get('level', None)
+
         try:
             topic = Topic.objects.get(id=topic_id)
+
             if level is not None:
                 questions = Question.objects.filter(topic=topic, level=level)
             else:
                 questions = Question.objects.filter(topic=topic)
+
             serializer = CustomQuestionSerializer(questions, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            try:
+                solution_status = SolutionStatus.objects.first()
+                subject_is_active = solution_status.subject_is_active if solution_status else False
+            except:
+                subject_is_active = False
+
+            return Response(
+                {
+                    "subject_is_active": subject_is_active,
+                    "questions": serializer.data
+                },
+                status=status.HTTP_200_OK
+            )
 
         except Topic.DoesNotExist:
             return Response({"detail": "Mavzu topilmadi"}, status=status.HTTP_404_NOT_FOUND)
