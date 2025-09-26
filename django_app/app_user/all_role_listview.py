@@ -146,10 +146,9 @@ class All_Role_ListView(APIView):
             "results": current_page.object_list
         })
 
-    def get_profile_data(self, user, ashgabat_tz):
+    def get_profile_data(self, user, timezone):
         """Foydalanuvchi roliga qarab profil ma'lumotlarini olish"""
-        from django.utils import timezone  # django timezone
-
+        
         profile_data = {
             'json': {},
             'excel': {}
@@ -157,15 +156,15 @@ class All_Role_ListView(APIView):
 
         if user.role == 'student' and hasattr(user, 'student_profile'):
             student = user.student_profile
-            student_datetime = student.student_date.astimezone(ashgabat_tz) if student.student_date else None
+            student_datetime = student.student_date.astimezone(timezone) if student.student_date else None
 
             # Login history
             last_login_obj = StudentLoginHistory.objects.filter(student=student).order_by('-login_time').first()
-            last_login_formatted = last_login_obj.login_time.astimezone(ashgabat_tz).strftime('%d/%m/%Y %H:%M') if last_login_obj else None
+            last_login_formatted = last_login_obj.login_time.astimezone(timezone).strftime('%d/%m/%Y %H:%M') if last_login_obj else None
 
             # 🔹 Subscription ma’lumotlari
             subscription = getattr(student, 'subscription', None)
-            now = timezone.now()   # ✅ endi django timezone ishlayapti
+            now = timezone.now()
             days_until_next_payment = 0
             end_date_formatted = None
 
@@ -179,7 +178,7 @@ class All_Role_ListView(APIView):
             last_payment_amount = float(last_payment.amount) if last_payment else 0
 
             profile_data['json'] = {
-                "profile_id": student.id,
+                "profile_id": student.id,  # Student profil id sini qaytaramiz
                 "full_name": student.full_name,
                 "region": student.region,
                 "districts": student.districts,
