@@ -65,6 +65,11 @@ class ReferralAndCouponSettings(models.Model):
         help_text="Kupon kodi orqali beriladigan chegirma foizi",
         verbose_name="Kupon chegirma foizi"
     )
+    referral_bonus_coin = models.PositiveIntegerField(
+        default=0,
+        help_text="Referral kodi orqali beriladigan tanga",
+        verbose_name="Referral  kodi uchun tanga"
+    )
     coupon_valid_days = models.PositiveIntegerField(
         default=30,
         help_text="Kupon kodi amal qilish muddati (kunlarda)",

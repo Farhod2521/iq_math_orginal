@@ -37,6 +37,11 @@ class TutorReferralTransaction(models.Model):
         related_name='transactions',
         verbose_name="Referal kodi"
     )
+    payment_amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        verbose_name="To‘lov summasi"
+    )
 
     bonus_amount = models.DecimalField(
         max_digits=12,
