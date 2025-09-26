@@ -87,18 +87,26 @@ def clean_student_answers_list(answers_list):
 # 🔹 YANGI FUNKSIYA: Javoblarni solishtirish uchun maxsus funksiya
 def compare_answers(student_answer, correct_answer):
     """
-    Student va to'g'ri javoblarni solishtiradi, vergul/nuqta farqini hisobga oladi
+    Student va to'g'ri javoblarni solishtiradi
     """
-    # Sonlarni tekshirish
-    if is_number(student_answer) and is_number(correct_answer):
-        student_clean = student_answer.replace(',', '.')
-        correct_clean = correct_answer.replace(',', '.')
-        return abs(float(student_clean) - float(correct_clean)) < 1e-6
+    # 1. Avval clean_latex orqali tozalab olamiz
+    student_clean = clean_latex(str(student_answer))
+    correct_clean = clean_latex(str(correct_answer))
     
-    # String sifatida tekshirish
-    student_clean = student_answer.replace(',', '.').strip().lower()
-    correct_clean = correct_answer.replace(',', '.').strip().lower()
-    return student_clean == correct_clean
+    # 2. Sonlarni tekshirish
+    if is_number(student_clean) and is_number(correct_clean):
+        student_num = student_clean.replace(',', '.')
+        correct_num = correct_clean.replace(',', '.')
+        return abs(float(student_num) - float(correct_num)) < 1e-6
+    
+    # 3. Advanced math check (agar murakkab ifodalar bo'lsa)
+    try:
+        return advanced_math_check(student_clean, correct_clean)
+    except:
+        # 4. Oddiy string solishtirish
+        student_final = student_clean.replace(',', '.').strip().lower()
+        correct_final = correct_clean.replace(',', '.').strip().lower()
+        return student_final == correct_final
 
 # 🔹 TEST QILISH
 if __name__ == "__main__":
