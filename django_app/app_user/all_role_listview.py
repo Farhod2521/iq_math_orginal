@@ -68,18 +68,20 @@ class All_Role_ListView(APIView):
         for idx, user in enumerate(users, start=1):
             profile_data = self.get_profile_data(user, ashgabat_tz)
             if profile_data:
-                # JSON data
+                # JSON data - profile_id ni qo'shamiz
                 data_json.append({
-                    "id": user.id,
+                    "id": profile_data['json'].get('profile_id', user.id),  # profile_id bo'lsa ishlatamiz, bo'lmasa user.id
+                    "user_id": user.id,  # asl user id ni ham saqlab qo'yamiz
                     "role": user.role,
                     "phone": user.phone,
                     "email": user.email,
-                    **profile_data['json']
+                    **{k: v for k, v in profile_data['json'].items() if k != 'profile_id'}
                 })
 
                 # Excel data
                 data_excel.append({
                     "ID": idx,
+                    "Profil ID": profile_data['excel'].get('profile_id', user.id),  # Excel uchun ham profile_id
                     "Roli": self.get_role_display(user.role),
                     "F.I.Sh.": profile_data['excel'].get('full_name', ''),
                     "Telefon": user.phone,
@@ -160,6 +162,7 @@ class All_Role_ListView(APIView):
             last_login_formatted = last_login_obj.login_time.astimezone(timezone).strftime('%d/%m/%Y %H:%M') if last_login_obj else None
 
             profile_data['json'] = {
+                "profile_id": student.id,  # Student profil id sini qaytaramiz
                 "full_name": student.full_name,
                 "region": student.region,
                 "districts": student.districts,
@@ -180,6 +183,7 @@ class All_Role_ListView(APIView):
             }
 
             profile_data['excel'] = {
+                'profile_id': student.id,  # Excel uchun ham profile_id
                 'full_name': student.full_name,
                 'region': student.region,
                 'districts': student.districts,
@@ -201,6 +205,7 @@ class All_Role_ListView(APIView):
             teacher_datetime = teacher.teacher_date.astimezone(timezone) if teacher.teacher_date else None
 
             profile_data['json'] = {
+                "profile_id": teacher.id,  # Teacher profil id sini qaytaramiz
                 "full_name": teacher.full_name,
                 "region": teacher.region,
                 "districts": teacher.districts,
@@ -215,6 +220,7 @@ class All_Role_ListView(APIView):
             }
 
             profile_data['excel'] = {
+                'profile_id': teacher.id,  # Excel uchun ham profile_id
                 'full_name': teacher.full_name,
                 'region': teacher.region,
                 'districts': teacher.districts,
@@ -235,6 +241,7 @@ class All_Role_ListView(APIView):
             parent_datetime = parent.parent_date.astimezone(timezone) if parent.parent_date else None
 
             profile_data['json'] = {
+                "profile_id": parent.id,  # Parent profil id sini qaytaramiz
                 "full_name": parent.full_name,
                 "region": parent.region,
                 "districts": parent.districts,
@@ -245,6 +252,7 @@ class All_Role_ListView(APIView):
             }
 
             profile_data['excel'] = {
+                'profile_id': parent.id,  # Excel uchun ham profile_id
                 'full_name': parent.full_name,
                 'region': parent.region or '',
                 'districts': parent.districts or '',
@@ -260,6 +268,7 @@ class All_Role_ListView(APIView):
             tutor_datetime = tutor.tutor_date.astimezone(timezone) if tutor.tutor_date else None
 
             profile_data['json'] = {
+                "profile_id": tutor.id,  # Tutor profil id sini qaytaramiz
                 "full_name": tutor.full_name,
                 "region": tutor.region,
                 "districts": tutor.districts,
@@ -270,6 +279,7 @@ class All_Role_ListView(APIView):
             }
 
             profile_data['excel'] = {
+                'profile_id': tutor.id,  # Excel uchun ham profile_id
                 'full_name': tutor.full_name,
                 'region': tutor.region or '',
                 'districts': tutor.districts or '',
@@ -285,12 +295,14 @@ class All_Role_ListView(APIView):
             user_datetime = user.date_joined.astimezone(timezone) if user.date_joined else None
             
             profile_data['json'] = {
+                "profile_id": user.id,  # Admin uchun user.id ni qaytaramiz
                 "full_name": user.get_full_name() or "Admin",
                 "registration_date": user_datetime.strftime('%Y-%m-%d') if user_datetime else None,
                 "registration_time": user_datetime.strftime('%H:%M:%S') if user_datetime else None
             }
 
             profile_data['excel'] = {
+                'profile_id': user.id,  # Excel uchun ham user.id
                 'full_name': user.get_full_name() or "Admin",
                 'region': '',
                 'districts': '',
