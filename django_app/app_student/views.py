@@ -460,15 +460,23 @@ class CheckAnswersAPIView(APIView):
             })
             index += 1
 
-        # COMPOSITE SAVOLLAR
+        # COMPOSITE SAVOLLAR - BU QISMI O'ZGARDI!
         for answer in serializer.validated_data.get('composite_answers', []):
             question = Question.objects.filter(id=answer['question_id'], question_type='composite').first()
             if not question:
                 continue
 
             correct_subs = question.sub_questions.all()
-            is_correct = all(sub_answer == sub_q.correct_answer for sub_answer, sub_q in zip(answer['answers'], correct_subs))
+            student_answers = answer['answers']
+            
+            # Har bir sub question uchun javoblarni advanced_math_check bilan solishtiramiz
+            all_correct = True
+            for student_ans, sub_question in zip(student_answers, correct_subs):
+                if not advanced_math_check(str(student_ans), str(sub_question.correct_answer)):
+                    all_correct = False
+                    break
 
+            is_correct = all_correct
             total_answers += 1
             process_question(question, is_correct)
 
