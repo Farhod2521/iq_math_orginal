@@ -11,7 +11,7 @@ from django.db.models import Q
 from .models import User, Student, Teacher, Parent, Tutor, StudentLoginHistory
 from django_app.app_payments.models import Payment
 from django.utils import timezone as dj_timezone 
-
+from django.utils import timezone
 def escape_uri_path(path):
     """Fayl nomini URLga moslashtirish"""
     return quote(path)
