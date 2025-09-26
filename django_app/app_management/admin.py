@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import SystemSettings, FAQ, Product, ReferralAndCouponSettings, Banner, Coupon_Tutor_Student, SystemCoupon,ConversionRate
+from .models import SystemSettings, FAQ, Product, ReferralAndCouponSettings, Banner, Coupon_Tutor_Student, SystemCoupon,ConversionRate, SolutionStatus
 from modeltranslation.admin import TranslationAdmin
 from django.utils.html import format_html
 
@@ -52,7 +52,16 @@ class ReferralAndCouponSettingsAdmin(admin.ModelAdmin):
         'created_at',
         'updated_at',
     )
-
+@admin.register(SolutionStatus)
+class SolutionStatusAdmin(admin.ModelAdmin):
+    list_display = (
+        'subject_is_active',
+        'recommendation_is_active',
+    )
+    list_editable = (
+        'subject_is_active',
+        'recommendation_is_active',
+    )
 
 @admin.register(Product)
 class ProductAdmin(TranslationAdmin):  # model.ModelAdmin o'rniga TranslationAdmin ishlatiladi

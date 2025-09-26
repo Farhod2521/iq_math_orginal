@@ -227,3 +227,24 @@ class CouponUsage_Tutor_Student(models.Model):
     class Meta:
         verbose_name = "Kupon ishlatilishi"
         verbose_name_plural = "Kupon ishlatilishlari"
+
+    
+class SolutionStatus(models.Model):
+    subject_is_active = models.BooleanField(
+        default=False,
+        verbose_name="Fanlar bo‘yicha yechim tugmasi yoqilganmi?"
+    )
+    recommendation_is_active = models.BooleanField(
+        default=False,
+        verbose_name="Tavsiyalar bo‘yicha yechim tugmasi yoqilganmi?"
+    )
+
+    class Meta:
+        verbose_name = "Yechim tugmalari holati"
+        verbose_name_plural = "Yechim tugmalari holatlari"
+
+    def __str__(self):
+        return (
+            f"Fanlar: {'Yoqilgan' if self.subject_is_active else 'O‘chirilgan'} | "
+            f"Tavsiyalar: {'Yoqilgan' if self.recommendation_is_active else 'O‘chirilgan'}"
+        )
