@@ -146,7 +146,7 @@ class All_Role_ListView(APIView):
             "results": current_page.object_list
         })
 
-    def get_profile_data(self, user, tz):  # timezone o'rniga tz deb nomlaymiz
+    def get_profile_data(self, user, tz):  # timezone o'rniga tz
         """Foydalanuvchi roliga qarab profil ma'lumotlarini olish"""
         
         profile_data = {
@@ -164,7 +164,7 @@ class All_Role_ListView(APIView):
 
             # 🔹 Subscription ma'lumotlari
             subscription = getattr(student, 'subscription', None)
-            now = timezone.now()  # Endi bu to'g'ri ishlaydi
+            now = timezone.now()  # Django timezone
             days_until_next_payment = 0
             end_date_formatted = None
 
@@ -172,6 +172,10 @@ class All_Role_ListView(APIView):
                 if now < subscription.end_date:
                     days_until_next_payment = (subscription.end_date - now).days
                 end_date_formatted = subscription.end_date.strftime("%d/%m/%Y")
+
+            # 🔹 Oxirgi to'lov summasi
+            last_payment = Payment.objects.filter(student=student, status="success").order_by('-payment_date').first()
+            last_payment_amount = float(last_payment.amount) if last_payment else 0
 
             profile_data['json'] = {
                 "profile_id": student.id,  # Student profil id sini qaytaramiz
