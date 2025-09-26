@@ -73,7 +73,7 @@ class TutorCreateReferralAPIView(APIView):
         try:
             referral = Referral_Tutor_Student.objects.create(
                 code=serializer.validated_data['code'],
-                bonus_percent=settings.referral_bonus_percent,
+                bonus_percent=settings.referral_bonus_coin,
                 valid_from=valid_from,
                 valid_until=valid_until,
                 created_by_tutor=tutor,
