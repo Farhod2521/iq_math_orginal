@@ -9,6 +9,7 @@ from openpyxl import Workbook
 import pytz
 from django.db.models import Q
 from .models import User, Student, Teacher, Parent, Tutor, StudentLoginHistory
+from django_app.app_payments.models import Payment
 
 
 def escape_uri_path(path):
@@ -160,7 +161,8 @@ class All_Role_ListView(APIView):
             # Login history
             last_login_obj = StudentLoginHistory.objects.filter(student=student).order_by('-login_time').first()
             last_login_formatted = last_login_obj.login_time.astimezone(timezone).strftime('%d/%m/%Y %H:%M') if last_login_obj else None
-
+            last_payment = Payment.objects.filter(student=student, status="success").order_by('-payment_date').first()
+            last_payment_amount = float(last_payment.amount) if last_payment else 0
             profile_data['json'] = {
                 "profile_id": student.id,  # Student profil id sini qaytaramiz
                 "full_name": student.full_name,
@@ -179,7 +181,8 @@ class All_Role_ListView(APIView):
                 "status": student.status,
                 "registration_date": student_datetime.strftime('%Y-%m-%d') if student_datetime else None,
                 "registration_time": student_datetime.strftime('%H:%M:%S') if student_datetime else None,
-                "last_login_time": last_login_formatted
+                "last_login_time": last_login_formatted,
+                "last_payment_amount": last_payment_amount,
             }
 
             profile_data['excel'] = {
