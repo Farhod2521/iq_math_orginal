@@ -11,9 +11,6 @@ from django.db.models import Q
 from .models import User, Student, Teacher, Parent, Tutor, StudentLoginHistory
 from django_app.app_payments.models import Payment
 from django.utils import timezone
-import pytz
-
-uzb_tz = pytz.timezone('Asia/Ashgabat')
 def escape_uri_path(path):
     """Fayl nomini URLga moslashtirish"""
     return quote(path)
@@ -149,25 +146,26 @@ class All_Role_ListView(APIView):
             "results": current_page.object_list
         })
 
-    def get_profile_data(self, user, timezone):
+    def get_profile_data(self, user, ashgabat_tz):
         """Foydalanuvchi roliga qarab profil ma'lumotlarini olish"""
+        from django.utils import timezone  # django timezone
+
         profile_data = {
             'json': {},
             'excel': {}
         }
 
-
         if user.role == 'student' and hasattr(user, 'student_profile'):
             student = user.student_profile
-            student_datetime = student.student_date.astimezone(uzb_tz) if student.student_date else None
+            student_datetime = student.student_date.astimezone(ashgabat_tz) if student.student_date else None
 
             # Login history
             last_login_obj = StudentLoginHistory.objects.filter(student=student).order_by('-login_time').first()
-            last_login_formatted = last_login_obj.login_time.astimezone(uzb_tz).strftime('%d/%m/%Y %H:%M') if last_login_obj else None
+            last_login_formatted = last_login_obj.login_time.astimezone(ashgabat_tz).strftime('%d/%m/%Y %H:%M') if last_login_obj else None
 
-            # Subscription ma’lumotlari
+            # 🔹 Subscription ma’lumotlari
             subscription = getattr(student, 'subscription', None)
-            now = timezone.now()   # ✅ endi ishlaydi
+            now = timezone.now()   # ✅ endi django timezone ishlayapti
             days_until_next_payment = 0
             end_date_formatted = None
 
@@ -181,7 +179,7 @@ class All_Role_ListView(APIView):
             last_payment_amount = float(last_payment.amount) if last_payment else 0
 
             profile_data['json'] = {
-                "profile_id": student.id,  # Student profil id sini qaytaramiz
+                "profile_id": student.id,
                 "full_name": student.full_name,
                 "region": student.region,
                 "districts": student.districts,
