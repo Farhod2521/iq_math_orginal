@@ -8,7 +8,7 @@ class CouponCreateSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         request = self.context.get('request')
-        tutor = getattr(request.user, 'tutor', None)
+        tutor = getattr(request.user, 'tutor_profile', None)
         if tutor is None:
             raise serializers.ValidationError({"error": "Foydalanuvchi o‘qituvchi emas"})
 
@@ -28,7 +28,7 @@ class ReferralCreateSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         request = self.context.get('request')
-        tutor = getattr(request.user, 'tutor', None)
+        tutor = getattr(request.user, 'tutor_profile', None)
         if tutor is None:
             raise serializers.ValidationError({"error": "Foydalanuvchi o‘qituvchi emas"})
 
