@@ -146,7 +146,7 @@ class All_Role_ListView(APIView):
             "results": current_page.object_list
         })
 
-    def get_profile_data(self, user, timezone):
+    def get_profile_data(self, user, tz):  # timezone o'rniga tz deb nomlaymiz
         """Foydalanuvchi roliga qarab profil ma'lumotlarini olish"""
         
         profile_data = {
@@ -156,15 +156,15 @@ class All_Role_ListView(APIView):
 
         if user.role == 'student' and hasattr(user, 'student_profile'):
             student = user.student_profile
-            student_datetime = student.student_date.astimezone(timezone) if student.student_date else None
+            student_datetime = student.student_date.astimezone(tz) if student.student_date else None
 
             # Login history
             last_login_obj = StudentLoginHistory.objects.filter(student=student).order_by('-login_time').first()
-            last_login_formatted = last_login_obj.login_time.astimezone(timezone).strftime('%d/%m/%Y %H:%M') if last_login_obj else None
+            last_login_formatted = last_login_obj.login_time.astimezone(tz).strftime('%d/%m/%Y %H:%M') if last_login_obj else None
 
-            # 🔹 Subscription ma’lumotlari
+            # 🔹 Subscription ma'lumotlari
             subscription = getattr(student, 'subscription', None)
-            now = timezone.now()
+            now = timezone.now()  # Endi bu to'g'ri ishlaydi
             days_until_next_payment = 0
             end_date_formatted = None
 
@@ -172,10 +172,6 @@ class All_Role_ListView(APIView):
                 if now < subscription.end_date:
                     days_until_next_payment = (subscription.end_date - now).days
                 end_date_formatted = subscription.end_date.strftime("%d/%m/%Y")
-
-            # 🔹 Oxirgi to‘lov summasi
-            last_payment = Payment.objects.filter(student=student, status="success").order_by('-payment_date').first()
-            last_payment_amount = float(last_payment.amount) if last_payment else 0
 
             profile_data['json'] = {
                 "profile_id": student.id,  # Student profil id sini qaytaramiz
