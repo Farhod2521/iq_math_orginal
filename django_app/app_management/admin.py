@@ -58,10 +58,7 @@ class SolutionStatusAdmin(admin.ModelAdmin):
         'subject_is_active',
         'recommendation_is_active',
     )
-    list_editable = (
-        'subject_is_active',
-        'recommendation_is_active',
-    )
+
 
 @admin.register(Product)
 class ProductAdmin(TranslationAdmin):  # model.ModelAdmin o'rniga TranslationAdmin ishlatiladi
