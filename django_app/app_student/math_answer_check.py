@@ -10,12 +10,16 @@ def detect_variables(expr):
         return []
 
 def clean_latex(expr):
+    """
+    Latex formatidagi stringni oddiy matematik ko‘rinishga keltiradi.
+    Masalan: "\\(0,8\\)" -> "0.8"
+    """
     expr = re.sub(r'\\left|\\right', '', expr)
     expr = re.sub(r'\\frac\{([^}]+)\}\{([^}]+)\}', r'(\1)/(\2)', expr)
     expr = re.sub(r'\\sqrt\{([^}]+)\}', r'sqrt(\1)', expr)
-    expr = re.sub(r'\\\(|\\\)|\\\[|\\\]', '', expr)
+    expr = re.sub(r'\\\(|\\\)|\\\[|\\\]', '', expr)       # \(...\) ni olib tashlaymiz
     expr = re.sub(r'\{,\}', '.', expr)
-    expr = re.sub(r'(?<=\d),(?=\d)', '.', expr)
+    expr = re.sub(r'(?<=\d),(?=\d)', '.', expr)          # sonlar orasidagi vergulni nuqtaga
     expr = expr.replace(',', '.')
     expr = expr.replace('\\', '').replace(' ', '')
     return expr
@@ -31,6 +35,10 @@ def is_number(s):
         return False
 
 def advanced_math_check(student_answer, correct_answer):
+    """
+    Bu funksiya studentning javobi bilan to‘g‘ri javobni solishtiradi.
+    Avval clean_latex() orqali tozalaydi va keyin tekshiradi.
+    """
     student = insert_multiplication(clean_latex(student_answer))
     correct = insert_multiplication(clean_latex(correct_answer))
 
@@ -63,3 +71,12 @@ def advanced_math_check(student_answer, correct_answer):
 
     except:
         return student_answer.strip().lower() == correct_answer.strip().lower()
+
+# 🔹 YANGI FUNKSIYA
+def clean_student_answers_list(answers_list):
+    """
+    Composite yoki boshqa joydan kelayotgan javoblar ro‘yxatini tozalab beradi.
+    Masalan:
+    ["\\(0,8\\)", "\\(1,2\\)"] -> ["0.8", "1.2"]
+    """
+    return [clean_latex(ans) for ans in answers_list]
