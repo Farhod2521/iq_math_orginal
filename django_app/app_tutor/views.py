@@ -63,7 +63,7 @@ class TutorCreateReferralAPIView(APIView):
         serializer = ReferralCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        tutor = getattr(request.user, 'tutor', None)
+        tutor = getattr(request.user, 'tutor_profile', None)
         if tutor is None:
             return Response({"error": "Foydalanuvchi O‘qituvchi emas"}, status=status.HTTP_403_FORBIDDEN)
 
