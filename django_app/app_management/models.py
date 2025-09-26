@@ -70,6 +70,11 @@ class ReferralAndCouponSettings(models.Model):
         help_text="Kupon kodi amal qilish muddati (kunlarda)",
         verbose_name="Kupon amal qilish muddati (kun)"
     )
+    referral_valid_days = models.PositiveIntegerField(
+        default=30,
+        help_text="Referral kodi amal qilish muddati (kunlarda)",
+        verbose_name="Referral amal qilish muddati (kun)"
+    )
     coupon_student_cashback_percent = models.PositiveIntegerField(
         default=0,
         help_text="Kupon ishlatilganda studentga beriladigan keshbek foizi",
