@@ -9,7 +9,6 @@ class CouponCreateSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         request = self.context.get('request')
 
-        # foydalanuvchi borligini tekshirish
         if not request or not hasattr(request, 'user') or request.user.is_anonymous:
             raise serializers.ValidationError({"error": "Foydalanuvchi aniqlanmadi"})
 
@@ -17,11 +16,9 @@ class CouponCreateSerializer(serializers.ModelSerializer):
         if tutor is None:
             raise serializers.ValidationError({"error": "Foydalanuvchi o‘qituvchi emas"})
 
-        # agar bu tutor allaqachon kupon yaratgan bo‘lsa
         if Coupon_Tutor_Student.objects.filter(created_by_tutor=tutor).exists():
             raise serializers.ValidationError({"error": "Siz allaqachon kupon yaratgansiz"})
 
-        # tutor ni validated_data ichiga qo‘shamiz
         attrs['created_by_tutor'] = tutor
         return attrs
 
@@ -49,7 +46,6 @@ class ReferralCreateSerializer(serializers.ModelSerializer):
         if tutor is None:
             raise serializers.ValidationError({"error": "Foydalanuvchi o‘qituvchi emas"})
 
-        # agar bu tutor allaqachon referal link yaratgan bo‘lsa
         if Referral_Tutor_Student.objects.filter(created_by_tutor=tutor).exists():
             raise serializers.ValidationError({"error": "Siz allaqachon referal link yaratgansiz"})
 
@@ -63,3 +59,4 @@ class ReferralCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         return Referral_Tutor_Student.objects.create(**validated_data)
+
