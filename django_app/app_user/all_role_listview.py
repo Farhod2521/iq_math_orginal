@@ -9,9 +9,8 @@ from openpyxl import Workbook
 import pytz
 from django.db.models import Q
 from .models import User, Student, Teacher, Parent, Tutor, StudentLoginHistory
-from django_app.app_payments.models import Payment
-from django.utils import timezone as dj_timezone 
-from django.utils import timezone
+
+
 def escape_uri_path(path):
     """Fayl nomini URLga moslashtirish"""
     return quote(path)
@@ -20,8 +19,6 @@ class All_Role_ListView(APIView):
 
     def get(self, request):
         ashgabat_tz = pytz.timezone("Asia/Ashgabat")
-        # hozirgi vaqtni olish (Django timezone dan)
-        now = dj_timezone.now().astimezone(ashgabat_tz)
         export_excel = request.GET.get("export") == "excel"
         
         # --- FILTER PARAMETERS ---
@@ -149,7 +146,7 @@ class All_Role_ListView(APIView):
             "results": current_page.object_list
         })
 
-    def get_profile_data(self, user, tz):
+    def get_profile_data(self, user, timezone):
         """Foydalanuvchi roliga qarab profil ma'lumotlarini olish"""
         profile_data = {
             'json': {},
@@ -158,29 +155,11 @@ class All_Role_ListView(APIView):
 
         if user.role == 'student' and hasattr(user, 'student_profile'):
             student = user.student_profile
-            student_datetime = student.student_date.astimezone(tz) if student.student_date else None
-
+            student_datetime = student.student_date.astimezone(timezone) if student.student_date else None
+            
             # Login history
             last_login_obj = StudentLoginHistory.objects.filter(student=student).order_by('-login_time').first()
-            last_login_formatted = (
-                last_login_obj.login_time.astimezone(tz).strftime('%d/%m/%Y %H:%M')
-                if last_login_obj else None
-            )
-
-            # 🔹 Subscription ma’lumotlari
-            subscription = getattr(student, 'subscription', None)
-            now = dj_timezone.now().astimezone(tz)  # ✅ Shunday qilish kerak
-            days_until_next_payment = 0
-            end_date_formatted = None
-
-            if subscription and subscription.end_date:
-                if now < subscription.end_date:
-                    days_until_next_payment = (subscription.end_date - now).days
-                end_date_formatted = subscription.end_date.strftime("%d/%m/%Y")
-
-            # 🔹 Oxirgi to‘lov summasi
-            last_payment = Payment.objects.filter(student=student, status="success").order_by('-payment_date').first()
-            last_payment_amount = float(last_payment.amount) if last_payment else 0
+            last_login_formatted = last_login_obj.login_time.astimezone(timezone).strftime('%d/%m/%Y %H:%M') if last_login_obj else None
 
             profile_data['json'] = {
                 "profile_id": student.id,  # Student profil id sini qaytaramiz
@@ -200,12 +179,7 @@ class All_Role_ListView(APIView):
                 "status": student.status,
                 "registration_date": student_datetime.strftime('%Y-%m-%d') if student_datetime else None,
                 "registration_time": student_datetime.strftime('%H:%M:%S') if student_datetime else None,
-                "last_login_time": last_login_formatted,
-
-                # 🔹 Qo‘shimcha maydonlar:
-                "days_until_next_payment": days_until_next_payment,
-                "end_date": end_date_formatted,
-                "last_payment_amount": last_payment_amount,
+                "last_login_time": last_login_formatted
             }
 
             profile_data['excel'] = {
