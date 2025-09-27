@@ -154,7 +154,14 @@ class DiagnostSubjectListAPIView(APIView):
     def get(self, request, student_id):
         student = get_object_or_404(Student, id=student_id)
 
-        diagnost_entries = Diagnost_Student.objects.filter(student=student).select_related('subject').prefetch_related('topic')
+        # har bir subject uchun eng oxirgi diagnostika olish
+        diagnost_entries = (
+            Diagnost_Student.objects.filter(student=student)
+            .select_related('subject')
+            .prefetch_related('topic')
+            .order_by('subject_id', '-created_at')
+            .distinct('subject_id')  # PostgreSQLda ishlaydi
+        )
 
         result = []
 
@@ -185,6 +192,7 @@ class DiagnostSubjectListAPIView(APIView):
             })
 
         return Response(result)
+
 
 
 class DiagnostChapterTopicProgressAPIView(APIView):
