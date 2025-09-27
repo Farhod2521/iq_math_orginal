@@ -146,7 +146,7 @@ class SubjectListWithMasteryAPIView(APIView):
         return Response(result)
 
 
-
+from django.db.models import OuterRef, Subquery
 ########################################   DIAGNOSTIKA  ###############################################
 class DiagnostSubjectListAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -154,14 +154,16 @@ class DiagnostSubjectListAPIView(APIView):
     def get(self, request, student_id):
         student = get_object_or_404(Student, id=student_id)
 
-        # har bir subject uchun eng oxirgi diagnostika olish
-        diagnost_entries = (
-            Diagnost_Student.objects.filter(student=student)
-            .select_related('subject')
-            .prefetch_related('topic')
-            .order_by('subject_id', '-created_at')
-            .distinct('subject_id')  # PostgreSQLda ishlaydi
-        )
+        # Har bir subject bo‘yicha eng oxirgi diagnostika id sini topamiz
+        latest_diagnost_ids = Diagnost_Student.objects.filter(
+            student=student,
+            subject=OuterRef('subject')
+        ).order_by('-id').values('id')[:1]
+
+        # Faqat eng oxirgi diagnostikalarni olamiz
+        diagnost_entries = Diagnost_Student.objects.filter(
+            id__in=Subquery(latest_diagnost_ids)
+        ).select_related('subject').prefetch_related('topic')
 
         result = []
 
