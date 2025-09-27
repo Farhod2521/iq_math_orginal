@@ -1,7 +1,7 @@
 from rest_framework.generics import ListAPIView
 from .models import SystemSettings, FAQ, Product, Banner
 from .serializers import SystemSettingsSerializer, FAQSerializer, ProductSerializer, BannerSerializer
-from django_app.app_user.models import User, Teacher, Student
+from django_app.app_user.models import User, Teacher, Student, Tutor, Parent
 from django_app.app_payments.models import Subscription, Payment, SubscriptionPlan
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -113,6 +113,8 @@ class FullStatisticsAPIView(APIView):
         # 🔹 Qo‘shimcha statistika
         total_teachers = Teacher.objects.filter(status=True).count()
         total_students = Student.objects.filter(status=True).count()
+        total_parents = Parent.objects.filter(status=True).count()
+        total_tutors = Tutor.objects.filter(status=True).count()
 
         five_days_later = today + timedelta(days=5)
 
@@ -143,6 +145,8 @@ class FullStatisticsAPIView(APIView):
             # 🔹 qo‘shimcha statistikalar
             "total_teachers": total_teachers,
             "total_students": total_students,
+            "total_parents": total_parents,
+            "total_tutors": total_tutors,
             "students_due_within_5_days": due_soon_subscriptions,
             "total_payments": total_payments,
             "pending_payments": pending_payments,
