@@ -12,6 +12,7 @@ from .View.independentView import  TeacherTopicHelpRequestListAPIView, TeacherTo
 from .View.coupon import   CreateTeacherCouponAPIView
 from .View.login_as_student import LoginAsStudentAPIView, ChangeStudentPasswordAPIView
 from  .View.teacherreward import  TeacherRewardAPIView, TeacherRewardListAPIView
+
 urlpatterns = [
     path("my-subjects/", TeacherSubjectsAPIView.as_view(), name="teacher-subjects"),
     path("subject-list/", SubjectListAPIView.as_view(), name="teacher-subjects"),

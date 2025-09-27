@@ -1,42 +1,13 @@
-from rest_framework.generics import ListAPIView
-from .models import SystemSettings, FAQ, Product, Banner
-from .serializers import SystemSettingsSerializer, FAQSerializer, ProductSerializer, BannerSerializer
-from django_app.app_user.models import User, Teacher, Student
-from django_app.app_payments.models import Subscription, Payment, SubscriptionPlan
+from datetime import timedelta
+from django.db.models import Sum, Count
+from django.utils.timezone import now
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from .permissions import IsTeacher
-from django.utils import timezone
-from datetime import timedelta
-from  .payment_stat import  PaymentStatisticsAPIView 
+from django_app.app_payments.models import Payment, SubscriptionPlan
 
-from django.utils.timezone import now
-from datetime import timedelta
-from django.db.models import Sum, Count, Q
-
-class SystemSettingsListView(ListAPIView):
-    queryset = SystemSettings.objects.all()
-    serializer_class = SystemSettingsSerializer
-
-
-class FAQListView(ListAPIView):
-    queryset = FAQ.objects.all()
-    serializer_class = FAQSerializer
-
-
-class BannerListView(ListAPIView):
-    queryset = Banner.objects.all()
-    serializer_class = BannerSerializer
-
-class ProductListView(ListAPIView):
-    queryset = Product.objects.all()
-    serializer_class = ProductSerializer
-
-
-
-
-class FullStatisticsAPIView(APIView):
-    permission_classes = [IsTeacher]
+class PaymentStatisticsAPIView(APIView):
+    permission_classes = [IsTeacher] 
 
     def get(self, request):
         # 🟩 Parametrlar
@@ -110,49 +81,15 @@ class FullStatisticsAPIView(APIView):
         ).values('month').annotate(count=Count('id')).order_by('month')
         monthly_data = [{'month': int(item['month']), 'count': item['count']} for item in monthly_subscriptions]
 
-        # 🔹 Qo‘shimcha statistika
-        total_teachers = Teacher.objects.filter(status=True).count()
-        total_students = Student.objects.filter(status=True).count()
-
-        five_days_later = today + timedelta(days=5)
-
-        due_soon_subscriptions = Subscription.objects.filter(
-            is_paid=False,
-            end_date__lte=five_days_later,
-            end_date__gte=today
-        ).count()
-
-        total_payments = Payment.objects.count()
-        pending_payments = Payment.objects.filter(status='pending').count()
-        success_payments = Payment.objects.filter(status='success').count()
-        failed_payments = Payment.objects.filter(status='failed').count()
-
         return Response({
-            # 🔹 1–10 statistikalar
             "total_amount": total_amount,
             "last_month_amount": last_month_amount,
-            **year_amounts,  # year_2025, year_2024 ...
+            **year_amounts,  # yil_2025, yil_2024 ...
             "active_subscribers": active_subscribers,
             "most_sold_plan": most_sold_plan,
             "plans_revenue": plans_revenue,
             "total_student_cashback": total_student_cashback,
             "total_teacher_cashback": total_teacher_cashback,
             "top_coupon_type": top_coupon_type,
-            "monthly_subscriptions": monthly_data,
-
-            # 🔹 qo‘shimcha statistikalar
-            "total_teachers": total_teachers,
-            "total_students": total_students,
-            "students_due_within_5_days": due_soon_subscriptions,
-            "total_payments": total_payments,
-            "pending_payments": pending_payments,
-            "successful_payments": success_payments,
-            "failed_payments": failed_payments,
+            "monthly_subscriptions": monthly_data
         })
-
-
-
-
-
-
-
