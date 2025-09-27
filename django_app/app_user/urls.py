@@ -14,6 +14,7 @@ from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
 )
+from .VIEW.unversial_update_view import ChangePasswordView, UniversalUpdateView, VerifyPhoneChangeView
 urlpatterns = [
     ###################################################################################
     #########################  STUDENT  ################################################
@@ -23,7 +24,7 @@ urlpatterns = [
     path('student/login/', LoginAPIView.as_view(), name='login'),
     path('student/logout/', LogoutAPIView.as_view(), name='login'),
     path('student/profile/', StudentProfileAPIView.as_view(), name='profile'),
-    path('student/profile-update/', UpdateStudentFieldAPIView.as_view(), name='profile'),
+    # path('student/profile-update/', UpdateStudentFieldAPIView.as_view(), name='profile'),
     path('student/student_list/', All_Role_ListView.as_view(), name='student_list'),
     path('student/forgot-password/', ForgotPasswordView.as_view(), name='forgot_password'),
     path('student/verify-sms-code/', VerifySMSCodeView.as_view(), name='verify-sms-code'),###foget-pasword
@@ -60,7 +61,15 @@ urlpatterns = [
     path("parent/confirm-child/list/", ParentChildrenListAPIView.as_view()),
     path("teacher-telegram-id/list/", TeacherTelegramIdListView.as_view()),
 
+    ###################################################################################
+    #########################  UPDATE ################################################
+    ###################################################################################
+
+    path('user/update-profile/', UniversalUpdateView.as_view(), name='update-profile'),
+    path('user/change-password/', ChangePasswordView.as_view(), name='change-password'),
+    path('user/verify-phone-change/', VerifyPhoneChangeView.as_view(), name='verify-phone-change'),
 ]
+
 
 
 
