@@ -5,10 +5,10 @@ from django_app.app_user.models import User, Teacher, Student
 from django_app.app_payments.models import Subscription, Payment, SubscriptionPlan
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .permissions import IsTeacher
+from django_app.app_management.permissions import IsTeacher
 from django.utils import timezone
 from datetime import timedelta
-from  .payment_stat import  PaymentStatisticsAPIView 
+
 
 from django.utils.timezone import now
 from datetime import timedelta
