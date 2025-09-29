@@ -244,6 +244,10 @@ class CustomQuestionSerializer(serializers.ModelSerializer):
                         sub_question["text2_uz"] = ""
                     if sub_question.get("text2_ru") in [None, "undefined"]:
                         sub_question["text2_ru"] = ""
+                    if sub_question.get("text1_uz") in [None, "undefined"]:
+                        sub_question["text2_uz"] = ""
+                    if sub_question.get("text1_ru") in [None, "undefined"]:
+                        sub_question["text1_ru"] = ""
 
         return data
 
