@@ -583,6 +583,7 @@ class StudentProfileAPIView(APIView):
         except User.DoesNotExist:
             return Response({"error": "User not found"}, status=404)
 
+        # STUDENT
         if user.role == 'student':
             try:
                 student = user.student_profile
@@ -604,27 +605,28 @@ class StudentProfileAPIView(APIView):
             data = {
                 "id": student.id,
                 "identification": student.identification,
-                'full_name': student.full_name,
-                'phone': getattr(student.user, 'phone', None),
-                'email': getattr(student.user, 'email', None),
-                "telegram_id": getattr(student.user, 'telegram_id', None),
-                'region': student.region,
-                'districts': student.districts,
-                'address': student.address,
-                'brithday': student.brithday,
-                'academy_or_school': student.academy_or_school,
-                'academy_or_school_name': student.academy_or_school_name,
-                'class_name_uz': f"{student.class_name.classes.name}-sinf {student.class_name.name_uz}" if student.class_name else None,
-                'class_name_ru': f"{student.class_name.classes.name}-класс {student.class_name.name_ru}" if student.class_name else None,
-                'document_type': student.document_type,
-                'document': student.document,
-                'type_of_education': student.type_of_education,
-                'student_date': student_date,
-                'student_time': student_time,
+                "full_name": student.full_name,
+                "phone": getattr(student.user, "phone", None),
+                "email": getattr(student.user, "email", None),
+                "telegram_id": getattr(student.user, "telegram_id", None),
+                "region": student.region,
+                "districts": student.districts,
+                "address": student.address,
+                "brithday": student.brithday,
+                "academy_or_school": student.academy_or_school,
+                "academy_or_school_name": student.academy_or_school_name,
+                "class_name_uz": f"{student.class_name.classes.name}-sinf {student.class_name.name_uz}" if student.class_name else None,
+                "class_name_ru": f"{student.class_name.classes.name}-класс {student.class_name.name_ru}" if student.class_name else None,
+                "document_type": student.document_type,
+                "document": student.document,
+                "type_of_education": student.type_of_education,
+                "student_date": student_date,
+                "student_time": student_time,
                 "role": "student",
-                "has_diagnost": has_diagnost
+                "has_diagnost": has_diagnost,
             }
 
+        # TEACHER
         elif user.role == 'teacher':
             try:
                 teacher = user.teacher_profile
@@ -644,21 +646,22 @@ class StudentProfileAPIView(APIView):
             data = {
                 "role": "teacher",
                 "id": teacher.id,
-                'full_name': teacher.full_name,
-                'phone': user.phone,
-                'email': user.email,
-                "telegram_id":user.telegram_id,
-                'region': teacher.region,
-                'districts': teacher.districts,
-                'address': teacher.address,
-                'brithday': teacher.brithday,
-                'document_type': teacher.document_type,
-                'document': teacher.document,
-                'is_verified_teacher': teacher.is_verified_teacher,
-                'teacher_date': teacher_date,
-                'teacher_time': teacher_time,
+                "full_name": teacher.full_name,
+                "phone": user.phone,
+                "email": user.email,
+                "telegram_id": user.telegram_id,
+                "region": teacher.region,
+                "districts": teacher.districts,
+                "address": teacher.address,
+                "brithday": teacher.brithday,
+                "document_type": teacher.document_type,
+                "document": teacher.document,
+                "is_verified_teacher": teacher.is_verified_teacher,
+                "teacher_date": teacher_date,
+                "teacher_time": teacher_time,
             }
 
+        # ADMIN
         elif user.role == 'admin':
             data = {
                 "role": "admin",
@@ -668,8 +671,72 @@ class StudentProfileAPIView(APIView):
                 "email": user.email,
             }
 
+        # TUTOR
+        elif user.role == 'tutor':
+            try:
+                tutor = user.tutor_profile
+            except Tutor.DoesNotExist:
+                return Response({"error": "Tutor profile not found"}, status=404)
+
+            tutor_datetime = tutor.tutor_date
+            ashgabat_tz = pytz.timezone("Asia/Ashgabat")
+            if tutor_datetime:
+                tutor_datetime = tutor_datetime.astimezone(ashgabat_tz)
+                tutor_date = tutor_datetime.strftime('%Y-%m-%d')
+                tutor_time = tutor_datetime.strftime('%H:%M:%S')
+            else:
+                tutor_date = None
+                tutor_time = None
+
+            data = {
+                "role": "tutor",
+                "id": tutor.id,
+                "full_name": tutor.full_name,
+                "phone": user.phone,
+                "email": user.email,
+                "telegram_id": user.telegram_id,
+                "region": tutor.region,
+                "districts": tutor.districts,
+                "address": tutor.address,
+                "status": tutor.status,
+                "tutor_date": tutor_date,
+                "tutor_time": tutor_time,
+            }
+
+        # PARENT
+        elif user.role == 'parent':
+            try:
+                parent = user.parent_profile
+            except Parent.DoesNotExist:
+                return Response({"error": "Parent profile not found"}, status=404)
+
+            parent_datetime = parent.parent_date
+            ashgabat_tz = pytz.timezone("Asia/Ashgabat")
+            if parent_datetime:
+                parent_datetime = parent_datetime.astimezone(ashgabat_tz)
+                parent_date = parent_datetime.strftime('%Y-%m-%d')
+                parent_time = parent_datetime.strftime('%H:%M:%S')
+            else:
+                parent_date = None
+                parent_time = None
+
+            data = {
+                "role": "parent",
+                "id": parent.id,
+                "full_name": parent.full_name,
+                "phone": user.phone,
+                "email": user.email,
+                "telegram_id": user.telegram_id,
+                "region": parent.region,
+                "districts": parent.districts,
+                "address": parent.address,
+                "status": parent.status,
+                "parent_date": parent_date,
+                "parent_time": parent_time,
+            }
+
         else:
-            return Response({"error": "Only student, teacher, and admin roles are supported"}, status=403)
+            return Response({"error": "Role not supported"}, status=403)
 
         return Response(data)
 
