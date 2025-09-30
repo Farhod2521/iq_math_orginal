@@ -20,6 +20,7 @@ def clean_latex(expr):
     expr = re.sub(r'\\\(|\\\)|\\\[|\\\]', '', expr)       
     expr = re.sub(r'\{,\}', '.', expr)
     expr = expr.replace('\\', '').replace(' ', '')
+    expr = re.sub(r'\\{([^}]+)\\}', r'\1', expr)
     return expr
 
 def insert_multiplication(expr):
