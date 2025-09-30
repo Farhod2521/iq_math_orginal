@@ -192,11 +192,11 @@ class All_Role_ListView(APIView):
                 "document": student.document,
                 "type_of_education": student.type_of_education,
                 "status": student.status,
-                "registration_date": student_datetime.strftime('%Y-%m-%d') if student_datetime else None,
+                "registration_date": student_datetime.strftime('%d/%m/%Y') if student_datetime else None,
                 "registration_time": student_datetime.strftime('%H:%M:%S') if student_datetime else None,
                 "last_login_time": last_login_formatted,
                 "last_payment_amount": last_payment_amount,
-                "subscription_end_date": end_date.strftime('%Y-%m-%d') if end_date else None,
+                 "subscription_end_date": end_date.strftime('%d/%m/%Y') if end_date else None,
                 "remaining_days": remaining_days,  # qolgan kunlar (int yoki None)
             }
 
@@ -207,7 +207,7 @@ class All_Role_ListView(APIView):
                 'districts': student.districts,
                 'address': student.address,
                 'status_display': 'Aktiv' if student.status else 'Noaktiv',
-                'registration_date': student_datetime.strftime('%Y-%m-%d') if student_datetime else '',
+                'registration_date': student_datetime.strftime('%d/%m/%Y') if student_datetime else '',
                 'registration_time': student_datetime.strftime('%H:%M:%S') if student_datetime else '',
                 'extra_fields': {
                     'Tug‘ilgan kun': student.brithday,
@@ -233,7 +233,7 @@ class All_Role_ListView(APIView):
                 "document": teacher.document,
                 "status": teacher.status,
                 "is_verified_teacher": teacher.is_verified_teacher,
-                "registration_date": teacher_datetime.strftime('%Y-%m-%d') if teacher_datetime else None,
+                "registration_date": teacher_datetime.strftime('%d/%m/%Y') if teacher_datetime else None,
                 "registration_time": teacher_datetime.strftime('%H:%M:%S') if teacher_datetime else None
             }
 
@@ -244,7 +244,7 @@ class All_Role_ListView(APIView):
                 'districts': teacher.districts,
                 'address': teacher.address,
                 'status_display': 'Aktiv' if teacher.status else 'Noaktiv',
-                'registration_date': teacher_datetime.strftime('%Y-%m-%d') if teacher_datetime else '',
+                'registration_date': teacher_datetime.strftime('%d/%m/%Y') if teacher_datetime else '',
                 'registration_time': teacher_datetime.strftime('%H:%M:%S') if teacher_datetime else '',
                 'extra_fields': {
                     'Tasdiqlangan': 'Ha' if teacher.is_verified_teacher else 'Yo‘q',
@@ -265,7 +265,7 @@ class All_Role_ListView(APIView):
                 "districts": parent.districts,
                 "address": parent.address,
                 "status": parent.status,
-                "registration_date": parent_datetime.strftime('%Y-%m-%d') if parent_datetime else None,
+                "registration_date": parent_datetime.strftime('%d/%m/%Y') if parent_datetime else None,
                 "registration_time": parent_datetime.strftime('%H:%M:%S') if parent_datetime else None
             }
 
@@ -276,7 +276,7 @@ class All_Role_ListView(APIView):
                 'districts': parent.districts or '',
                 'address': parent.address or '',
                 'status_display': 'Aktiv' if parent.status else 'Noaktiv',
-                'registration_date': parent_datetime.strftime('%Y-%m-%d') if parent_datetime else '',
+                'registration_date': parent_datetime.strftime('%d/%m/%Y') if parent_datetime else '',
                 'registration_time': parent_datetime.strftime('%H:%M:%S') if parent_datetime else '',
                 'extra_fields': {}
             }
@@ -292,7 +292,7 @@ class All_Role_ListView(APIView):
                 "districts": tutor.districts,
                 "address": tutor.address,
                 "status": tutor.status,
-                "registration_date": tutor_datetime.strftime('%Y-%m-%d') if tutor_datetime else None,
+                "registration_date": tutor_datetime.strftime('%d/%m/%Y') if tutor_datetime else None,
                 "registration_time": tutor_datetime.strftime('%H:%M:%S') if tutor_datetime else None
             }
 
@@ -303,7 +303,7 @@ class All_Role_ListView(APIView):
                 'districts': tutor.districts or '',
                 'address': tutor.address or '',
                 'status_display': 'Aktiv' if tutor.status else 'Noaktiv',
-                'registration_date': tutor_datetime.strftime('%Y-%m-%d') if tutor_datetime else '',
+                'registration_date': tutor_datetime.strftime('%d/%m/%Y') if tutor_datetime else '',
                 'registration_time': tutor_datetime.strftime('%H:%M:%S') if tutor_datetime else '',
                 'extra_fields': {}
             }
@@ -315,7 +315,7 @@ class All_Role_ListView(APIView):
             profile_data['json'] = {
                 "profile_id": user.id,  # Admin uchun user.id ni qaytaramiz
                 "full_name": user.get_full_name() or "Admin",
-                "registration_date": user_datetime.strftime('%Y-%m-%d') if user_datetime else None,
+                "registration_date": user_datetime.strftime('%d/%m/%Y') if user_datetime else None,
                 "registration_time": user_datetime.strftime('%H:%M:%S') if user_datetime else None
             }
 
@@ -326,7 +326,7 @@ class All_Role_ListView(APIView):
                 'districts': '',
                 'address': '',
                 'status_display': 'Aktiv',
-                'registration_date': user_datetime.strftime('%Y-%m-%d') if user_datetime else '',
+                'registration_date': user_datetime.strftime('%d/%m/%Y') if user_datetime else '',
                 'registration_time': user_datetime.strftime('%H:%M:%S') if user_datetime else '',
                 'extra_fields': {}
             }
