@@ -11,7 +11,8 @@ from django.db.models import Q
 from .models import User, Student, Teacher, Parent, Tutor, StudentLoginHistory
 from django_app.app_payments.models import Payment
 
-
+from datetime import datetime
+import pytz
 def escape_uri_path(path):
     """Fayl nomini URLga moslashtirish"""
     return quote(path)
@@ -157,14 +158,25 @@ class All_Role_ListView(APIView):
         if user.role == 'student' and hasattr(user, 'student_profile'):
             student = user.student_profile
             student_datetime = student.student_date.astimezone(timezone) if student.student_date else None
-            
+
             # Login history
             last_login_obj = StudentLoginHistory.objects.filter(student=student).order_by('-login_time').first()
             last_login_formatted = last_login_obj.login_time.astimezone(timezone).strftime('%d/%m/%Y %H:%M') if last_login_obj else None
+
+            # Last payment
             last_payment = Payment.objects.filter(student=student, status="success").order_by('-payment_date').first()
             last_payment_amount = float(last_payment.amount) if last_payment else 0
+
+            # Subscription qolgan kun
+            subscription = getattr(student, 'subscription', None)
+            end_date = subscription.end_date if subscription else None
+            remaining_days = None
+            if end_date:
+                today = datetime.now(pytz.timezone("Asia/Ashgabat")).date()
+                remaining_days = (end_date.date() - today).days
+
             profile_data['json'] = {
-                "profile_id": student.id,  # Student profil id sini qaytaramiz
+                "profile_id": student.id,
                 "full_name": student.full_name,
                 "region": student.region,
                 "districts": student.districts,
@@ -183,6 +195,8 @@ class All_Role_ListView(APIView):
                 "registration_time": student_datetime.strftime('%H:%M:%S') if student_datetime else None,
                 "last_login_time": last_login_formatted,
                 "last_payment_amount": last_payment_amount,
+                "subscription_end_date": end_date.strftime('%Y-%m-%d') if end_date else None,
+                "remaining_days": remaining_days,  # qolgan kunlar (int yoki None)
             }
 
             profile_data['excel'] = {
