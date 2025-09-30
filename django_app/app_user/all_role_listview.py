@@ -173,7 +173,8 @@ class All_Role_ListView(APIView):
             remaining_days = None
             if end_date:
                 today = datetime.now(pytz.timezone("Asia/Ashgabat")).date()
-                remaining_days = (end_date.date() - today).days
+                diff_days = (end_date.date() - today).days
+                remaining_days = diff_days if diff_days > 0 else 0 
 
             profile_data['json'] = {
                 "profile_id": student.id,
