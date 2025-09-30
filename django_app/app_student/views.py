@@ -113,8 +113,18 @@ class GenerateCheckAnswersAPIView(APIView):
             if not student_answer or not correct_answer:
                 continue
 
-            # advanced_math_check dan foydalanish
-            is_correct = advanced_math_check(student_answer, correct_answer)
+            # LaTeX ifodalarni normalizatsiya qilish
+            def normalize_latex(expr):
+                # {x} ni x ga aylantirish
+                expr = re.sub(r'\\{([^}]+)\\}', r'\1', expr)
+                # Keraksiz bo'sh joylarni olib tashlash
+                expr = re.sub(r'\s+', '', expr)
+                return expr
+
+            student_clean = normalize_latex(strip_tags(student_answer).strip())
+            correct_clean = normalize_latex(strip_tags(correct_answer).strip())
+            
+            is_correct = student_clean == correct_clean
             total_answers += 1
             if is_correct:
                 correct_answers += 1
