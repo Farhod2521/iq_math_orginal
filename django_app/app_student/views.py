@@ -110,22 +110,23 @@ class GenerateCheckAnswersAPIView(APIView):
 
             student_answer = answer.get('answer_uz') or answer.get('answer_ru')
             correct_answer = question.correct_text_answer_uz if 'answer_uz' in answer else question.correct_text_answer_ru
-
-            if student_answer is None or correct_answer is None:
+            if not student_answer or not correct_answer:
                 continue
 
-            is_correct = advanced_math_check(strip_tags(student_answer).strip(), strip_tags(correct_answer).strip())
+            # advanced_math_check dan foydalanish
+            is_correct = advanced_math_check(student_answer, correct_answer)
             total_answers += 1
-          
+            if is_correct:
+                correct_answers += 1
+            else:
+                add_wrong_topic(question)
 
-            last_question_topic = question.topic
             question_details.append({
                 "index": index,
                 "question_id": question.id,
                 "question_uz": question.question_text_uz,
                 "question_ru": question.question_text_ru,
-                "answer": is_correct,
-                "answer_text": student_answer
+                "answer": is_correct
             })
             index += 1
 
