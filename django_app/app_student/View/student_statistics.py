@@ -6,7 +6,7 @@ from django_app.app_payments.models import Payment
 from django_app.app_student.models import StudentScore,  Diagnost_Student, TopicProgress, StudentReferral
 from django_app.app_user.models import Student, Subject
 from django.shortcuts import get_object_or_404
-from  django_app.app_student.serializers import  ReferredStudentSerializer
+from  django_app.app_student.serializers import  ReferredStudentSerializer, DiagnostSubjectSerializer
 
 class StudentStatisticsDetailAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -193,7 +193,8 @@ class DiagnostSubjectListAPIView(APIView):
                 "mastery_percent": mastery_percent
             })
 
-        return Response(result)
+        serializer = DiagnostSubjectSerializer(result, many=True)
+        return Response(serializer.data)
 
 
 

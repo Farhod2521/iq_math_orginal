@@ -422,3 +422,16 @@ class TopicHelpRequestIndependentDetailSerializer(serializers.ModelSerializer):
         model_id = obj.id
         student_id = obj.student.id if obj.student else ''
         return f"https://t.me/iq_mathbot?start={model_id}_{student_id}"
+    
+
+
+class DiagnostSubjectSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    name_uz = serializers.CharField()
+    name_ru = serializers.CharField()
+    class_name = serializers.CharField()
+    class_uz = serializers.CharField()
+    class_ru = serializers.CharField()
+    image_uz = serializers.CharField(allow_null=True)
+    image_ru = serializers.CharField(allow_null=True)
+    mastery_percent = serializers.FloatField()
