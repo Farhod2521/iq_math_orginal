@@ -177,8 +177,7 @@ class DiagnostSubjectListAPIView(APIView):
             diagnost_dict[d.subject.id] = progress_percent
 
         # Barcha fanlarni olamiz
-
-        subjects = Subject.objects.all().select_related('classes')
+        subjects = Subject.objects.filter(student=student).select_related('subject')
         data = []
         for subject in subjects:
             class_name = subject.classes.name if subject.classes else ""
@@ -200,7 +199,6 @@ class DiagnostSubjectListAPIView(APIView):
             })
 
         return Response(data)
-
 
 
 class DiagnostChapterTopicProgressAPIView(APIView):
