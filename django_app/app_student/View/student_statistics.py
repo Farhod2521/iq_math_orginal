@@ -154,47 +154,52 @@ class DiagnostSubjectListAPIView(APIView):
     def get(self, request, student_id):
         student = get_object_or_404(Student, id=student_id)
 
-        # Har bir subject bo‘yicha eng oxirgi diagnostika id sini topamiz
-        latest_diagnost_ids = Diagnost_Student.objects.filter(
-            student=student,
-            subject=OuterRef('subject')
-        ).order_by('-id').values('id')[:1]
+        diagnost_dict = {}
+        diagnost_list = Diagnost_Student.objects.filter(student=student).select_related('subject')
 
-        # Faqat eng oxirgi diagnostikalarni olamiz
-        diagnost_entries = Diagnost_Student.objects.filter(
-            id__in=Subquery(latest_diagnost_ids)
-        ).select_related('subject').prefetch_related('topic')
+        for d in diagnost_list:
+            # Har bir subject bo‘yicha oxirgi diagnostika yozuvini olish
+            latest_diagnost = Diagnost_Student.objects.filter(
+                student=student,
+                subject=d.subject
+            ).order_by('-id').first()
 
-        result = []
+            progress_percent = None
+            if latest_diagnost and latest_diagnost.result:
+                try:
+                    # result JSON ichidan score olish
+                    score = latest_diagnost.result.get("result", [{}])[0].get("score")
+                    if score is not None:
+                        progress_percent = score
+                except Exception:
+                    progress_percent = None
 
-        for diagnost in diagnost_entries:
-            subject = diagnost.subject
-            topics = diagnost.topic.all()
+            diagnost_dict[d.subject.id] = progress_percent
 
-            total = topics.count()
-            mastered = 0
+        # Barcha fanlarni olamiz
 
-            for topic in topics:
-                progress = TopicProgress.objects.filter(user=student, topic=topic).first()
-                if progress and progress.score >= 80:
-                    mastered += 1
+        subjects = Subject.objects.all().select_related('classes')
+        data = []
+        for subject in subjects:
+            class_name = subject.classes.name if subject.classes else ""
+            progress_percent = diagnost_dict.get(subject.id)
 
-            mastery_percent = round((mastered / total) * 100, 1) if total else 0.0
+            has_diagnost = Diagnost_Student.objects.filter(student=student, subject=subject).exists()
 
-            result.append({
+            data.append({
                 "id": subject.id,
-                "name_uz": subject.name,
-                "name_ru": subject.name,
-                "class_name": subject.classes.name if subject.classes else "",
-                "class_uz": f"{subject.classes.name}-sinf {subject.name}" if subject.classes else subject.name,
-                "class_ru": f"{subject.classes.name}-класс {subject.name}" if subject.classes else subject.name,
-                "image_uz": subject.image_uz.url if subject.image_uz else None,
-                "image_ru": subject.image_ru.url if subject.image_ru else None,
-                "mastery_percent": mastery_percent
+                "name_uz": subject.name_uz,
+                "name_ru": subject.name_ru,
+                "class_name": class_name,
+                "class_uz": f"{class_name}-sinf {subject.name_uz}",
+                "class_ru": f"{class_name}-класс {subject.name_ru}",
+                "image_uz": subject.image_uz.url if subject.image_uz else "",
+                "image_ru": subject.image_ru.url if subject.image_ru else "",
+                "progress_percent": progress_percent,   # ✅ endi oxirgi score chiqadi
+                "has_taken_diagnostic": has_diagnost
             })
 
-        serializer = DiagnostSubjectSerializer(result, many=True)
-        return Response(serializer.data)
+        return Response(data)
 
 
 
