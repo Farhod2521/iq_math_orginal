@@ -146,6 +146,7 @@ class SubjectListWithMasteryAPIView(APIView):
         return Response(result)
 
 
+
 from django.db.models import OuterRef, Subquery
 ########################################   DIAGNOSTIKA  ###############################################
 class DiagnostSubjectListAPIView(APIView):
@@ -177,7 +178,7 @@ class DiagnostSubjectListAPIView(APIView):
             diagnost_dict[d.subject.id] = progress_percent
 
         # Barcha fanlarni olamiz
-        subjects = Subject.objects.filter(student=student).select_related('subject')
+        subjects = Subject.objects.filter(student=student).select_related('subject').select_related('classes')
         data = []
         for subject in subjects:
             class_name = subject.classes.name if subject.classes else ""
