@@ -9,30 +9,31 @@ from django_app.app_teacher.models import Chapter
 
 
 
-
 class StudentDiagnostSubjectsAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         student = Student.objects.get(user=request.user)
 
-        # O‘quvchining barcha diagnostika qilgan subjectlari progress foizi bilan
         diagnost_dict = {}
         diagnost_list = Diagnost_Student.objects.filter(student=student).select_related('subject')
 
         for d in diagnost_list:
-            assigned_topics = d.topic.all()
-            total_topics = assigned_topics.count()
+            # Har bir subject bo‘yicha oxirgi diagnostika yozuvini olish
+            latest_diagnost = Diagnost_Student.objects.filter(
+                student=student,
+                subject=d.subject
+            ).order_by('-id').first()
 
-            learned_count = TopicProgress.objects.filter(
-                user=student,
-                topic__in=assigned_topics,
-                score__gte=80
-            ).count()
-
-            progress_percent = 0
-            if total_topics > 0:
-                progress_percent = round((learned_count / total_topics) * 100)
+            progress_percent = None
+            if latest_diagnost and latest_diagnost.result:
+                try:
+                    # result JSON ichidan score olish
+                    score = latest_diagnost.result.get("result", [{}])[0].get("score")
+                    if score is not None:
+                        progress_percent = score
+                except Exception:
+                    progress_percent = None
 
             diagnost_dict[d.subject.id] = progress_percent
 
@@ -43,7 +44,6 @@ class StudentDiagnostSubjectsAPIView(APIView):
             class_name = subject.classes.name if subject.classes else ""
             progress_percent = diagnost_dict.get(subject.id)
 
-            # ✅ Diagnostika topshirganmi yoki yo‘qmi
             has_diagnost = Diagnost_Student.objects.filter(student=student, subject=subject).exists()
 
             data.append({
@@ -55,12 +55,11 @@ class StudentDiagnostSubjectsAPIView(APIView):
                 "class_ru": f"{class_name}-класс {subject.name_ru}",
                 "image_uz": subject.image_uz.url if subject.image_uz else "",
                 "image_ru": subject.image_ru.url if subject.image_ru else "",
-                "progress_percent": progress_percent,   # diagnostika qilgan bo‘lsa raqam, qilmagan bo‘lsa None
-                "has_taken_diagnostic ": has_diagnost        # 🔹 yangi qo‘shilgan maydon
+                "progress_percent": progress_percent,   # ✅ endi oxirgi score chiqadi
+                "has_taken_diagnostic": has_diagnost
             })
 
         return Response(data)
-
 
 class SubjectChaptersAPIView(APIView):
     permission_classes = [IsAuthenticated]
