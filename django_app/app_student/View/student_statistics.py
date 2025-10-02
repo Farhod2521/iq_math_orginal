@@ -146,7 +146,6 @@ class SubjectListWithMasteryAPIView(APIView):
         return Response(result)
 
 
-
 from django.db.models import OuterRef, Subquery
 ########################################   DIAGNOSTIKA  ###############################################
 class DiagnostSubjectListAPIView(APIView):
@@ -155,51 +154,46 @@ class DiagnostSubjectListAPIView(APIView):
     def get(self, request, student_id):
         student = get_object_or_404(Student, id=student_id)
 
-        diagnost_dict = {}
-        diagnost_list = Diagnost_Student.objects.filter(student=student).select_related('subject')
+        # Har bir subject bo‘yicha eng oxirgi diagnostika id sini topamiz
+        latest_diagnost_ids = Diagnost_Student.objects.filter(
+            student=student,
+            subject=OuterRef('subject')
+        ).order_by('-id').values('id')[:1]
 
-        for d in diagnost_list:
-            # Har bir subject bo‘yicha oxirgi diagnostika yozuvini olish
-            latest_diagnost = Diagnost_Student.objects.filter(
-                student=student,
-                subject=d.subject
-            ).order_by('-id').first()
+        # Faqat eng oxirgi diagnostikalarni olamiz
+        diagnost_entries = Diagnost_Student.objects.filter(
+            id__in=Subquery(latest_diagnost_ids)
+        ).select_related('subject').prefetch_related('topic')
 
-            progress_percent = None
-            if latest_diagnost and latest_diagnost.result:
-                try:
-                    # result JSON ichidan score olish
-                    score = latest_diagnost.result.get("result", [{}])[0].get("score")
-                    if score is not None:
-                        progress_percent = score
-                except Exception:
-                    progress_percent = None
+        result = []
 
-            diagnost_dict[d.subject.id] = progress_percent
+        for diagnost in diagnost_entries:
+            subject = diagnost.subject
 
-        # Barcha fanlarni olamiz
-        subjects = Subject.objects.filter(student=student).select_related('classes')
-        data = []
-        for subject in subjects:
-            class_name = subject.classes.name if subject.classes else ""
-            progress_percent = diagnost_dict.get(subject.id)
+            # Default qiymat
+            score = None
 
-            has_diagnost = Diagnost_Student.objects.filter(student=student, subject=subject).exists()
+            # result JSON ichidan score olish
+            try:
+                score = diagnost.result.get("result", [{}])[0].get("score")
+            except Exception:
+                score = None
 
-            data.append({
+            result.append({
                 "id": subject.id,
                 "name_uz": subject.name_uz,
                 "name_ru": subject.name_ru,
-                "class_name": class_name,
-                "class_uz": f"{class_name}-sinf {subject.name_uz}",
-                "class_ru": f"{class_name}-класс {subject.name_ru}",
-                "image_uz": subject.image_uz.url if subject.image_uz else "",
-                "image_ru": subject.image_ru.url if subject.image_ru else "",
-                "progress_percent": progress_percent,   # ✅ endi oxirgi score chiqadi
-                "has_taken_diagnostic": has_diagnost
+                "class_name": subject.classes.name if subject.classes else "",
+                "class_uz": f"{subject.classes.name}-sinf {subject.name_uz}" if subject.classes else subject.name_uz,
+                "class_ru": f"{subject.classes.name}-класс {subject.name_ru}" if subject.classes else subject.name_ru,
+                "image_uz": subject.image_uz.url if subject.image_uz else None,
+                "image_ru": subject.image_ru.url if subject.image_ru else None,
+                "mastery_percent": score   # ✅ endi oxirgi diagnostikadagi score chiqadi
             })
 
-        return Response(data)
+        serializer = DiagnostSubjectSerializer(result, many=True)
+        return Response(serializer.data)
+
 
 
 class DiagnostChapterTopicProgressAPIView(APIView):
