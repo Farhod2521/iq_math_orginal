@@ -11,6 +11,8 @@ from .serializers import (
 from django.db import IntegrityError
 from rest_framework.exceptions import PermissionDenied
 from .models import TutorCouponTransaction, TutorReferralTransaction
+import random
+import string
 
 class TutorCouponViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
@@ -22,23 +24,40 @@ class TutorCouponViewSet(viewsets.ModelViewSet):
             raise PermissionDenied("Foydalanuvchi o‘qituvchi emas")
         return Coupon_Tutor_Student.objects.filter(created_by_tutor=tutor)
 
+    def _generate_unique_coupon_code(self, length=6):
+        """A-Z va 0-9 dan iborat unikal kupon kodi yaratish."""
+        chars = string.ascii_uppercase + string.digits  # A-Z + 0-9
+        while True:
+            code = ''.join(random.choices(chars, k=length))
+            if not Coupon_Tutor_Student.objects.filter(code=code).exists():
+                return code
+
     def create(self, request, *args, **kwargs):
-        # CouponCreateSerializer bilan validatsiya
         try:
             settings = ReferralAndCouponSettings.objects.latest('updated_at')
         except ReferralAndCouponSettings.DoesNotExist:
-            return Response({"error": "ReferralAndCouponSettings topilmadi"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "ReferralAndCouponSettings topilmadi"},
+                            status=status.HTTP_400_BAD_REQUEST)
 
-        serializer = CouponCreateSerializer(data=request.data, context={'request': request})
-        serializer.is_valid(raise_exception=True)
+        tutor = getattr(request.user, 'tutor_profile', None)
+        if tutor is None:
+            raise PermissionDenied("Foydalanuvchi o‘qituvchi emas")
 
         valid_from = timezone.now()
         valid_until = valid_from + timedelta(days=settings.coupon_valid_days)
 
+        # Avtomatik unikal kupon kodi yaratish
+        coupon_code = self._generate_unique_coupon_code()
+
+        serializer = CouponCreateSerializer(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+
         coupon = serializer.save(
+            code=coupon_code,
             discount_percent=settings.coupon_discount_percent,
             valid_from=valid_from,
             valid_until=valid_until,
+            created_by_tutor=tutor,
             is_active=True
         )
 
