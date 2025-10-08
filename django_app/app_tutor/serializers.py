@@ -8,7 +8,7 @@ from .models import TutorReferralTransaction, TutorCouponTransaction
 class CouponSerializer(serializers.ModelSerializer):
     class Meta:
         model = Coupon_Tutor_Student
-        fields = ['id',  'discount_percent', 'valid_from', 'valid_until', 'is_active']
+        fields = ['id', 'code', 'discount_percent', 'valid_from', 'valid_until', 'is_active']
 
 
 class ReferralSerializer(serializers.ModelSerializer):
@@ -19,7 +19,8 @@ class ReferralSerializer(serializers.ModelSerializer):
 class CouponCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Coupon_Tutor_Student
-        fields = ['code']
+        # 'code' foydalanuvchi tomonidan yuborilmaydi — viewsetda avtomatik yaratiladi
+        fields = ['id']  
 
     def validate(self, attrs):
         request = self.context.get('request')
@@ -31,20 +32,16 @@ class CouponCreateSerializer(serializers.ModelSerializer):
         if tutor is None:
             raise serializers.ValidationError({"error": "Foydalanuvchi o‘qituvchi emas"})
 
+        # Har bir o‘qituvchiga faqat bitta kupon
         if Coupon_Tutor_Student.objects.filter(created_by_tutor=tutor).exists():
             raise serializers.ValidationError({"error": "Siz allaqachon kupon yaratgansiz"})
 
         attrs['created_by_tutor'] = tutor
         return attrs
 
-    def validate_code(self, value):
-        if Coupon_Tutor_Student.objects.filter(code=value).exists():
-            raise serializers.ValidationError("Bu kupon kodi allaqachon mavjud")
-        return value
-
     def create(self, validated_data):
+        # Kupon kodi viewset ichida generate qilinadi
         return Coupon_Tutor_Student.objects.create(**validated_data)
-
 
 class ReferralCreateSerializer(serializers.ModelSerializer):
     class Meta:
