@@ -82,22 +82,47 @@ class TutorReferralViewSet(viewsets.ModelViewSet):
             raise PermissionDenied("Foydalanuvchi o‘qituvchi emas")
         return Referral_Tutor_Student.objects.filter(created_by_tutor=tutor)
 
+    def _generate_unique_referral_code(self, length=6):
+        """A-Z va 0-9 dan iborat unikal referal kodi yaratish."""
+        chars = string.ascii_uppercase + string.digits
+        while True:
+            code = ''.join(random.choices(chars, k=length))
+            if not Referral_Tutor_Student.objects.filter(code=code).exists():
+                return code
+
     def create(self, request, *args, **kwargs):
         try:
             settings = ReferralAndCouponSettings.objects.latest('updated_at')
         except ReferralAndCouponSettings.DoesNotExist:
-            return Response({"error": "ReferralAndCouponSettings topilmadi"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "ReferralAndCouponSettings topilmadi"},
+                            status=status.HTTP_400_BAD_REQUEST)
 
-        serializer = ReferralCreateSerializer(data=request.data, context={'request': request})
-        serializer.is_valid(raise_exception=True)
+        tutor = getattr(request.user, 'tutor_profile', None)
+        if tutor is None:
+            raise PermissionDenied("Foydalanuvchi o‘qituvchi emas")
+
+        # 🔹 Agar tutor allaqachon referal yaratgan bo‘lsa — shuni qaytaramiz
+        existing_referral = Referral_Tutor_Student.objects.filter(created_by_tutor=tutor).first()
+        if existing_referral:
+            return Response({
+                "message": "Siz allaqachon referal link yaratgansiz",
+                "referral": ReferralSerializer(existing_referral).data
+            }, status=status.HTTP_200_OK)
 
         valid_from = timezone.now()
         valid_until = valid_from + timedelta(days=settings.referral_valid_days)
 
+        referral_code = self._generate_unique_referral_code()
+
+        serializer = ReferralCreateSerializer(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+
         referral = serializer.save(
+            code=referral_code,
             bonus_percent=settings.referral_bonus_coin,
             valid_from=valid_from,
             valid_until=valid_until,
+            created_by_tutor=tutor,
             is_active=True
         )
 

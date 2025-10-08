@@ -46,7 +46,7 @@ class CouponCreateSerializer(serializers.ModelSerializer):
 class ReferralCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Referral_Tutor_Student
-        fields = ['code']
+        fields = ['id']  # foydalanuvchi 'code' yubormaydi, avtomatik generatsiya bo‘ladi
 
     def validate(self, attrs):
         request = self.context.get('request')
@@ -58,16 +58,12 @@ class ReferralCreateSerializer(serializers.ModelSerializer):
         if tutor is None:
             raise serializers.ValidationError({"error": "Foydalanuvchi o‘qituvchi emas"})
 
+        # faqat bitta referal linkga ruxsat
         if Referral_Tutor_Student.objects.filter(created_by_tutor=tutor).exists():
             raise serializers.ValidationError({"error": "Siz allaqachon referal link yaratgansiz"})
 
         attrs['created_by_tutor'] = tutor
         return attrs
-
-    def validate_code(self, value):
-        if Referral_Tutor_Student.objects.filter(code=value).exists():
-            raise serializers.ValidationError("Bu referal kodi allaqachon mavjud")
-        return value
 
     def create(self, validated_data):
         return Referral_Tutor_Student.objects.create(**validated_data)
