@@ -43,10 +43,17 @@ class TutorCouponViewSet(viewsets.ModelViewSet):
         if tutor is None:
             raise PermissionDenied("Foydalanuvchi o‘qituvchi emas")
 
+        # 🔹 Agar tutor allaqachon kupon yaratgan bo‘lsa — shuni qaytaramiz
+        existing_coupon = Coupon_Tutor_Student.objects.filter(created_by_tutor=tutor).first()
+        if existing_coupon:
+            return Response({
+                "message": "Siz allaqachon kupon yaratgansiz",
+                "coupon": CouponSerializer(existing_coupon).data
+            }, status=status.HTTP_200_OK)
+
         valid_from = timezone.now()
         valid_until = valid_from + timedelta(days=settings.coupon_valid_days)
 
-        # Avtomatik unikal kupon kodi yaratish
         coupon_code = self._generate_unique_coupon_code()
 
         serializer = CouponCreateSerializer(data=request.data, context={'request': request})
@@ -62,6 +69,7 @@ class TutorCouponViewSet(viewsets.ModelViewSet):
         )
 
         return Response(CouponSerializer(coupon).data, status=status.HTTP_201_CREATED)
+
 
 
 class TutorReferralViewSet(viewsets.ModelViewSet):
