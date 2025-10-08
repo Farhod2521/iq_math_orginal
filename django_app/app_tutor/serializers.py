@@ -8,7 +8,7 @@ from .models import TutorReferralTransaction, TutorCouponTransaction
 class CouponSerializer(serializers.ModelSerializer):
     class Meta:
         model = Coupon_Tutor_Student
-        fields = ['id', 'code', 'discount_percent', 'valid_from', 'valid_until', 'is_active']
+        fields = ['id',  'discount_percent', 'valid_from', 'valid_until', 'is_active']
 
 
 class ReferralSerializer(serializers.ModelSerializer):
