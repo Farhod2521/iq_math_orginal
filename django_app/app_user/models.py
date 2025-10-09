@@ -6,7 +6,7 @@ from django.utils.timezone import now
 
 
 
-
+import random
 
 
 
@@ -59,10 +59,15 @@ class User(AbstractUser):
     class Meta:
         verbose_name = "Foydalanuvchi"
         verbose_name_plural = "Foydalanuvchilar"
-
+def generate_tutor_identification():
+    today = now().strftime("%y%m%d")  # Masalan: '250507'
+    random_part = random.randint(100, 999)  # 3 xonali tasodifiy son
+    count_today = Tutor.objects.filter(tutor_date__date=now().date()).count() + 1
+    return f"T{today}{random_part:03d}{count_today:03d}"  
 
 class Tutor(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='tutor_profile', verbose_name="Foydalanuvchi")
+    identification = models.CharField(max_length=20, unique=True, null=True, blank=True)
     full_name = models.CharField(max_length=200, verbose_name="To‘liq ism")
     region = models.CharField(max_length=200, blank=True, null=True)
     districts = models.CharField(max_length=200, blank=True, null=True)
@@ -74,8 +79,8 @@ class Tutor(models.Model):
         return self.full_name
 
     class Meta:
-        verbose_name = "O'qtuvchi"
-        verbose_name_plural = "O'qtuvchilar"
+        verbose_name = "O‘qituvchi"
+        verbose_name_plural = "O‘qituvchilar"
 
 
 class Teacher(models.Model):
