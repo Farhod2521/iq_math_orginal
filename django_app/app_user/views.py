@@ -691,6 +691,7 @@ class StudentProfileAPIView(APIView):
             data = {
                 "role": "tutor",
                 "id": tutor.id,
+                "identification": tutor.identification,
                 "full_name": tutor.full_name,
                 "phone": user.phone,
                 "email": user.email,
