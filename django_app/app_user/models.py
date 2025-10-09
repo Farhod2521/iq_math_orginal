@@ -67,7 +67,7 @@ def generate_tutor_identification():
 
 class Tutor(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='tutor_profile', verbose_name="Foydalanuvchi")
-    identification = models.CharField(max_length=20, unique=True, null=True, blank=True)
+    identification = models.CharField(max_length=20, unique=True, default=generate_tutor_identification)
     full_name = models.CharField(max_length=200, verbose_name="To‘liq ism")
     region = models.CharField(max_length=200, blank=True, null=True)
     districts = models.CharField(max_length=200, blank=True, null=True)
