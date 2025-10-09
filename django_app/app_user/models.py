@@ -60,10 +60,14 @@ class User(AbstractUser):
         verbose_name = "Foydalanuvchi"
         verbose_name_plural = "Foydalanuvchilar"
 def generate_tutor_identification():
-    today = now().strftime("%y%m%d")  # Masalan: '250507'
-    random_part = random.randint(100, 999)  # 3 xonali tasodifiy son
-    count_today = Tutor.objects.filter(tutor_date__date=now().date()).count() + 1
-    return f"T{today}{random_part:03d}{count_today:03d}"  
+    from app_user.models import Tutor  # o'z app nomingni yoz, masalan: from users.models import Tutor
+    while True:
+        today = now().strftime("%y%m%d")  # Masalan: 250509
+        random_part = random.randint(100, 999)
+        count_today = Tutor.objects.filter(tutor_date__date=now().date()).count() + 1
+        identification = f"T{today}{random_part:03d}{count_today:03d}"
+        if not Tutor.objects.filter(identification=identification).exists():
+            return identification
 
 class Tutor(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='tutor_profile', verbose_name="Foydalanuvchi")
