@@ -179,7 +179,7 @@ def generate_parent_identification():
 class Parent(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='parent_profile', verbose_name="Foydalanuvchi")
     full_name = models.CharField(max_length=200, verbose_name="To‘liq ism")
-    identification = models.CharField(max_length=20, unique=True, null=True, blank=True)
+    identification = models.CharField(max_length=20, unique=True, default=generate_parent_identification)
     region = models.CharField(max_length=200, blank=True, null=True)
     districts = models.CharField(max_length=200, blank=True, null=True)
     address = models.CharField(max_length=500, blank=True, null=True)
