@@ -724,6 +724,7 @@ class StudentProfileAPIView(APIView):
             data = {
                 "role": "parent",
                 "id": parent.id,
+                "identification": parent.identification,
                 "full_name": parent.full_name,
                 "phone": user.phone,
                 "email": user.email,
