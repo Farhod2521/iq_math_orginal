@@ -135,9 +135,8 @@ class SubjectListWithMasteryAPIView(APIView):
                     "id": subject.id,
                     "name_uz": subject.name,  # Agar Translation ishlatilsa: subject.name_uz
                     "name_ru": subject.name,  # Agar Translation ishlatilsa: subject.name_ru
-                    "class_name": subject.classes.name if subject.classes else "",
-                    "class_uz": f"{subject.classes.name}-sinf {subject.name}" if subject.classes else subject.name,
-                    "class_ru": f"{subject.classes.name}-класс {subject.name}" if subject.classes else subject.name,
+                    "class_uz": f"{subject.classes.name}-sinf {subject.name_uz}" if subject.classes else subject.name_uz,
+                    "class_ru": f"{subject.classes.name}-класс {subject.name_ru}" if subject.classes else subject.name_ru,
                     "image_uz": subject.image_uz.url if subject.image_uz else None,
                     "image_ru": subject.image_ru.url if subject.image_ru else None,
                     "mastery_percent": mastery_percent
