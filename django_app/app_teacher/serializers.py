@@ -4,7 +4,8 @@ from .models import (
     
 )
 from django_app.app_user.models import  Subject, Student
-
+from django_app.app_student.models import ProductExchange
+from django_app.app_management.models import  Product
 class SubjectSerializer(serializers.ModelSerializer):
     class_name = serializers.CharField(source="classes.name")  # Sinf nomini olish
     teachers = serializers.StringRelatedField(many=True)  # O‘qituvchi ismlarini olish
@@ -217,4 +218,36 @@ class TeacherRewardLogSerializer(serializers.ModelSerializer):
             'amount',
             'reason',
             'created_at'
+        ]
+
+
+
+
+class StudentProductExchangeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Student
+        fields = [
+            'id', 'full_name', 'region', 'districts', 'address',
+            'brithday', 'academy_or_school', 'academy_or_school_name',
+            'document_type', 'document', 'type_of_education', 'status',
+            'student_date'
+        ]
+
+
+class ProductSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Product
+        fields = ['id', 'name', 'image', 'count']
+
+
+class ProductExchangeSerializer(serializers.ModelSerializer):
+    student = StudentProductExchangeSerializer(read_only=True)
+    product = ProductSerializer(read_only=True)
+    created_at = serializers.DateTimeField(format="%d/%m/%Y %H:%M", read_only=True)
+
+    class Meta:
+        model = ProductExchange
+        fields = [
+            'id', 'student', 'product',
+            'used_coin', 'status', 'created_at'
         ]
