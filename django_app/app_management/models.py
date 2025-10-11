@@ -54,11 +54,11 @@ class FAQ(models.Model):
 class ReferralAndCouponSettings(models.Model):
     teacher_referral_bonus_points = models.PositiveIntegerField(
         default=0,
-        verbose_name="O‘qituvchi uchun referal ball"
+        verbose_name="O‘qituvchi uchun referal foizi"
     )
     student_referral_bonus_points = models.PositiveIntegerField(
         default=0,
-        verbose_name="O‘quvchi uchun referal ball"
+        verbose_name="O‘quvchi uchun referal foizi"
     )
     coupon_discount_percent = models.PositiveIntegerField(
         default=0,
