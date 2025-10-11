@@ -83,7 +83,7 @@ class TutorCouponTransactionSerializer(serializers.ModelSerializer):
 
 class TutorReferralTransactionSerializer(serializers.ModelSerializer):
     student_name = serializers.CharField(source='student.full_name', read_only=True)
-    
+    used_at = serializers.DateTimeField(format="%d/%m/%Y %H:%M", read_only=True)  # ✅ sana formatlash
 
     class Meta:
         model = TutorReferralTransaction

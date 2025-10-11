@@ -12,7 +12,7 @@ from .View.independentView import  TeacherTopicHelpRequestListAPIView, TeacherTo
 from .View.coupon import   CreateTeacherCouponAPIView
 from .View.login_as_student import LoginAsStudentAPIView, ChangeStudentPasswordAPIView
 from  .View.teacherreward import  TeacherRewardAPIView, TeacherRewardListAPIView
-
+from  .View.productexchange import ProductExchangeListAPIView
 urlpatterns = [
     path("my-subjects/", TeacherSubjectsAPIView.as_view(), name="teacher-subjects"),
     path("subject-list/", SubjectListAPIView.as_view(), name="teacher-subjects"),
@@ -68,6 +68,10 @@ urlpatterns = [
     path('teacher/reward/list/', TeacherRewardListAPIView.as_view(), name='teacher-reward-list'),
     path('teacher/help-request/<int:pk>/telegram-id/', GetTelegramIDFromHelpRequestAPIView.as_view(), name='get-telegram-id'),
     path('teacher/help-request/<int:pk>/delete/', TeacherTopicHelpRequestDeleteAPIView.as_view(), name='teacher-help-request-delete'),
+
+    ######################################  PRODUCT EXCHANGE  LIST VIEW ######################################
+
+    path('teacher/product-exchange-list/', ProductExchangeListAPIView.as_view(), name='product-reward'),
 
 
 ]
