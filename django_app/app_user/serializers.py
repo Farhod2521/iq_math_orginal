@@ -7,7 +7,8 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth import authenticate
 from django.utils.timezone import now
 from django_app.app_payments.models import Subscription, SubscriptionSetting, Payment
-from django_app.app_student.models import  StudentScore, StudentReferral
+from django_app.app_student.models import  StudentReferralTransaction
+from django_app.app_tutor.models import TutorReferralTransaction
 from django_app.app_management.models import  ReferralAndCouponSettings
 User = get_user_model()
 
@@ -200,40 +201,36 @@ class UniversalRegisterSerializer(serializers.Serializer):
 
         sms_code = str(random.randint(10000, 99999))
 
-        # 1. Mavjud userni tekshiramiz
+        # 1. Mavjud userni tekshirish
         user = User.objects.filter(phone=phone).first()
 
         if user:
-            # Agar mavjud bo'lsa va status hali tasdiqlanmagan bo'lsa – sms_code yangilanadi
-            if hasattr(user, 'student_profile'):
-                profile = user.student_profile
-                if not profile.status:
-                    user.sms_code = sms_code
-                    user.save(update_fields=['sms_code'])
-                    send_sms(phone, sms_code)
-                    return user
-            elif hasattr(user, 'parent_profile'):
-                profile = user.parent_profile
-                if not profile.status:
-                    user.sms_code = sms_code
-                    user.save(update_fields=['sms_code'])
-                    send_sms(phone, sms_code)
-                    return user
-            elif hasattr(user, 'tutor_profile'):
-                profile = user.tutor_profile
-                if not profile.status:
-                    user.sms_code = sms_code
-                    user.save(update_fields=['sms_code'])
-                    send_sms(phone, sms_code)
-                    return user
+            # Agar mavjud bo‘lsa va hali tasdiqlanmagan bo‘lsa — sms_code yangilanadi
+            if hasattr(user, 'student_profile') and not user.student_profile.status:
+                user.sms_code = sms_code
+                user.save(update_fields=['sms_code'])
+                send_sms(phone, sms_code)
+                return user
 
-        # 2. Yangi User yaratish
+            if hasattr(user, 'parent_profile') and not user.parent_profile.status:
+                user.sms_code = sms_code
+                user.save(update_fields=['sms_code'])
+                send_sms(phone, sms_code)
+                return user
+
+            if hasattr(user, 'tutor_profile') and not user.tutor_profile.status:
+                user.sms_code = sms_code
+                user.save(update_fields=['sms_code'])
+                send_sms(phone, sms_code)
+                return user
+
+        # 2. Yangi foydalanuvchi yaratish
         user = User.objects.create(phone=phone, role=role)
         user.sms_code = sms_code
         user.set_unusable_password()
         user.save()
 
-        # 3. Role bo‘yicha profillar
+        # 3. Role bo‘yicha profil yaratish
         if role == "student":
             student = Student.objects.create(
                 user=user,
@@ -243,7 +240,7 @@ class UniversalRegisterSerializer(serializers.Serializer):
                 student_date=now()
             )
 
-            # trial subscription
+            # 🎁 Trial obuna
             free_days = SubscriptionSetting.objects.first().free_trial_days
             Subscription.objects.create(
                 student=student,
@@ -252,19 +249,41 @@ class UniversalRegisterSerializer(serializers.Serializer):
                 is_paid=False
             )
 
-            # referral
+            # 🧩 REFERAL LOGIKA
             if referral_code:
-                try:
-                    referrer_student = Student.objects.get(identification=referral_code)
-                    StudentReferral.objects.create(referrer=referrer_student, referred=student)
-                except Student.DoesNotExist:
-                    pass
+                referral_code = referral_code.strip()
+
+                # Tutor referali (T bilan boshlansa)
+                if referral_code.startswith('T'):
+                    try:
+                        ref_tutor = Tutor.objects.get(identification=referral_code)
+                        TutorReferralTransaction.objects.create(
+                            student=student,
+                            tutor=ref_tutor,
+                            payment_amount=0,
+                            bonus_amount=0
+                        )
+                    except Tutor.DoesNotExist:
+                        pass
+
+                # Student referali (faqat raqam)
+                elif referral_code.isdigit():
+                    try:
+                        ref_student = Student.objects.get(identification=referral_code)
+                        StudentReferralTransaction.objects.create(
+                            student=student,
+                            by_student=ref_student,
+                            payment_amount=0,
+                            bonus_amount=0
+                        )
+                    except Student.DoesNotExist:
+                        pass
 
         elif role == "parent":
             Parent.objects.create(
                 user=user,
                 full_name=full_name,
-                status=False  # parent ham status bilan bo‘lishi kerak
+                status=False
             )
 
         elif role == "tutor":
