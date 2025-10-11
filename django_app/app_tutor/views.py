@@ -150,8 +150,12 @@ class TutorReferralTransactionListAPIView(APIView):
     def get(self, request, *args, **kwargs):
         tutor = getattr(request.user, 'tutor_profile', None)
         if tutor is None:
-            return Response({"error": "Foydalanuvchi O‘qituvchi emas"}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"error": "Foydalanuvchi o‘qituvchi emas"}, status=status.HTTP_403_FORBIDDEN)
 
-        transactions = TutorReferralTransaction.objects.filter(tutor=tutor).select_related('student', 'referral')
+        # ✅ To‘g‘rilangan select_related
+        transactions = TutorReferralTransaction.objects.filter(
+            tutor=tutor
+        ).select_related('student', 'tutor')
+
         serializer = TutorReferralTransactionSerializer(transactions, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
