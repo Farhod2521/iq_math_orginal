@@ -35,19 +35,33 @@ class ProductExchangeView(APIView):
 
         product = get_object_or_404(Product, id=product_id)
 
+        # 🔹 Mahsulot sonini tekshirish
+        if product.count <= 0:
+            return Response({
+                'error_uz': 'Bu mahsulot qolmagan.',
+                'error_ru': 'Этот товар закончился.'
+            }, status=400)
+
+        # 🔹 Coin yetarliligini tekshirish
         if student_score.coin < product.coin:
             return Response({
                 'error_uz': f"Sizda yetarli coin yo'q. Kerakli: {product.coin}, Sizda: {student_score.coin}",
                 'error_ru': f"У вас недостаточно монет. Необходимо: {product.coin}, У вас: {student_score.coin}"
             }, status=400)
 
+        # 🔹 Coinni kamaytirish
         student_score.coin -= product.coin
         student_score.save()
 
+        # 🔹 Mahsulot sonini kamaytirish
+        product.count -= 1
+        product.save()
+
+        # 🔹 Yangi almashinuv yozuvini yaratish
         exchange = ProductExchange.objects.create(
             student=student,
             product=product,
-            used_coin=product.coin,  # modelda hali used_score deb turgan bo‘lsa, nomi o‘zgartirilmagan
+            used_coin=product.coin,  # agar modelda hali used_score bo‘lsa, nomini moslashtiring
             status='approved'
         )
 
@@ -55,11 +69,10 @@ class ProductExchangeView(APIView):
             'message_uz': f"{product.name} mahsuloti muvaffaqiyatli olindi.",
             'message_ru': f"Товар {product.name} успешно получен.",
             'remaining_coin': student_score.coin,
+            'product_count': product.count,
             'exchange_id': exchange.id,
             'status': exchange.status,
         })
-
-
 
 
 
