@@ -88,6 +88,6 @@ class TutorReferralTransactionSerializer(serializers.ModelSerializer):
     class Meta:
         model = TutorReferralTransaction
         fields = [
-            'id', 'student', 'student_name', 'referral', 'referral_code',
+            'id', 'student', 'student_name', 'referral',
             'payment_amount', 'bonus_amount', 'used_at'
         ]
