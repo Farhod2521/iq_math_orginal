@@ -83,11 +83,11 @@ class TutorCouponTransactionSerializer(serializers.ModelSerializer):
 
 class TutorReferralTransactionSerializer(serializers.ModelSerializer):
     student_name = serializers.CharField(source='student.full_name', read_only=True)
-    referral_code = serializers.CharField(source='referral.code', read_only=True)
+    
 
     class Meta:
         model = TutorReferralTransaction
         fields = [
-            'id', 'student', 'student_name', 'referral',
+            'id', 'student', 'student_name',
             'payment_amount', 'bonus_amount', 'used_at'
         ]
