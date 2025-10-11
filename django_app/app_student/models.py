@@ -201,12 +201,6 @@ class StudentReferralTransaction(models.Model):
         related_name='referral_transactions_student',
         verbose_name="Referal link egasi (student)"
     )
-    referral = models.ForeignKey(
-        Referral_Tutor_Student,
-        on_delete=models.CASCADE,
-        related_name='student_transactions',
-        verbose_name="Referal kodi"
-    )
     payment_amount = models.DecimalField(
         max_digits=12,
         decimal_places=2,
