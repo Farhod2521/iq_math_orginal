@@ -42,17 +42,34 @@ class ChapterSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         user = request.user
 
-        # Agar foydalanuvchi o'qituvchi bo'lsa — progress doim 100%
-        if hasattr(user, 'teacher_profile'):
+        # 👨‍🏫 Agar foydalanuvchi o'qituvchi yoki admin bo‘lsa, progress 100%
+        if user.role in ['teacher', 'admin']:
             return 100.0
 
-        # Student bo'lsa — ChapterProgress tekshiramiz
         try:
-            student_instance = Student.objects.get(user=user)
-            progress = ChapterProgress.objects.get(user=student_instance, chapter=chapter)
-            return round(progress.progress_percentage, 2)
-        except (ChapterProgress.DoesNotExist, Student.DoesNotExist):
+            student = Student.objects.get(user=user)
+        except Student.DoesNotExist:
             return 0.0
+
+        # 🔹 Shu bobga tegishli barcha topiclar
+        topics = Topic.objects.filter(chapter=chapter)
+        total_topics = topics.count()
+
+        if total_topics == 0:
+            return 0.0
+
+        # 🔹 Shu bobdagi barcha mavzularda studentning progresslarini olamiz
+        progresses = TopicProgress.objects.filter(user=student, topic__in=topics)
+
+        if not progresses.exists():
+            return 0.0
+
+        # 🔹 O‘rtacha score hisoblanadi
+        total_score = sum(p.score for p in progresses)
+        avg_score = total_score / total_topics
+
+        # 100 dan oshib ketmasligi uchun
+        return round(min(avg_score, 100), 2)
 
 class TopicSerializer1(serializers.ModelSerializer):
 
