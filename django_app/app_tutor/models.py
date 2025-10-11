@@ -66,7 +66,7 @@ class TutorWithdrawal(models.Model):
     )
 
     tutor = models.ForeignKey(
-        'Tutor',
+        Tutor,
         on_delete=models.CASCADE,
         related_name='withdrawals',
         verbose_name="O‘qituvchi"
