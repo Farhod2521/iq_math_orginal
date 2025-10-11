@@ -133,6 +133,7 @@ class SystemCoupon(models.Model):
 class Product(models.Model):
     name = models.CharField(max_length=255, verbose_name="Mahsulot nomi")
     image = models.ImageField(upload_to='products/', verbose_name="Mahsulot rasmi")
+    count =  models.PositiveIntegerField(verbose_name="Mahsulot soni", default=0)
     coin = models.PositiveIntegerField(verbose_name="Kerakli tanga")
 
     def __str__(self):
