@@ -54,3 +54,31 @@ class TutorReferralTransaction(models.Model):
 
     def __str__(self):
         return f"{self.student} → {self.referral.code} ({self.payment_amount} so‘m)"
+    
+
+
+
+class TutorWithdrawal(models.Model):
+    STATUS_CHOICES = (
+        ('pending', 'Kutilmoqda'),
+        ('approved', 'Tasdiqlangan'),
+        ('rejected', 'Rad etilgan'),
+    )
+
+    tutor = models.ForeignKey(
+        'Tutor',
+        on_delete=models.CASCADE,
+        related_name='withdrawals',
+        verbose_name="O‘qituvchi"
+    )
+    amount = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="So‘ralgan summa")
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="So‘ralgan vaqt")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Yangilangan vaqt")
+
+    class Meta:
+        verbose_name = "O‘qituvchi yechib olish"
+        verbose_name_plural = "O‘qituvchi yechib olishlar"
+
+    def __str__(self):
+        return f"{self.tutor.full_name} - {self.amount} so‘m ({self.status})"

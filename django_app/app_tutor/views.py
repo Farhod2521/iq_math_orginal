@@ -7,12 +7,13 @@ from django_app.app_management.models import  Coupon_Tutor_Student, ReferralAndC
 from .serializers import (
     CouponCreateSerializer, ReferralCreateSerializer, 
       TutorCouponTransactionSerializer, TutorReferralTransactionSerializer,
-      CouponSerializer, ReferralSerializer)
+      CouponSerializer, ReferralSerializer, TutorWithdrawalSerializer)
 from django.db import IntegrityError
 from rest_framework.exceptions import PermissionDenied
-from .models import TutorCouponTransaction, TutorReferralTransaction
+from .models import TutorCouponTransaction, TutorReferralTransaction, TutorWithdrawal
 import random
 import string
+from django.db.models import Sum
 
 class TutorCouponViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
@@ -159,3 +160,95 @@ class TutorReferralTransactionListAPIView(APIView):
 
         serializer = TutorReferralTransactionSerializer(transactions, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+
+
+
+class TutorEarningsAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        tutor = getattr(request.user, 'tutor_profile', None)
+        if tutor is None:
+            return Response({"error": "Foydalanuvchi o‘qituvchi emas"}, status=status.HTTP_403_FORBIDDEN)
+
+        # 1️⃣ Referal daromadlari
+        referral_income = TutorReferralTransaction.objects.filter(tutor=tutor).aggregate(
+            total=Sum('bonus_amount')
+        )['total'] or 0
+
+        # 2️⃣ Kupon keshbeklari
+        coupon_income = TutorCouponTransaction.objects.filter(tutor=tutor).aggregate(
+            total=Sum('cashback_amount')
+        )['total'] or 0
+
+        total_earned = referral_income + coupon_income
+
+        # 3️⃣ Yechilgan va kutilayotgan summalar
+        withdrawn = TutorWithdrawal.objects.filter(tutor=tutor, status='approved').aggregate(
+            total=Sum('amount')
+        )['total'] or 0
+
+        pending = TutorWithdrawal.objects.filter(tutor=tutor, status='pending').aggregate(
+            total=Sum('amount')
+        )['total'] or 0
+
+        balance = total_earned - withdrawn - pending
+
+        # 4️⃣ Yechib olishlar tarixi
+        withdrawals = TutorWithdrawal.objects.filter(tutor=tutor).order_by('-created_at')
+        withdrawals_data = TutorWithdrawalSerializer(withdrawals, many=True).data
+
+        data = {
+            "total_earned": total_earned,
+            "withdrawn": withdrawn,
+            "pending": pending,
+            "balance": balance,
+            "withdrawals": withdrawals_data
+        }
+
+        return Response(data, status=status.HTTP_200_OK)
+    
+
+
+class TutorWithdrawalCreateAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        tutor = getattr(request.user, 'tutor_profile', None)
+        if tutor is None:
+            return Response({"error": "Foydalanuvchi o‘qituvchi emas"}, status=status.HTTP_403_FORBIDDEN)
+
+        amount = request.data.get('amount')
+        if not amount:
+            return Response({"error": "Summani kiriting"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Balansni hisoblaymiz
+        referral_income = TutorReferralTransaction.objects.filter(tutor=tutor).aggregate(
+            total=Sum('bonus_amount')
+        )['total'] or 0
+        coupon_income = TutorCouponTransaction.objects.filter(tutor=tutor).aggregate(
+            total=Sum('cashback_amount')
+        )['total'] or 0
+        withdrawn = TutorWithdrawal.objects.filter(tutor=tutor, status='approved').aggregate(
+            total=Sum('amount')
+        )['total'] or 0
+        pending = TutorWithdrawal.objects.filter(tutor=tutor, status='pending').aggregate(
+            total=Sum('amount')
+        )['total'] or 0
+
+        balance = referral_income + coupon_income - withdrawn - pending
+
+        if float(amount) > float(balance):
+            return Response({"error": "Balansda yetarli mablag‘ mavjud emas"}, status=status.HTTP_400_BAD_REQUEST)
+
+        withdrawal = TutorWithdrawal.objects.create(
+            tutor=tutor,
+            amount=amount,
+            status='pending'
+        )
+
+        return Response({
+            "message": "Yechib olish so‘rovi yuborildi",
+            "withdrawal_id": withdrawal.id
+        }, status=status.HTTP_201_CREATED)

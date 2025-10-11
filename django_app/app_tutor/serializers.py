@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django_app.app_management.models import  Coupon_Tutor_Student, Referral_Tutor_Student
-from .models import TutorReferralTransaction, TutorCouponTransaction
+from .models import TutorReferralTransaction, TutorCouponTransaction, TutorWithdrawal
 
 
 
@@ -91,3 +91,10 @@ class TutorReferralTransactionSerializer(serializers.ModelSerializer):
             'id', 'student', 'student_name',
             'payment_amount', 'bonus_amount', 'used_at'
         ]
+
+class TutorWithdrawalSerializer(serializers.ModelSerializer):
+    created_at = serializers.DateTimeField(format="%d/%m/%Y %H:%M")
+
+    class Meta:
+        model = TutorWithdrawal
+        fields = ['id', 'amount', 'status', 'created_at']
