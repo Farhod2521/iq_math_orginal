@@ -9,10 +9,29 @@ from django_app.app_management.models import  Product
 class SubjectSerializer(serializers.ModelSerializer):
     class_name = serializers.CharField(source="classes.name")  # Sinf nomini olish
     teachers = serializers.StringRelatedField(many=True)  # O‘qituvchi ismlarini olish
+    chapter_count = serializers.SerializerMethodField()
+    topic_count = serializers.SerializerMethodField()
+    question_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Subject
-        fields = ["id", "name_uz", "name_ru", "class_name", "teachers",  "image_uz","image_ru"]  # Kerakli maydonlar
+        fields = [
+            "id", "name_uz", "name_ru", "class_name", "teachers",
+            "image_uz", "image_ru",
+            "chapter_count", "topic_count", "question_count"
+        ]
+
+    def get_chapter_count(self, obj):
+        # Fan ichidagi boblar soni
+        return obj.chapters.count()
+
+    def get_topic_count(self, obj):
+        # Fan ichidagi barcha boblardagi mavzular soni
+        return Topic.objects.filter(chapter__subject=obj).count()
+
+    def get_question_count(self, obj):
+        # Fan ichidagi barcha mavzulardagi jami misollar (savollar) soni
+        return Question.objects.filter(topic__chapter__subject=obj).count()
 class SubjectRegisterSerilzier(serializers.ModelSerializer):
     class_name = serializers.CharField(source="classes.name")
     class_uz = serializers.SerializerMethodField()
