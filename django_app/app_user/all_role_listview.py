@@ -26,17 +26,17 @@ class All_Role_ListView(APIView):
         # --- FILTER PARAMETERS ---
         role = request.GET.get("role", "").strip()  # student, teacher, parent, tutor
         search_query = request.GET.get("search", "").strip()
-        class_num = request.GET.get("class_num", "").strip() if role == 'student' else ""
-        subject_name = request.GET.get("subject_name", "").strip() if role == 'student' else ""
+        class_num = request.GET.get("class_num", "").strip()
+        subject_name = request.GET.get("subject_name", "").strip()
         status_filter = request.GET.get("status", "").strip()  # active, inactive, all
-
+        
         # --- BASE QUERY ---
         users = User.objects.all().order_by('-date_joined')
         
         # --- ROLE FILTER ---
         if role and role != 'all':
             users = users.filter(role=role)
-        
+            
         # --- SEARCH FILTER ---
         if search_query:
             users = users.filter(
@@ -47,43 +47,54 @@ class All_Role_ListView(APIView):
                 Q(parent_profile__full_name__icontains=search_query) |
                 Q(tutor_profile__full_name__icontains=search_query)
             )
-        
+            
+        # --- CLASS_NUM FILTER (faqat studentlar uchun) ---
+        if class_num and role == 'student':
+            users = users.filter(student_profile__class_name__classes__name=class_num)
+            
+        # --- SUBJECT_NAME FILTER (faqat studentlar uchun) ---
+        if subject_name and role == 'student':
+            users = users.filter(
+                Q(student_profile__class_name__name_uz__icontains=subject_name) |
+                Q(student_profile__class_name__name_ru__icontains=subject_name)
+            )
+            
         # --- STATUS FILTER ---
         if status_filter == 'active':
             users = users.filter(
-                Q(student_profile__status=True) | 
-                Q(teacher_profile__status=True) | 
-                Q(parent_profile__status=True) | 
+                Q(student_profile__status=True) |
+                Q(teacher_profile__status=True) |
+                Q(parent_profile__status=True) |
                 Q(tutor_profile__status=True)
             )
         elif status_filter == 'inactive':
             users = users.filter(
-                Q(student_profile__status=False) | 
-                Q(teacher_profile__status=False) | 
-                Q(parent_profile__status=False) | 
+                Q(student_profile__status=False) |
+                Q(teacher_profile__status=False) |
+                Q(parent_profile__status=False) |
                 Q(tutor_profile__status=False)
             )
 
         data_json = []
         data_excel = []
-
+        
         for idx, user in enumerate(users, start=1):
             profile_data = self.get_profile_data(user, ashgabat_tz)
             if profile_data:
                 # JSON data - profile_id ni qo'shamiz
                 data_json.append({
-                    "id": profile_data['json'].get('profile_id', user.id),  # profile_id bo'lsa ishlatamiz, bo'lmasa user.id
-                    "user_id": user.id,  # asl user id ni ham saqlab qo'yamiz
+                    "id": profile_data['json'].get('profile_id', user.id),
+                    "user_id": user.id,
                     "role": user.role,
                     "phone": user.phone,
                     "email": user.email,
                     **{k: v for k, v in profile_data['json'].items() if k != 'profile_id'}
                 })
-
+                
                 # Excel data
                 data_excel.append({
                     "ID": idx,
-                    "Profil ID": profile_data['excel'].get('profile_id', user.id),  # Excel uchun ham profile_id
+                    "Profil ID": profile_data['excel'].get('profile_id', user.id),
                     "Roli": self.get_role_display(user.role),
                     "F.I.Sh.": profile_data['excel'].get('full_name', ''),
                     "Telefon": user.phone,
@@ -92,8 +103,8 @@ class All_Role_ListView(APIView):
                     "Tuman": profile_data['excel'].get('districts', ''),
                     "Manzil": profile_data['excel'].get('address', ''),
                     "Holati": profile_data['excel'].get('status_display', ''),
-                    "Ro‘yxatdan o‘tgan sana": profile_data['excel'].get('registration_date', ''),
-                    "Ro‘yxatdan o‘tgan vaqt": profile_data['excel'].get('registration_time', ''),
+                    "Ro'yxatdan o'tgan sana": profile_data['excel'].get('registration_date', ''),
+                    "Ro'yxatdan o'tgan vaqt": profile_data['excel'].get('registration_time', ''),
                     **profile_data['excel'].get('extra_fields', {})
                 })
 
@@ -101,17 +112,17 @@ class All_Role_ListView(APIView):
         if export_excel:
             if not data_excel:
                 return Response({"error": "Eksport qilish uchun ma'lumot topilmadi"}, status=status.HTTP_404_NOT_FOUND)
-                
+            
             wb = Workbook()
             ws = wb.active
             ws.title = "Foydalanuvchilar ro'yxati"
-
+            
             headers = list(data_excel[0].keys()) if data_excel else []
             ws.append(headers)
-
+            
             for row in data_excel:
                 ws.append(list(row.values()))
-
+                
             response = HttpResponse(
                 content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
             )
@@ -123,11 +134,11 @@ class All_Role_ListView(APIView):
         # --- PAGINATION ---
         page = int(request.GET.get('page', 1))
         size = int(request.GET.get('size', 10))
-
+        
         paginator = Paginator(data_json, size)
         total_count = paginator.count
         total_pages = paginator.num_pages
-
+        
         try:
             current_page = paginator.page(page)
         except EmptyPage:
@@ -139,7 +150,7 @@ class All_Role_ListView(APIView):
                 "total_pages": total_pages,
                 "results": []
             }, status=status.HTTP_404_NOT_FOUND)
-
+            
         return Response({
             "page": page,
             "size": size,
