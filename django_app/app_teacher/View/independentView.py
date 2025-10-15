@@ -40,7 +40,6 @@ class TeacherTopicHelpRequestListAPIView(APIView):
                     "commit": req.commit
                 }
 
-            # created_at formatlash
             created_at_formatted = req.created_at.strftime("%d.%m.%Y %H:%M") if req.created_at else None
 
             grouped_data[req.student.id, req.student.full_name].append({
@@ -54,11 +53,12 @@ class TeacherTopicHelpRequestListAPIView(APIView):
                 "teacher": teacher_info
             })
 
+        # 🔽 Har bir student uchun faqat 10 ta request chiqadi
         response_data = [
             {
                 "student_id": student_id,
                 "student_full_name": full_name,
-                "requests": reqs
+                "requests": reqs[:10]  # <-- shu joy qo‘shildi
             }
             for (student_id, full_name), reqs in grouped_data.items()
         ]
