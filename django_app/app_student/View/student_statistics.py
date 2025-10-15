@@ -86,7 +86,8 @@ class ChapterTopicProgressAPIView(APIView):
         for chapter in subject.chapters.all().order_by('order'):
             chapter_data = {
                 "chapter_id": chapter.id,
-                "chapter_name": chapter.name,
+                "chapter_name_uz": chapter.name_uz,
+                "chapter_name_ru": chapter.name_ru,
                 "topics": []
             }
 
@@ -96,7 +97,8 @@ class ChapterTopicProgressAPIView(APIView):
 
                 chapter_data["topics"].append({
                     "topic_id": topic.id,
-                    "topic_name": topic.name,
+                    "topic_name_uz": topic.name_uz,
+                    "topic_name_ru": topic.name_ru,
                     "score_percent": score
                 })
 
