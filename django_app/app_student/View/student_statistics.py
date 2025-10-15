@@ -58,6 +58,7 @@ class StudentStatisticsDetailAPIView(APIView):
         data = {
             'student_id': student.id,
             'full_name': student.full_name,
+            "identification": student.identification,
             'score': score_data.score if score_data else 0,
             'coin': score_data.coin if score_data else 0,
             'last_payment_date': last_payment_date,
