@@ -53,12 +53,18 @@ class TeacherTopicHelpRequestListAPIView(APIView):
                 "teacher": teacher_info
             })
 
-        # 🔽 Har bir student uchun faqat 10 ta request chiqadi
+        # 🔽 Har bir student uchun sahifalangan requestlar
+        page = int(request.GET.get('page', 1))
+        page_size = int(request.GET.get('page_size', 10))
+        start = (page - 1) * page_size
+        end = start + page_size
+
         response_data = [
             {
                 "student_id": student_id,
                 "student_full_name": full_name,
-                "requests": reqs[:10]  # <-- shu joy qo‘shildi
+                "requests": reqs[start:end],  # sahifalab kesiladi
+                "total_requests": len(reqs),  # umumiy sonni ham ko‘rsatamiz
             }
             for (student_id, full_name), reqs in grouped_data.items()
         ]
