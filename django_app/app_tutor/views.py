@@ -223,6 +223,15 @@ class TutorWithdrawalCreateAPIView(APIView):
         if not amount:
             return Response({"error": "Summani kiriting"}, status=status.HTTP_400_BAD_REQUEST)
 
+        try:
+            amount = float(amount)
+        except ValueError:
+            return Response({"error": "Noto‘g‘ri summa formatida yuborildi"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # ✅ Minimal yechib olish miqdori 1000 so‘m
+        if amount < 1000:
+            return Response({"error": "Minimal yechib olish miqdori 1000 so‘m"}, status=status.HTTP_400_BAD_REQUEST)
+
         # Balansni hisoblaymiz
         referral_income = TutorReferralTransaction.objects.filter(tutor=tutor).aggregate(
             total=Sum('bonus_amount')
@@ -239,7 +248,7 @@ class TutorWithdrawalCreateAPIView(APIView):
 
         balance = referral_income + coupon_income - withdrawn - pending
 
-        if float(amount) > float(balance):
+        if amount > balance:
             return Response({"error": "Balansda yetarli mablag‘ mavjud emas"}, status=status.HTTP_400_BAD_REQUEST)
 
         withdrawal = TutorWithdrawal.objects.create(
