@@ -158,19 +158,14 @@ class StudentDiagnosticHistoryAPIView(APIView):
                 "progress_percent": progress_percent
             }
 
-        # Barcha fanlarni olamiz
-        subjects = Subject.objects.all().select_related('classes')
+        # Faqat diagnostika topshirilgan fanlar chiqadi
+        subjects = Subject.objects.filter(id__in=diagnost_dict.keys()).select_related('classes')
+
         data = []
 
         for subject in subjects:
             class_name = subject.classes.name if subject.classes else ""
-
-            diagnost_info = diagnost_dict.get(subject.id, {
-                "progress_history": [],
-                "progress_percent": None
-            })
-
-            has_diagnost = len(diagnost_info["progress_history"]) > 0
+            diagnost_info = diagnost_dict[subject.id]
 
             data.append({
                 "id": subject.id,
@@ -183,7 +178,7 @@ class StudentDiagnosticHistoryAPIView(APIView):
                 "image_ru": subject.image_ru.url if subject.image_ru else "",
                 "progress_percent": diagnost_info["progress_percent"],  # oxirgisi
                 "progress_history": diagnost_info["progress_history"],  # barcha foizlar
-                "has_taken_diagnostic": has_diagnost
+                "has_taken_diagnostic": True  # faqat true bo‘lganlar chiqadi
             })
 
         return Response(data)
