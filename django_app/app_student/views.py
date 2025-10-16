@@ -710,3 +710,68 @@ class PathFromIdsAPIView(APIView):
 
         return Response(response_data, status=status.HTTP_200_OK)
 
+
+class PathFromIdsStudentAPIView(APIView):
+    def post(self, request):
+        student_id = request.data.get("student")
+        subject_id = request.data.get("subject")
+        chapter_id = request.data.get("chapter")
+        topic_id = request.data.get("topic")
+
+        # Studentni tekshiramiz
+        if not student_id:
+            return Response({"error": "Student ID majburiy"}, status=400)
+
+        student = get_object_or_404(Student, id=student_id)
+
+        # Subjectni tekshiramiz
+        if not subject_id:
+            return Response({"error": "Subject ID majburiy"}, status=400)
+
+        subject = get_object_or_404(Subject, id=subject_id)
+
+        # Javob tuzish
+        path_data = []
+
+        # Faqat subject bo‘lsa
+        if not chapter_id:
+            path_data.append({
+                "id": str(subject.id),
+                "title_uz": f"{subject.classes.name}-sinf {subject.name_uz}",
+                "title_ru": f"{subject.classes.name}-класс {subject.name_ru}"
+            })
+        else:
+            # chapterni ham qo‘shamiz
+            chapter = get_object_or_404(Chapter, id=chapter_id, subject=subject)
+            path_data.extend([
+                {
+                    "id": str(subject.id),
+                    "title_uz": f"{subject.classes.name}-sinf {subject.name_uz}",
+                    "title_ru": f"{subject.classes.name}-класс {subject.name_ru}"
+                },
+                {
+                    "id": str(chapter.id),
+                    "title_uz": chapter.name_uz,
+                    "title_ru": chapter.name_ru
+                }
+            ])
+
+            # agar topic bo‘lsa, uni ham qo‘shamiz
+            if topic_id:
+                topic = get_object_or_404(Topic, id=topic_id, chapter=chapter)
+                path_data.append({
+                    "id": str(topic.id),
+                    "title_uz": topic.name_uz,
+                    "title_ru": topic.name_ru
+                })
+
+        # Yakuniy response
+        response_data = {
+            "student": {
+                "id": student.id,
+                "full_name": student.full_name
+            },
+            "path": path_data
+        }
+
+        return Response(response_data, status=status.HTTP_200_OK)
