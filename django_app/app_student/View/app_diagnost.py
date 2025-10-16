@@ -117,3 +117,73 @@ class ChapterTopicsAPIView(APIView):
             for topic in topics
         ]
         return Response(data)
+    
+
+
+
+class StudentDiagnosticHistoryAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        student = Student.objects.get(user=request.user)
+
+        diagnost_dict = {}
+        diagnost_list = Diagnost_Student.objects.filter(student=student).select_related('subject')
+
+        # Har bir subject bo‘yicha barcha diagnostika natijalarini to‘plab chiqamiz
+        for d in diagnost_list:
+            subject_id = d.subject.id
+
+            # Shu fanga tegishli barcha diagnostika yozuvlarini olamiz (tartib bilan)
+            all_diagnosts = Diagnost_Student.objects.filter(
+                student=student,
+                subject=d.subject
+            ).order_by('id')
+
+            progress_history = []
+            for diag in all_diagnosts:
+                if diag.result:
+                    try:
+                        score = diag.result.get("result", [{}])[0].get("score")
+                        if score is not None:
+                            progress_history.append(score)
+                    except Exception:
+                        continue
+
+            # Oxirgi foiz
+            progress_percent = progress_history[-1] if progress_history else None
+
+            diagnost_dict[subject_id] = {
+                "progress_history": progress_history,
+                "progress_percent": progress_percent
+            }
+
+        # Barcha fanlarni olamiz
+        subjects = Subject.objects.all().select_related('classes')
+        data = []
+
+        for subject in subjects:
+            class_name = subject.classes.name if subject.classes else ""
+
+            diagnost_info = diagnost_dict.get(subject.id, {
+                "progress_history": [],
+                "progress_percent": None
+            })
+
+            has_diagnost = len(diagnost_info["progress_history"]) > 0
+
+            data.append({
+                "id": subject.id,
+                "name_uz": subject.name_uz,
+                "name_ru": subject.name_ru,
+                "class_name": class_name,
+                "class_uz": f"{class_name}-sinf {subject.name_uz}",
+                "class_ru": f"{class_name}-класс {subject.name_ru}",
+                "image_uz": subject.image_uz.url if subject.image_uz else "",
+                "image_ru": subject.image_ru.url if subject.image_ru else "",
+                "progress_percent": diagnost_info["progress_percent"],  # oxirgisi
+                "progress_history": diagnost_info["progress_history"],  # barcha foizlar
+                "has_taken_diagnostic": has_diagnost
+            })
+
+        return Response(data)
