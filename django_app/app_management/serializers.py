@@ -20,7 +20,7 @@ class ProductSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Product
-        fields = ["id", "name_uz", "name_ru", "coin", "price_money", "price_score", "image"]
+        fields = ["id", "name_uz", "name_ru", "coin","count", "price_money", "price_score", "image"]
 
     def get_price_money(self, obj):
         rate = ConversionRate.objects.last()
