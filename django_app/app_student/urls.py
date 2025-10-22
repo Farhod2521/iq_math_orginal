@@ -11,7 +11,7 @@ from  .View.unsolvedquestioncreateView import UnsolvedQuestionCreateView, Unsolv
 from .View.student_statistics import StudentStatisticsDetailAPIView, SubjectListWithMasteryAPIView, ChapterTopicProgressAPIView, DiagnostSubjectListAPIView, MyReferralsAPIView ,DiagnostChapterTopicProgressAPIView
 from .View.independentView import  TopicHelpRequestCreateView, AssignTeacherAPIView, GetTelegramIdFromTopicHelpAPIView, StudentTopicHelpRequestListView, TopicHelpRequestIndependentDetailAPIView
 from .View.student_login_history import  StudentLoginHistoryListAPIView
-
+from .View.convertView import ConvertView
 urlpatterns = [
     path('my-subjects/', StudentSubjectListAPIView.as_view(), name='my-subjects'),
     path('my-chapter/<int:subject_id>/', ChapterListBySubjectAPIView.as_view(), name='chapter-list-by-subject'),
@@ -61,6 +61,7 @@ urlpatterns = [
 
 
     path('student/login-history/', StudentLoginHistoryListAPIView.as_view(), name='student-login-history'),
+    path('my-convert/', ConvertView.as_view(), name='convert'),
 
 
 
