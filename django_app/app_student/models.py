@@ -3,7 +3,7 @@ from django_app.app_user.models import Student, Teacher
 from django_app.app_teacher.models import Topic, Question, Chapter
 from django_app.app_management.models import Product, Coupon_Tutor_Student, Referral_Tutor_Student
 from django_app.app_user.models import Subject
-
+from django.utils import timezone
 class Diagnost_Student(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, null=True)  
@@ -66,6 +66,22 @@ class StudentScore(models.Model):
     def __str__(self):
         return f"{self.student.user.username} - {self.score} ball"
 
+
+
+class ConversionHistory(models.Model):
+    CONVERT_TYPE_CHOICES = (
+        ('SCORE_TO_COIN', 'Ball → Tanga'),
+        ('COIN_TO_SOM', 'Tanga → Soʻm'),
+    )
+
+    student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    conversion_type = models.CharField(max_length=20, choices=CONVERT_TYPE_CHOICES)
+    amount_from = models.PositiveIntegerField()  # konvertatsiya qilingan miqdor (masalan: 30 ball)
+    amount_to = models.PositiveIntegerField()    # natijada olingan miqdor (masalan: 2 tanga)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    def __str__(self):
+        return f"{self.student.user.username} - {self.conversion_type}"
 
 class StudentScoreLog(models.Model):
     student_score = models.ForeignKey(StudentScore, on_delete=models.CASCADE)
