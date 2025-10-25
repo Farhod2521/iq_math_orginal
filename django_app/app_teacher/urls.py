@@ -13,6 +13,7 @@ from .View.coupon import   CreateTeacherCouponAPIView
 from .View.login_as_student import LoginAsStudentAPIView, ChangeStudentPasswordAPIView
 from  .View.teacherreward import  TeacherRewardAPIView, TeacherRewardListAPIView
 from  .View.productexchange import ProductExchangeListAPIView
+from .View.generatedquestionopenAi import GenerateAIQuestionsAPIView
 urlpatterns = [
     path("my-subjects/", TeacherSubjectsAPIView.as_view(), name="teacher-subjects"),
     path("subject-list/", SubjectListAPIView.as_view(), name="teacher-subjects"),
@@ -72,6 +73,9 @@ urlpatterns = [
     ######################################  PRODUCT EXCHANGE  LIST VIEW ######################################
 
     path('teacher/product-exchange-list/', ProductExchangeListAPIView.as_view(), name='product-reward'),
+    #########################################  GENERETE QUESITON OPEN AI ############################################
+    path('teacher/question-gerete-openai/', GenerateAIQuestionsAPIView.as_view(), name='product-reward'),
+
 
 
 ]
