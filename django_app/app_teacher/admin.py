@@ -12,21 +12,25 @@ from django_app.app_user.models import  Subject, Subject_Category
 
 
 
-# 🔹 Variantlar uchun inline admin
+# 🔹 Variantlar uchun inline admin (A, B, C, D)
 class GeneratedChoiceOpenAiInline(admin.TabularInline):
     model = GeneratedChoiceOpenAi
     extra = 1
-    fields = ("letter", "text", "is_correct")
+    fields = ("letter", "text_uz", "text_ru", "is_correct")
     show_change_link = True
     verbose_name = "AI Variant"
     verbose_name_plural = "AI Variantlar"
 
 
-# 🔹 Sub-savollar uchun inline admin
+# 🔹 Sub-savollar uchun inline admin (bir nechta inputli savollar uchun)
 class GeneratedSubQuestionOpenAiInline(admin.TabularInline):
     model = GeneratedSubQuestionOpenAi
     extra = 1
-    fields = ("text1", "correct_answer", "text2")
+    fields = (
+        "text1_uz", "text1_ru",
+        "correct_answer_uz", "correct_answer_ru",
+        "text2_uz", "text2_ru"
+    )
     show_change_link = True
     verbose_name = "AI Kichik savol"
     verbose_name_plural = "AI Kichik savollar"
@@ -36,35 +40,66 @@ class GeneratedSubQuestionOpenAiInline(admin.TabularInline):
 @admin.register(GeneratedQuestionOpenAi)
 class GeneratedQuestionOpenAiAdmin(admin.ModelAdmin):
     list_display = (
-        "id", "topic", "base_question", "short_generated_text",
+        "id", "topic", "question_type",
+        "short_generated_text_uz", "short_generated_text_ru",
         "created_at", "created_by_ai"
     )
-    list_filter = ("topic", "created_by_ai", "created_at")
-    search_fields = ("generated_text", "base_question__question_text", "topic__name")
+    list_filter = ("topic", "question_type", "created_by_ai", "created_at")
+    search_fields = (
+        "generated_text_uz", "generated_text_ru",
+        "topic__name"
+    )
     readonly_fields = ("created_at",)
     inlines = [GeneratedChoiceOpenAiInline, GeneratedSubQuestionOpenAiInline]
+    list_per_page = 25
 
-    def short_generated_text(self, obj):
-        return (obj.generated_text[:80] + "...") if obj.generated_text else "-"
-    short_generated_text.short_description = "AI Savol"
+    def short_generated_text_uz(self, obj):
+        return (obj.generated_text_uz[:60] + "...") if obj.generated_text_uz else "-"
+    short_generated_text_uz.short_description = "Savol (UZ)"
+
+    def short_generated_text_ru(self, obj):
+        return (obj.generated_text_ru[:60] + "...") if obj.generated_text_ru else "-"
+    short_generated_text_ru.short_description = "Savol (RU)"
 
 
-# (Ixtiyoriy) alohida model sifatida ham tahrirlash mumkin bo‘lsin
+# 🔹 Alohida model sifatida ham ko‘rish uchun (variantlar)
 @admin.register(GeneratedChoiceOpenAi)
 class GeneratedChoiceOpenAiAdmin(admin.ModelAdmin):
-    list_display = ("generated_question", "letter", "short_text", "is_correct")
+    list_display = ("generated_question", "letter", "short_text_uz", "short_text_ru", "is_correct")
     list_filter = ("is_correct",)
-    search_fields = ("text", "generated_question__generated_text")
+    search_fields = ("text_uz", "text_ru", "generated_question__generated_text_uz")
+    list_per_page = 30
 
-    def short_text(self, obj):
-        return (obj.text[:80] + "...") if obj.text else "-"
-    short_text.short_description = "Variant matni"
+    def short_text_uz(self, obj):
+        return (obj.text_uz[:60] + "...") if obj.text_uz else "-"
+    short_text_uz.short_description = "Variant (UZ)"
+
+    def short_text_ru(self, obj):
+        return (obj.text_ru[:60] + "...") if obj.text_ru else "-"
+    short_text_ru.short_description = "Variant (RU)"
 
 
+# 🔹 Kichik (sub) savollar admini
 @admin.register(GeneratedSubQuestionOpenAi)
 class GeneratedSubQuestionOpenAiAdmin(admin.ModelAdmin):
-    list_display = ("generated_question", "text1", "correct_answer", "text2")
-    search_fields = ("text1", "text2", "correct_answer")
+    list_display = (
+        "generated_question",
+        "short_text1_uz", "short_text1_ru",
+        "correct_answer_uz", "correct_answer_ru"
+    )
+    search_fields = (
+        "text1_uz", "text1_ru",
+        "correct_answer_uz", "correct_answer_ru"
+    )
+    list_per_page = 30
+
+    def short_text1_uz(self, obj):
+        return (obj.text1_uz[:60] + "...") if obj.text1_uz else "-"
+    short_text1_uz.short_description = "Kichik savol (UZ)"
+
+    def short_text1_ru(self, obj):
+        return (obj.text1_ru[:60] + "...") if obj.text1_ru else "-"
+    short_text1_ru.short_description = "Kichik savol (RU)"
 
 
 
