@@ -12,17 +12,17 @@ def generate_topic_questions(subject_id: int, chapter_id: int, topic_id: int):
     topic = Topic.objects.select_related("chapter", "chapter__subject").get(id=topic_id)
     subject = topic.chapter.subject
     topic_name = topic.name
-
+    chapter_name = topic.chapter.name
     total_generated = 0
 
     # ✅ 1️⃣ FAQAT TEXT SAVOLLAR (5 ta, UZ + RU)
     for i in range(5):
         prompt = f"""
-        Sen {subject.name} fanidan o‘quv test generatorisan.
-        Mavzu: "{topic_name}"
+        Sen {subject.classes.name}-{subject.name} fanidan o‘quv savol generatsiya qilib ber.
+        BOB:{chapter_name}   Mavzu: "{topic_name}"
         - Savol turi: text (matnli javob)
         - Foydalanuvchidan aniq javob kutiladi (raqam, so‘z yoki formula)
-        - Savol aniq, qisqa va mantiqiy bo‘lsin.
+        - Savol aniq, va mantiqiy bo‘lsin.
         Natijani quyidagi formatda 2 tilda qaytar:
         🇺🇿 Uzbekcha: ...
         🇷🇺 Русский: ...
