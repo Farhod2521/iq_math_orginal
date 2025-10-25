@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import (
-    Chapter, Topic, Question,Choice, CompositeSubQuestion, Group, TeacherRewardLog
+    Chapter, Topic, Question,Choice, CompositeSubQuestion, Group, TeacherRewardLog, GeneratedQuestionOpenAi, GeneratedChoiceOpenAi, GeneratedSubQuestionOpenAi
     
 )
 from django_app.app_user.models import  Subject, Student
@@ -144,6 +144,29 @@ class QuestionSerializer(serializers.ModelSerializer):
 
 
 
+class GeneratedChoiceOpenAiSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GeneratedChoiceOpenAi
+        fields = ["letter", "text_uz", "text_ru", "is_correct"]
+
+class GeneratedSubQuestionOpenAiSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GeneratedSubQuestionOpenAi
+        fields = ["text1_uz", "text1_ru", "correct_answer_uz", "correct_answer_ru", "text2_uz", "text2_ru"]
+
+class GeneratedQuestionOpenAiSerializer(serializers.ModelSerializer):
+    generated_choices = GeneratedChoiceOpenAiSerializer(many=True, read_only=True)
+    generated_sub_questions = GeneratedSubQuestionOpenAiSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = GeneratedQuestionOpenAi
+        fields = [
+            "id", "topic", "question_type",
+            "generated_text_uz", "generated_text_ru",
+            "correct_answer_uz", "correct_answer_ru",
+            "generated_choices", "generated_sub_questions",
+            "created_at"
+        ]
 
 
 
