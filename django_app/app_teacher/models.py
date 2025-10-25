@@ -215,12 +215,17 @@ class TeacherRewardLog(models.Model):
 
 class GeneratedQuestionOpenAi(models.Model):
     base_question = models.ForeignKey(
-        Question, on_delete=models.CASCADE,
-        related_name='generated_versions', verbose_name="Asosiy savol"
+        Question,
+        on_delete=models.CASCADE,
+        related_name='generated_versions',
+        verbose_name="Asosiy savol",
+        null=True,        # ✅ qo‘shildi
+        blank=True        # ✅ qo‘shildi
     )
     topic = models.ForeignKey(
         Topic, on_delete=models.CASCADE,
-        related_name='generated_questions', verbose_name="Tegishli mavzu"
+        related_name='generated_questions',
+        verbose_name="Tegishli mavzu"
     )
     generated_text = RichTextField(verbose_name="AI generatsiya qilgan savol")
     correct_answer = models.CharField(max_length=255, blank=True, null=True)
@@ -229,12 +234,13 @@ class GeneratedQuestionOpenAi(models.Model):
     created_by_ai = models.BooleanField(default=True)
 
     def __str__(self):
-        return f"AI-{self.base_question.id}: {self.generated_text[:40]}"
+        return f"AI-{self.id}: {self.generated_text[:40]}"
 
     class Meta:
         verbose_name = "Generatsiya qilingan savol"
         verbose_name_plural = "Generatsiya qilingan savollar"
         ordering = ['-created_at']
+
 
 
 class GeneratedChoiceOpenAi(models.Model):
