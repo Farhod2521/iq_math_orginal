@@ -39,24 +39,20 @@
       margin-top: 15px;
       font-weight: bold;
     }
-    .loading {
-      color: orange;
-    }
-    .success {
-      color: green;
-    }
-    .error {
-      color: red;
-    }
+    .loading { color: orange; }
+    .success { color: green; }
+    .error { color: red; }
   </style>
 </head>
 <body>
 
 <div class="container">
   <h2>🧠 AI Savol Generatsiyasi</h2>
-  <p>Topic ID ni kiriting va <b>OpenAI orqali savollarni generatsiya</b> qiling.</p>
+  <p><b>Fan, Bob va Mavzu ID</b> larni kiriting. AI shu mavzu bo‘yicha 15 ta savol generatsiya qiladi.</p>
 
-  <input type="number" id="topic_id" placeholder="Masalan: 146" />
+  <input type="number" id="subject_id" placeholder="Fan ID (masalan: 1)" />
+  <input type="number" id="chapter_id" placeholder="Bob ID (masalan: 3)" />
+  <input type="number" id="topic_id" placeholder="Mavzu ID (masalan: 146)" />
   <button onclick="generateQuestions()">Generatsiya qilish</button>
 
   <div id="status" class="status"></div>
@@ -64,16 +60,18 @@
 
 <script>
 async function generateQuestions() {
+  const subjectId = document.getElementById("subject_id").value;
+  const chapterId = document.getElementById("chapter_id").value;
   const topicId = document.getElementById("topic_id").value;
   const statusDiv = document.getElementById("status");
 
-  if (!topicId) {
-    statusDiv.innerHTML = "❗ Iltimos, Topic ID kiriting.";
+  if (!subjectId || !chapterId || !topicId) {
+    statusDiv.innerHTML = "❗ Iltimos, barcha ID maydonlarini to‘ldiring.";
     statusDiv.className = "status error";
     return;
   }
 
-  statusDiv.innerHTML = "⏳ Savollar generatsiya qilinmoqda, kuting...";
+  statusDiv.innerHTML = "⏳ AI savollarni generatsiya qilmoqda, biroz kuting...";
   statusDiv.className = "status loading";
 
   try {
@@ -81,10 +79,16 @@ async function generateQuestions() {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        // agar auth kerak bo‘lsa, tokenni shu yerda qo‘sh:
+        "Accept": "application/json",
+        // Agar auth kerak bo‘lsa:
         // "Authorization": "Bearer YOUR_TOKEN_HERE"
       },
-      body: JSON.stringify({ topic_id: parseInt(topicId) })
+      mode: "cors",
+      body: JSON.stringify({
+        subject_id: parseInt(subjectId),
+        chapter_id: parseInt(chapterId),
+        topic_id: parseInt(topicId)
+      })
     });
 
     if (!response.ok) {
@@ -95,13 +99,17 @@ async function generateQuestions() {
     console.log("Natija:", data);
 
     if (data.success) {
-      statusDiv.innerHTML = `✅ ${data.generated_count} ta savol muvaffaqiyatli generatsiya qilindi.`;
+      if (data.generated_count !== undefined) {
+        statusDiv.innerHTML = `✅ ${data.generated_count} ta savol muvaffaqiyatli generatsiya qilindi.`;
+      } else {
+        statusDiv.innerHTML = `✅ ${data.message || "Jarayon fon rejimida boshlandi."}`;
+      }
       statusDiv.className = "status success";
     } else if (data.error) {
       statusDiv.innerHTML = `⚠️ Xatolik: ${data.error}`;
       statusDiv.className = "status error";
     } else {
-      statusDiv.innerHTML = "✅ Jarayon tugadi, ammo javob formati kutilganidan boshqacha.";
+      statusDiv.innerHTML = "✅ Jarayon tugadi, ammo javob formati kutilmagan.";
       statusDiv.className = "status success";
     }
 
