@@ -14,7 +14,7 @@
       background: #fff;
       border-radius: 12px;
       padding: 25px;
-      max-width: 500px;
+      max-width: 900px;
       margin: auto;
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
@@ -42,13 +42,52 @@
     .loading { color: orange; }
     .success { color: green; }
     .error { color: red; }
+    .results {
+      margin-top: 25px;
+      background: #fafafa;
+      border-radius: 10px;
+      padding: 20px;
+    }
+    .question-card {
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      padding: 15px;
+      margin-bottom: 15px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .question-type {
+      font-size: 12px;
+      color: #666;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+    }
+    .question-text {
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    .choice {
+      padding-left: 20px;
+      margin-bottom: 5px;
+    }
+    .correct {
+      color: green;
+      font-weight: bold;
+    }
+    .subq {
+      background: #f9f9f9;
+      padding: 5px 10px;
+      border-left: 3px solid #007bff;
+      margin-bottom: 5px;
+      border-radius: 4px;
+    }
   </style>
 </head>
 <body>
 
 <div class="container">
   <h2>🧠 AI Savol Generatsiyasi</h2>
-  <p><b>Fan, Bob va Mavzu ID</b> larni kiriting. AI shu mavzu bo‘yicha 15 ta savol generatsiya qiladi.</p>
+  <p><b>Fan, Bob va Mavzu ID</b> larni kiriting. AI shu mavzu bo‘yicha 15 ta savol generatsiya qiladi va natijani quyida ko‘rsatadi.</p>
 
   <input type="number" id="subject_id" placeholder="Fan ID (masalan: 1)" />
   <input type="number" id="chapter_id" placeholder="Bob ID (masalan: 3)" />
@@ -56,6 +95,7 @@
   <button onclick="generateQuestions()">Generatsiya qilish</button>
 
   <div id="status" class="status"></div>
+  <div id="results" class="results" style="display:none;"></div>
 </div>
 
 <script>
@@ -64,6 +104,9 @@ async function generateQuestions() {
   const chapterId = document.getElementById("chapter_id").value;
   const topicId = document.getElementById("topic_id").value;
   const statusDiv = document.getElementById("status");
+  const resultsDiv = document.getElementById("results");
+  resultsDiv.style.display = "none";
+  resultsDiv.innerHTML = "";
 
   if (!subjectId || !chapterId || !topicId) {
     statusDiv.innerHTML = "❗ Iltimos, barcha ID maydonlarini to‘ldiring.";
@@ -80,8 +123,6 @@ async function generateQuestions() {
       headers: {
         "Content-Type": "application/json",
         "Accept": "application/json",
-        // Agar auth kerak bo‘lsa:
-        // "Authorization": "Bearer YOUR_TOKEN_HERE"
       },
       mode: "cors",
       body: JSON.stringify({
@@ -91,20 +132,54 @@ async function generateQuestions() {
       })
     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP xatolik: ${response.status}`);
-    }
+    if (!response.ok) throw new Error(`HTTP xatolik: ${response.status}`);
 
     const data = await response.json();
     console.log("Natija:", data);
 
     if (data.success) {
-      if (data.generated_count !== undefined) {
-        statusDiv.innerHTML = `✅ ${data.generated_count} ta savol muvaffaqiyatli generatsiya qilindi.`;
-      } else {
-        statusDiv.innerHTML = `✅ ${data.message || "Jarayon fon rejimida boshlandi."}`;
-      }
+      statusDiv.innerHTML = `✅ ${data.generated_count} ta savol muvaffaqiyatli generatsiya qilindi.`;
       statusDiv.className = "status success";
+
+      if (data.questions && data.questions.length > 0) {
+        resultsDiv.style.display = "block";
+        data.questions.forEach((q, index) => {
+          const card = document.createElement("div");
+          card.className = "question-card";
+          card.innerHTML = `
+            <div class="question-type">#${index + 1} — ${q.question_type.toUpperCase()}</div>
+            <div class="question-text"><b>🇺🇿:</b> ${q.generated_text_uz || "-"}<br><b>🇷🇺:</b> ${q.generated_text_ru || "-"}</div>
+          `;
+
+          // Variantli savollar
+          if (q.generated_choices && q.generated_choices.length > 0) {
+            card.innerHTML += `<div><b>Variantlar:</b></div>`;
+            q.generated_choices.forEach(ch => {
+              card.innerHTML += `
+                <div class="choice ${ch.is_correct ? "correct" : ""}">
+                  ${ch.letter}) 🇺🇿 ${ch.text_uz || "-"} / 🇷🇺 ${ch.text_ru || "-"}
+                  ${ch.is_correct ? "✅" : ""}
+                </div>
+              `;
+            });
+          }
+
+          // Kichik sub-savollar
+          if (q.generated_sub_questions && q.generated_sub_questions.length > 0) {
+            card.innerHTML += `<div><b>Kichik savollar:</b></div>`;
+            q.generated_sub_questions.forEach(sub => {
+              card.innerHTML += `
+                <div class="subq">
+                  🇺🇿 ${sub.text1_uz || ""} [${sub.correct_answer_uz || ""}] ${sub.text2_uz || ""}<br>
+                  🇷🇺 ${sub.text1_ru || ""} [${sub.correct_answer_ru || ""}] ${sub.text2_ru || ""}
+                </div>
+              `;
+            });
+          }
+
+          resultsDiv.appendChild(card);
+        });
+      }
     } else if (data.error) {
       statusDiv.innerHTML = `⚠️ Xatolik: ${data.error}`;
       statusDiv.className = "status error";

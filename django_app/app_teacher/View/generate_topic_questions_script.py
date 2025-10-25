@@ -15,100 +15,91 @@ def generate_topic_questions(subject_id: int, chapter_id: int, topic_id: int):
 
     total_generated = 0
 
-    # ✅ 1️⃣ TEXT SAVOLLAR (UZ + RU)
+    # ✅ 1️⃣ TEXT SAVOLLAR (5 ta)
     for i in range(5):
-        prompt_uz = f"""
+        prompt = f"""
         Sen {subject.name} fanidan o‘quv test generatorisan.
         Mavzu: "{topic_name}"
         - Savol turi: text (matnli javob)
         - Foydalanuvchidan aniq javob kutiladi (raqam, so‘z yoki formula)
         - Savol aniq, qisqa va mantiqiy bo‘lsin.
-        Natijani faqat savol matni ko‘rinishida qaytar.
-        """
-        prompt_ru = f"""
-        Ты генератор учебных тестов по предмету {subject.name}.
-        Тема: "{topic_name}"
-        - Тип вопроса: текстовый ответ
-        - Ожидается точный ответ (число, слово или формула)
-        - Вопрос должен быть коротким и логическим.
-        Верни только сам вопрос.
+        Natijani quyidagi formatda 2 tilda qaytar:
+        🇺🇿 Uzbekcha: ...
+        🇷🇺 Русский: ...
         """
 
-        uz = client.responses.create(model="gpt-4o-mini", input=prompt_uz).output[0].content[0].text.strip()
-        ru = client.responses.create(model="gpt-4o-mini", input=prompt_ru).output[0].content[0].text.strip()
+        response = client.responses.create(model="gpt-4o-mini", input=prompt)
+        text = response.output[0].content[0].text.strip()
+
+        # AI javobini 2 tilda ajratamiz
+        uz_text, ru_text = extract_bilingual(text)
 
         GeneratedQuestionOpenAi.objects.create(
             topic=topic,
             question_type="text",
-            generated_text_uz=uz,
-            generated_text_ru=ru
+            generated_text_uz=uz_text,
+            generated_text_ru=ru_text
         )
         total_generated += 1
 
-    # ✅ 2️⃣ CHOICE SAVOLLAR (UZ + RU)
-    for i in range(5):
-        prompt_uz = f"""
+    # ✅ 2️⃣ CHOICE SAVOLLAR (3 ta)
+    for i in range(3):
+        prompt = f"""
         Sen {subject.name} fanidan test tuzuvchi AI assistantisan.
         Mavzu: "{topic_name}"
         Quyidagi formatda yangi test savolini yarat:
-        Savol: (1 ta to‘g‘ri javobi bo‘lsin)
+        🇺🇿 Uzbekcha savol:
+        Savol: ...
         A) ...
         B) ...
         C) ...
         D) ...
         To‘g‘ri javob: (A, B, C yoki D dan biri)
-        """
-        prompt_ru = f"""
-        Ты AI ассистент, создающий тесты по предмету {subject.name}.
-        Тема: "{topic_name}"
-        Создай новый вопрос в формате:
+
+        🇷🇺 Русский вариант:
         Вопрос:
         A) ...
         B) ...
         C) ...
         D) ...
-        Правильный ответ: (A, B, C или D)
+        Правильный ответ: ...
         """
 
-        uz_content = client.responses.create(model="gpt-4o-mini", input=prompt_uz).output[0].content[0].text.strip()
-        ru_content = client.responses.create(model="gpt-4o-mini", input=prompt_ru).output[0].content[0].text.strip()
+        content = client.responses.create(model="gpt-4o-mini", input=prompt).output[0].content[0].text.strip()
 
+        # Bo‘lib olish
+        uz_block, ru_block = split_uz_ru(content)
         gen_q = GeneratedQuestionOpenAi.objects.create(
             topic=topic,
             question_type="choice",
-            generated_text_uz=extract_question_line(uz_content),
-            generated_text_ru=extract_question_line(ru_content)
+            generated_text_uz=extract_question_line(uz_block),
+            generated_text_ru=extract_question_line(ru_block)
         )
 
-        # UZ variantlar
-        add_choice_variants(gen_q, uz_content, lang="uz")
-        # RU variantlar
-        add_choice_variants(gen_q, ru_content, lang="ru")
+        # Variantlar
+        add_choice_variants(gen_q, uz_block, lang="uz")
+        add_choice_variants(gen_q, ru_block, lang="ru")
 
         total_generated += 1
 
-    # ✅ 3️⃣ COMPOSITE SAVOLLAR (UZ + RU)
-    for i in range(5):
-        prompt_uz = f"""
+    # ✅ 3️⃣ COMPOSITE SAVOLLAR (2 ta)
+    for i in range(2):
+        prompt = f"""
         Sen {subject.name} fanidan o‘quv mashq generatorisan.
         Mavzu: "{topic_name}"
-        Quyidagi formatda 1 ta kichik misol yarat:
-        text1, correct_answer, text2
-        Masalan: 12 + 5 = ___
-        """
-        prompt_ru = f"""
-        Ты генератор учебных упражнений по предмету {subject.name}.
-        Тема: "{topic_name}"
-        Создай 1 пример в формате:
-        text1, correct_answer, text2
-        Например: 12 + 5 = ___
+        Quyidagi formatda misol yarat 2 tilda:
+        🇺🇿 Uzbekcha: text1, correct_answer, text2
+        🇷🇺 Русский: text1, correct_answer, text2
+        Masalan:
+        🇺🇿: 5 + 3, 8, =
+        🇷🇺: 5 + 3, 8, =
         """
 
-        uz_content = client.responses.create(model="gpt-4o-mini", input=prompt_uz).output[0].content[0].text.strip()
-        ru_content = client.responses.create(model="gpt-4o-mini", input=prompt_ru).output[0].content[0].text.strip()
+        content = client.responses.create(model="gpt-4o-mini", input=prompt).output[0].content[0].text.strip()
 
-        uz_parts = [p.strip() for p in uz_content.split(",")]
-        ru_parts = [p.strip() for p in ru_content.split(",")]
+        uz_part, ru_part = split_uz_ru(content)
+        uz_parts = [p.strip() for p in uz_part.split(",")]
+        ru_parts = [p.strip() for p in ru_part.split(",")]
 
         gen_q = GeneratedQuestionOpenAi.objects.create(
             topic=topic,
@@ -126,12 +117,34 @@ def generate_topic_questions(subject_id: int, chapter_id: int, topic_id: int):
             correct_answer_ru=ru_parts[1] if len(ru_parts) > 1 else "",
             text2_ru=ru_parts[2] if len(ru_parts) > 2 else ""
         )
+
         total_generated += 1
 
     return total_generated
 
 
 # --- yordamchi funksiyalar ---
+def extract_bilingual(text: str):
+    """Matndan 🇺🇿 va 🇷🇺 qismlarini ajratib olish."""
+    uz, ru = "", ""
+    for line in text.splitlines():
+        if line.startswith("🇺🇿"):
+            uz = line.replace("🇺🇿 Uzbekcha:", "").strip()
+        elif line.startswith("🇷🇺"):
+            ru = line.replace("🇷🇺 Русский:", "").strip()
+    return uz or text, ru or text
+
+
+def split_uz_ru(content: str):
+    """2 blok (🇺🇿 va 🇷🇺) bo‘lib ajratish."""
+    if "🇷🇺" in content:
+        parts = content.split("🇷🇺", 1)
+        uz = parts[0].replace("🇺🇿", "").strip()
+        ru = "🇷🇺" + parts[1].strip()
+        return uz, ru
+    return content, content
+
+
 def extract_question_line(content: str) -> str:
     """Matndan faqat 'Savol:' yoki 'Вопрос:' qatorini ajratib olish."""
     for line in content.splitlines():
