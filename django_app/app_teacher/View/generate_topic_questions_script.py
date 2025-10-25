@@ -14,13 +14,24 @@ def generate_topic_questions(subject_id: int, chapter_id: int, topic_id: int):
     # ✅ 1️⃣ FAQAT TEXT SAVOLLAR (5 ta, UZ + RU)
     for i in range(5):
         prompt = f"""
-        Sen {subject.classes.name}-sinf {subject.name} fanidan o‘quv test generatorisan.
-        Bob: {chapter_name}
-        Mavzu: "{topic_name}"
-        - Savol turi: text (matnli javob)
-        - Foydalanuvchidan aniq javob kutiladi (raqam, so‘z yoki formula)
-        - Savol aniq va mantiqiy bo‘lsin.
-        Natijani quyidagi formatda qaytar:
+        Sen maktab o‘quvchilari uchun test va mashq generatorisan.
+        Quyidagi ma’lumotlarga asoslanib savol yarat:
+        - Fan: {subject.name}
+        - Sinf: {subject.classes.name}-sinf
+        - Bob: {chapter_name}
+        - Mavzu: {topic_name}
+
+        Talablar:
+        1. Savol turi: text (matnli javob)
+        2. Savol o‘sha sinfning darslik darajasiga mos murakkablikda bo‘lsin.
+        3. Savolda {subject.name} faniga xos ifodalar ishlatilsin:
+        - Agar fan Matematika yoki Algebra bo‘lsa → sonli, algebraik, kasrli, darajali ifodalar.
+        - Agar Geometriya bo‘lsa → shakl, perimetr, maydon, burchak, radius, uzunlik, formula asosidagi misollar.
+        4. 1–4-sinflar uchun savollar juda sodda, raqamli yoki kundalik hayotiy misollar bo‘lsin.
+        5. 5–7-sinflar uchun o‘rta darajali (kasr, qavs, oddiy algebraik ifoda).
+        6. 8–10-sinflar uchun murakkabroq (daraja, ildiz, tenglama, formulali hisob).
+        7. Har bir savol “Hisoblang:” yoki “Toping:” so‘zi bilan boshlansin.
+        8. Natijani quyidagi formatda qaytar:
 
         🇺🇿 Uzbekcha:
         Savol: ...
@@ -28,7 +39,7 @@ def generate_topic_questions(subject_id: int, chapter_id: int, topic_id: int):
         🇷🇺 Русский:
         Вопрос: ...
         Ответ: ...
-        """
+    """
 
         try:
             response = client.responses.create(model="gpt-4o-mini", input=prompt)
