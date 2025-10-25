@@ -7,8 +7,8 @@ client = OpenAI(api_key=os.getenv("OPENAI"))
 def generate_topic_questions(subject_id: int, chapter_id: int, topic_id: int):
     topic = Topic.objects.select_related("chapter", "chapter__subject").get(id=topic_id)
     subject = topic.chapter.subject
-    topic_name = topic.name
-    chapter_name = topic.chapter.name
+    topic_name = topic.name_uz
+    chapter_name = topic.chapter.name_uz
     total_generated = 0
 
     # ✅ 1️⃣ FAQAT TEXT SAVOLLAR (5 ta, UZ + RU)
@@ -16,7 +16,7 @@ def generate_topic_questions(subject_id: int, chapter_id: int, topic_id: int):
         prompt = f"""
         Sen maktab o‘quvchilari uchun test va mashq generatorisan.
         Quyidagi ma’lumotlarga asoslanib savol yarat:
-        - Fan: {subject.name}
+        - Fan: {subject.name_uz}
         - Sinf: {subject.classes.name}-sinf
         - Bob: {chapter_name}
         - Mavzu: {topic_name}
