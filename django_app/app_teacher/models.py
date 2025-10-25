@@ -4,7 +4,7 @@ from ckeditor.fields import RichTextField
 from django_app.app_management.models import Product
 from django_app.app_user.models import Teacher, Student
 
-
+from ckeditor.fields import RichTextField
 class Chapter(models.Model):
     name = models.CharField(max_length=500, verbose_name="Bob nomi")
     subject = models.ForeignKey(
@@ -205,3 +205,69 @@ class TeacherRewardLog(models.Model):
         verbose_name = "Rag‘bat yozuvi"
         verbose_name_plural = "Rag‘bat yozuvlari"
         ordering = ['-created_at']
+
+
+
+
+
+
+
+
+class GeneratedQuestionOpenAi(models.Model):
+    base_question = models.ForeignKey(
+        Question, on_delete=models.CASCADE,
+        related_name='generated_versions', verbose_name="Asosiy savol"
+    )
+    topic = models.ForeignKey(
+        Topic, on_delete=models.CASCADE,
+        related_name='generated_questions', verbose_name="Tegishli mavzu"
+    )
+    generated_text = RichTextField(verbose_name="AI generatsiya qilgan savol")
+    correct_answer = models.CharField(max_length=255, blank=True, null=True)
+    data_seed = models.JSONField(blank=True, null=True, verbose_name="Raqamli parametrlar (AI tomonidan)")
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by_ai = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"AI-{self.base_question.id}: {self.generated_text[:40]}"
+
+    class Meta:
+        verbose_name = "Generatsiya qilingan savol"
+        verbose_name_plural = "Generatsiya qilingan savollar"
+        ordering = ['-created_at']
+
+
+class GeneratedChoiceOpenAi(models.Model):
+    generated_question = models.ForeignKey(
+        'GeneratedQuestionOpenAi',
+        on_delete=models.CASCADE,
+        related_name='generated_choices'
+    )
+    letter = models.CharField(max_length=1)
+    text = RichTextField(blank=True, null=True)
+    is_correct = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.letter}. {self.text[:50]}"
+
+    class Meta:
+        verbose_name = "AI variant"
+        verbose_name_plural = "AI variantlar"
+
+
+class GeneratedSubQuestionOpenAi(models.Model):
+    generated_question = models.ForeignKey(
+        'GeneratedQuestionOpenAi',
+        on_delete=models.CASCADE,
+        related_name='generated_sub_questions'
+    )
+    text1 = models.TextField(blank=True, null=True)
+    correct_answer = models.CharField(max_length=255)
+    text2 = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.text1} ..."
+
+    class Meta:
+        verbose_name = "AI kichik savol"
+        verbose_name_plural = "AI kichik savollar"

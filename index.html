@@ -1,154 +1,546 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="uz">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Savol — Javob (index.html)</title>
-  <style>
-    :root{font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;}
-    body{display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f3f4f6;margin:0;padding:20px;}
-    .card{width:100%;max-width:720px;background:white;border-radius:12px;box-shadow:0 6px 18px rgba(15,23,42,0.08);padding:20px;}
-    h1{margin:0 0 12px;font-size:20px}
-    .row{display:flex;gap:12px;align-items:start;}
-    textarea{width:100%;min-height:120px;padding:12px;border-radius:8px;border:1px solid #e6e7ea;font-size:15px;resize:vertical}
-    button{padding:10px 14px;border-radius:8px;border:0;background:#0ea5a4;color:white;font-weight:600;cursor:pointer}
-    button:disabled{opacity:0.6;cursor:not-allowed}
-    .answer{margin-top:14px;padding:14px;border-radius:10px;background:#f8fafc;border:1px solid #eef2f7;min-height:60px;white-space:pre-wrap}
-    .meta{display:flex;gap:8px;align-items:center;margin-top:12px;font-size:13px;color:#6b7280}
-    .history{margin-top:16px;max-height:200px;overflow:auto;border-top:1px dashed #eef2f7;padding-top:12px}
-    .item{padding:8px;border-radius:8px;margin-bottom:8px;background:#ffffff;border:1px solid #f1f5f9}
-    .item .q{font-weight:700}
-    .item .a{margin-top:6px;color:#374151}
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avtomatik Chatbot Demo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #1a5fb4;
+            --secondary-color: #2ec27e;
+            --light-color: #f6f5f4;
+            --dark-color: #241f31;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+            padding: 20px;
+        }
+        
+        .demo-container {
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        
+        .chat-container {
+            max-width: 800px;
+            margin: 30px auto;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.1);
+            background-color: white;
+        }
+        
+        .chat-header {
+            background: linear-gradient(135deg, var(--primary-color), #0d47a1);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .chat-header h2 {
+            margin: 0;
+            font-weight: 600;
+            font-size: 1.5rem;
+        }
+        
+        .chat-body {
+            height: 500px;
+            overflow-y: auto;
+            padding: 20px;
+            background-color: var(--light-color);
+        }
+        
+        .message {
+            margin-bottom: 20px;
+            display: flex;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .user-message {
+            justify-content: flex-end;
+        }
+        
+        .bot-message {
+            justify-content: flex-start;
+        }
+        
+        .message-bubble {
+            max-width: 70%;
+            padding: 12px 18px;
+            border-radius: 18px;
+            position: relative;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+        
+        .user-bubble {
+            background-color: var(--primary-color);
+            color: white;
+            border-bottom-right-radius: 5px;
+        }
+        
+        .bot-bubble {
+            background-color: white;
+            color: var(--dark-color);
+            border: 1px solid #e0e0e0;
+            border-bottom-left-radius: 5px;
+        }
+        
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 10px;
+            font-size: 1.2rem;
+        }
+        
+        .user-avatar {
+            background-color: var(--secondary-color);
+        }
+        
+        .bot-avatar {
+            background-color: #5e5c64;
+        }
+        
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            opacity: 0;
+            animation: fadeIn 0.3s ease forwards;
+        }
+        
+        .typing-dots {
+            display: flex;
+            margin-left: 10px;
+        }
+        
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #aaa;
+            margin: 0 2px;
+            animation: typingAnimation 1.4s infinite ease-in-out;
+        }
+        
+        .typing-dot:nth-child(1) {
+            animation-delay: -0.32s;
+        }
+        
+        .typing-dot:nth-child(2) {
+            animation-delay: -0.16s;
+        }
+        
+        .controls {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes typingAnimation {
+            0%, 60%, 100% {
+                transform: translateY(0);
+                opacity: 0.5;
+            }
+            30% {
+                transform: translateY(-10px);
+                opacity: 1;
+            }
+        }
+        
+        .message-time {
+            font-size: 0.7rem;
+            opacity: 0.7;
+            margin-top: 5px;
+            text-align: right;
+        }
+        
+        .user-message .message-time {
+            text-align: right;
+        }
+        
+        .bot-message .message-time {
+            text-align: left;
+        }
+        
+        /* Input simulation */
+        .input-simulation {
+            display: flex;
+            padding: 15px;
+            background-color: white;
+            border-top: 1px solid #e0e0e0;
+        }
+        
+        .input-field {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 30px;
+            outline: none;
+            background-color: white;
+            font-family: inherit;
+            font-size: 1rem;
+            min-height: 20px;
+        }
+        
+        .send-button {
+            margin-left: 10px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 30px;
+            padding: 10px 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 100px;
+        }
+        
+        .send-button:hover {
+            background-color: #0d47a1;
+        }
+        
+        .send-button:active {
+            transform: scale(0.95);
+        }
+        
+        .send-button.sending {
+            background-color: #2ec27e;
+        }
+        
+        .cursor {
+            display: inline-block;
+            width: 2px;
+            height: 1.2em;
+            background-color: #333;
+            margin-left: 2px;
+            animation: blink 1s infinite;
+            vertical-align: middle;
+        }
+        
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+        
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .chat-container {
+                margin: 20px;
+            }
+            
+            .message-bubble {
+                max-width: 85%;
+            }
+        }
+    </style>
 </head>
 <body>
-  <div class="card" role="main">
-    <h1>Savol yozing — Javobni oling</h1>
+    <div class="demo-container">
 
-    <div class="row" style="flex-direction:column;">
-      <label for="q" style="font-size:14px;color:#374151;margin-bottom:6px">Savol:</label>
-      <textarea id="q" placeholder="Savolingizni bu yerga yozing... (masalan: 'Bugun ob-havo qanday?' yoki '2+2 necha?')"></textarea>
-
-      <div style="display:flex;gap:8px;margin-top:10px;">
-        <button id="askBtn">So‘rash</button>
-        <button id="clearBtn" style="background:#ef4444">Tozalash</button>
-      </div>
-
-      <div class="meta">
-        <span id="status">Holat: tayyor</span>
-      </div>
-
-      <div class="answer" id="answer">Javob shu yerda chiqadi...</div>
-
-      <div class="history" id="history" aria-live="polite"></div>
+   
+        
+        <div class="controls">
+            <button id="startDemo" class="btn btn-primary"></button>
+            <button id="restartDemo" class="btn btn-secondary"></button>
+        </div>
     </div>
-  </div>
+    
+    <div class="chat-container">
+        <div class="chat-header">
+            <h2>AI yordamchi</h2>
+            <p class="mb-0">Shahar sozlik norma va qoidalari</p>
+        </div>
+        
+        <div class="chat-body" id="chatBody">
+            <!-- Messages will be added here automatically -->
+        </div>
+        
+        <div class="input-simulation">
+            <div class="input-field" id="inputField"></div>
+            <button class="send-button" id="sendButton">
+                <span id="buttonText">Yuborish</span>
+                <div id="buttonSpinner" class="spinner-border spinner-border-sm text-light ms-2 d-none" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </button>
+        </div>
+    </div>
 
-  <script>
-    const qEl = document.getElementById('q');
-    const askBtn = document.getElementById('askBtn');
-    const clearBtn = document.getElementById('clearBtn');
-    const ansEl = document.getElementById('answer');
-    const histEl = document.getElementById('history');
-    const statusEl = document.getElementById('status');
-
-    // Oddiy "engine": savolni tekshiradi, so'ng javob beradi.
-    // Bu demo: matematik ifodalarni yechadi, salomlashishga javob beradi,
-    // yoki default javob qaytaradi.
-    function generateAnswer(question) {
-      const q = (question || '').trim();
-      if (!q) return "Savol yozilmadi. Iltimos, savolingizni kiriting.";
-
-      // pastga tushirish
-      const lower = q.toLowerCase();
-
-      // salomlashish
-      if (/(salom|assalomu|hello|hi)\b/.test(lower)) {
-        return "Va alaykum assalom! Qanday yordam bera olishim mumkin?";
-      }
-
-      // oddiy math: agar faqat raqamlar va + - * / ^ ( ) . bo'lsa, hisoblab beradi
-      // xavfsizlik uchun eval ishlatmaymiz: oddiy parser (faqat + - * / va . raqamlar)
-      const mathMatch = lower.match(/^[0-9\.\s\+\-\*\/\^\(\)]+$/);
-      if (mathMatch) {
-        try {
-          // ^ ni ** ga o'zgartiramiz
-          const expr = lower.replace(/\^/g, '**');
-          // eslatma: Function(...) xavfi, ammo biz faqat ruxsatli belgilarni oldindan tekshirdik
-          const result = Function('"use strict"; return (' + expr + ')')();
-          if (typeof result === 'number' && isFinite(result)) {
-            return "Hisoblash natijasi: " + result;
-          } else {
-            return "Ifoda murakkab yoki hisoblab bo'lmadi.";
-          }
-        } catch (e) {
-          return "Ifodani hisoblashda xatolik: " + e.message;
-        }
-      }
-
-      // oddiy fakt so'rovlari (kalit so'zlar bilan)
-      if (lower.includes('bugun') && lower.includes('ob-havo')) {
-        return "Men ob-havoni onlayn tekshira olmayman (bu demo). Lekin hududingiz uchun ob-havo saytiga qarab tekshiring.";
-      }
-      if (lower.includes('vaqt') || lower.includes('soat')) {
-        const now = new Date();
-        return "Hozirgi vaqt: " + now.toLocaleString();
-      }
-
-      // default — interaktiv jokey: so'rovni qaytarib, taklif bilan
-      return "Siz so'radingiz: \"" + question + "\"\n\nMen bu demo versiyasiman — haqiqiy javob olish uchun men bilan server orqali OpenAI yoki boshqa xizmatga ulashingiz mumkin. Xohlasangiz, shu sahifaga OpenAI integratsiyasi qanday qo‘shilishini ham ko‘rsatib beraman.";
-    }
-
-    function addHistory(question, answer) {
-      const item = document.createElement('div');
-      item.className = 'item';
-      const qdiv = document.createElement('div');
-      qdiv.className = 'q';
-      qdiv.textContent = 'Savol: ' + question;
-      const adiv = document.createElement('div');
-      adiv.className = 'a';
-      adiv.textContent = 'Javob: ' + answer;
-      item.appendChild(qdiv);
-      item.appendChild(adiv);
-      histEl.prepend(item);
-    }
-
-    askBtn.addEventListener('click', () => {
-      const question = qEl.value;
-      askBtn.disabled = true;
-      clearBtn.disabled = true;
-      statusEl.textContent = 'Holat: ishlanmoqda...';
-
-      // "o'ylash" effektini ko'rsatamiz
-      ansEl.textContent = 'Ishlanyapti... iltimos kuting (demo)...';
-
-      // kichik kechikish bilan javob ko'rsatish (UX uchun)
-      setTimeout(() => {
-        const answer = generateAnswer(question);
-        ansEl.textContent = answer;
-        addHistory(question, answer);
-        statusEl.textContent = 'Holat: tayyor';
-        askBtn.disabled = false;
-        clearBtn.disabled = false;
-      }, 600);
-    });
-
-    clearBtn.addEventListener('click', () => {
-      qEl.value = '';
-      ansEl.textContent = 'Javob shu yerda chiqadi...';
-      statusEl.textContent = 'Holat: tozalandi';
-      setTimeout(()=> statusEl.textContent = 'Holat: tayyor', 800);
-    });
-
-    // enter+ctrl/shift to submit
-    qEl.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-        askBtn.click();
-      }
-    });
-
-    // accessibility: fokusni savolga joylash
-    qEl.focus();
-  </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const chatBody = document.getElementById('chatBody');
+            const startButton = document.getElementById('startDemo');
+            const restartButton = document.getElementById('restartDemo');
+            const inputField = document.getElementById('inputField');
+            const sendButton = document.getElementById('sendButton');
+            const buttonText = document.getElementById('buttonText');
+            const buttonSpinner = document.getElementById('buttonSpinner');
+            
+            // Conversation script
+            const conversation = [
+                {
+                    type: 'user_typing',
+                    message: 'Assalom alaykum',
+                    delay: 2000 // Sekinroq yozish
+                },
+                {
+                    type: 'user_sending',
+                    delay: 1000 // 1 soniya kutish
+                },
+                {
+                    type: 'bot',
+                    message: 'Assalomu alaykum! Davlat qurilish normativlari bo\'yicha savollaringizga javob berishga tayyorman. Savolingizni yozing.',
+                    delay: 1500
+                },
+                {
+                    type: 'user_typing',
+                    message: 'Ko\'p qavatli binolarda yong\'inga qarshi yo\'lak kengligi qancha bo\'lishi kerak?',
+                    delay: 3500 // Uzunroq savol, sekinroq yozish
+                },
+                {
+                    type: 'user_sending',
+                    delay: 1000 // 1 soniya kutish
+                },
+                {
+                    type: 'bot_typing',
+                    delay: 2000 // 2 soniya kutish
+                },
+                {
+                    type: 'bot',
+                    message: 'SHNQ 2.01.02-19, 3.5-bandga ko\'ra, yo\'lak kengligi kamida 1,2 metr bo\'lishi kerak.',
+                    delay: 2000
+                },
+                {
+                    type: 'user_typing',
+                    message: 'Yangi qurilayotgan binolarda liftlar soni qanday belgilanadi?',
+                    delay: 3500 // Uzunroq savol, sekinroq yozish
+                },
+                {
+                    type: 'user_sending',
+                    delay: 1000 // 1 soniya kutish
+                },
+                {
+                    type: 'bot_typing',
+                    delay: 2000 // 2 soniya kutish
+                },
+                {
+                    type: 'bot',
+                    message: 'SHNQ 2.01.02-19, 4.3-bandga ko\'ra, har 60 kvadrat metr yashash maydoni uchun kamida bitta lift o\'rnatilishi kerak.',
+                    delay: 0
+                }
+            ];
+            
+            let currentStep = 0;
+            let isDemoRunning = false;
+            let currentTypingMessage = '';
+            
+            // Start demo function
+            function startDemo() {
+                if (isDemoRunning) return;
+                
+                isDemoRunning = true;
+                currentStep = 0;
+                chatBody.innerHTML = '';
+                inputField.innerHTML = '';
+                resetSendButton();
+                
+                processNextStep();
+            }
+            
+            // Process next step in conversation
+            function processNextStep() {
+                if (currentStep >= conversation.length) {
+                    isDemoRunning = false;
+                    return;
+                }
+                
+                const step = conversation[currentStep];
+                
+                setTimeout(() => {
+                    switch(step.type) {
+                        case 'user_typing':
+                            currentTypingMessage = step.message;
+                            simulateUserTyping(step.message, () => {
+                                // Savol to'liq yozilgandan keyin keyingi qadamga o'tish
+                                currentStep++;
+                                processNextStep();
+                            });
+                            break;
+                        case 'user_sending':
+                            simulateSendingMessage(() => {
+                                currentStep++;
+                                processNextStep();
+                            });
+                            break;
+                        case 'bot':
+                            addBotMessage(step.message);
+                            currentStep++;
+                            processNextStep();
+                            break;
+                        case 'bot_typing':
+                            showTypingIndicator();
+                            setTimeout(() => {
+                                removeTypingIndicator();
+                                currentStep++;
+                                processNextStep();
+                            }, step.delay);
+                            break;
+                    }
+                }, step.delay);
+            }
+            
+            // Simulate user typing with callback
+            function simulateUserTyping(message, callback) {
+                inputField.innerHTML = '';
+                let i = 0;
+                const typingSpeed = 80; // Har bir harf uchun 80ms - sekinroq
+                
+                function typeWriter() {
+                    if (i < message.length) {
+                        inputField.innerHTML = message.substring(0, i+1) + '<span class="cursor"></span>';
+                        i++;
+                        setTimeout(typeWriter, typingSpeed);
+                    } else {
+                        inputField.innerHTML = message + '<span class="cursor"></span>';
+                        // Savol to'liq yozilgandan keyin callback chaqiramiz
+                        setTimeout(callback, 500); // Yarim soniya kutib keyin
+                    }
+                }
+                
+                typeWriter();
+            }
+            
+            // Simulate sending message with callback
+            function simulateSendingMessage(callback) {
+                // Show sending animation
+                sendButton.classList.add('sending');
+                buttonText.textContent = 'Yuborilmoqda';
+                buttonSpinner.classList.remove('d-none');
+                
+                // Tugma bosilgandek animatsiya
+                sendButton.style.transform = 'scale(0.95)';
+                
+                setTimeout(() => {
+                    // Get the message from input field
+                    const message = currentTypingMessage;
+                    
+                    // Add user message to chat
+                    addUserMessage(message);
+                    
+                    // Clear input field
+                    inputField.innerHTML = '';
+                    
+                    // Reset send button
+                    resetSendButton();
+                    
+                    // Callback chaqirish
+                    callback();
+                }, 1000); // 1 soniya davom etadi
+            }
+            
+            // Reset send button to original state
+            function resetSendButton() {
+                sendButton.classList.remove('sending');
+                buttonText.textContent = 'Yuborish';
+                buttonSpinner.classList.add('d-none');
+                sendButton.style.transform = 'scale(1)';
+            }
+            
+            // Add user message to chat
+            function addUserMessage(message) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message user-message';
+                
+                const time = new Date().toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' });
+                
+                messageDiv.innerHTML = `
+                    <div class="message-bubble user-bubble">
+                        <div>${message}</div>
+                        <div class="message-time">${time}</div>
+                    </div>
+                    <div class="avatar user-avatar">👷‍♂️</div>
+                `;
+                
+                chatBody.appendChild(messageDiv);
+                scrollToBottom();
+            }
+            
+            // Add bot message to chat
+            function addBotMessage(message) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message bot-message';
+                
+                const time = new Date().toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' });
+                
+                messageDiv.innerHTML = `
+                    <div class="avatar bot-avatar">🤖</div>
+                    <div class="message-bubble bot-bubble">
+                        <div>${message}</div>
+                        <div class="message-time">${time}</div>
+                    </div>
+                `;
+                
+                chatBody.appendChild(messageDiv);
+                scrollToBottom();
+            }
+            
+            // Show typing indicator
+            function showTypingIndicator() {
+                const typingDiv = document.createElement('div');
+                typingDiv.className = 'typing-indicator';
+                typingDiv.id = 'typingIndicator';
+                
+                typingDiv.innerHTML = `
+                    <div class="avatar bot-avatar">🤖</div>
+                    <div class="typing-dots">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                    </div>
+                `;
+                
+                chatBody.appendChild(typingDiv);
+                scrollToBottom();
+            }
+            
+            // Remove typing indicator
+            function removeTypingIndicator() {
+                const typingIndicator = document.getElementById('typingIndicator');
+                if (typingIndicator) {
+                    typingIndicator.remove();
+                }
+            }
+            
+            // Scroll to bottom of chat
+            function scrollToBottom() {
+                chatBody.scrollTop = chatBody.scrollHeight;
+            }
+            
+            // Event listeners
+            startButton.addEventListener('click', startDemo);
+            restartButton.addEventListener('click', startDemo);
+            
+            // Auto-start the demo after a short delay
+            setTimeout(startDemo, 1000);
+        });
+    </script>
 </body>
 </html>
