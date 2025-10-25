@@ -213,48 +213,54 @@ class TeacherRewardLog(models.Model):
 
 
 
+
 class GeneratedQuestionOpenAi(models.Model):
-    base_question = models.ForeignKey(
-        Question,
-        on_delete=models.CASCADE,
-        related_name='generated_versions',
-        verbose_name="Asosiy savol",
-        null=True,        # ✅ qo‘shildi
-        blank=True        # ✅ qo‘shildi
-    )
     topic = models.ForeignKey(
-        Topic, on_delete=models.CASCADE,
-        related_name='generated_questions',
+        "Topic", on_delete=models.CASCADE,
+        related_name="generated_questions",
         verbose_name="Tegishli mavzu"
     )
-    generated_text = RichTextField(verbose_name="AI generatsiya qilgan savol")
-    correct_answer = models.CharField(max_length=255, blank=True, null=True)
+
+    # 🔹 Endi ikkita til uchun alohida maydonlar
+    generated_text_uz = RichTextField(verbose_name="AI generatsiya qilgan savol (UZ)", blank=True, null=True)
+    generated_text_ru = RichTextField(verbose_name="AI generatsiya qilgan savol (RU)", blank=True, null=True)
+
+    correct_answer_uz = models.CharField(max_length=255, blank=True, null=True)
+    correct_answer_ru = models.CharField(max_length=255, blank=True, null=True)
+
+    question_type = models.CharField(
+        max_length=20,
+        choices=[("text", "Text"), ("choice", "Choice"), ("composite", "Composite")],
+        default="text",
+        verbose_name="Savol turi"
+    )
+
     data_seed = models.JSONField(blank=True, null=True, verbose_name="Raqamli parametrlar (AI tomonidan)")
     created_at = models.DateTimeField(auto_now_add=True)
     created_by_ai = models.BooleanField(default=True)
 
     def __str__(self):
-        return f"AI-{self.id}: {self.generated_text[:40]}"
+        return f"AI-{self.id}: {self.generated_text_uz[:40] if self.generated_text_uz else 'Savol'}"
 
     class Meta:
-        verbose_name = "Generatsiya qilingan savol"
-        verbose_name_plural = "Generatsiya qilingan savollar"
+        verbose_name = "AI generatsiya qilingan savol"
+        verbose_name_plural = "AI generatsiya qilingan savollar"
         ordering = ['-created_at']
-
 
 
 class GeneratedChoiceOpenAi(models.Model):
     generated_question = models.ForeignKey(
-        'GeneratedQuestionOpenAi',
+        "GeneratedQuestionOpenAi",
         on_delete=models.CASCADE,
-        related_name='generated_choices'
+        related_name="generated_choices"
     )
     letter = models.CharField(max_length=1)
-    text = RichTextField(blank=True, null=True)
+    text_uz = RichTextField(blank=True, null=True)
+    text_ru = RichTextField(blank=True, null=True)
     is_correct = models.BooleanField(default=False)
 
     def __str__(self):
-        return f"{self.letter}. {self.text[:50]}"
+        return f"{self.letter}. {self.text_uz[:50] if self.text_uz else ''}"
 
     class Meta:
         verbose_name = "AI variant"
@@ -263,16 +269,19 @@ class GeneratedChoiceOpenAi(models.Model):
 
 class GeneratedSubQuestionOpenAi(models.Model):
     generated_question = models.ForeignKey(
-        'GeneratedQuestionOpenAi',
+        "GeneratedQuestionOpenAi",
         on_delete=models.CASCADE,
-        related_name='generated_sub_questions'
+        related_name="generated_sub_questions"
     )
-    text1 = models.TextField(blank=True, null=True)
-    correct_answer = models.CharField(max_length=255)
-    text2 = models.TextField(blank=True, null=True)
+    text1_uz = models.TextField(blank=True, null=True)
+    text1_ru = models.TextField(blank=True, null=True)
+    correct_answer_uz = models.CharField(max_length=255, blank=True, null=True)
+    correct_answer_ru = models.CharField(max_length=255, blank=True, null=True)
+    text2_uz = models.TextField(blank=True, null=True)
+    text2_ru = models.TextField(blank=True, null=True)
 
     def __str__(self):
-        return f"{self.text1} ..."
+        return f"{self.text1_uz or ''} ..."
 
     class Meta:
         verbose_name = "AI kichik savol"
