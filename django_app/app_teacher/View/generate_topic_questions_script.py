@@ -5,7 +5,7 @@ import os, re
 
 client = OpenAI(api_key=os.getenv("OPENAI"))
 
-BOOK_PATH = os.path.join(os.path.dirname(__file__), "../../Books/7-algebra.pdf")
+BOOK_PATH = os.path.join(os.path.dirname(__file__), "/home/user/backend/iq_math_orginal/Books/algebra-7.pdf")
 
 def generate_topic_questions(subject_id: int, chapter_id: int, topic_id: int):
     topic = Topic.objects.select_related("chapter", "chapter__subject").get(id=topic_id)
