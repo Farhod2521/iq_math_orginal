@@ -1,37 +1,57 @@
 from openai import OpenAI
 from django_app.app_teacher.models import Topic, GeneratedQuestionOpenAi
-import os
+from pdfminer.high_level import extract_text
+import os, re
 
 client = OpenAI(api_key=os.getenv("OPENAI"))
+
+BOOK_PATH = os.path.join(os.path.dirname(__file__), "../../Books/7-algebra.pdf")
 
 def generate_topic_questions(subject_id: int, chapter_id: int, topic_id: int):
     topic = Topic.objects.select_related("chapter", "chapter__subject").get(id=topic_id)
     subject = topic.chapter.subject
-    topic_name = topic.name_uz
-    chapter_name = topic.chapter.name_uz
+    topic_name = topic.name_uz.strip()
+    chapter_name = topic.chapter.name_uz.strip()
     total_generated = 0
 
-    # ✅ 1️⃣ FAQAT TEXT SAVOLLAR (5 ta, UZ + RU)
+    # 🔹 1️⃣ PDF dan matnni o‘qib olish
+    try:
+        full_text = extract_text(BOOK_PATH)
+    except Exception as e:
+        raise Exception(f"PDF o‘qishda xatolik: {e}")
+
+    # 🔹 2️⃣ Mavzuni topamiz
+    pattern = re.escape(topic_name)
+    match = re.search(pattern, full_text, re.IGNORECASE)
+
+    if not match:
+        raise Exception(f"'{topic_name}' mavzusi PDF ichidan topilmadi.")
+
+    start_index = match.start()
+
+    # 🔹 3️⃣ Keyingi bobgacha bo‘lgan matnni ajratamiz
+    rest_text = full_text[start_index:]
+    next_chapter = re.search(r"\n\s*[A-ZА-ЯЁ0-9]+\..+\n", rest_text)
+    end_index = next_chapter.start() if next_chapter else len(rest_text)
+    topic_text = rest_text[:end_index].strip()
+
+    # --- AI prompt yaratamiz
     for i in range(5):
         prompt = f"""
-        Sen maktab o‘quvchilari uchun test va mashq generatorisan.
-        Quyidagi ma’lumotlarga asoslanib savol yarat:
-        - Fan: {subject.name_uz}
-        - Sinf: {subject.classes.name}-sinf
-        - Bob: {chapter_name}
-        - Mavzu: {topic_name}
+        Quyidagi darslik matniga asoslanib 7-sinf o‘quvchilari uchun matematika/algebra misollarini yarat:
+        Fan: {subject.name_uz}
+        Bob: {chapter_name}
+        Mavzu: {topic_name}
+
+        Darslikdan olingan matn:
+        \"\"\"{topic_text[:2500]}\"\"\"  # faqat 2500 belgigacha
 
         Talablar:
-        1. Savol turi: text (matnli javob)
-        2. Savol o‘sha sinfning darslik darajasiga mos murakkablikda bo‘lsin.
-        3. Savolda {subject.name} faniga xos ifodalar ishlatilsin:
-        - Agar fan Matematika yoki Algebra bo‘lsa → sonli, algebraik, kasrli, darajali ifodalar.
-        - Agar Geometriya bo‘lsa → shakl, perimetr, maydon, burchak, radius, uzunlik, formula asosidagi misollar.
-        4. 1–4-sinflar uchun savollar juda sodda, raqamli yoki kundalik hayotiy misollar bo‘lsin.
-        5. 5–7-sinflar uchun o‘rta darajali (kasr, qavs, oddiy algebraik ifoda).
-        6. 8–10-sinflar uchun murakkabroq (daraja, ildiz, tenglama, formulali hisob).
-        7. Har bir savol “Hisoblang:” yoki “Toping:” so‘zi bilan boshlansin.
-        8. Natijani quyidagi formatda qaytar:
+        - Savol turi: text (matnli javob)
+        - Misollar shu matndagi qoidalar yoki formulalarga mos bo‘lsin.
+        - Murakkablik 7-sinf darajasiga mos (kasrlar, qavslar, o‘nli sonlar).
+        - Har bir savol uchun to‘liq javobni yoz.
+        - Format quyidagicha bo‘lsin:
 
         🇺🇿 Uzbekcha:
         Savol: ...
@@ -39,7 +59,7 @@ def generate_topic_questions(subject_id: int, chapter_id: int, topic_id: int):
         🇷🇺 Русский:
         Вопрос: ...
         Ответ: ...
-    """
+        """
 
         try:
             response = client.responses.create(model="gpt-4o-mini", input=prompt)
@@ -56,7 +76,7 @@ def generate_topic_questions(subject_id: int, chapter_id: int, topic_id: int):
             generated_text_uz=uz_q,
             correct_answer_uz=uz_a,
             generated_text_ru=ru_q,
-            correct_answer_ru=ru_a
+            correct_answer_ru=ru_a,
         )
         total_generated += 1
 
@@ -65,7 +85,6 @@ def generate_topic_questions(subject_id: int, chapter_id: int, topic_id: int):
 
 # --- yordamchi funksiyalar ---
 def extract_bilingual_question_answer(text: str):
-    """Matndan 🇺🇿 va 🇷🇺 qismlarini, shuningdek Savol/Javob bo‘limlarini ajratib olish."""
     uz_q = uz_a = ru_q = ru_a = ""
     current_lang = None
 
@@ -74,9 +93,9 @@ def extract_bilingual_question_answer(text: str):
         if not line:
             continue
 
-        if line.startswith("🇺🇿"):
+        if "🇺🇿" in line:
             current_lang = "uz"
-        elif line.startswith("🇷🇺"):
+        elif "🇷🇺" in line:
             current_lang = "ru"
         elif line.lower().startswith("savol:") and current_lang == "uz":
             uz_q = line.split(":", 1)[-1].strip()
@@ -87,7 +106,6 @@ def extract_bilingual_question_answer(text: str):
         elif line.lower().startswith(("ответ", "ответ:")) and current_lang == "ru":
             ru_a = line.split(":", 1)[-1].strip()
 
-    # Agar AI formatni biroz o‘zgartirsa, fallback sifatida birinchi satrlarni olib qo‘yamiz
     if not uz_q:
         uz_q = text.split("\n")[0][:200]
     if not ru_q:
