@@ -1,11 +1,12 @@
 from openai import OpenAI
 from django_app.app_teacher.models import Topic, GeneratedQuestionOpenAi
 from pdfminer.high_level import extract_text
-import os, re
+import os, re, random
 
 client = OpenAI(api_key=os.getenv("OPENAI"))
 
-BOOK_PATH = os.path.join(os.path.dirname(__file__), "/home/user/backend/iq_math_orginal/Books/algebra-7.pdf")
+BOOK_PATH = "/home/user/backend/iq_math_orginal/Books/algebra-7.pdf"
+
 
 def generate_topic_questions(subject_id: int, chapter_id: int, topic_id: int):
     topic = Topic.objects.select_related("chapter", "chapter__subject").get(id=topic_id)
@@ -14,45 +15,54 @@ def generate_topic_questions(subject_id: int, chapter_id: int, topic_id: int):
     chapter_name = topic.chapter.name_uz.strip()
     total_generated = 0
 
-    # 🔹 1️⃣ PDF dan matnni o‘qib olish
+    # 1️⃣ PDF matnini o‘qib olish
     try:
         full_text = extract_text(BOOK_PATH)
     except Exception as e:
         raise Exception(f"PDF o‘qishda xatolik: {e}")
 
-    # 🔹 2️⃣ Mavzuni topamiz
-    pattern = re.escape(topic_name)
-    match = re.search(pattern, full_text, re.IGNORECASE)
-
+    # 2️⃣ Mavzuni aniq sarlavha sifatida topish
+    # sarlavha aynan shu nomda bo‘lishi kerak (katta harflarda bo‘lishi mumkin)
+    topic_pattern = re.compile(rf"(?i)\b{re.escape(topic_name)}\b")
+    match = topic_pattern.search(full_text)
     if not match:
         raise Exception(f"'{topic_name}' mavzusi PDF ichidan topilmadi.")
 
     start_index = match.start()
-
-    # 🔹 3️⃣ Keyingi bobgacha bo‘lgan matnni ajratamiz
     rest_text = full_text[start_index:]
-    next_chapter = re.search(r"\n\s*[A-ZА-ЯЁ0-9]+\..+\n", rest_text)
-    end_index = next_chapter.start() if next_chapter else len(rest_text)
-    topic_text = rest_text[:end_index].strip()
 
-    # --- AI prompt yaratamiz
-    for i in range(5):
+    # 3️⃣ “Mashqlar” so‘zini topamiz
+    mashqlar_match = re.search(r"(?i)Mashqlar", rest_text)
+    if not mashqlar_match:
+        raise Exception("Mashqlar bo‘limi topilmadi.")
+
+    mashq_text = rest_text[mashqlar_match.end():]
+
+    # 4️⃣ Mashqlarni raqamlar bo‘yicha ajratish (1), 2), 3)...)
+    mashqlar = re.split(r"\n\s*\d+\)\s*", mashq_text)
+    mashqlar = [m.strip() for m in mashqlar if len(m.strip()) > 20][:10]  # 10 tadan oshmasin
+
+    if not mashqlar:
+        raise Exception("Mashqlar topilmadi yoki juda qisqa.")
+
+    # 5️⃣ Har bir mashqdan bitta misol tanlash
+    random.shuffle(mashqlar)
+    selected_tasks = mashqlar[:5]
+
+    for i, mashq in enumerate(selected_tasks, start=1):
         prompt = f"""
-        Quyidagi darslik matniga asoslanib 7-sinf o‘quvchilari uchun matematika/algebra misollarini yarat:
+        Quyidagi 7-sinf algebra darsligidagi mashqni o‘qib, uni yechib natijani yoz:
         Fan: {subject.name_uz}
         Bob: {chapter_name}
         Mavzu: {topic_name}
 
-        Darslikdan olingan matn:
-        \"\"\"{topic_text[:2500]}\"\"\"  # faqat 2500 belgigacha
+        Mashq:
+        \"\"\"{mashq[:1000]}\"\"\"
 
-        Talablar:
-        - Savol turi: text (matnli javob)
-        - Misollar shu matndagi qoidalar yoki formulalarga mos bo‘lsin.
-        - Murakkablik 7-sinf darajasiga mos (kasrlar, qavslar, o‘nli sonlar).
-        - Har bir savol uchun to‘liq javobni yoz.
+        Talab:
+        - Faqat bitta savolni yech.
+        - Javobni aniq yoz (raqam yoki ifoda).
         - Format quyidagicha bo‘lsin:
-
         🇺🇿 Uzbekcha:
         Savol: ...
         Javob: ...
@@ -62,8 +72,8 @@ def generate_topic_questions(subject_id: int, chapter_id: int, topic_id: int):
         """
 
         try:
-            response = client.responses.create(model="gpt-4o-mini", input=prompt)
-            text = response.output[0].content[0].text.strip()
+            res = client.responses.create(model="gpt-4o-mini", input=prompt)
+            text = res.output[0].content[0].text.strip()
         except Exception as e:
             print(f"⚠️ OpenAI xatolik: {e}")
             continue
@@ -83,7 +93,7 @@ def generate_topic_questions(subject_id: int, chapter_id: int, topic_id: int):
     return total_generated
 
 
-# --- yordamchi funksiyalar ---
+# --- yordamchi funksiya ---
 def extract_bilingual_question_answer(text: str):
     uz_q = uz_a = ru_q = ru_a = ""
     current_lang = None
@@ -92,7 +102,6 @@ def extract_bilingual_question_answer(text: str):
         line = line.strip()
         if not line:
             continue
-
         if "🇺🇿" in line:
             current_lang = "uz"
         elif "🇷🇺" in line:
