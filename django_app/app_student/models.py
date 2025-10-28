@@ -153,6 +153,7 @@ class TopicHelpRequestIndependent(models.Model):
         default='sent',
         verbose_name="Savol holati"
     )
+    is_seen = models.BooleanField(default=False, verbose_name="Ko‘rildi")
 
     def __str__(self):
         return f"{self.student} - {self.subject}"
