@@ -61,3 +61,25 @@ class TeacherAnswerUnsolvedQuestionView(APIView):
         return Response({"success": "Javob muvaffaqiyatli yozildi"}, status=status.HTTP_200_OK)
     
 
+class TeacherNotificationsAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        """O‘qituvchi uchun javobsiz va ko‘rilmagan misollar sonini qaytaradi"""
+        teacher = request.user.teacher  # foydalanuvchi Teacher modeliga ulangan deb faraz qilamiz
+        unread_count = UnsolvedQuestionReport.objects.filter(
+            teachers=teacher,
+            status='pending',
+            is_seen=False
+        ).count()
+        return Response({"unread_count": unread_count})
+
+    def post(self, request):
+        """Barcha 'pending' misollarni 'ko‘rildi' deb belgilaydi"""
+        teacher = request.user.teacher
+        updated = UnsolvedQuestionReport.objects.filter(
+            teachers=teacher,
+            status='pending',
+            is_seen=False
+        ).update(is_seen=True)
+        return Response({"marked_as_seen": updated})

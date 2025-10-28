@@ -121,6 +121,7 @@ class UnsolvedQuestionReport(models.Model):
     answer = RichTextField(verbose_name="O‘qituvchi javobi", blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     answered_at = models.DateTimeField(null=True, blank=True)
+    is_seen = models.BooleanField(default=False) 
 
     def __str__(self):
         return f"{self.student.full_name} - {self.question}"

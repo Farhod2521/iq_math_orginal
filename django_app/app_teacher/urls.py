@@ -5,7 +5,7 @@ from .views import(
        MyChapterListView, QuestionAddCreateView, MyQuestionListView, QuestionUpdateView, QuestionDeleteView, SubjectListAPIView,
        ChoiceQuestionToXlsxImport, CompenQuestionToXlsxImport, UploadQuestionsAPIView, OpenAIQuestionListView, OpenAIProcessAPIView
 )
-from .View.unsolved import  TeacherUnsolvedQuestionReportListView, TeacherAnswerUnsolvedQuestionView
+from .View.unsolved import  TeacherUnsolvedQuestionReportListView, TeacherAnswerUnsolvedQuestionView, TeacherNotificationsAPIView
 from  .View.gruop_student import AddStudentsToGroupAPIView, GroupCreateAPIView, GroupListAPIView, GroupDetailAPIView
 from .View.reorderOrderIndex  import  ReorderTopicAPIView, ReorderChapterAPIView, ReorderSubjectAPIView
 from .View.independentView import  TeacherTopicHelpRequestListAPIView, TeacherTopicHelpRequestDeleteAPIView,TeacherTopicHelpRequestDetailAPIView, GetTelegramIDFromHelpRequestAPIView,TeacherTopicHelpRequestFromTelegramAPIView,TeacherCommitToHelpRequestAPIView
@@ -34,6 +34,7 @@ urlpatterns = [
     path('word-import/', UploadQuestionsAPIView.as_view(), name='my-topics'),
     path('my-unsolved-question/list/', TeacherUnsolvedQuestionReportListView.as_view(), name='unsolved-question-list'),
     path('my-unsolved-question/answer/', TeacherAnswerUnsolvedQuestionView.as_view(), name='unsolved-question-answer'),
+    path("my-notifications/", TeacherNotificationsAPIView.as_view(), name="teacher-notifications"),
 
 
     path('openai/questions/', OpenAIQuestionListView.as_view(), name='openai-question-list'),
