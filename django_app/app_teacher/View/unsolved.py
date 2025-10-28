@@ -66,7 +66,7 @@ class TeacherNotificationsAPIView(APIView):
 
     def get(self, request):
         """O‘qituvchi uchun javobsiz va ko‘rilmagan misollar sonini qaytaradi"""
-        teacher = request.user.teacher  # foydalanuvchi Teacher modeliga ulangan deb faraz qilamiz
+        teacher = request.user.teacher_profile  # foydalanuvchi Teacher modeliga ulangan deb faraz qilamiz
         unread_count = UnsolvedQuestionReport.objects.filter(
             teachers=teacher,
             status='pending',
@@ -76,7 +76,7 @@ class TeacherNotificationsAPIView(APIView):
 
     def post(self, request):
         """Barcha 'pending' misollarni 'ko‘rildi' deb belgilaydi"""
-        teacher = request.user.teacher
+        teacher = request.user.teacher_profile
         updated = UnsolvedQuestionReport.objects.filter(
             teachers=teacher,
             status='pending',
