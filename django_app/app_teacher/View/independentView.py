@@ -236,3 +236,39 @@ class TeacherTopicHelpRequestDeleteAPIView(APIView):
             {"detail": "Murojaat muvaffaqiyatli o‘chirildi."},
             status=status.HTTP_204_NO_CONTENT
         )
+    
+
+
+
+class TeacherHelpRequestNotificationAPIView(APIView):
+    """
+    Qo‘ng‘iroqcha uchun xabarlar soni va ularni ko‘rildi deb belgilash
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # foydalanuvchi Teacher modeliga ulangan deb faraz qilamiz
+        teacher = getattr(request.user, 'teacher_profile', None)
+        if not teacher:
+            return Response({"detail": "Foydalanuvchi o‘qituvchi emas."}, status=status.HTTP_403_FORBIDDEN)
+
+        unread_count = TopicHelpRequestIndependent.objects.filter(
+            teacher=teacher,
+            status='sent',
+            is_seen=False
+        ).count()
+
+        return Response({"unread_count": unread_count})
+
+    def post(self, request):
+        teacher = getattr(request.user, 'teacher_profile', None)
+        if not teacher:
+            return Response({"detail": "Foydalanuvchi o‘qituvchi emas."}, status=status.HTTP_403_FORBIDDEN)
+
+        updated = TopicHelpRequestIndependent.objects.filter(
+            teacher=teacher,
+            status='sent',
+            is_seen=False
+        ).update(is_seen=True)
+
+        return Response({"marked_as_seen": updated})
