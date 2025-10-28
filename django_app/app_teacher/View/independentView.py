@@ -253,7 +253,7 @@ class TeacherHelpRequestNotificationAPIView(APIView):
             return Response({"detail": "Foydalanuvchi o‘qituvchi emas."}, status=status.HTTP_403_FORBIDDEN)
 
         unread_count = TopicHelpRequestIndependent.objects.filter(
-            teacher=teacher,
+       
             status='sent',
             is_seen=False
         ).count()
@@ -266,7 +266,7 @@ class TeacherHelpRequestNotificationAPIView(APIView):
             return Response({"detail": "Foydalanuvchi o‘qituvchi emas."}, status=status.HTTP_403_FORBIDDEN)
 
         updated = TopicHelpRequestIndependent.objects.filter(
-            teacher=teacher,
+       
             status='sent',
             is_seen=False
         ).update(is_seen=True)
