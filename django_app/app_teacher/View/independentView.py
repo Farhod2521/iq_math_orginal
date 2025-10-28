@@ -242,18 +242,20 @@ class TeacherTopicHelpRequestDeleteAPIView(APIView):
 
 class TeacherHelpRequestNotificationAPIView(APIView):
     """
-    Qo‘ng‘iroqcha uchun xabarlar soni va ularni ko‘rildi deb belgilash
+    Qo‘ng‘iroqcha uchun xabarlar soni va ularni 'Ko‘rildi' deb belgilash
     """
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        # foydalanuvchi Teacher modeliga ulangan deb faraz qilamiz
         teacher = getattr(request.user, 'teacher_profile', None)
         if not teacher:
-            return Response({"detail": "Foydalanuvchi o‘qituvchi emas."}, status=status.HTTP_403_FORBIDDEN)
+            return Response(
+                {"detail": "Foydalanuvchi o‘qituvchi emas."},
+                status=status.HTTP_403_FORBIDDEN
+            )
 
         unread_count = TopicHelpRequestIndependent.objects.filter(
-       
+            teacher=teacher,
             status='sent',
             is_seen=False
         ).count()
@@ -263,12 +265,28 @@ class TeacherHelpRequestNotificationAPIView(APIView):
     def post(self, request):
         teacher = getattr(request.user, 'teacher_profile', None)
         if not teacher:
-            return Response({"detail": "Foydalanuvchi o‘qituvchi emas."}, status=status.HTTP_403_FORBIDDEN)
+            return Response(
+                {"detail": "Foydalanuvchi o‘qituvchi emas."},
+                status=status.HTTP_403_FORBIDDEN
+            )
 
-        updated = TopicHelpRequestIndependent.objects.filter(
-       
+        # 🔹 faqat 10 ta "sent" yozuvni yangilaymiz
+        to_update = TopicHelpRequestIndependent.objects.filter(
+            teacher=teacher,
             status='sent',
             is_seen=False
-        ).update(is_seen=True)
+        )[:10]
 
-        return Response({"marked_as_seen": updated})
+        updated_count = to_update.count()
+        now = timezone.now()
+
+        for record in to_update:
+            record.is_seen = True
+            record.status = 'seen'
+            record.reviewed_at = now
+            record.save(update_fields=['is_seen', 'status', 'reviewed_at'])
+
+        return Response({
+            "marked_as_seen": updated_count,
+            "message": f"{updated_count} ta murojaat 'Ko‘rildi' holatiga o‘tkazildi."
+        })

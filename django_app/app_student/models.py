@@ -123,10 +123,12 @@ class ProductExchange(models.Model):
 class TopicHelpRequestIndependent(models.Model):
     STATUS_CHOICES = [
         ('sent', "Yuborilgan"),
-        ('reviewing', "Muhokamada"),
+        ('seen', "Ko‘rildi"),
+        ('reviewing', "Ko‘rib chiqilmoqda"),
         ('answered', "Javob berildi"),
+        ('closed', "Yopildi / Yakunlandi"),
+        ('rejected', "Rad etildi"),
     ]
-
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='student_results')
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
     chapters = models.ManyToManyField(Chapter)
