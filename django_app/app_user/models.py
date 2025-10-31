@@ -162,6 +162,7 @@ class Student(models.Model):
     document = models.CharField(max_length=20, verbose_name="Hujjat raqami")
     type_of_education = models.CharField(max_length=200, verbose_name="Ta’lim turi")
     status = models.BooleanField(default=False, verbose_name="Holat")
+    lang =  models.CharField(max_length=10, verbose_name="Til", null=True, blank=True)
     student_date = models.DateTimeField(auto_now=True, null=True, verbose_name="Ro‘yxatdan o‘tgan sana")
     
     def __str__(self):
