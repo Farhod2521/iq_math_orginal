@@ -196,6 +196,7 @@ class UniversalRegisterSerializer(serializers.Serializer):
         phone = validated_data['phone']
         role = validated_data['role']
         full_name = validated_data['full_name']
+        lang = validated_data['lang', None]
         class_name = validated_data.pop('class_name', None)
         referral_code = validated_data.pop('referral_code', None)
 
@@ -236,6 +237,7 @@ class UniversalRegisterSerializer(serializers.Serializer):
                 user=user,
                 full_name=full_name,
                 class_name=class_name,
+                lang=lang,
                 status=False,
                 student_date=now()
             )
