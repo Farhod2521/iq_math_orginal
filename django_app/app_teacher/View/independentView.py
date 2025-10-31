@@ -273,17 +273,22 @@ class TeacherHelpRequestNotificationAPIView(APIView):
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        # 🔹 faqat 10 ta "sent" yozuvni yangilaymiz
-        to_update = TopicHelpRequestIndependent.objects.filter(
+        ids = request.data.get("ids", [])
+        qs = TopicHelpRequestIndependent.objects.filter(
             teacher=teacher,
             status='sent',
             is_seen=False
-        )[:10]
+        )
 
-        updated_count = to_update.count()
+        if ids:
+            qs = qs.filter(id__in=ids)
+        else:
+            qs = qs[:10]  # agar ids berilmagan bo‘lsa, faqat 10 ta yozuvni olamiz
+
+        updated_count = qs.count()
         now = timezone.now()
 
-        for record in to_update:
+        for record in qs:
             record.is_seen = True
             record.status = 'seen'
             record.reviewed_at = now
