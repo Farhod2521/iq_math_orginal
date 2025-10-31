@@ -4,7 +4,7 @@ from rest_framework import status
 from .serializers import (
 UniversalRegisterSerializer, VerifySmsCodeSerializer, 
 LoginSerializer, StudentProfileSerializer, TeacherRegisterSerializer, Class_Serializer,
-TeacherVerifySmsCodeSerializer, TeacherSerializer, StudentSerializer, ParentCreateSerializer
+TeacherVerifySmsCodeSerializer, TeacherSerializer, StudentSerializer, ParentCreateSerializer, StudentSerializerParent
 )
 from .models import Student, UserSMSAttempt, Teacher, Class, StudentLoginHistory, Parent, Tutor, ParentStudentRelation
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -1301,7 +1301,7 @@ class ParentChildrenListAPIView(APIView):
         relations = ParentStudentRelation.objects.filter(parent=parent, is_confirmed=True)
 
         students = [relation.student for relation in relations]
-        serializer = StudentSerializer(students, many=True)
+        serializer = StudentSerializerParent(students, many=True)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
     
