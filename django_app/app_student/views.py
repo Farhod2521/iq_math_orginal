@@ -576,6 +576,7 @@ class StudentScoreAPIView(APIView):
                 "student": student.full_name,
                 "score": score_obj.score,
                 "coin": score_obj.coin,
+                "sum": score_obj.som,
                 "created_at": score_obj.created_at
             })
         except StudentScore.DoesNotExist:
