@@ -515,3 +515,78 @@ class ParentCreateSerializer(serializers.ModelSerializer):
         parent = Parent.objects.create(user=user, **validated_data)
         parent.students.set(students)
         return parent
+
+
+
+class StudentSerializerParent(serializers.ModelSerializer):
+    class_num = serializers.SerializerMethodField()
+    subject_name_uz = serializers.SerializerMethodField()
+    subject_name_ru = serializers.SerializerMethodField()
+    registration_date = serializers.SerializerMethodField()
+    registration_time = serializers.SerializerMethodField()
+    last_login_time = serializers.SerializerMethodField()
+    last_payment_amount = serializers.SerializerMethodField()
+    subscription_end_date = serializers.SerializerMethodField()
+    remaining_days = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Student
+        fields = [
+            "id", "full_name", "identification", "region", "districts", "address", "brithday",
+            "academy_or_school", "academy_or_school_name", "class_num",
+            "subject_name_uz", "subject_name_ru", "document_type", "document",
+            "type_of_education", "status", "registration_date", "registration_time",
+            "last_login_time", "last_payment_amount", "subscription_end_date",
+            "remaining_days",
+        ]
+
+    def get_class_num(self, obj):
+        return obj.class_name.classes.name if obj.class_name else None
+
+    def get_subject_name_uz(self, obj):
+        return obj.class_name.name_uz if obj.class_name else None
+
+    def get_subject_name_ru(self, obj):
+        return obj.class_name.name_ru if obj.class_name else None
+
+    def get_registration_date(self, obj):
+        if obj.student_date:
+            return obj.student_date.astimezone(pytz.timezone("Asia/Ashgabat")).strftime('%d/%m/%Y')
+        return None
+
+    def get_registration_time(self, obj):
+        if obj.student_date:
+            return obj.student_date.astimezone(pytz.timezone("Asia/Ashgabat")).strftime('%H:%M:%S')
+        return None
+
+    def get_last_login_time(self, obj):
+        last_login_obj = StudentLoginHistory.objects.filter(student=obj).order_by('-login_time').first()
+        if last_login_obj:
+            return last_login_obj.login_time.astimezone(pytz.timezone("Asia/Ashgabat")).strftime('%d/%m/%Y %H:%M')
+        return None
+
+    def get_last_payment_amount(self, obj):
+        last_payment = Payment.objects.filter(student=obj, status="success").order_by('-payment_date').first()
+        return float(last_payment.amount) if last_payment else 0
+
+    def get_subscription_end_date(self, obj):
+        subscription = getattr(obj, 'subscription', None)
+        if subscription and subscription.end_date:
+            return subscription.end_date.strftime('%d/%m/%Y')
+        return None
+
+    def get_remaining_days(self, obj):
+        subscription = getattr(obj, 'subscription', None)
+        if subscription and subscription.end_date:
+            today = datetime.now(pytz.timezone("Asia/Ashgabat")).date()
+            diff_days = (subscription.end_date.date() - today).days
+            return diff_days if diff_days > 0 else 0
+        return 0
+
+    # 🔹 Bu yerda status ni dinamik tarzda o‘zgartiramiz
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        remaining_days = data.get("remaining_days")
+        if remaining_days == 0:
+            data["status"] = False
+        return data
