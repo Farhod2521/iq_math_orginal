@@ -216,33 +216,9 @@ class GetTelegramIDFromHelpRequestAPIView(APIView):
 
 
 
-class TeacherTopicHelpRequestDeleteAPIView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def delete(self, request, pk):
-        # Login bo‘lgan userga tegishli teacher obyektini olamiz
-        teacher = get_object_or_404(Teacher, user=request.user)
-
-        # Faqat shu o‘qituvchiga biriktirilgan murojaatni topamiz
-        help_request = get_object_or_404(
-            TopicHelpRequestIndependent,
-            pk=pk,
-            teacher=teacher
-        )
-
-        help_request.delete()
-
-        return Response(
-            {"detail": "Murojaat muvaffaqiyatli o‘chirildi."},
-            status=status.HTTP_204_NO_CONTENT
-        )
-    
-
-
-
 class TeacherHelpRequestNotificationAPIView(APIView):
     """
-    Qo‘ng‘iroqcha uchun xabarlar soni va ularni 'Ko‘rildi' deb belgilash
+    Qo‘ng‘iroqcha uchun xabarlar soni, statistikasi va ularni 'Ko‘rildi' deb belgilash
     """
     permission_classes = [IsAuthenticated]
 
@@ -254,13 +230,40 @@ class TeacherHelpRequestNotificationAPIView(APIView):
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        unread_count = TopicHelpRequestIndependent.objects.filter(
-            teacher=teacher,
-            status='sent',
-            is_seen=False
-        ).count()
+        # 🔹 Statistik ma'lumotlar
+        base_qs = TopicHelpRequestIndependent.objects.filter(teacher=teacher)
+        total_count = base_qs.count()
+        unread_count = base_qs.filter(status='sent', is_seen=False).count()
 
-        return Response({"unread_count": unread_count})
+        stats = {
+            "sent": base_qs.filter(status='sent').count(),
+            "seen": base_qs.filter(status='seen').count(),
+            "reviewing": base_qs.filter(status='reviewing').count(),
+            "answered": base_qs.filter(status='answered').count(),
+            "closed": base_qs.filter(status='closed').count(),
+            "rejected": base_qs.filter(status='rejected').count(),
+        }
+
+        # 🔹 Oxirgi 10 ta yuborilgan murojaat (eng yangilari birinchi)
+        latest_requests = base_qs.order_by('-created_at')[:10]
+        latest_list = [
+            {
+                "id": item.id,
+                "student": item.student.full_name if item.student else None,
+                "subject": item.subject.name_uz if item.subject else None,
+                "status": item.status,
+                "created_at": item.created_at.strftime("%d/%m/%Y %H:%M"),
+                "is_seen": item.is_seen,
+            }
+            for item in latest_requests
+        ]
+
+        return Response({
+            "total_requests": total_count,
+            "unread_count": unread_count,
+            "status_breakdown": stats,
+            "latest_requests": latest_list,
+        }, status=status.HTTP_200_OK)
 
     def post(self, request):
         teacher = getattr(request.user, 'teacher_profile', None)
