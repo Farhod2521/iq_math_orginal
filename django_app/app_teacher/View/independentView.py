@@ -216,6 +216,28 @@ class GetTelegramIDFromHelpRequestAPIView(APIView):
 
 
 
+class TeacherTopicHelpRequestDeleteAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, pk):
+        # Login bo‘lgan userga tegishli teacher obyektini olamiz
+        teacher = get_object_or_404(Teacher, user=request.user)
+
+        # Faqat shu o‘qituvchiga biriktirilgan murojaatni topamiz
+        help_request = get_object_or_404(
+            TopicHelpRequestIndependent,
+            pk=pk,
+            teacher=teacher
+        )
+
+        help_request.delete()
+
+        return Response(
+            {"detail": "Murojaat muvaffaqiyatli o‘chirildi."},
+            status=status.HTTP_204_NO_CONTENT
+        )
+    
+
 class TeacherHelpRequestNotificationAPIView(APIView):
     """
     Qo‘ng‘iroqcha uchun xabarlar soni, statistikasi va ularni 'Ko‘rildi' deb belgilash
