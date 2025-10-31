@@ -54,6 +54,7 @@ class StudentScore(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
     score = models.PositiveIntegerField(default=0)
     coin = models.PositiveIntegerField(default=0)
+    som =  models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     
 
@@ -71,17 +72,33 @@ class StudentScore(models.Model):
 class ConversionHistory(models.Model):
     CONVERT_TYPE_CHOICES = (
         ('SCORE_TO_COIN', 'Ball → Tanga'),
+        ('SCORE_TO_SOM', 'Ball → Soʻm'),
         ('COIN_TO_SOM', 'Tanga → Soʻm'),
+    )
+
+    STATUS_CHOICES = (
+        ('pending', 'Kutilmoqda'),
+        ('approved', 'Tasdiqlandi'),
+        ('rejected', 'Rad etildi'),
     )
 
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
     conversion_type = models.CharField(max_length=20, choices=CONVERT_TYPE_CHOICES)
     amount_from = models.PositiveIntegerField()  # konvertatsiya qilingan miqdor (masalan: 30 ball)
-    amount_to = models.PositiveIntegerField()    # natijada olingan miqdor (masalan: 2 tanga)
+    amount_to = models.PositiveIntegerField()    # natijada olingan miqdor (masalan: 2 tanga yoki 100 so‘m)
+    som_after = models.PositiveIntegerField(default=0, verbose_name="So‘m balans (konvertatsiyadan keyin)")
+    comment = models.TextField(blank=True, null=True, verbose_name="Izoh")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='approved')
     created_at = models.DateTimeField(default=timezone.now)
 
+    class Meta:
+        verbose_name = "Konvertatsiya tarixi"
+        verbose_name_plural = "Konvertatsiyalar tarixi"
+        ordering = ['-created_at']
+
     def __str__(self):
-        return f"{self.student.user.username} - {self.conversion_type}"
+        return f"{self.student.user.username} - {self.conversion_type} ({self.status})"
+
 
 class StudentScoreLog(models.Model):
     student_score = models.ForeignKey(StudentScore, on_delete=models.CASCADE)
