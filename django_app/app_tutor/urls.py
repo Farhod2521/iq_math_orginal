@@ -14,4 +14,5 @@ urlpatterns = [
     path('tutor/referral-transactions/', TutorReferralTransactionListAPIView.as_view(), name='tutor-referral-transactions'),
     path('tutor/payments/', TutorEarningsAPIView.as_view(), name='tutor-earnings'),
     path('tutor/withdraw/', TutorWithdrawalCreateAPIView.as_view(), name='tutor-withdraw'),
+    path('tutor/withdrawals/list/', TutorWithdrawalListAPIView.as_view(), name='tutor-withdrawal-list'),
 ]+ router.urls

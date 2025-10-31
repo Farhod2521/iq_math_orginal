@@ -261,3 +261,23 @@ class TutorWithdrawalCreateAPIView(APIView):
             "message": "Yechib olish so‘rovi yuborildi",
             "withdrawal_id": withdrawal.id
         }, status=status.HTTP_201_CREATED)
+    
+
+
+class TutorWithdrawalListAPIView(APIView):
+    """
+    Tizimga kirgan o‘qituvchining barcha yechib olish so‘rovlari ro‘yxati
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        tutor = getattr(request.user, "tutor_profile", None)
+        if not tutor:
+            return Response(
+                {"detail": "Foydalanuvchi o‘qituvchi emas."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        withdrawals = TutorWithdrawal.objects.filter(tutor=tutor).order_by("-created_at")
+        serializer = TutorWithdrawalSerializer(withdrawals, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
