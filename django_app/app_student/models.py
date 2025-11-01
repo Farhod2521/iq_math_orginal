@@ -11,7 +11,7 @@ class Diagnost_Student(models.Model):
     topic = models.ManyToManyField(Topic, blank=True)       
     level = models.PositiveIntegerField()
     result = models.JSONField()
-
+    create_date =  models.DateTimeField(blank=True, null=True)
     def __str__(self):
         return f"{self.student.full_name} - {self.subject}"
 
