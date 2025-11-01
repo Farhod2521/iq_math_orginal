@@ -121,6 +121,8 @@ class ChapterTopicsAPIView(APIView):
 
 
 
+
+
 class StudentDiagnosticHistoryAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -134,26 +136,29 @@ class StudentDiagnosticHistoryAPIView(APIView):
             subject = d.subject
             subject_id = subject.id
 
-            # Shu fanga tegishli barcha diagnostika yozuvlarini olamiz (tartib bilan)
+            # Shu fanga tegishli barcha diagnostikalar
             all_diagnosts = Diagnost_Student.objects.filter(
                 student=student,
                 subject=subject
             ).order_by('id')
 
             progress_history = []
-            last_date = None
 
             for diag in all_diagnosts:
                 if diag.result:
                     try:
                         score = diag.result.get("result", [{}])[0].get("score")
                         if score is not None:
-                            progress_history.append(score)
-                            last_date = diag.create_date  # eng so‘nggi sanani saqlaymiz
+                            progress_history.append({
+                                "date": diag.create_date.strftime("%Y-%m-%d %H:%M") if diag.create_date else None,
+                                "score": score
+                            })
                     except Exception:
                         continue
 
-            progress_percent = progress_history[-1] if progress_history else None
+            # Oxirgi ball
+            progress_percent = progress_history[-1]["score"] if progress_history else None
+            last_date = progress_history[-1]["date"] if progress_history else None
 
             diagnost_dict[subject_id] = {
                 "progress_history": progress_history,
@@ -161,6 +166,7 @@ class StudentDiagnosticHistoryAPIView(APIView):
                 "last_date": last_date
             }
 
+        # Faqat diagnostika o‘tkazilgan fanlar
         subjects = Subject.objects.filter(id__in=diagnost_dict.keys()).select_related('classes')
 
         data = []
@@ -180,7 +186,7 @@ class StudentDiagnosticHistoryAPIView(APIView):
                 "progress_percent": diagnost_info["progress_percent"],
                 "progress_history": diagnost_info["progress_history"],
                 "has_taken_diagnostic": True,
-                "date": diagnost_info["last_date"].strftime("%Y-%m-%d %H:%M") if diagnost_info["last_date"] else None
+                "last_date": diagnost_info["last_date"]
             })
 
         return Response(data)
