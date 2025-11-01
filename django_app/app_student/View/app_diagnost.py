@@ -130,39 +130,40 @@ class StudentDiagnosticHistoryAPIView(APIView):
         diagnost_dict = {}
         diagnost_list = Diagnost_Student.objects.filter(student=student).select_related('subject')
 
-        # Har bir subject bo‘yicha barcha diagnostika natijalarini to‘plab chiqamiz
         for d in diagnost_list:
-            subject_id = d.subject.id
+            subject = d.subject
+            subject_id = subject.id
 
             # Shu fanga tegishli barcha diagnostika yozuvlarini olamiz (tartib bilan)
             all_diagnosts = Diagnost_Student.objects.filter(
                 student=student,
-                subject=d.subject
+                subject=subject
             ).order_by('id')
 
             progress_history = []
+            last_date = None
+
             for diag in all_diagnosts:
                 if diag.result:
                     try:
                         score = diag.result.get("result", [{}])[0].get("score")
                         if score is not None:
                             progress_history.append(score)
+                            last_date = diag.create_date  # eng so‘nggi sanani saqlaymiz
                     except Exception:
                         continue
 
-            # Oxirgi foiz
             progress_percent = progress_history[-1] if progress_history else None
 
             diagnost_dict[subject_id] = {
                 "progress_history": progress_history,
-                "progress_percent": progress_percent
+                "progress_percent": progress_percent,
+                "last_date": last_date
             }
 
-        # Faqat diagnostika topshirilgan fanlar chiqadi
         subjects = Subject.objects.filter(id__in=diagnost_dict.keys()).select_related('classes')
 
         data = []
-
         for subject in subjects:
             class_name = subject.classes.name if subject.classes else ""
             diagnost_info = diagnost_dict[subject.id]
@@ -176,9 +177,10 @@ class StudentDiagnosticHistoryAPIView(APIView):
                 "class_ru": f"{class_name}-класс {subject.name_ru}",
                 "image_uz": subject.image_uz.url if subject.image_uz else "",
                 "image_ru": subject.image_ru.url if subject.image_ru else "",
-                "progress_percent": diagnost_info["progress_percent"],  # oxirgisi
-                "progress_history": diagnost_info["progress_history"],  # barcha foizlar
-                "has_taken_diagnostic": True  # faqat true bo‘lganlar chiqadi
+                "progress_percent": diagnost_info["progress_percent"],
+                "progress_history": diagnost_info["progress_history"],
+                "has_taken_diagnostic": True,
+                "date": diagnost_info["last_date"].strftime("%Y-%m-%d %H:%M") if diagnost_info["last_date"] else None
             })
 
         return Response(data)
