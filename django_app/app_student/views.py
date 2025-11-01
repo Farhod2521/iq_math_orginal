@@ -74,7 +74,7 @@ class GenerateTestAPIView(APIView):
         })
 
 
-
+from datetime import timedelta
 class GenerateCheckAnswersAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -215,7 +215,7 @@ class GenerateCheckAnswersAPIView(APIView):
             level=level,
             subject=subject,
             result=result_json,
-            create_date=timezone.now()
+            create_date=timezone.now() + timedelta(hours=5)  # 🇺🇿 O‘zbekiston vaqti
         )
 
         # Xato qilingan topic va chapterlarni yozamiz
