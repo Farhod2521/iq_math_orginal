@@ -29,6 +29,7 @@ class All_Role_ListView(APIView):
         class_num = request.GET.get("class_num", "").strip()
         subject_name = request.GET.get("subject_name", "").strip()
         status_filter = request.GET.get("status", "").strip()  # active, inactive, all
+        lang_filter = request.GET.get("lang", "").strip() 
         
         # --- BASE QUERY ---
         users = User.objects.all().order_by('-date_joined')
@@ -58,6 +59,8 @@ class All_Role_ListView(APIView):
                 Q(student_profile__class_name__name_uz__icontains=subject_name) |
                 Q(student_profile__class_name__name_ru__icontains=subject_name)
             )
+        if lang_filter and role == 'student':
+            users = users.filter(student_profile__lang=lang_filter)
             
         # --- STATUS FILTER ---
         if status_filter == 'active':
