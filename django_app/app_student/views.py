@@ -214,7 +214,8 @@ class GenerateCheckAnswersAPIView(APIView):
             student=student_instance,
             level=level,
             subject=subject,
-            result=result_json
+            result=result_json,
+            create_date=timezone.now()
         )
 
         # Xato qilingan topic va chapterlarni yozamiz
