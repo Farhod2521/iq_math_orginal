@@ -79,15 +79,7 @@ class Payment(models.Model):
 
 
 
-class MonthlyPayment(models.Model):
-    price = models.PositiveIntegerField(default=1000, help_text="Oylik to‘lov summasi (so‘m)")
 
-    def __str__(self):
-        return f"Oylik to‘lov: {self.price} so‘m"
-
-    class Meta:
-        verbose_name = "Oylik to‘lov"
-        verbose_name_plural = "Oylik to‘lov"
 
 
 
