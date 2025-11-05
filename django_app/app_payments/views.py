@@ -504,12 +504,7 @@ class PaymentCallbackAPIView(APIView):
 
 
 
-from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from rest_framework import status
-from django.utils import timezone
-from .models import MonthlyPayment, Student, Subscription, SubscriptionSetting  # mos importlar
+
 
 class SubscriptionTrialDaysAPIView(APIView):
     permission_classes = [IsAuthenticated]
