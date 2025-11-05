@@ -104,11 +104,11 @@ class InitiatePaymentAPIView(APIView):
 
         # Keshbek sozlamalari
         cashback_settings = ReferralAndCouponSettings.objects.first()
-        student_cashback_percent = cashback_settings.coupon_student_cashback_percent if cashback_settings else 0
+        
         teacher_cashback_percent = cashback_settings.coupon_teacher_cashback_percent if cashback_settings else 0
 
         # Keshbek summalarini hisoblash (sale_price asosida)
-        student_cashback_amount = sale_price * student_cashback_percent / 100
+        
         teacher_cashback_amount = sale_price * teacher_cashback_percent / 100
 
         # Token olish
@@ -162,7 +162,7 @@ class InitiatePaymentAPIView(APIView):
             coupon=coupon_obj,
             coupon_type=coupon_type,
             discount_percent=discount_percent,
-            student_cashback_amount=student_cashback_amount,
+            
             teacher_cashback_amount=teacher_cashback_amount,
             subscription_months=plan.months
         )
