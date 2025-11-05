@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import SubscriptionSetting, Subscription, Payment, MonthlyPayment, SubscriptionPlan
+from .models import SubscriptionSetting, Subscription, Payment, SubscriptionPlan
 
 @admin.register(SubscriptionSetting)
 class SubscriptionSettingAdmin(admin.ModelAdmin):
@@ -25,18 +25,7 @@ class PaymentAdmin(admin.ModelAdmin):
 
 
 
-@admin.register(MonthlyPayment)
-class MonthlyPaymentAdmin(admin.ModelAdmin):
-    # Add tugmasini yashirish
-    def has_add_permission(self, request):
-        # Agar hali hech qanday obyekt yo'q bo'lsa, faqat shunda qo'shishga ruxsat
-        if MonthlyPayment.objects.count() >= 1:
-            return False
-        return True
 
-    # Delete qilishni ham cheklash (ixtiyoriy)
-    def has_delete_permission(self, request, obj=None):
-        return False
     
 
 @admin.register(SubscriptionPlan)
