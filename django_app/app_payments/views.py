@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.utils import timezone
 from django.conf import settings
-from .models import Payment, Subscription, SubscriptionSetting, MonthlyPayment, SubscriptionPlan
+from .models import Payment, Subscription, SubscriptionSetting, SubscriptionPlan
 from django_app.app_management.models import  Coupon_Tutor_Student, CouponUsage_Tutor_Student, ReferralAndCouponSettings
 from datetime import timedelta
 import hashlib
@@ -523,22 +523,24 @@ class SubscriptionTrialDaysAPIView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
+        # 🎁 Sinov kunlari
         trial_days_setting = SubscriptionSetting.objects.first()
         trial_days = trial_days_setting.free_trial_days if trial_days_setting else 0
 
         now = timezone.now()
 
+        # ⏳ Qolgan kunlar
         if now < subscription.end_date:
             remaining_days = (subscription.end_date - now).days
         else:
             remaining_days = 0
 
-        # is_paid flag logikasi
+        # 💳 To‘lov holati
         is_paid = subscription.is_paid and remaining_days > 0
 
-        # MonthlyPayment modeldan narx olish
-        monthly_payment = MonthlyPayment.objects.first()
-        payment_amount = monthly_payment.price if monthly_payment else 1000
+        # 💰 Eng arzon aktiv reja narxini olish
+        plan = SubscriptionPlan.objects.filter(is_active=True).order_by('price_per_month').first()
+        payment_amount = float(plan.total_price()) if plan else 1000
 
         return Response(
             {
