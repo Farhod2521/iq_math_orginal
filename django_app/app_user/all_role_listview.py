@@ -209,6 +209,7 @@ class All_Role_ListView(APIView):
                 "registration_date": student_datetime.strftime('%d/%m/%Y') if student_datetime else None,
                 "registration_time": student_datetime.strftime('%H:%M:%S') if student_datetime else None,
                 "last_login_time": last_login_formatted,
+                "lang": student.lang,
                 "last_payment_amount": last_payment_amount,
                  "subscription_end_date": end_date.strftime('%d/%m/%Y') if end_date else None,
                 "remaining_days": remaining_days,  # qolgan kunlar (int yoki None)
