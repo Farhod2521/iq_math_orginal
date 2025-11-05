@@ -58,8 +58,7 @@ class Payment(models.Model):
     discount_percent = models.PositiveIntegerField(default=0, verbose_name="Chegirma foizi")
     subscription_months = models.PositiveIntegerField(default=1, verbose_name="Obuna muddati (oy)")
     
-    # Cashback fields
-    student_cashback_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Studentga keshbek")
+
     teacher_cashback_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Teacherga keshbek")
     
     # Date fields - default qiymatlarni to'g'rilaymiz
