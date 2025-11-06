@@ -21,7 +21,6 @@ from django_app.app_tutor.models import TutorCouponTransaction
 
 URL_TEST = "https://dev-mesh.multicard.uz"
 URL_DEV = "https://mesh.multicard.uz"
-
 class InitiatePaymentAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -59,6 +58,13 @@ class InitiatePaymentAPIView(APIView):
         # Standart matn
         coupon_text = f"IQMATH.UZ {plan.get_months_display()} obuna to'lovi"
 
+        # Keshbek sozlamalari - BARCHA HOLATLAR UCHUN
+        cashback_settings = ReferralAndCouponSettings.objects.first()
+        
+        # ✅ DEFAULT: Hech qanday kupon bo'lmasa, keshbek BERILMAYDI
+        student_cashback_amount = 0
+        teacher_cashback_amount = 0
+
         if coupon_code:
             try:
                 coupon_obj = Coupon_Tutor_Student.objects.get(
@@ -73,15 +79,31 @@ class InitiatePaymentAPIView(APIView):
                 # Kupon turini aniqlash
                 if coupon_obj.created_by_tutor:
                     coupon_type = "tutor"
-                    coupon_owner_name = coupon_obj.created_by_tutor.full_name  # Tutorning o'zidagi full_name
+                    coupon_owner_name = coupon_obj.created_by_tutor.full_name
+                    
+                    # ✅ TUTOR KUPONI: Faqat tutorga keshbek
+                    if cashback_settings:
+                        teacher_cashback_percent = cashback_settings.coupon_teacher_cashback_percent
+                        teacher_cashback_amount = sale_price * teacher_cashback_percent / 100
+                        student_cashback_amount = 0  # Studentga keshbek BERILMAYDI
+                    
                 elif coupon_obj.created_by_student:
                     coupon_type = "student"
-                    coupon_owner_name = coupon_obj.created_by_student.full_name  # Studentning o'zidagi full_name
+                    coupon_owner_name = coupon_obj.created_by_student.full_name
+                    
+                    # ✅ STUDENT KUPONI: Faqat studentga (kupon egasi) keshbek
+                    if cashback_settings:
+                        student_cashback_percent = cashback_settings.coupon_student_cashback_percent
+                        student_cashback_amount = sale_price * student_cashback_percent / 100
+                        teacher_cashback_amount = 0  # Teacherga keshbek BERILMAYDI
+                    
                 else:
                     coupon_type = "system"
+                    # ✅ SYSTEM KUPONI: Hech kimga keshbek BERILMAYDI
+                    student_cashback_amount = 0
+                    teacher_cashback_amount = 0
                 
-                # Sale price hisoblash (CheckCouponAPIView dagi logika)
-                # 1 oylik tarifdan kupon chegirmasi
+                # Sale price hisoblash
                 one_month_plan = SubscriptionPlan.objects.filter(months=1, is_active=True).first()
                 one_month_discount = 0
                 if one_month_plan:
@@ -101,15 +123,6 @@ class InitiatePaymentAPIView(APIView):
                     
             except Coupon_Tutor_Student.DoesNotExist:
                 return Response({"error": "Kupon topilmadi yoki muddati tugagan"}, status=status.HTTP_400_BAD_REQUEST)
-
-        # Keshbek sozlamalari
-        cashback_settings = ReferralAndCouponSettings.objects.first()
-        
-        teacher_cashback_percent = cashback_settings.coupon_teacher_cashback_percent if cashback_settings else 0
-
-        # Keshbek summalarini hisoblash (sale_price asosida)
-        
-        teacher_cashback_amount = sale_price * teacher_cashback_percent / 100
 
         # Token olish
         try:
@@ -151,8 +164,8 @@ class InitiatePaymentAPIView(APIView):
         if response.status_code != 200:
             return Response({"error": "To'lov yaratilishda xatolik", "details": response.text}, status=500)
 
-        # To'lovni bazaga yozish
-        Payment.objects.create(
+        # ✅ TO'G'RI KESHBEK QIYMATLARI BILAN TO'LOVNI YARATISH
+        payment = Payment.objects.create(
             student=student,
             amount=sale_price,
             original_amount=original_price,
@@ -162,20 +175,17 @@ class InitiatePaymentAPIView(APIView):
             coupon=coupon_obj,
             coupon_type=coupon_type,
             discount_percent=discount_percent,
-            
+            student_cashback_amount=student_cashback_amount,
             teacher_cashback_amount=teacher_cashback_amount,
             subscription_months=plan.months
         )
 
         # Agar kupon ishlatilgan bo'lsa, foydalanish tarixini yozish
         if coupon_obj:
-            student_id = coupon_obj.created_by_student.id if coupon_obj.created_by_student else None
-            tutor_id = coupon_obj.created_by_tutor.id if coupon_obj.created_by_tutor else None
-            
             CouponUsage_Tutor_Student.objects.create(
                 coupon=coupon_obj,
-                used_by_student=student if student_id else None,
-                used_by_tutor=coupon_obj.created_by_tutor if tutor_id else None
+                used_by_student=student,
+                used_by_tutor=coupon_obj.created_by_tutor if coupon_obj.created_by_tutor else None
             )
 
         return Response({
@@ -186,17 +196,13 @@ class InitiatePaymentAPIView(APIView):
                 "discount_percent": discount_percent,
                 "coupon_type": coupon_type,
                 "subscription_months": plan.months,
-                "subscription_name": plan.get_months_display()
+                "subscription_name": plan.get_months_display(),
+                "cashback_details": {
+                    "student_cashback": student_cashback_amount,
+                    "teacher_cashback": teacher_cashback_amount
+                }
             }
         }, status=200)
-
-
-
-
-
-
-
-
 
 
 
@@ -241,11 +247,11 @@ class PaymentCallbackAPIView(APIView):
         payment.receipt_url = f"{URL_DEV}/invoice/{uuid_val}"
         payment.save()
 
-        # Create coupon transaction if coupon was used
+        # ✅ TO'G'RI KESHBEK TAQSIMLASH LOGIKASI
         if payment.coupon and payment.coupon_type:
-            cashback_settings = ReferralAndCouponSettings.objects.first()
             
             if payment.coupon_type == "tutor" and payment.coupon.created_by_tutor:
+                # ✅ TUTOR KUPONI: Faqat tutorga keshbek
                 TutorCouponTransaction.objects.create(
                     student=payment.student,
                     tutor=payment.coupon.created_by_tutor,
@@ -254,66 +260,56 @@ class PaymentCallbackAPIView(APIView):
                     cashback_amount=payment.teacher_cashback_amount
                 )
                 
+                # Tutorga keshbek qo'shish
                 if payment.teacher_cashback_amount > 0:
                     tutor = payment.coupon.created_by_tutor
                     tutor.balance += payment.teacher_cashback_amount
                     tutor.save()
 
             elif payment.coupon_type == "student" and payment.coupon.created_by_student:
+                # ✅ STUDENT KUPONI: Faqat studentga (KUPON EGASI) keshbek
                 StudentCouponTransaction.objects.create(
                     student=payment.student,
-                    by_student=payment.coupon.created_by_student,
+                    by_student=payment.coupon.created_by_student,  # Kupon egasi
                     coupon=payment.coupon,
                     payment_amount=payment.amount,
                     cashback_amount=payment.student_cashback_amount
                 )
                 
+                # Studentga (KUPON EGASI) keshbek qo'shish
                 if payment.student_cashback_amount > 0:
-                    student_owner = payment.coupon.created_by_student
+                    student_owner = payment.coupon.created_by_student  # Kupon egasi
                     student_owner.balance += payment.student_cashback_amount
                     student_owner.save()
 
-            if payment.coupon_type == "system" and payment.student_cashback_amount > 0:
-                payment.student.balance += payment.student_cashback_amount
-                payment.student.save()
+            # ✅ SYSTEM KUPONI: Hech kimga keshbek BERILMAYDI
+            # payment.coupon_type == "system" holati uchun hech qanday keshbek amalga oshirilmaydi
 
-        # ✅ TO'G'RILANGAN QISMI: Subscriptionni yangilash
+        # ✅ SUBSCRIPTIONNI YANGILASH
         try:
             subscription = Subscription.objects.get(student=payment.student)
-            # Mavjud subscriptionni yangilash
             now = timezone.now()
             
             if subscription.end_date > now:
-                # Obuna hali amal qilmoqda - muddatni uzaytiramiz
                 subscription.end_date += relativedelta(months=payment.subscription_months)
             else:
-                # Obuna muddati tugagan - yangi muddat belgilaymiz
                 subscription.end_date = now + relativedelta(months=payment.subscription_months)
             
             subscription.next_payment_date = subscription.end_date
-            subscription.is_paid = True  # ✅ BU QATOR QO'SHILDI
+            subscription.is_paid = True
             subscription.save()
             
         except Subscription.DoesNotExist:
-            # Yangi subscription yaratish
             now = timezone.now()
             subscription = Subscription.objects.create(
                 student=payment.student,
                 start_date=now,
                 end_date=now + relativedelta(months=payment.subscription_months),
                 next_payment_date=now + relativedelta(months=payment.subscription_months),
-                is_paid=True  # ✅ BU QATOR QO'SHILDI
+                is_paid=True
             )
 
         return Response({"status": "ok"}, status=status.HTTP_200_OK)
-
-
-
-
-
-
-
-
 
 
 
