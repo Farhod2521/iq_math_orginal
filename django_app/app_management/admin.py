@@ -62,7 +62,7 @@ class SolutionStatusAdmin(admin.ModelAdmin):
 
 @admin.register(Product)
 class ProductAdmin(TranslationAdmin):  # model.ModelAdmin o'rniga TranslationAdmin ishlatiladi
-    list_display = ['name_uz', 'name_ru', 'coin', 'count','get_price', 'image_tag']
+    list_display = ['name_uz', 'name_ru', 'coin', 'get_price','count', 'image_tag']
     search_fields = ['name_uz', 'name_ru']
     readonly_fields = ['image_tag']
 
