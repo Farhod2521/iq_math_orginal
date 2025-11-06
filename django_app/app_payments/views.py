@@ -204,134 +204,198 @@ class InitiatePaymentAPIView(APIView):
             }
         }, status=200)
 
+import logging
 
+logger = logging.getLogger(__name__)
 
 class PaymentCallbackAPIView(APIView):
+    """
+    Multicard to'lov callback API
+    """
     authentication_classes = []
     permission_classes = []
 
     def generate_sign(self, store_id, invoice_id, amount, secret):
+        """MD5 signature yaratish"""
         raw = f"{store_id}{invoice_id}{amount}{secret}"
         return hashlib.md5(raw.encode()).hexdigest()
 
     def post(self, request):
-        data = request.data
-        store_id = str(data.get("store_id"))
-        invoice_id = str(data.get("invoice_id"))
-        amount = str(data.get("amount"))
-        received_sign = data.get("sign")
-        payment_time = data.get("payment_time")
-        uuid_val = data.get("uuid")
-        invoice_uuid = data.get("invoice_uuid")
-        billing_id = data.get("billing_id")
-
-        SECRET_KEY = "b7lydo1mu8abay9x"
-        EXPECTED_SIGN = self.generate_sign(store_id, invoice_id, amount, SECRET_KEY)
-
-        if received_sign != EXPECTED_SIGN:
-            return Response({"error": "Invalid sign"}, status=status.HTTP_400_BAD_REQUEST)
-
+        """
+        Multicard dan kelgan to'lov callback ni qayta ishlash
+        """
         try:
-            payment = Payment.objects.get(transaction_id=invoice_id)
-        except Payment.DoesNotExist:
-            return Response({"error": "Payment not found"}, status=status.HTTP_404_NOT_FOUND)
+            # 1. Ma'lumotlarni olish va validatsiya qilish
+            data = request.data
+            logger.info(f"🔔 Payment callback received: {data}")
+            
+            store_id = str(data.get("store_id", ""))
+            invoice_id = str(data.get("invoice_id", ""))
+            amount = str(data.get("amount", ""))
+            received_sign = data.get("sign", "")
+            payment_time = data.get("payment_time")
+            uuid_val = data.get("uuid")
+            invoice_uuid = data.get("invoice_uuid")
+            billing_id = data.get("billing_id")
 
+            # 2. Signature tekshirish
+            SECRET_KEY = "b7lydo1mu8abay9x"
+            EXPECTED_SIGN = self.generate_sign(store_id, invoice_id, amount, SECRET_KEY)
 
-        # Update payment status
-        payment.store_id = store_id
-        payment.invoice_uuid = invoice_uuid
-        payment.uuid = uuid_val
-        payment.billing_id = billing_id
-        payment.sign = received_sign
-        payment.status = "success"
-        payment.payment_date = timezone.now()
-        payment.receipt_url = f"{URL_DEV}/invoice/{uuid_val}"
-        payment.save()
+            if received_sign != EXPECTED_SIGN:
+                logger.error(f"❌ Invalid signature. Expected: {EXPECTED_SIGN}, Received: {received_sign}")
+                return Response({"error": "Invalid signature"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # ✅ TO'G'RI KESHBEK TAQSIMLASH LOGIKASI
-        if payment.coupon and payment.coupon_type:
+            # 3. Paymentni topish
+            try:
+                payment = Payment.objects.get(transaction_id=invoice_id)
+                logger.info(f"✅ Payment found: ID={payment.id}, Student={payment.student.full_name}, Amount={payment.amount}")
+            except Payment.DoesNotExist:
+                logger.error(f"❌ Payment not found with transaction_id: {invoice_id}")
+                return Response({"error": "Payment not found"}, status=status.HTTP_404_NOT_FOUND)
+
+            # 4. Payment statusini yangilash
+            payment.store_id = store_id
+            payment.invoice_uuid = invoice_uuid
+            payment.uuid = uuid_val
+            payment.billing_id = billing_id
+            payment.sign = received_sign
+            payment.status = "success"
+            payment.payment_date = timezone.now()
+            payment.receipt_url = f"https://mesh.multicard.uz/invoice/{uuid_val}"
+            payment.save()
+            logger.info(f"✅ Payment status updated to SUCCESS: {payment.id}")
+
+            # 5. KESHBEK LOGIKASI
+            self._process_cashback(payment)
+
+            # 6. SUBSCRIPTION YANGILASH/YARATISH
+            self._process_subscription(payment)
+
+            logger.info(f"🎉 Payment callback successfully processed: {payment.id}")
+            return Response({"status": "ok", "message": "Payment processed successfully"}, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            logger.error(f"💥 Payment callback error: {str(e)}", exc_info=True)
+            return Response({"error": "Internal server error"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def _process_cashback(self, payment):
+        """Keshbeklarni taqsimlash"""
+        try:
+            if not payment.coupon or not payment.coupon_type:
+                logger.info("ℹ️ No coupon used, skipping cashback processing")
+                return
+
+            logger.info(f"💰 Processing cashback for coupon type: {payment.coupon_type}")
+
             if payment.coupon_type == "tutor" and payment.coupon.created_by_tutor:
-                TutorCouponTransaction.objects.create(
-                    student=payment.student,
-                    tutor=payment.coupon.created_by_tutor,
-                    coupon=payment.coupon,
-                    payment_amount=payment.amount,
-                    cashback_amount=payment.teacher_cashback_amount
-                )
-                
+                # TUTOR KUPONI: Faqat tutorga keshbek
                 if payment.teacher_cashback_amount > 0:
+                    TutorCouponTransaction.objects.create(
+                        student=payment.student,
+                        tutor=payment.coupon.created_by_tutor,
+                        coupon=payment.coupon,
+                        payment_amount=payment.amount,
+                        cashback_amount=payment.teacher_cashback_amount
+                    )
+                    
                     tutor = payment.coupon.created_by_tutor
+                    old_balance = tutor.balance
                     tutor.balance += payment.teacher_cashback_amount
                     tutor.save()
+                    
+                    logger.info(f"👨‍🏫 Teacher cashback added: {payment.teacher_cashback_amount} to {tutor.full_name} (Balance: {old_balance} -> {tutor.balance})")
 
             elif payment.coupon_type == "student" and payment.coupon.created_by_student:
-                StudentCouponTransaction.objects.create(
-                    student=payment.student,
-                    by_student=payment.coupon.created_by_student,
-                    coupon=payment.coupon,
-                    payment_amount=payment.amount,
-                    cashback_amount=payment.student_cashback_amount
-                )
-                
+                # STUDENT KUPONI: Faqat studentga (kupon egasi) keshbek
                 if payment.student_cashback_amount > 0:
+                    StudentCouponTransaction.objects.create(
+                        student=payment.student,
+                        by_student=payment.coupon.created_by_student,
+                        coupon=payment.coupon,
+                        payment_amount=payment.amount,
+                        cashback_amount=payment.student_cashback_amount
+                    )
+                    
                     student_owner = payment.coupon.created_by_student
+                    old_balance = student_owner.balance
                     student_owner.balance += payment.student_cashback_amount
                     student_owner.save()
+                    
+                    logger.info(f"👨‍🎓 Student cashback added: {payment.student_cashback_amount} to {student_owner.full_name} (Balance: {old_balance} -> {student_owner.balance})")
 
-        # ✅ SUBSCRIPTIONNI YANGILASH - TO'LIQ QAYTA YOZILGAN
-        try:
-            subscription = Subscription.objects.get(student=payment.student)
-            now = timezone.now()
-            
-            # ✅ Subscription months ni tekshirish
-            subscription_months = payment.subscription_months
-            if not subscription_months:
-                subscription_months = 1  # Default qiymat
-                print(f"Warning: subscription_months not found, using default: {subscription_months}")
-            
-            print(f"Adding {subscription_months} months to subscription")
-            
-            if subscription.end_date and subscription.end_date > now:
-                # Obuna hali amal qilmoqda - muddatni uzaytiramiz
-                new_end_date = subscription.end_date + relativedelta(months=subscription_months)
-                subscription.end_date = new_end_date
-                print(f"Extended subscription to: {new_end_date}")
-            else:
-                # Obuna muddati tugagan yoki mavjud emas - yangi muddat belgilaymiz
-                new_end_date = now + relativedelta(months=subscription_months)
-                subscription.end_date = new_end_date
-                print(f"New subscription until: {new_end_date}")
-            
-            subscription.next_payment_date = subscription.end_date
-            subscription.is_paid = True
-            subscription.save()
-            
-            print(f"Subscription updated successfully. is_paid: {subscription.is_paid}")
-            
-        except Subscription.DoesNotExist:
-            # Yangi subscription yaratish
-            now = timezone.now()
-            
-            # ✅ Subscription months ni tekshirish
-            subscription_months = payment.subscription_months
-            if not subscription_months:
-                subscription_months = 1  # Default qiymat
-                print(f"Warning: subscription_months not found, using default: {subscription_months}")
-            
-            new_end_date = now + relativedelta(months=subscription_months)
-            
-            subscription = Subscription.objects.create(
-                student=payment.student,
-                start_date=now,
-                end_date=new_end_date,
-                next_payment_date=new_end_date,
-                is_paid=True
+            elif payment.coupon_type == "system":
+                # SYSTEM KUPONI: Hech kimga keshbek BERILMAYDI
+                logger.info("ℹ️ System coupon used, no cashback applied")
+
+            # Kupon foydalanish tarixini yozish
+            CouponUsage_Tutor_Student.objects.create(
+                coupon=payment.coupon,
+                used_by_student=payment.student,
+                used_by_tutor=payment.coupon.created_by_tutor if payment.coupon.created_by_tutor else None
             )
+            logger.info(f"📝 Coupon usage recorded: {payment.coupon.code}")
+
+        except Exception as e:
+            logger.error(f"💥 Cashback processing error: {str(e)}", exc_info=True)
+            # Cashback xatosi to'lovni to'xtatmasligi kerak
+
+    def _process_subscription(self, payment):
+        """Subscriptionni yangilash/yaratish"""
+        try:
+            now = timezone.now()
             
-            print(f"New subscription created until: {new_end_date}")
+            # Subscription months ni tekshirish
+            subscription_months = payment.subscription_months
+            if not subscription_months:
+                subscription_months = 1
+                logger.warning(f"⚠️ subscription_months not found, using default: {subscription_months}")
+            else:
+                logger.info(f"📅 Subscription months: {subscription_months}")
 
-        return Response({"status": "ok"}, status=status.HTTP_200_OK)
+            # Subscription mavjudligini tekshirish
+            try:
+                subscription = Subscription.objects.get(student=payment.student)
+                logger.info(f"📋 Existing subscription found: ID={subscription.id}")
+                
+                # Yangi tugash sanasini hisoblash
+                if subscription.end_date and subscription.end_date > now:
+                    # Obuna hali amal qilmoqda - muddatni uzaytiramiz
+                    new_end_date = subscription.end_date + relativedelta(months=subscription_months)
+                    logger.info(f"📈 Extending existing subscription from {subscription.end_date} to {new_end_date}")
+                else:
+                    # Obuna muddati tugagan - yangi muddat belgilaymiz
+                    new_end_date = now + relativedelta(months=subscription_months)
+                    logger.info(f"🔄 Subscription expired, setting new end date: {new_end_date}")
+                
+                # Subscriptionni yangilash
+                old_end_date = subscription.end_date
+                old_is_paid = subscription.is_paid
+                
+                subscription.end_date = new_end_date
+                subscription.next_payment_date = new_end_date
+                subscription.is_paid = True
+                subscription.save()
+                
+                logger.info(f"✅ Subscription UPDATED: EndDate {old_end_date} → {subscription.end_date}, IsPaid {old_is_paid} → {subscription.is_paid}")
+                
+            except Subscription.DoesNotExist:
+                # Yangi subscription yaratish
+                new_end_date = now + relativedelta(months=subscription_months)
+                
+                subscription = Subscription.objects.create(
+                    student=payment.student,
+                    start_date=now,
+                    end_date=new_end_date,
+                    next_payment_date=new_end_date,
+                    is_paid=True
+                )
+                
+                logger.info(f"✅ NEW Subscription CREATED: ID={subscription.id}, EndDate={subscription.end_date}, IsPaid={subscription.is_paid}")
 
+        except Exception as e:
+            logger.error(f"💥 Subscription processing error: {str(e)}", exc_info=True)
+            raise  # Subscription xatosi muhim, shuning uchun raise qilamiz
 
 
 
