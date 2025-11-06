@@ -190,6 +190,16 @@ class InitiatePaymentAPIView(APIView):
             }
         }, status=200)
 
+
+
+
+
+
+
+
+
+
+
 class PaymentCallbackAPIView(APIView):
     authentication_classes = []
     permission_classes = []
@@ -236,85 +246,66 @@ class PaymentCallbackAPIView(APIView):
             cashback_settings = ReferralAndCouponSettings.objects.first()
             
             if payment.coupon_type == "tutor" and payment.coupon.created_by_tutor:
-                # Tutor kupon tranzaksiyasi - faqat tutorga keshbek
                 TutorCouponTransaction.objects.create(
                     student=payment.student,
                     tutor=payment.coupon.created_by_tutor,
                     coupon=payment.coupon,
                     payment_amount=payment.amount,
-                    cashback_amount=payment.teacher_cashback_amount  # Tutorga berilgan keshbek
+                    cashback_amount=payment.teacher_cashback_amount
                 )
                 
-                # Add cashback to tutor's balance
                 if payment.teacher_cashback_amount > 0:
                     tutor = payment.coupon.created_by_tutor
                     tutor.balance += payment.teacher_cashback_amount
                     tutor.save()
 
             elif payment.coupon_type == "student" and payment.coupon.created_by_student:
-                # Student kupon tranzaksiyasi - faqat studentga (kupon egasi) keshbek
                 StudentCouponTransaction.objects.create(
                     student=payment.student,
                     by_student=payment.coupon.created_by_student,
                     coupon=payment.coupon,
                     payment_amount=payment.amount,
-                    cashback_amount=payment.student_cashback_amount  # Studentga (kupon egasi) berilgan keshbek
+                    cashback_amount=payment.student_cashback_amount
                 )
                 
-                # Add cashback to student's balance (kupon egasi)
                 if payment.student_cashback_amount > 0:
                     student_owner = payment.coupon.created_by_student
                     student_owner.balance += payment.student_cashback_amount
                     student_owner.save()
 
-            # To'lov qilgan studentga keshbek qo'shish (agar system kupon bo'lsa)
             if payment.coupon_type == "system" and payment.student_cashback_amount > 0:
                 payment.student.balance += payment.student_cashback_amount
                 payment.student.save()
 
-        # Agar kupon ishlatilgan bo'lsa, foydalanish tarixini yozish
-        if payment.coupon:
-            student_id = payment.coupon.created_by_student.id if payment.coupon.created_by_student else None
-            tutor_id = payment.coupon.created_by_tutor.id if payment.coupon.created_by_tutor else None
+        # ✅ TO'G'RILANGAN QISMI: Subscriptionni yangilash
+        try:
+            subscription = Subscription.objects.get(student=payment.student)
+            # Mavjud subscriptionni yangilash
+            now = timezone.now()
             
-            CouponUsage_Tutor_Student.objects.create(
-                coupon=payment.coupon,
-                used_by_student=payment.student if student_id else None,
-                used_by_tutor=payment.coupon.created_by_tutor if tutor_id else None
-            )
-
-        # Create or update subscription
-        subscription, created = Subscription.objects.get_or_create(student=payment.student)
-        now = timezone.now()
-        
-        if created:
-            subscription.start_date = now
-            subscription.end_date = now + relativedelta(months=payment.subscription_months)
-        else:
             if subscription.end_date > now:
+                # Obuna hali amal qilmoqda - muddatni uzaytiramiz
                 subscription.end_date += relativedelta(months=payment.subscription_months)
             else:
+                # Obuna muddati tugagan - yangi muddat belgilaymiz
                 subscription.end_date = now + relativedelta(months=payment.subscription_months)
-
-        subscription.next_payment_date = subscription.end_date
-        subscription.is_paid = True
-        subscription.save()
+            
+            subscription.next_payment_date = subscription.end_date
+            subscription.is_paid = True  # ✅ BU QATOR QO'SHILDI
+            subscription.save()
+            
+        except Subscription.DoesNotExist:
+            # Yangi subscription yaratish
+            now = timezone.now()
+            subscription = Subscription.objects.create(
+                student=payment.student,
+                start_date=now,
+                end_date=now + relativedelta(months=payment.subscription_months),
+                next_payment_date=now + relativedelta(months=payment.subscription_months),
+                is_paid=True  # ✅ BU QATOR QO'SHILDI
+            )
 
         return Response({"status": "ok"}, status=status.HTTP_200_OK)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
