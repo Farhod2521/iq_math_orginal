@@ -91,9 +91,10 @@ class FullStatisticsAPIView(APIView):
             })
 
         # 7. Studentga berilgan umumiy keshbek
-        total_student_cashback = payments_success.aggregate(
-            total=Sum('student_cashback_amount')
-        )['total'] or 0
+        total_student_cashback=0
+        # total_student_cashback = payments_success.aggregate(
+        #     total=Sum('student_cashback_amount')
+        # )['total'] or 0
 
         # 8. Teacherga berilgan umumiy keshbek
         total_teacher_cashback = payments_success.aggregate(
