@@ -236,6 +236,7 @@ class PaymentCallbackAPIView(APIView):
         except Payment.DoesNotExist:
             return Response({"error": "Payment not found"}, status=status.HTTP_404_NOT_FOUND)
 
+
         # Update payment status
         payment.store_id = store_id
         payment.invoice_uuid = invoice_uuid
@@ -249,9 +250,7 @@ class PaymentCallbackAPIView(APIView):
 
         # ✅ TO'G'RI KESHBEK TAQSIMLASH LOGIKASI
         if payment.coupon and payment.coupon_type:
-            
             if payment.coupon_type == "tutor" and payment.coupon.created_by_tutor:
-                # ✅ TUTOR KUPONI: Faqat tutorga keshbek
                 TutorCouponTransaction.objects.create(
                     student=payment.student,
                     tutor=payment.coupon.created_by_tutor,
@@ -260,57 +259,78 @@ class PaymentCallbackAPIView(APIView):
                     cashback_amount=payment.teacher_cashback_amount
                 )
                 
-                # Tutorga keshbek qo'shish
                 if payment.teacher_cashback_amount > 0:
                     tutor = payment.coupon.created_by_tutor
                     tutor.balance += payment.teacher_cashback_amount
                     tutor.save()
 
             elif payment.coupon_type == "student" and payment.coupon.created_by_student:
-                # ✅ STUDENT KUPONI: Faqat studentga (KUPON EGASI) keshbek
                 StudentCouponTransaction.objects.create(
                     student=payment.student,
-                    by_student=payment.coupon.created_by_student,  # Kupon egasi
+                    by_student=payment.coupon.created_by_student,
                     coupon=payment.coupon,
                     payment_amount=payment.amount,
                     cashback_amount=payment.student_cashback_amount
                 )
                 
-                # Studentga (KUPON EGASI) keshbek qo'shish
                 if payment.student_cashback_amount > 0:
-                    student_owner = payment.coupon.created_by_student  # Kupon egasi
+                    student_owner = payment.coupon.created_by_student
                     student_owner.balance += payment.student_cashback_amount
                     student_owner.save()
 
-            # ✅ SYSTEM KUPONI: Hech kimga keshbek BERILMAYDI
-            # payment.coupon_type == "system" holati uchun hech qanday keshbek amalga oshirilmaydi
-
-        # ✅ SUBSCRIPTIONNI YANGILASH
+        # ✅ SUBSCRIPTIONNI YANGILASH - TO'LIQ QAYTA YOZILGAN
         try:
             subscription = Subscription.objects.get(student=payment.student)
             now = timezone.now()
             
-            if subscription.end_date > now:
-                subscription.end_date += relativedelta(months=payment.subscription_months)
+            # ✅ Subscription months ni tekshirish
+            subscription_months = payment.subscription_months
+            if not subscription_months:
+                subscription_months = 1  # Default qiymat
+                print(f"Warning: subscription_months not found, using default: {subscription_months}")
+            
+            print(f"Adding {subscription_months} months to subscription")
+            
+            if subscription.end_date and subscription.end_date > now:
+                # Obuna hali amal qilmoqda - muddatni uzaytiramiz
+                new_end_date = subscription.end_date + relativedelta(months=subscription_months)
+                subscription.end_date = new_end_date
+                print(f"Extended subscription to: {new_end_date}")
             else:
-                subscription.end_date = now + relativedelta(months=payment.subscription_months)
+                # Obuna muddati tugagan yoki mavjud emas - yangi muddat belgilaymiz
+                new_end_date = now + relativedelta(months=subscription_months)
+                subscription.end_date = new_end_date
+                print(f"New subscription until: {new_end_date}")
             
             subscription.next_payment_date = subscription.end_date
             subscription.is_paid = True
             subscription.save()
             
+            print(f"Subscription updated successfully. is_paid: {subscription.is_paid}")
+            
         except Subscription.DoesNotExist:
+            # Yangi subscription yaratish
             now = timezone.now()
+            
+            # ✅ Subscription months ni tekshirish
+            subscription_months = payment.subscription_months
+            if not subscription_months:
+                subscription_months = 1  # Default qiymat
+                print(f"Warning: subscription_months not found, using default: {subscription_months}")
+            
+            new_end_date = now + relativedelta(months=subscription_months)
+            
             subscription = Subscription.objects.create(
                 student=payment.student,
                 start_date=now,
-                end_date=now + relativedelta(months=payment.subscription_months),
-                next_payment_date=now + relativedelta(months=payment.subscription_months),
+                end_date=new_end_date,
+                next_payment_date=new_end_date,
                 is_paid=True
             )
+            
+            print(f"New subscription created until: {new_end_date}")
 
         return Response({"status": "ok"}, status=status.HTTP_200_OK)
-
 
 
 
