@@ -13,10 +13,7 @@ from .View.independentView import  TopicHelpRequestCreateView, AssignTeacherAPIV
 from .View.student_login_history import  StudentLoginHistoryListAPIView
 from .View.convertView import ConvertView
 from .View.coupon_create_apiview import StudentCouponViewSet
-from rest_framework.routers import DefaultRouter
 
-router = DefaultRouter()
-router.register(r'student/coupons', StudentCouponViewSet, basename='tutor-coupon')
 
 
 urlpatterns = [
@@ -72,4 +69,4 @@ urlpatterns = [
 
 
 
-]+ router.urls
+]
