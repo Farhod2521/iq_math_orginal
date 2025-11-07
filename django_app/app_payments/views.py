@@ -633,37 +633,47 @@ class CheckCouponAPIView(APIView):
     """
     Kupon kodini tekshiradi va 1 oylik chegirmani alohida hisoblaydi.
     """
+    permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
         code = request.data.get("code")
         subscription_id = request.data.get("subscription_id")
 
         if not code or not subscription_id:
-            return Response({"error": "Kupon kodi yoki subscription_id kiritilmadi"}, status=400)
+            return Response(
+                {"error": "Kupon kodi yoki subscription_id kiritilmadi"},
+                status=400
+            )
 
         # Kuponni olish
         try:
             coupon = Coupon_Tutor_Student.objects.get(code=code)
         except Coupon_Tutor_Student.DoesNotExist:
-            return Response({"active": False, "message": "Kupon topilmadi"}, status=404)
+            return Response(
+                {"active": False, "message": "Kupon topilmadi"},
+                status=404
+            )
 
+        # 🔒 Kupon faol va yaroqli ekanligini tekshirish
         if not coupon.is_active or not coupon.is_valid():
-            return Response({"active": False, "message": "Kupon muddati tugagan yoki faol emas"}, status=200)
+            return Response(
+                {"active": False, "message": "Kupon muddati tugagan yoki faol emas"},
+                status=200
+            )
+
+        # 🔒 Student o‘z kuponini ishlata olmasin
+        student = getattr(request.user, "student_profile", None)
+        if student and coupon.created_by_student and coupon.created_by_student.id == student.id:
+            return Response(
+                {"active": False, "message": "Siz o‘zingiz yaratgan kuponni ishlata olmaysiz"},
+                status=403
+            )
 
         # Kuponni kim yaratganini aniqlash
         student_id = coupon.created_by_student.id if coupon.created_by_student else None
         tutor_id = coupon.created_by_tutor.id if coupon.created_by_tutor else None
 
-        # Allaqachon ishlatilganmi
-        # already_used = CouponUsage_Tutor_Student.objects.filter(
-        #     coupon=coupon,
-        #     used_by_student_id=student_id,
-        #     used_by_tutor_id=tutor_id
-        # ).exists()
-        # if already_used:
-        #     return Response({"active": False, "message": "Kupon avval ishlatilgan"}, status=200)
-
-        # Tanlangan tarif
+        # Tanlangan tarifni olish
         try:
             plan = SubscriptionPlan.objects.get(id=subscription_id)
         except SubscriptionPlan.DoesNotExist:
@@ -671,30 +681,31 @@ class CheckCouponAPIView(APIView):
 
         original_price = plan.price_per_month - (plan.price_per_month * plan.discount_percent / 100)
 
-        # 1 oylik tarifdan kupon chegirmasi
+        # 1 oylik chegirma
         one_month_plan = SubscriptionPlan.objects.filter(months=1).first()
         one_month_discount = 0
         if one_month_plan:
             one_month_discount = one_month_plan.price_per_month * coupon.discount_percent / 100
 
-        # Sale price = original_price - 1 oylik kupon chegirma
         sale_price = original_price - one_month_discount
-
-        # Tejalgan summa
         saved_amount = plan.price_per_month - sale_price
         price = plan.price_per_month
-        # Foydalanish tarixini yozish
-        CouponUsage_Tutor_Student.objects.create(
-            coupon=coupon,
-            used_by_student_id=student_id,
-            used_by_tutor_id=tutor_id
-        )
+
+        # Kupon turini aniqlash
         if coupon.created_by_student:
             coupon_type = "student"
         elif coupon.created_by_tutor:
             coupon_type = "tutor"
         else:
             coupon_type = "system"
+
+        # Foydalanish tarixini yozish (agar kerak bo‘lsa)
+        # CouponUsage_Tutor_Student.objects.create(
+        #     coupon=coupon,
+        #     used_by_student=student,
+        #     used_by_tutor_id=tutor_id
+        # )
+
         return Response({
             "active": True,
             "code": coupon.code,
@@ -705,7 +716,6 @@ class CheckCouponAPIView(APIView):
             "saved_amount": saved_amount,
             "coupon_type": coupon_type
         }, status=200)
-
 
 class SubscriptionPlanListAPIView(APIView):
     def get(self, request):
