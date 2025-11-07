@@ -12,6 +12,13 @@ from .View.student_statistics import StudentStatisticsDetailAPIView, SubjectList
 from .View.independentView import  TopicHelpRequestCreateView, AssignTeacherAPIView, GetTelegramIdFromTopicHelpAPIView, StudentTopicHelpRequestListView, TopicHelpRequestIndependentDetailAPIView
 from .View.student_login_history import  StudentLoginHistoryListAPIView
 from .View.convertView import ConvertView
+from .View.coupon_create_apiview import StudentCouponViewSet
+from rest_framework.routers import DefaultRouter
+
+router = DefaultRouter()
+router.register(r'student/coupons', StudentCouponViewSet, basename='tutor-coupon')
+
+
 urlpatterns = [
     path('my-subjects/', StudentSubjectListAPIView.as_view(), name='my-subjects'),
     path('my-chapter/<int:subject_id>/', ChapterListBySubjectAPIView.as_view(), name='chapter-list-by-subject'),
@@ -65,4 +72,4 @@ urlpatterns = [
 
 
 
-]
+]+ router.urls
