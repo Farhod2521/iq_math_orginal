@@ -18,7 +18,7 @@ from dateutil.relativedelta import relativedelta
 from .serializers import PaymentSerializer, SubscriptionPlanSerializer
 from django_app.app_student.models import  StudentCouponTransaction
 from django_app.app_tutor.models import TutorCouponTransaction
-
+from django.db.models import Q
 URL_TEST = "https://dev-mesh.multicard.uz"
 URL_DEV = "https://mesh.multicard.uz"
 class InitiatePaymentAPIView(APIView):
@@ -631,7 +631,8 @@ class MyPaymentsAPIView(APIView):
     
 class CheckCouponAPIView(APIView):
     """
-    Kupon kodini tekshiradi va 1 oylik chegirmani alohida hisoblaydi.
+    Kupon kodini tekshiradi, 1 oylik chegirmani hisoblaydi
+    va agar kupon allaqachon ishlatilgan bo‘lsa — bloklaydi.
     """
     permission_classes = [IsAuthenticated]
 
@@ -642,56 +643,72 @@ class CheckCouponAPIView(APIView):
         if not code or not subscription_id:
             return Response(
                 {"error": "Kupon kodi yoki subscription_id kiritilmadi"},
-                status=400
+                status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Kuponni olish
+        # 🔍 Kuponni olish
         try:
             coupon = Coupon_Tutor_Student.objects.get(code=code)
         except Coupon_Tutor_Student.DoesNotExist:
             return Response(
                 {"active": False, "message": "Kupon topilmadi"},
-                status=404
+                status=status.HTTP_404_NOT_FOUND
             )
 
-        # 🔒 Kupon faol va yaroqli ekanligini tekshirish
+        # ⛔ Kupon yaroqliligini tekshirish
         if not coupon.is_active or not coupon.is_valid():
             return Response(
                 {"active": False, "message": "Kupon muddati tugagan yoki faol emas"},
-                status=200
+                status=status.HTTP_200_OK
             )
 
-        # 🔒 Student o‘z kuponini ishlata olmasin
+        # 👤 Joriy studentni olish
         student = getattr(request.user, "student_profile", None)
-        if student and coupon.created_by_student and coupon.created_by_student.id == student.id:
+        if not student:
+            return Response({"error": "Foydalanuvchi student emas"}, status=403)
+
+        # ⛔ Student o‘z kuponini ishlata olmasin
+        if coupon.created_by_student and coupon.created_by_student.id == student.id:
             return Response(
                 {"active": False, "message": "Siz o‘zingiz yaratgan kuponni ishlata olmaysiz"},
-                status=403
+                status=status.HTTP_403_FORBIDDEN
             )
 
-        # Kuponni kim yaratganini aniqlash
+        # ⛔ Kupon allaqachon shu student tomonidan ishlatilganmi?
+        used_in_tutor_tx = TutorCouponTransaction.objects.filter(
+            student=student,
+            coupon=coupon
+        ).exists()
+
+        used_in_student_tx = StudentCouponTransaction.objects.filter(
+            student=student,
+            coupon=coupon
+        ).exists()
+
+        if used_in_tutor_tx or used_in_student_tx:
+            return Response(
+                {"active": False, "message": "Ushbu kuponni siz allaqachon ishlatgansiz"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # 🎯 Kuponni kim yaratganini aniqlash
         student_id = coupon.created_by_student.id if coupon.created_by_student else None
         tutor_id = coupon.created_by_tutor.id if coupon.created_by_tutor else None
 
-        # Tanlangan tarifni olish
+        # 📦 Tarifni olish
         try:
             plan = SubscriptionPlan.objects.get(id=subscription_id)
         except SubscriptionPlan.DoesNotExist:
-            return Response({"error": "Tarif topilmadi"}, status=400)
+            return Response({"error": "Tarif topilmadi"}, status=status.HTTP_400_BAD_REQUEST)
 
+        # 💰 Narxlarni hisoblash
         original_price = plan.price_per_month - (plan.price_per_month * plan.discount_percent / 100)
-
-        # 1 oylik chegirma
         one_month_plan = SubscriptionPlan.objects.filter(months=1).first()
-        one_month_discount = 0
-        if one_month_plan:
-            one_month_discount = one_month_plan.price_per_month * coupon.discount_percent / 100
-
+        one_month_discount = one_month_plan.price_per_month * coupon.discount_percent / 100 if one_month_plan else 0
         sale_price = original_price - one_month_discount
         saved_amount = plan.price_per_month - sale_price
-        price = plan.price_per_month
 
-        # Kupon turini aniqlash
+        # 🏷️ Kupon turi
         if coupon.created_by_student:
             coupon_type = "student"
         elif coupon.created_by_tutor:
@@ -699,23 +716,16 @@ class CheckCouponAPIView(APIView):
         else:
             coupon_type = "system"
 
-        # Foydalanish tarixini yozish (agar kerak bo‘lsa)
-        # CouponUsage_Tutor_Student.objects.create(
-        #     coupon=coupon,
-        #     used_by_student=student,
-        #     used_by_tutor_id=tutor_id
-        # )
-
         return Response({
             "active": True,
             "code": coupon.code,
             "discount_percent": coupon.discount_percent,
-            "price": price,
+            "price": plan.price_per_month,
             "original_price": original_price,
             "sale_price": sale_price,
             "saved_amount": saved_amount,
             "coupon_type": coupon_type
-        }, status=200)
+        }, status=status.HTTP_200_OK)
 
 class SubscriptionPlanListAPIView(APIView):
     def get(self, request):
