@@ -12,7 +12,7 @@ from .View.student_statistics import StudentStatisticsDetailAPIView, SubjectList
 from .View.independentView import  TopicHelpRequestCreateView, AssignTeacherAPIView, GetTelegramIdFromTopicHelpAPIView, StudentTopicHelpRequestListView, TopicHelpRequestIndependentDetailAPIView
 from .View.student_login_history import  StudentLoginHistoryListAPIView
 from .View.convertView import ConvertView
-from .View.coupon_create_apiview import StudentCouponViewSet
+from .View.coupon_create_apiview import StudentCouponAPIView
 
 
 
@@ -66,6 +66,7 @@ urlpatterns = [
 
     path('student/login-history/', StudentLoginHistoryListAPIView.as_view(), name='student-login-history'),
     path('my-convert/', ConvertView.as_view(), name='convert'),
+    path("student/coupon/", StudentCouponAPIView.as_view(), name='convert'),
 
 
 
