@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404
 
 from django_app.app_user.models import Student, Subject
 from django_app.app_student.models import Diagnost_Student, TopicProgress
-from django_app.app_teacher.models import Chapter
+from django_app.app_teacher.models import Chapter, Topic
 
 
 
@@ -128,7 +128,6 @@ class StudentDiagnosticHistoryAPIView(APIView):
 
     def get(self, request):
         student = Student.objects.get(user=request.user)
-
         diagnost_dict = {}
         diagnost_list = Diagnost_Student.objects.filter(student=student).select_related('subject')
 
@@ -140,11 +139,13 @@ class StudentDiagnosticHistoryAPIView(APIView):
             all_diagnosts = Diagnost_Student.objects.filter(
                 student=student,
                 subject=subject
-            ).order_by('id')
+            ).prefetch_related('topic').order_by('id')
 
             progress_history = []
+            topic_counter = {}
 
             for diag in all_diagnosts:
+                # 🔹 Ball tarixini yig‘ish
                 if diag.result:
                     try:
                         score = diag.result.get("result", [{}])[0].get("score")
@@ -156,14 +157,32 @@ class StudentDiagnosticHistoryAPIView(APIView):
                     except Exception:
                         continue
 
-            # Oxirgi ball
+                # 🔹 Mavzularni hisoblash
+                for topic in diag.topic.all():
+                    topic_counter[topic.id] = topic_counter.get(topic.id, 0) + 1
+
+            # 🔹 3 martadan ko‘p takrorlangan mavzular
+            repeated_topics = [
+                {
+                    "id": t.id,
+                    "name_uz": t.name_uz,
+                    "name_ru": t.name_ru,
+                    "repeat_count": topic_counter[t.id]
+                }
+                for t in Topic.objects.filter(id__in=[
+                    tid for tid, count in topic_counter.items() if count >= 3
+                ])
+            ]
+
+            # Oxirgi ball va sana
             progress_percent = progress_history[-1]["score"] if progress_history else None
             last_date = progress_history[-1]["date"] if progress_history else None
 
             diagnost_dict[subject_id] = {
                 "progress_history": progress_history,
                 "progress_percent": progress_percent,
-                "last_date": last_date
+                "last_date": last_date,
+                "repeated_topics": repeated_topics
             }
 
         # Faqat diagnostika o‘tkazilgan fanlar
@@ -185,8 +204,10 @@ class StudentDiagnosticHistoryAPIView(APIView):
                 "image_ru": subject.image_ru.url if subject.image_ru else "",
                 "progress_percent": diagnost_info["progress_percent"],
                 "progress_history": diagnost_info["progress_history"],
+                "last_date": diagnost_info["last_date"],
                 "has_taken_diagnostic": True,
-                "last_date": diagnost_info["last_date"]
+                # 🆕 Takrorlangan mavzularni massiv shaklida qaytarish
+                "repeated_topics": diagnost_info["repeated_topics"]
             })
 
         return Response(data)
