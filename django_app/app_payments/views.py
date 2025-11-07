@@ -15,7 +15,7 @@ import uuid
 from rest_framework.permissions import IsAuthenticated
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
-from .serializers import PaymentSerializer, SubscriptionPlanSerializer
+from .serializers import PaymentSerializer, SubscriptionPlanSerializer, PaymentTeacherSerializer
 from django_app.app_student.models import  StudentCouponTransaction
 from django_app.app_tutor.models import TutorCouponTransaction
 from django.db.models import Q
@@ -732,3 +732,55 @@ class SubscriptionPlanListAPIView(APIView):
         plans = SubscriptionPlan.objects.filter(is_active=True).order_by('months')
         serializer = SubscriptionPlanSerializer(plans, many=True)
         return Response(serializer.data)
+    
+
+
+
+class PaymentTeacherListAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        # faqat teacher kirsin
+        if not hasattr(user, 'teacher_profile'):
+            return Response(
+                {"detail": "Sizda bu sahifaga kirish huquqi yo‘q (faqat o‘qituvchilar uchun)."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # barcha to‘lovlarni olish (so‘nggi to‘lovlar yuqorida)
+        payments = Payment.objects.select_related("student", "coupon").order_by("-created_at")
+
+        # filtrlash parametrlari (ixtiyoriy)
+        status_filter = request.GET.get("status")
+        coupon_type = request.GET.get("coupon_type")
+
+        if status_filter:
+            payments = payments.filter(status=status_filter)
+        if coupon_type:
+            payments = payments.filter(coupon_type=coupon_type)
+
+        serializer = PaymentTeacherSerializer(payments, many=True)
+
+        # Jadval ko‘rinishida JSON qaytarish
+        table_data = {
+            "columns": [
+                "ID",
+                "Student",
+                "Amount",
+                "Original Amount",
+                "Discount (%)",
+                "Coupon",
+                "Coupon Type",
+                "Status",
+                "Payment Gateway",
+                "Student Cashback",
+                "Teacher Cashback",
+                "Payment Date",
+                "Created At"
+            ],
+            "rows": serializer.data
+        }
+
+        return Response(table_data, status=status.HTTP_200_OK)

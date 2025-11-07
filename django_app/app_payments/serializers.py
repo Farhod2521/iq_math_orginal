@@ -51,3 +51,26 @@ class SubscriptionPlanSerializer(serializers.ModelSerializer):
         discount_amount = (monthly_price * obj.discount_percent) / 100
         # chegirmali oylik narx
         return float(monthly_price - discount_amount)
+    
+
+class PaymentTeacherSerializer(serializers.ModelSerializer):
+    student_name = serializers.CharField(source="student.full_name", read_only=True)
+    coupon_code = serializers.CharField(source="coupon.code", read_only=True)
+
+    class Meta:
+        model = Payment
+        fields = [
+            "id",
+            "student_name",
+            "amount",
+            "original_amount",
+            "discount_percent",
+            "coupon_code",
+            "coupon_type",
+            "status",
+            "payment_gateway",
+            "student_cashback_amount",
+            "teacher_cashback_amount",
+            "payment_date",
+            "created_at",
+        ]
