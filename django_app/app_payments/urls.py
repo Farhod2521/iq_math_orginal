@@ -2,7 +2,7 @@
 from django.urls import path
 from .views import (
     PaymentCallbackAPIView, InitiatePaymentAPIView, 
-    SubscriptionTrialDaysAPIView, MyPaymentsAPIView, CheckCouponAPIView, SubscriptionPlanListAPIView
+    SubscriptionTrialDaysAPIView, MyPaymentsAPIView, CheckCouponAPIView, SubscriptionPlanListAPIView, PaymentTeacherListAPIView
 )
 
 urlpatterns = [
@@ -12,4 +12,4 @@ urlpatterns = [
     path('my-payments/', MyPaymentsAPIView.as_view(), name='my-payments'),
     path('check-coupon/', CheckCouponAPIView.as_view(), name='my-payments'),
     path('plans/', SubscriptionPlanListAPIView.as_view(), name='subscription-plan-list'),
-]
+    path("teacher/payments/", PaymentTeacherListAPIView.as_view(), name="teacher-payment-list"),
