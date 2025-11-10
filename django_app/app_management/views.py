@@ -6,10 +6,10 @@ from django_app.app_payments.models import Subscription, Payment, SubscriptionPl
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django_app.app_management.permissions import IsTeacher
-from django.utils import timezone
+
 from datetime import timedelta
 
-from datetime import datetime
+from datetime import datetime, timezone
 from django.utils.timezone import now
 from datetime import timedelta
 from django.db.models import Sum, Count, Q
@@ -57,7 +57,7 @@ class MotivationAPIView(APIView):
         ]
 
         return Response({"motivations": data}, status=status.HTTP_200_OK)
-
+from django.utils import timezone
 class SystemSettingsListView(ListAPIView):
     queryset = SystemSettings.objects.all()
     serializer_class = SystemSettingsSerializer
