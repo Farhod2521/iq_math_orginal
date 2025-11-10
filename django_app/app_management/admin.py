@@ -1,7 +1,35 @@
 from django.contrib import admin
-from .models import SystemSettings, FAQ, Product, ReferralAndCouponSettings, Banner, Coupon_Tutor_Student, SystemCoupon,ConversionRate, SolutionStatus
+from .models import  Motivation, SystemSettings, FAQ, Product, ReferralAndCouponSettings, Banner, Coupon_Tutor_Student, SystemCoupon,ConversionRate, SolutionStatus
 from modeltranslation.admin import TranslationAdmin
 from django.utils.html import format_html
+
+
+
+
+@admin.register(Motivation)
+class MotivationAdmin(admin.ModelAdmin):
+    list_display = ("title", "is_active", "created_at")
+    list_filter = ("is_active", "created_at")
+    search_fields = ("title", "content")
+    ordering = ("-created_at",)
+    readonly_fields = ("created_at", "updated_at")
+
+    fieldsets = (
+        ("Asosiy ma'lumotlar", {
+            "fields": ("title", "content", "is_active")
+        }),
+        ("Vaqt ma'lumotlari", {
+            "fields": ("created_at", "updated_at")
+        }),
+    )
+
+    class Meta:
+        verbose_name = "Motivatsion so‘z"
+        verbose_name_plural = "Motivatsion so‘zlar"
+
+
+
+
 
 @admin.register(SystemSettings)
 class SystemSettingsAdmin(admin.ModelAdmin):

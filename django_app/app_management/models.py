@@ -7,6 +7,38 @@ from django.utils import timezone
 from datetime import timedelta
 
 from django_app.app_user.models import  Student, Teacher, Tutor
+
+
+
+class Motivation(models.Model):
+    title = models.CharField(
+        max_length=255,
+        verbose_name="Sarlavha"
+    )
+    content = RichTextField(
+        verbose_name="Matn (motivatsion so‘zlar)"
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name="Faolmi?"
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Yaratilgan sana"
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name="Yangilangan sana"
+    )
+
+    def __str__(self):
+        return self.title
+
+    class Meta:
+        verbose_name = "Motivatsion matn"
+        verbose_name_plural = "Motivatsion matnlar"
+        ordering = ["-created_at"]
+
 class SystemSettings(models.Model):
     logo = models.ImageField(upload_to='system/logo/', blank=True, null=True, verbose_name="Logo")
     about =  RichTextField(verbose_name="Biz Haqimizda")

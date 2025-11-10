@@ -1,5 +1,5 @@
 from rest_framework.generics import ListAPIView
-from .models import SystemSettings, FAQ, Product, Banner
+from .models import SystemSettings, FAQ, Product, Banner, Motivation
 from .serializers import SystemSettingsSerializer, FAQSerializer, ProductSerializer, BannerSerializer
 from django_app.app_user.models import User, Teacher, Student, Tutor, Parent
 from django_app.app_payments.models import Subscription, Payment, SubscriptionPlan
@@ -9,10 +9,54 @@ from django_app.app_management.permissions import IsTeacher
 from django.utils import timezone
 from datetime import timedelta
 
-
+from datetime import datetime
 from django.utils.timezone import now
 from datetime import timedelta
 from django.db.models import Sum, Count, Q
+from rest_framework import status
+
+
+class MotivationAPIView(APIView):
+    """
+    Har 3 soatda 2 ta motivatsion so‘zni chiqaruvchi API.
+    """
+
+    def get(self, request, *args, **kwargs):
+        motivations = Motivation.objects.filter(is_active=True).order_by("created_at")
+
+        if not motivations.exists():
+            return Response({"detail": "Motivatsion so‘zlar topilmadi."}, status=status.HTTP_404_NOT_FOUND)
+
+        count = motivations.count()
+
+        # 🕒 Hozirgi vaqt
+        now = datetime.now(timezone.utc)
+        # Kun boshidan o‘tgan soatlar
+        hours_since_midnight = now.hour
+
+        # Har 3 soatda o‘zgaradi
+        block_index = hours_since_midnight // 3
+
+        # Har 3 soatda 2 tadan chiqaramiz
+        start_index = (block_index * 2) % count
+        end_index = (start_index + 2) % count
+
+        if end_index > start_index:
+            selected = motivations[start_index:end_index]
+        else:
+            # ro‘yxat aylanishi uchun
+            selected = list(motivations[start_index:]) + list(motivations[:end_index])
+
+        data = [
+            {
+                "title": m.title,
+                "content": m.content,
+                "created_at": m.created_at.strftime("%Y-%m-%d %H:%M"),
+            }
+            for m in selected
+        ]
+
+        return Response({"motivations": data}, status=status.HTTP_200_OK)
 
 class SystemSettingsListView(ListAPIView):
     queryset = SystemSettings.objects.all()
