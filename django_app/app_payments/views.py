@@ -604,16 +604,44 @@ class SubscriptionTrialDaysAPIView(APIView):
         # 💳 To‘lov holati
         is_paid = subscription.is_paid and remaining_days > 0
 
-        # 💰 Eng arzon aktiv reja narxini olish
+        # 💰 Eng arzon aktiv reja narxini olish (fallback)
         plan = SubscriptionPlan.objects.filter(is_active=True).order_by('price_per_month').first()
         payment_amount = float(plan.total_price()) if plan else 1000
+
+        # 🔎 Oxirgi muvaffaqiyatli to‘lovni topamiz
+        last_payment = (
+            Payment.objects
+            .filter(student=request.user.student_profile, status="success")
+            .order_by('-payment_date', '-created_at')
+            .first()
+        )
+
+        current_plan_info = None
+        if last_payment:
+            # To‘lovdan obuna muddatiga qarab tarifni aniqlaymiz
+            plan = SubscriptionPlan.objects.filter(
+                months=last_payment.subscription_months
+            ).first()
+            if plan:
+                current_plan_info = {
+                    "plan_name": plan.get_months_display(),
+                    "discount_percent": plan.discount_percent,
+                    "total_price": float(plan.total_price()),
+                }
+            else:
+                current_plan_info = {
+                    "plan_name": f"{last_payment.subscription_months} oylik (custom)",
+                    "discount_percent": last_payment.discount_percent,
+                    "total_price": float(last_payment.amount),
+                }
 
         return Response(
             {
                 "days_until_next_payment": remaining_days,
                 "end_date": subscription.end_date.strftime("%d/%m/%Y"),
                 "payment_amount": payment_amount,
-                "is_paid": is_paid
+                "is_paid": is_paid,
+                "current_plan": current_plan_info,  # 🆕 tarif haqida ma’lumot
             },
             status=status.HTTP_200_OK
         )
