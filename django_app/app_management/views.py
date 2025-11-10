@@ -57,7 +57,7 @@ class MotivationAPIView(APIView):
         ]
 
         return Response({"motivations": data}, status=status.HTTP_200_OK)
-from django.utils import timezone
+
 class SystemSettingsListView(ListAPIView):
     queryset = SystemSettings.objects.all()
     serializer_class = SystemSettingsSerializer
