@@ -11,9 +11,6 @@ from rest_framework.permissions import IsAuthenticated
 
 
 
-
-
-
 class StudentNextTopicAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -27,16 +24,18 @@ class StudentNextTopicAPIView(APIView):
         student = user.student_profile
 
         # 🧮 1️⃣ Talabaning ishlagan barcha mavzulari
-        progresses = TopicProgress.objects.filter(user=student).select_related("topic", "topic__chapter", "topic__chapter__subject")
+        progresses = TopicProgress.objects.filter(user=student).select_related(
+            "topic", "topic__chapter", "topic__chapter__subject"
+        )
 
         if progresses.exists():
             # 🎯 Har bir fan uchun eng oxirgi ishlangan mavzuni topamiz
             subjects = {}
-            for progress in progresses.order_by('-updated_at'):  # agar updated_at yo‘q bo‘lsa, created_at bo‘lishi mumkin
+            for progress in progresses.order_by('-completed_at', '-id'):  # ✅ to‘g‘rilangan joy
                 topic = progress.topic
                 subject = topic.chapter.subject
 
-                # Agar bu fan uchun hali tanlanmagan bo‘lsa, birinchi topilganini olamiz (ya’ni eng oxirgi ishlangan)
+                # Agar bu fan uchun hali tanlanmagan bo‘lsa — birinchi topilganini olamiz (ya’ni eng oxirgi ishlangan)
                 if subject.id not in subjects:
                     subjects[subject.id] = topic
 
@@ -91,3 +90,5 @@ class StudentNextTopicAPIView(APIView):
 
         # 3️⃣ Aks holda hech narsa yo‘q
         return Response({"detail": "Hozircha hech qanday mavzu mavjud emas."}, status=status.HTTP_204_NO_CONTENT)
+
+
