@@ -13,7 +13,7 @@ from .View.independentView import  TopicHelpRequestCreateView, AssignTeacherAPIV
 from .View.student_login_history import  StudentLoginHistoryListAPIView
 from .View.convertView import ConvertView
 from .View.coupon_create_apiview import StudentCouponAPIView
-from .View.student_next_topic_mobile_app import  StudentNextTopicAPIView
+from .View.student_next_topic_mobile_app import  StudentNextTopicAPIView, StudentLastProgressAPIView
 
 
 
@@ -72,5 +72,6 @@ urlpatterns = [
 
     ###############################################  MOBILE APP ##################################################
     path("student/next-topic/app", StudentNextTopicAPIView.as_view(), name='convert'),
+    path("student/last-topic-result/app", StudentLastProgressAPIView.as_view(), name='convert'),
 
 ]
