@@ -92,3 +92,38 @@ class StudentNextTopicAPIView(APIView):
         return Response({"detail": "Hozircha hech qanday mavzu mavjud emas."}, status=status.HTTP_204_NO_CONTENT)
 
 
+class StudentLastProgressAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        # ✅ Faqat student kirishi mumkin
+        if not hasattr(user, 'student_profile'):
+            return Response({"detail": "Faqat o‘quvchilar uchun."}, status=status.HTTP_403_FORBIDDEN)
+
+        student = user.student_profile
+
+        # 🔍 Eng oxirgi ishlangan mavzuni olish
+        last_progress = (
+            TopicProgress.objects
+            .filter(user=student)
+            .select_related('topic', 'topic__chapter', 'topic__chapter__subject')
+            .order_by('-completed_at')
+            .first()
+        )
+
+        if not last_progress:
+            return Response({"detail": "Hali hech qanday mavzu ishlanmagan."}, status=status.HTTP_204_NO_CONTENT)
+
+        topic = last_progress.topic
+        subject = topic.chapter.subject
+
+        data = {
+            "subject_name_uz": subject.name_uz,
+            "topic_name_uz": topic.name_uz,
+            "score": round(last_progress.score, 1),
+            "completed_at": last_progress.completed_at.strftime("%d/%m/%Y %H:%M") if last_progress.completed_at else None
+        }
+
+        return Response(data, status=status.HTTP_200_OK)
