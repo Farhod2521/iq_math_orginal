@@ -6,6 +6,11 @@ from django.utils.html import format_html
 
 
 
+
+
+
+
+
 @admin.register(Motivation)
 class MotivationAdmin(admin.ModelAdmin):
     list_display = ("title", "is_active", "created_at")
