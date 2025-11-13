@@ -20,57 +20,54 @@ class TeacherTopicHelpRequestListAPIView(APIView):
         max_page_size = 100
 
     def get(self, request):
-        help_requests = TopicHelpRequestIndependent.objects.all()\
-            .select_related('student__user', 'subject', 'teacher__user')\
+        # ORM LEVEL — maksimal darajada optimizatsiya
+        help_requests = (
+            TopicHelpRequestIndependent.objects
+            .select_related(
+                'student', 'student__user',
+                'subject', 'teacher', 'teacher__user'
+            )
             .prefetch_related('topics')
+            .order_by('student_id', '-created_at')  # groupby uchun tartiblash shart
+        )
 
-        grouped_data = defaultdict(list)
+        # STUDENT bo‘yicha guruhlash (tezyurar)
+        grouped = []
+        for (student_id, student_reqs) in groupby(help_requests, key=attrgetter('student_id')):
+            student_reqs = list(student_reqs)
+            student = student_reqs[0].student  # repeated query emas — already selected
 
-        for req in help_requests:
-            subject = req.subject
-            class_name = subject.classes.name if subject.classes else 'Nomalum'
-            topics = req.topics.all()
-            status_text = "javob berilgan" if req.commit else "kutmoqda"
+            req_list = []
+            for req in student_reqs:
+                subject = req.subject
+                class_name = subject.classes.name if subject.classes else 'Nomalum'
 
-            teacher_info = None
-            if req.teacher:
-                teacher_info = {
-                    "full_name": req.teacher.full_name,
-                    "reviewed_at": req.reviewed_at,
-                    "commit": req.commit
-                }
+                req_list.append({
+                    "id": req.id,
+                    "class_uz": f"{class_name}-sinf {subject.name_uz}",
+                    "class_ru": f"{class_name}-класс {subject.name_ru}",
+                    "topics_name_uz": [t.name_uz for t in req.topics.all()],
+                    "topics_name_ru": [t.name_ru for t in req.topics.all()],
+                    "created_at": req.created_at.strftime("%d.%m.%Y %H:%M"),
+                    "status": "javob berilgan" if req.commit else "kutmoqda",
+                    "teacher": {
+                        "full_name": req.teacher.full_name,
+                        "reviewed_at": req.reviewed_at,
+                        "commit": req.commit,
+                    } if req.teacher else None,
+                })
 
-            created_at_formatted = req.created_at.strftime("%d.%m.%Y %H:%M") if req.created_at else None
-
-            grouped_data[req.student.id, req.student.full_name].append({
-                "id": req.id,
-                "class_uz": f"{class_name}-sinf {subject.name_uz}",
-                "class_ru": f"{class_name}-класс {subject.name_ru}",
-                "topics_name_uz": [topic.name_uz for topic in topics],
-                "topics_name_ru": [topic.name_ru for topic in topics],
-                "created_at": created_at_formatted,
-                "status": status_text,
-                "teacher": teacher_info
+            grouped.append({
+                "student_id": student.id,
+                "student_full_name": student.full_name,
+                "total_requests": len(req_list),
+                "requests": req_list,  # SLICING SIZ — chunki student ichida to‘liq ro‘yxat bo‘lishi kerak
             })
 
-        # 🔽 Har bir student uchun sahifalangan requestlar
-        page = int(request.GET.get('page', 1))
-        page_size = int(request.GET.get('page_size', 10))
-        start = (page - 1) * page_size
-        end = start + page_size
-
-        response_data = [
-            {
-                "student_id": student_id,
-                "student_full_name": full_name,
-                "requests": reqs[start:end],  # sahifalab kesiladi
-                "total_requests": len(reqs),  # umumiy sonni ham ko‘rsatamiz
-            }
-            for (student_id, full_name), reqs in grouped_data.items()
-        ]
-
+        # END → Bitta katta LISTni paginate qilamiz (eng to‘g‘ri yo‘l)
         paginator = self.StandardResultsSetPagination()
-        paginated_page = paginator.paginate_queryset(response_data, request)
+        paginated_page = paginator.paginate_queryset(grouped, request)
+
         return paginator.get_paginated_response(paginated_page)
 
 from rest_framework.generics import RetrieveAPIView
