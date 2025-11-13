@@ -12,6 +12,7 @@ from django_app.app_user.models import  Teacher, User
 from django.db.models import Prefetch, Count, Subquery, OuterRef
 from django.core.paginator import Paginator
 from collections import defaultdict
+from django_app.app_teacher.models import Topic
 class TeacherTopicHelpRequestListAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
