@@ -9,9 +9,9 @@ from django.utils import timezone
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import AllowAny
 from django_app.app_user.models import  Teacher, User
-from itertools import groupby
-from operator import attrgetter
-
+from django.db.models import Prefetch, Count, Subquery, OuterRef
+from django.core.paginator import Paginator
+from collections import defaultdict
 class TeacherTopicHelpRequestListAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -21,34 +21,79 @@ class TeacherTopicHelpRequestListAPIView(APIView):
         max_page_size = 100
 
     def get(self, request):
-        # ORM LEVEL — maksimal darajada optimizatsiya
-        help_requests = (
+        # 1. Avval pagination qilinadigan student ID larni topamiz
+        student_subquery = (
             TopicHelpRequestIndependent.objects
-            .select_related(
-                'student', 'student__user',
-                'subject', 'teacher', 'teacher__user'
-            )
-            .prefetch_related('topics')
-            .order_by('student_id', '-created_at')  # groupby uchun tartiblash shart
+            .filter(student_id=OuterRef('student_id'))
+            .order_by('-created_at')
+            .values('id')[:1]  # Eng yangi request ID sini olish
         )
 
-        # STUDENT bo‘yicha guruhlash (tezyurar)
-        grouped = []
-        for (student_id, student_reqs) in groupby(help_requests, key=attrgetter('student_id')):
-            student_reqs = list(student_reqs)
-            student = student_reqs[0].student  # repeated query emas — already selected
+        # Faqat so'rov yuborgan studentlarni olish
+        students_with_requests = (
+            TopicHelpRequestIndependent.objects
+            .select_related('student')
+            .only('student_id', 'student__full_name')
+            .annotate(
+                latest_request_id=Subquery(student_subquery)
+            )
+            .order_by('student_id')
+            .distinct('student_id')  # Har bir studentdan faqat bitta record
+        )
 
-            req_list = []
-            for req in student_reqs:
-                subject = req.subject
-                class_name = subject.classes.name if subject.classes else 'Nomalum'
+        # 2. Studentlarni paginate qilish
+        paginator = self.StandardResultsSetPagination()
+        paginated_students = paginator.paginate_queryset(
+            list(students_with_requests), request
+        )
 
-                req_list.append({
+        # 3. Faqat pagination dagi studentlarning so'rovlarini olish
+        result = []
+        if paginated_students:
+            student_ids = [student.student_id for student in paginated_students]
+            
+            # Barcha kerakli ma'lumotlarni bir queryda olish
+            topics_prefetch = Prefetch(
+                'topics', 
+                queryset=Topic.objects.only('id', 'name_uz', 'name_ru')
+            )
+
+            help_requests = (
+                TopicHelpRequestIndependent.objects
+                .filter(student_id__in=student_ids)
+                .select_related(
+                    'student', 
+                    'subject', 
+                    'subject__classes',
+                    'teacher'
+                )
+                .prefetch_related(topics_prefetch)
+                .only(
+                    'id', 'student_id', 'created_at', 'commit', 'reviewed_at',
+                    'student__full_name',
+                    'subject__name_uz', 'subject__name_ru', 'subject__classes__name',
+                    'teacher__full_name'
+                )
+                .order_by('student_id', '-created_at')
+            )
+
+            # 4. Ma'lumotlarni studentlar bo'yicha guruhlash
+            student_requests_map = defaultdict(list)
+            
+            for req in help_requests:
+                class_name = getattr(req.subject.classes, 'name', 'Nomalum') if req.subject.classes else 'Nomalum'
+                
+                # Topics ma'lumotlarini bir martta olish
+                topics = list(req.topics.all())
+                topics_uz = [topic.name_uz for topic in topics]
+                topics_ru = [topic.name_ru for topic in topics]
+                
+                request_data = {
                     "id": req.id,
-                    "class_uz": f"{class_name}-sinf {subject.name_uz}",
-                    "class_ru": f"{class_name}-класс {subject.name_ru}",
-                    "topics_name_uz": [t.name_uz for t in req.topics.all()],
-                    "topics_name_ru": [t.name_ru for t in req.topics.all()],
+                    "class_uz": f"{class_name}-sinf {req.subject.name_uz}",
+                    "class_ru": f"{class_name}-класс {req.subject.name_ru}",
+                    "topics_name_uz": topics_uz,
+                    "topics_name_ru": topics_ru,
                     "created_at": req.created_at.strftime("%d.%m.%Y %H:%M"),
                     "status": "javob berilgan" if req.commit else "kutmoqda",
                     "teacher": {
@@ -56,21 +101,23 @@ class TeacherTopicHelpRequestListAPIView(APIView):
                         "reviewed_at": req.reviewed_at,
                         "commit": req.commit,
                     } if req.teacher else None,
+                }
+                
+                student_requests_map[req.student_id].append(request_data)
+
+            # 5. Natijalarni tayyorlash
+            for student_data in paginated_students:
+                student_id = student_data.student_id
+                requests = student_requests_map.get(student_id, [])
+                
+                result.append({
+                    "student_id": student_id,
+                    "student_full_name": student_data.student.full_name,
+                    "total_requests": len(requests),
+                    "requests": requests,
                 })
 
-            grouped.append({
-                "student_id": student.id,
-                "student_full_name": student.full_name,
-                "total_requests": len(req_list),
-                "requests": req_list,  # SLICING SIZ — chunki student ichida to‘liq ro‘yxat bo‘lishi kerak
-            })
-
-        # END → Bitta katta LISTni paginate qilamiz (eng to‘g‘ri yo‘l)
-        paginator = self.StandardResultsSetPagination()
-        paginated_page = paginator.paginate_queryset(grouped, request)
-
-        return paginator.get_paginated_response(paginated_page)
-
+        return paginator.get_paginated_response(result)
 from rest_framework.generics import RetrieveAPIView
 class TeacherTopicHelpRequestDetailAPIView(RetrieveAPIView):
     permission_classes = [IsAuthenticated]
