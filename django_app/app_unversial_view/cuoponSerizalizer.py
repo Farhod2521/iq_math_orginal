@@ -9,29 +9,45 @@ from django_app.app_management.models import  Coupon_Tutor_Student
 class CouponCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Coupon_Tutor_Student
-        # 'code' foydalanuvchi tomonidan yuborilmaydi — viewsetda avtomatik yaratiladi
-        fields = ['id']  
+        fields = ['id']  # Foydalanuvchi hech narsa yubormaydi
 
     def validate(self, attrs):
         request = self.context.get('request')
 
-        if not request or not hasattr(request, 'user') or request.user.is_anonymous:
+        if not request or request.user.is_anonymous:
             raise serializers.ValidationError({"error": "Foydalanuvchi aniqlanmadi"})
 
-        tutor = getattr(request.user, 'tutor_profile', None)
-        if tutor is None:
-            raise serializers.ValidationError({"error": "Foydalanuvchi o‘qituvchi emas"})
+        user = request.user
 
-        # Har bir o‘qituvchiga faqat bitta kupon
-        if Coupon_Tutor_Student.objects.filter(created_by_tutor=tutor).exists():
-            raise serializers.ValidationError({"error": "Siz allaqachon kupon yaratgansiz"})
+        # Student
+        if user.role == 'student':
+            student = user.student_profile
+            if Coupon_Tutor_Student.objects.filter(created_by_student=student).exists():
+                raise serializers.ValidationError({"error": "Siz allaqachon kupon yaratgansiz"})
+            attrs['created_by_student'] = student
 
-        attrs['created_by_tutor'] = tutor
+        # Tutor
+        elif user.role == 'tutor':
+            tutor = user.tutor_profile
+            if Coupon_Tutor_Student.objects.filter(created_by_tutor=tutor).exists():
+                raise serializers.ValidationError({"error": "Siz allaqachon kupon yaratgansiz"})
+            attrs['created_by_tutor'] = tutor
+
+        # Teacher
+        elif user.role == 'teacher':
+            teacher = user.teacher_profile
+            if Coupon_Tutor_Student.objects.filter(created_by_teacher=teacher).exists():
+                raise serializers.ValidationError({"error": "Siz allaqachon kupon yaratgansiz"})
+            attrs['created_by_teacher'] = teacher
+
+        else:
+            raise serializers.ValidationError({"error": "Bu rolda kupon yaratish mumkin emas"})
+
         return attrs
 
     def create(self, validated_data):
-        # Kupon kodi viewset ichida generate qilinadi
         return Coupon_Tutor_Student.objects.create(**validated_data)
+
     
 
 class CouponSerializer(serializers.ModelSerializer):
