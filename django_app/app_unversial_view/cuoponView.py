@@ -1,22 +1,20 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import viewsets, permissions, status
+from rest_framework import permissions, status
+from rest_framework.exceptions import PermissionDenied
 import random
 import string
 from django.utils import timezone
 from datetime import timedelta
-from django.db.models import Sum
+
 from django_app.app_management.models import Coupon_Tutor_Student, ReferralAndCouponSettings
-from .cuoponSerizalizer import  CouponCreateSerializer, CouponSerializer
+from .cuoponSerizalizer import CouponCreateSerializer, CouponSerializer
 
 
-
-
-class UniversalCouponViewSet(viewsets.ModelViewSet):
+class UniversalCouponAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
-    serializer_class = CouponSerializer
-    queryset = Coupon_Tutor_Student.objects.all()
 
+    # --- Unique kupon generatsiya qilish ---
     def _generate_unique_coupon_code(self, length=6):
         chars = string.ascii_uppercase + string.digits
         while True:
@@ -24,41 +22,51 @@ class UniversalCouponViewSet(viewsets.ModelViewSet):
             if not Coupon_Tutor_Student.objects.filter(code=code).exists():
                 return code
 
-    def get_queryset(self):
-        """Foydalanuvchi faqat o‘zi yaratgan kuponlarni ko‘radi"""
-        user = self.request.user
+    # --- GET: Foydalanuvchining kuponini qaytaradi ---
+    def get(self, request):
+        user = request.user
+        role = user.role
 
-        if user.role == 'student':
-            student = user.student_profile
-            return Coupon_Tutor_Student.objects.filter(created_by_student=student)
+        coupon = None
 
-        elif user.role == 'tutor':
-            tutor = user.tutor_profile
-            return Coupon_Tutor_Student.objects.filter(created_by_tutor=tutor)
+        if role == 'student':
+            coupon = Coupon_Tutor_Student.objects.filter(created_by_student=user.student_profile).first()
 
-        elif user.role == 'teacher':
-            teacher = user.teacher_profile
-            return Coupon_Tutor_Student.objects.filter(created_by_teacher=teacher)
+        elif role == 'tutor':
+            coupon = Coupon_Tutor_Student.objects.filter(created_by_tutor=user.tutor_profile).first()
 
-        return Coupon_Tutor_Student.objects.none()
+        elif role == 'teacher':
+            coupon = Coupon_Tutor_Student.objects.filter(created_by_teacher=user.teacher_profile).first()
 
-    def create(self, request, *args, **kwargs):
+        else:
+            raise PermissionDenied("Role uchun ruxsat yo‘q!")
 
-        # --- SETTINGS ---
+        if coupon is None:
+            return Response({"message": "Siz hali kupon yaratmagansiz."}, status=status.HTTP_404_NOT_FOUND)
+
+        return Response({
+            "message": "Sizning kuponingiz:",
+            "coupon": CouponSerializer(coupon).data
+        }, status=status.HTTP_200_OK)
+
+    # --- POST: Yangi kupon yaratish ---
+    def post(self, request):
+        user = request.user
+        role = user.role
+
+        # SETTINGS
         try:
             settings = ReferralAndCouponSettings.objects.latest('updated_at')
         except ReferralAndCouponSettings.DoesNotExist:
             return Response({"error": "ReferralAndCouponSettings topilmadi"},
                             status=status.HTTP_400_BAD_REQUEST)
 
-        user = request.user
-        role = user.role  # student / tutor / teacher
-
+        # Kupon muddati
         valid_from = timezone.now()
         valid_until = valid_from + timedelta(days=settings.coupon_valid_days)
-        coupon_code = self._generate_unique_coupon_code()
 
         existing_coupon = None
+        creator_data = {}
 
         # --- STUDENT ---
         if role == 'student':
@@ -81,14 +89,16 @@ class UniversalCouponViewSet(viewsets.ModelViewSet):
         else:
             raise PermissionDenied("Role uchun ruxsat yo‘q!")
 
-        # --- Agar mavjud bo‘lsa, qaytaramiz ---
+        # Agar bor bo‘lsa — mavjudini qaytarish
         if existing_coupon:
             return Response({
                 "message": "Siz allaqachon kupon yaratgansiz",
                 "coupon": CouponSerializer(existing_coupon).data
             }, status=status.HTTP_200_OK)
 
-        # --- Yangi kupon yaratish ---
+        # Yangi kupon kodi
+        coupon_code = self._generate_unique_coupon_code()
+
         serializer = CouponCreateSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
 
