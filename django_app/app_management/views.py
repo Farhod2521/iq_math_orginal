@@ -1,6 +1,6 @@
 from rest_framework.generics import ListAPIView
-from .models import SystemSettings, FAQ, Product, Banner, Motivation
-from .serializers import SystemSettingsSerializer, FAQSerializer, ProductSerializer, BannerSerializer
+from .models import SystemSettings, FAQ, Product, Banner, Motivation, Elon
+from .serializers import SystemSettingsSerializer, FAQSerializer, ProductSerializer, BannerSerializer, ElonSerializer
 from django_app.app_user.models import User, Teacher, Student, Tutor, Parent
 from django_app.app_payments.models import Subscription, Payment, SubscriptionPlan
 from rest_framework.views import APIView
@@ -14,6 +14,16 @@ from django.utils.timezone import now
 from datetime import timedelta
 from django.db.models import Sum, Count, Q
 from rest_framework import status
+
+
+
+
+
+class ElonListAPIView(APIView):
+    def get(self, request):
+        elonlar = Elon.objects.all().order_by('-created_at')
+        serializer = ElonSerializer(elonlar, many=True, context={"request": request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class MotivationAPIView(APIView):

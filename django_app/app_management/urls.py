@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import SystemSettingsListView, FAQListView, ProductListView, FullStatisticsAPIView, BannerListView, MotivationAPIView
+from .views import SystemSettingsListView, FAQListView, ProductListView, FullStatisticsAPIView, BannerListView, MotivationAPIView, ElonListAPIView
 
 urlpatterns = [
     path('system-settings/', SystemSettingsListView.as_view(), name='system-settings-list'),
@@ -11,5 +11,6 @@ urlpatterns = [
 
     ######################  MOBILE APP ####################################
     path('app/motivation-list/', MotivationAPIView.as_view(), name='statistics'),
+    path('app/elon-list/', ElonListAPIView.as_view(), name='statistics'),
 
 ]
