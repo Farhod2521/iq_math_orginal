@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import SystemSettings, FAQ, Product, Banner, ConversionRate
+from .models import SystemSettings, FAQ, Product, Banner, ConversionRate, Category, Tag, Elon
 
 class SystemSettingsSerializer(serializers.ModelSerializer):
     class Meta:
@@ -38,3 +38,33 @@ class BannerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Banner
         fields = '__all__'
+
+
+
+
+class CategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ["id", "title"]
+
+
+class TagSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tag
+        fields = ["id", "title"]
+class ElonSerializer(serializers.ModelSerializer):
+    categories = CategorySerializer(many=True)
+    tags = TagSerializer(many=True)
+
+    class Meta:
+        model = Elon
+        fields = [
+            "id",
+            "title",
+            "text",
+            "image",
+            "categories",
+            "tags",
+            "created_at",
+            "updated_at",
+        ]
