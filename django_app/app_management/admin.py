@@ -1,5 +1,9 @@
 from django.contrib import admin
-from .models import  Motivation, SystemSettings, FAQ, Product, ReferralAndCouponSettings, Banner, Coupon_Tutor_Student, SystemCoupon,ConversionRate, SolutionStatus
+from .models import  (
+    Motivation, SystemSettings, FAQ, Product, ReferralAndCouponSettings, 
+    Banner, Coupon_Tutor_Student, SystemCoupon,ConversionRate, SolutionStatus,
+    Elon, Category, Tag
+    )
 from modeltranslation.admin import TranslationAdmin
 from django.utils.html import format_html
 
@@ -7,6 +11,25 @@ from django.utils.html import format_html
 
 
 
+@admin.register(Category)
+class CategoryAdmin(admin.ModelAdmin):
+    list_display = ("id", "title")
+    search_fields = ("title",)
+
+
+@admin.register(Tag)
+class TagAdmin(admin.ModelAdmin):
+    list_display = ("id", "title")
+    search_fields = ("title",)
+
+
+@admin.register(Elon)
+class ElonAdmin(admin.ModelAdmin):
+    list_display = ("id", "title", "created_at", "updated_at")
+    search_fields = ("title", "text")
+    list_filter = ("created_at", "categories", "tags")
+    filter_horizontal = ("categories", "tags")
+    readonly_fields = ("created_at", "updated_at")
 
 
 

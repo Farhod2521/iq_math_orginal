@@ -9,6 +9,48 @@ from datetime import timedelta
 from django_app.app_user.models import  Student, Teacher, Tutor
 
 
+class Category(models.Model):
+    title = models.CharField(max_length=200, verbose_name="Kategoriya nomi")
+
+    def __str__(self):
+        return self.title
+
+    class Meta:
+        verbose_name = "Kategoriya"
+        verbose_name_plural = "Kategoriyalar"
+        ordering = ['title']
+
+
+class Tag(models.Model):
+    title = models.CharField(max_length=200, verbose_name="Teg nomi")
+
+    def __str__(self):
+        return self.title
+
+    class Meta:
+        verbose_name = "Teg"
+        verbose_name_plural = "Teglar"
+        ordering = ['title']
+
+
+class Elon(models.Model):
+    title = models.CharField(max_length=255, verbose_name="Sarlavha")
+    text = RichTextField(verbose_name="Matn (boy matn)")
+    image = models.ImageField(upload_to='elon_images/', null=True, blank=True, verbose_name="Rasm")
+
+    categories = models.ManyToManyField(Category, blank=True, related_name="elons", verbose_name="Kategoriyalar")
+    tags = models.ManyToManyField(Tag, blank=True, related_name="elons", verbose_name="Teglar")
+
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Yaratilgan sana")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Yangilangan sana")
+
+    def __str__(self):
+        return self.title
+
+    class Meta:
+        verbose_name = "E'lon"
+        verbose_name_plural = "E'lonlar"
+        ordering = ['-created_at']
 
 class Motivation(models.Model):
     title = models.CharField(
