@@ -1,9 +1,7 @@
-from django.urls import path
-from  .cuoponView import  UniversalCouponViewSet
+from rest_framework.routers import DefaultRouter
+from .cuoponView import UniversalCouponViewSet
 
+router = DefaultRouter()
+router.register('coupon-generate', UniversalCouponViewSet, basename='coupon')
 
-urlpatterns = [
-    path('coupon-generate/', UniversalCouponViewSet.as_view(), name='tutor-coupon-transactions'),
-
-
-]
+urlpatterns = router.urls
