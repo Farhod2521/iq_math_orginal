@@ -2,12 +2,12 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Sum, Count, Max
-from django_app.app_payments.models import Payment
+from django_app.app_payments.models import Payment, Subscription
 from django_app.app_student.models import StudentScore,  Diagnost_Student, TopicProgress, StudentReferral
 from django_app.app_user.models import Student, Subject
 from django.shortcuts import get_object_or_404
 from  django_app.app_student.serializers import  ReferredStudentSerializer, DiagnostSubjectSerializer
-
+from django.utils import timezone
 class StudentStatisticsDetailAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -37,7 +37,6 @@ class StudentStatisticsDetailAPIView(APIView):
             topic_ids = diagnost.topic.values_list('id', flat=True)
             total_topics = len(topic_ids)
 
-            # 80% dan yuqori bajarilganlar
             mastered_count = TopicProgress.objects.filter(
                 user=student,
                 topic_id__in=topic_ids,
@@ -53,6 +52,14 @@ class StudentStatisticsDetailAPIView(APIView):
                 "mastered_topics": mastered_count,
                 "mastery_percent": mastery_percent
             })
+
+        # === Subscription holati (aktiv yoki yo'q) ===
+        try:
+            subscription = student.subscription
+            now = timezone.now()
+            is_active = subscription.is_paid and subscription.end_date >= now
+        except Subscription.DoesNotExist:
+            is_active = False
 
         # === Response JSON ===
         data = {
@@ -70,6 +77,7 @@ class StudentStatisticsDetailAPIView(APIView):
                 'failed': failed_payments.count(),
             },
             'total_paid_amount': float(total_paid_amount),
+            'is_active': is_active,      # 🔥 Yangi maydon qo‘shildi
             'student_diagnost': diagnostika
         }
 
