@@ -82,3 +82,28 @@ class TutorWithdrawal(models.Model):
 
     def __str__(self):
         return f"{self.tutor.full_name} - {self.amount} so‘m ({self.status})"
+
+
+
+class WithdrawalLimitSettings(models.Model):
+    min_amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        verbose_name="Minimal yechib olish summasi"
+    )
+    max_amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        verbose_name="Maksimal yechib olish summasi"
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name="Yangilangan vaqt"
+    )
+
+    class Meta:
+        verbose_name = "Yechib olish sozlamalari"
+        verbose_name_plural = "Yechib olish sozlamalari"
+
+    def __str__(self):
+        return f"Min: {self.min_amount} | Max: {self.max_amount}"

@@ -10,7 +10,7 @@ from .serializers import (
       CouponSerializer, ReferralSerializer, TutorWithdrawalSerializer)
 from django.db import IntegrityError
 from rest_framework.exceptions import PermissionDenied
-from .models import TutorCouponTransaction, TutorReferralTransaction, TutorWithdrawal
+from .models import TutorCouponTransaction, TutorReferralTransaction, TutorWithdrawal, WithdrawalLimitSettings
 import random
 import string
 from django.db.models import Sum
@@ -228,29 +228,58 @@ class TutorWithdrawalCreateAPIView(APIView):
         except ValueError:
             return Response({"error": "Noto‘g‘ri summa formatida yuborildi"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # ✅ Minimal yechib olish miqdori 1000 so‘m
-        if amount < 1000:
-            return Response({"error": "Minimal yechib olish miqdori 1000 so‘m"}, status=status.HTTP_400_BAD_REQUEST)
+        # === 🔥 LIMIT SETTINGS — DEFAULT & CUSTOM ===
+        settings = WithdrawalLimitSettings.objects.first()
 
-        # Balansni hisoblaymiz
+        if settings:
+            min_limit = float(settings.min_amount)
+            max_limit = float(settings.max_amount)
+        else:
+            # 🔥 Model yo‘q bo‘lsa — default limitlar
+            min_limit = 1000
+            max_limit = 100000
+
+        # === Minimal tekshiruv ===
+        if amount < min_limit:
+            return Response(
+                {"error": f"Minimal yechib olish miqdori {min_limit} so‘m"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # === Maksimal tekshiruv ===
+        if amount > max_limit:
+            return Response(
+                {"error": f"Maksimal yechib olish miqdori {max_limit} so‘m"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # === Balansni hisoblash ===
         referral_income = TutorReferralTransaction.objects.filter(tutor=tutor).aggregate(
             total=Sum('bonus_amount')
         )['total'] or 0
+
         coupon_income = TutorCouponTransaction.objects.filter(tutor=tutor).aggregate(
             total=Sum('cashback_amount')
         )['total'] or 0
+
         withdrawn = TutorWithdrawal.objects.filter(tutor=tutor, status='approved').aggregate(
             total=Sum('amount')
         )['total'] or 0
+
         pending = TutorWithdrawal.objects.filter(tutor=tutor, status='pending').aggregate(
             total=Sum('amount')
         )['total'] or 0
 
         balance = referral_income + coupon_income - withdrawn - pending
 
+        # === Balans yetarlimi? ===
         if amount > balance:
-            return Response({"error": "Balansda yetarli mablag‘ mavjud emas"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Balansda yetarli mablag‘ mavjud emas"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
+        # === Yechib olish so‘rovini yaratish ===
         withdrawal = TutorWithdrawal.objects.create(
             tutor=tutor,
             amount=amount,
@@ -261,7 +290,7 @@ class TutorWithdrawalCreateAPIView(APIView):
             "message": "Yechib olish so‘rovi yuborildi",
             "withdrawal_id": withdrawal.id
         }, status=status.HTTP_201_CREATED)
-    
+
 
 
 class TutorWithdrawalListAPIView(APIView):

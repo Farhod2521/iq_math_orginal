@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import TutorCouponTransaction
+from .models import TutorCouponTransaction, WithdrawalLimitSettings
 
 @admin.register(TutorCouponTransaction)
 class TutorCouponTransactionAdmin(admin.ModelAdmin):
@@ -16,3 +16,9 @@ class TutorCouponTransactionAdmin(admin.ModelAdmin):
     search_fields = ('student__user__first_name', 'student__user__last_name', 'tutor__user__first_name', 'tutor__user__last_name', 'coupon__code')
     readonly_fields = ('used_at',)
     ordering = ('-used_at',)
+
+
+
+@admin.register(WithdrawalLimitSettings)
+class WithdrawalLimitSettingsAdmin(admin.ModelAdmin):
+    list_display = ("min_amount", "max_amount", "updated_at")
