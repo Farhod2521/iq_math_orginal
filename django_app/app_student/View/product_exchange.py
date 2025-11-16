@@ -61,8 +61,8 @@ class ProductExchangeView(APIView):
         exchange = ProductExchange.objects.create(
             student=student,
             product=product,
-            used_coin=product.coin,  # agar modelda hali used_score bo‘lsa, nomini moslashtiring
-            status='approved'
+            used_coin=product.coin,
+            delivery_status="new"
         )
 
         return Response({
@@ -115,16 +115,42 @@ class ProductExchangeListView(APIView):
                 else None
             )
 
-            data.append({
-                'product_name': exchange.product.name,
-                'product_image': product_image_url,  
-                'used_coin': exchange.used_coin,     
-                'status': exchange.status,
-                'created_at': exchange.created_at.strftime('%Y-%m-%d %H:%M'),
-            })
+        data.append({
+            'product_name': exchange.product.name,
+            'product_image': product_image_url,
+            'used_coin': exchange.used_coin,
+            'delivery_status': exchange.delivery_status,
+            'is_confirmed_by_student': exchange.is_confirmed_by_student,
+            'created_at': exchange.created_at.strftime('%Y-%m-%d %H:%M'),
+        })
 
         return Response({
             'message_uz': 'Siz almashtirgan mahsulotlar ro‘yxati.',
             'message_ru': 'Список обменянных вами товаров.',
             'exchanges': data
+        })
+    
+
+
+class ProductExchangeConfirmAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            exchange = ProductExchange.objects.get(id=pk, student=request.user.student_profile)
+        except:
+            return Response({"error": "Almashinuv topilmadi"}, status=404)
+
+        if exchange.delivery_status != "delivered":
+            return Response({"error": "Tovar hali yetkazilmagan!"}, status=400)
+
+        exchange.delivery_status = "confirmed"
+        exchange.is_confirmed_by_student = True
+        exchange.confirmed_at = timezone.now()
+        exchange.save()
+
+        return Response({
+            "message_uz": "Hizmatimizdan foydalanganingiz uchun rahmat!",
+            "message_ru": "Спасибо, что воспользовались нашим сервисом!",
+            "status": exchange.delivery_status,
         })
