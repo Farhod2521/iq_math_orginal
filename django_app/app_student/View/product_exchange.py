@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404
 from django_app.app_management.models import Product
 from django_app.app_user.models import Student
 from ..models import StudentScore, ProductExchange
-
+from django.utils import timezone
 class ProductExchangeView(APIView):
     permission_classes = [IsAuthenticated]
 

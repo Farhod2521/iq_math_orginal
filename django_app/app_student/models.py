@@ -119,7 +119,7 @@ class StudentScoreLog(models.Model):
 class ProductExchange(models.Model):
     DELIVERY_STATUS = (
         ('new', 'Yangi kelgan xabar'),
-        ('processing', 'Jarayonda'),
+        ('viewed', 'Ko‘rildi')
         ('preparing', 'Tayyorlanmoqda'),
         ('delivering', 'Yetkazilmoqda'),
         ('delivered', 'Yetkazib berildi'),
