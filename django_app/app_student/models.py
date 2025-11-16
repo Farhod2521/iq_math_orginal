@@ -117,16 +117,33 @@ class StudentScoreLog(models.Model):
 
 
 class ProductExchange(models.Model):
-    STATUS_CHOICES = (
-        ('pending', 'Kutilmoqda'),
-        ('approved', 'Tasdiqlangan'),
-        ('rejected', 'Rad etilgan'),
+    DELIVERY_STATUS = (
+        ('new', 'Yangi kelgan xabar'),
+        ('processing', 'Jarayonda'),
+        ('preparing', 'Tayyorlanmoqda'),
+        ('delivering', 'Yetkazilmoqda'),
+        ('delivered', 'Yetkazib berildi'),
+        ('confirmed', 'O‘quvchi tasdiqladi'),
     )
 
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='product_exchanges')
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    used_coin  = models.PositiveIntegerField()
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    used_coin = models.PositiveIntegerField()
+
+    # Mentor o'zgartiradigan status
+    delivery_status = models.CharField(
+        max_length=20,
+        choices=DELIVERY_STATUS,
+        default='new',
+        verbose_name="Tovar holati"
+    )
+
+    # O'quvchi tasdiqlaganmi
+    is_confirmed_by_student = models.BooleanField(default=False)
+
+    # Qachon tasdiqlagan
+    confirmed_at = models.DateTimeField(null=True, blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -135,6 +152,7 @@ class ProductExchange(models.Model):
 
     def __str__(self):
         return f"{self.student.full_name} → {self.product.name} ({self.used_coin} ball)"
+
     
 
 class TopicHelpRequestIndependent(models.Model):
