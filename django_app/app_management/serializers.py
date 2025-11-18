@@ -1,6 +1,10 @@
 from rest_framework import serializers
 from .models import SystemSettings, FAQ, Product, Banner, ConversionRate, Category, Tag, Elon
 
+
+
+
+
 class SystemSettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = SystemSettings

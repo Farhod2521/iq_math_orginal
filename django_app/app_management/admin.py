@@ -2,7 +2,7 @@ from django.contrib import admin
 from .models import  (
     Motivation, SystemSettings, FAQ, Product, ReferralAndCouponSettings, 
     Banner, Coupon_Tutor_Student, SystemCoupon,ConversionRate, SolutionStatus,
-    Elon, Category, Tag
+    Elon, Category, Tag, UploadedFile
     )
 from modeltranslation.admin import TranslationAdmin
 from django.utils.html import format_html
@@ -10,7 +10,10 @@ from django.utils.html import format_html
 
 
 
-
+@admin.register(UploadedFile)
+class UploadedFileAdmin(admin.ModelAdmin):
+    list_display = ("id", "file", "uploaded_at")
+    search_fields = ("file",)
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
     list_display = ("id", "title")

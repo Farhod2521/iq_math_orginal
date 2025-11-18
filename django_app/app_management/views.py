@@ -1,5 +1,5 @@
 from rest_framework.generics import ListAPIView
-from .models import SystemSettings, FAQ, Product, Banner, Motivation, Elon
+from .models import SystemSettings, FAQ, Product, Banner, Motivation, Elon, UploadedFile
 from .serializers import SystemSettingsSerializer, FAQSerializer, ProductSerializer, BannerSerializer, ElonSerializer
 from django_app.app_user.models import User, Teacher, Student, Tutor, Parent
 from django_app.app_payments.models import Subscription, Payment, SubscriptionPlan
@@ -14,9 +14,37 @@ from django.utils.timezone import now
 from datetime import timedelta
 from django.db.models import Sum, Count, Q
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
 
+class UploadSingleFileAPIView(APIView):
+    permission_classes = [IsAuthenticated]
 
+    def post(self, request, *args, **kwargs):
 
+        if "file" not in request.FILES:
+            return Response({"error": "file yuborilmadi!"}, status=400)
+
+        file_obj = request.FILES["file"]
+
+        # 🔥 10 MB = 10 * 1024 * 1024
+        max_size = 10 * 1024 * 1024
+        if file_obj.size > max_size:
+            return Response(
+                {"error": "Fayl hajmi 10 MB dan oshmasligi kerak!"},
+                status=400
+            )
+
+        uploaded = UploadedFile.objects.create(file=file_obj)
+
+        file_url = request.build_absolute_uri(uploaded.file.url)
+
+        return Response(
+            {
+                "message": "Fayl muvaffaqiyatli yuklandi!",
+                "file_url": file_url
+            },
+            status=status.HTTP_201_CREATED
+        )
 
 
 class ElonListAPIView(APIView):
