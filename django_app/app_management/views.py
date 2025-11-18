@@ -17,7 +17,7 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 
 class UploadSingleFileAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
 
