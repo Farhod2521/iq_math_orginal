@@ -9,6 +9,17 @@ from datetime import timedelta
 from django_app.app_user.models import  Student, Teacher, Tutor
 
 
+class UploadedFile(models.Model):
+    file = models.FileField(upload_to="uploaded_files/")
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Yuklangan fayl"
+        verbose_name_plural = "Yuklangan fayllar"
+
+    def __str__(self):
+        return self.file.name
+
 class Category(models.Model):
     title = models.CharField(max_length=200, verbose_name="Kategoriya nomi")
 

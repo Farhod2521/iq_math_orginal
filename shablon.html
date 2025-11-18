@@ -1,200 +1,93 @@
 <!DOCTYPE html>
 <html lang="uz">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI Savol Generatsiyasi</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f7f7f7;
-      padding: 30px;
-    }
-    .container {
-      background: #fff;
-      border-radius: 12px;
-      padding: 25px;
-      max-width: 900px;
-      margin: auto;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-    input, button {
-      width: 100%;
-      padding: 10px;
-      margin: 8px 0;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-      font-size: 15px;
-    }
-    button {
-      background: #007bff;
-      color: white;
-      border: none;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #0056b3;
-    }
-    .status {
-      margin-top: 15px;
-      font-weight: bold;
-    }
-    .loading { color: orange; }
-    .success { color: green; }
-    .error { color: red; }
-    .results {
-      margin-top: 25px;
-      background: #fafafa;
-      border-radius: 10px;
-      padding: 20px;
-    }
-    .question-card {
-      background: white;
-      border: 1px solid #ddd;
-      border-radius: 10px;
-      padding: 15px;
-      margin-bottom: 15px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    }
-    .question-type {
-      font-size: 12px;
-      color: #666;
-      text-transform: uppercase;
-      margin-bottom: 5px;
-    }
-    .question-text {
-      font-weight: bold;
-      margin-bottom: 10px;
-    }
-    .choice {
-      padding-left: 20px;
-      margin-bottom: 5px;
-    }
-    .correct {
-      color: green;
-      font-weight: bold;
-    }
-    .subq {
-      background: #f9f9f9;
-      padding: 5px 10px;
-      border-left: 3px solid #007bff;
-      margin-bottom: 5px;
-      border-radius: 4px;
-    }
-  </style>
+  <meta charset="UTF-8">
+  <title>Savol yuborish</title>
 </head>
 <body>
+  <h1>Image Choice Savol yuborish</h1>
+  <form id="questionForm" enctype="multipart/form-data">
+    <div>
+      <label>Topic ID: <input type="number" name="topic" value="1" required></label>
+    </div>
+    <div>
+      <label>Question text (UZ): <input type="text" name="question_text_uz" required></label>
+    </div>
+    <div>
+      <label>Question text (RU): <input type="text" name="question_text_ru" required></label>
+    </div>
+    <div>
+      <label>Question type:
+        <select name="question_type">
+          <option value="image_choice" selected>Image Choice</option>
+        </select>
+      </label>
+    </div>
+    <div>
+      <label>Level: <input type="number" name="level" value="1" required></label>
+    </div>
 
-<div class="container">
-  <h2>🧠 AI Savol Generatsiyasi</h2>
-  <p><b>Fan, Bob va Mavzu ID</b> larni kiriting. AI shu mavzu bo‘yicha 15 ta savol generatsiya qiladi va natijani quyida ko‘rsatadi.</p>
+    <h3>Variants</h3>
+    <div id="choicesContainer">
+      <!-- Boshida 3 variant -->
+      <div class="choice">
+        <label>Letter: <input type="text" name="choices[0].letter" value="A" required></label><br>
+        <label>Is correct: <input type="checkbox" name="choices[0].is_correct"></label><br>
+        <label>Image: <input type="file" name="choices[0].image" accept="image/*" required></label>
+      </div>
+      <div class="choice">
+        <label>Letter: <input type="text" name="choices[1].letter" value="B" required></label><br>
+        <label>Is correct: <input type="checkbox" name="choices[1].is_correct"></label><br>
+        <label>Image: <input type="file" name="choices[1].image" accept="image/*" required></label>
+      </div>
+      <div class="choice">
+        <label>Letter: <input type="text" name="choices[2].letter" value="C" required></label><br>
+        <label>Is correct: <input type="checkbox" name="choices[2].is_correct"></label><br>
+        <label>Image: <input type="file" name="choices[2].image" accept="image/*" required></label>
+      </div>
+    </div>
 
-  <input type="number" id="subject_id" placeholder="Fan ID (masalan: 1)" />
-  <input type="number" id="chapter_id" placeholder="Bob ID (masalan: 3)" />
-  <input type="number" id="topic_id" placeholder="Mavzu ID (masalan: 146)" />
-  <button onclick="generateQuestions()">Generatsiya qilish</button>
+    <button type="submit">Yuborish</button>
+  </form>
 
-  <div id="status" class="status"></div>
-  <div id="results" class="results" style="display:none;"></div>
-</div>
+  <script>
+    const form = document.getElementById('questionForm');
+    const apiUrl = 'https://api.iqmath.uz/api/v1/func_teacher/my-question/create/';
+    const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzYzNTQwNjYwLCJpYXQiOjE3NjM0OTM4NjAsImp0aSI6IjAyNTI2YzI2N2ZlYjQzNDdhYzk0MWRlODg5YTk5NmEwIiwidXNlcl9pZCI6MTAwLCJzdHVkZW50X2lkIjo4M30.EIY74290YaGU0m_eF0eVv0O__4GP8ZfujFki7IcqOWE';
 
-<script>
-async function generateQuestions() {
-  const subjectId = document.getElementById("subject_id").value;
-  const chapterId = document.getElementById("chapter_id").value;
-  const topicId = document.getElementById("topic_id").value;
-  const statusDiv = document.getElementById("status");
-  const resultsDiv = document.getElementById("results");
-  resultsDiv.style.display = "none";
-  resultsDiv.innerHTML = "";
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
 
-  if (!subjectId || !chapterId || !topicId) {
-    statusDiv.innerHTML = "❗ Iltimos, barcha ID maydonlarini to‘ldiring.";
-    statusDiv.className = "status error";
-    return;
-  }
+      const formData = new FormData(form);
 
-  statusDiv.innerHTML = "⏳ AI savollarni generatsiya qilmoqda, biroz kuting...";
-  statusDiv.className = "status loading";
+      // Checkbox is_correct qiymatini "true"/"false" shaklida yuborish uchun:
+      document.querySelectorAll('input[type=checkbox][name^="choices"]').forEach(cb => {
+        formData.set(cb.name, cb.checked ? 'true' : 'false');
+      });
 
-  try {
-    const response = await fetch("https://api.iqmath.uz/api/v1/func_teacher/teacher/question-gerete-openai/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-      },
-      mode: "cors",
-      body: JSON.stringify({
-        subject_id: parseInt(subjectId),
-        chapter_id: parseInt(chapterId),
-        topic_id: parseInt(topicId)
-      })
-    });
-
-    if (!response.ok) throw new Error(`HTTP xatolik: ${response.status}`);
-
-    const data = await response.json();
-    console.log("Natija:", data);
-
-    if (data.success) {
-      statusDiv.innerHTML = `✅ ${data.generated_count} ta savol muvaffaqiyatli generatsiya qilindi.`;
-      statusDiv.className = "status success";
-
-      if (data.questions && data.questions.length > 0) {
-        resultsDiv.style.display = "block";
-        data.questions.forEach((q, index) => {
-          const card = document.createElement("div");
-          card.className = "question-card";
-          card.innerHTML = `
-            <div class="question-type">#${index + 1} — ${q.question_type.toUpperCase()}</div>
-            <div class="question-text"><b>🇺🇿:</b> ${q.generated_text_uz || "-"}<br><b>🇷🇺:</b> ${q.generated_text_ru || "-"}</div>
-          `;
-
-          // Variantli savollar
-          if (q.generated_choices && q.generated_choices.length > 0) {
-            card.innerHTML += `<div><b>Variantlar:</b></div>`;
-            q.generated_choices.forEach(ch => {
-              card.innerHTML += `
-                <div class="choice ${ch.is_correct ? "correct" : ""}">
-                  ${ch.letter}) 🇺🇿 ${ch.text_uz || "-"} / 🇷🇺 ${ch.text_ru || "-"}
-                  ${ch.is_correct ? "✅" : ""}
-                </div>
-              `;
-            });
-          }
-
-          // Kichik sub-savollar
-          if (q.generated_sub_questions && q.generated_sub_questions.length > 0) {
-            card.innerHTML += `<div><b>Kichik savollar:</b></div>`;
-            q.generated_sub_questions.forEach(sub => {
-              card.innerHTML += `
-                <div class="subq">
-                  🇺🇿 ${sub.text1_uz || ""} [${sub.correct_answer_uz || ""}] ${sub.text2_uz || ""}<br>
-                  🇷🇺 ${sub.text1_ru || ""} [${sub.correct_answer_ru || ""}] ${sub.text2_ru || ""}
-                </div>
-              `;
-            });
-          }
-
-          resultsDiv.appendChild(card);
+      try {
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            // 'Content-Type': multipart/form-data avtomatik qo‘yiladi FormData bilan
+          },
+          body: formData
         });
+
+        const data = await response.json();
+        if (response.ok) {
+          alert('Yuborildi! Javob: ' + JSON.stringify(data));
+          console.log(data);
+        } else {
+          alert('Xato: ' + JSON.stringify(data));
+          console.error(data);
+        }
+      } catch (error) {
+        alert('Fetch xatosi: ' + error);
+        console.error(error);
       }
-    } else if (data.error) {
-      statusDiv.innerHTML = `⚠️ Xatolik: ${data.error}`;
-      statusDiv.className = "status error";
-    } else {
-      statusDiv.innerHTML = "✅ Jarayon tugadi, ammo javob formati kutilmagan.";
-      statusDiv.className = "status success";
-    }
-
-  } catch (err) {
-    console.error("Xatolik:", err);
-    statusDiv.innerHTML = `❌ So‘rovda xatolik: ${err.message}`;
-    statusDiv.className = "status error";
-  }
-}
-</script>
-
+    });
+  </script>
 </body>
 </html>
