@@ -72,18 +72,17 @@ class ChoiceSerializer(serializers.ModelSerializer):
         write_only=True,
         required=False
     )
-    image = serializers.ImageField(required=False, allow_null=True)
-    letter = serializers.CharField(required=True)  # letter maydonini required=True qilib belgilang
-    
+
     class Meta:
         model = Choice
-        fields = ['question', 'letter', 'text_uz','text_ru', 'image', 'is_correct']
-    
-    def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        if instance.image:
-            representation['image'] = instance.image.url
-        return representation
+        fields = [
+            'question',
+            'letter',
+            'text_uz',
+            'text_ru',
+            'image_url',
+            'is_correct'
+        ]
 class CompositeSubQuestionSerializer(serializers.ModelSerializer):
     question = serializers.PrimaryKeyRelatedField(
         queryset=Question.objects.all(),

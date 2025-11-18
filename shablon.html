@@ -1,91 +1,127 @@
 <!DOCTYPE html>
 <html lang="uz">
 <head>
-  <meta charset="UTF-8">
-  <title>Savol yuborish</title>
+  <meta charset="UTF-8" />
+  <title>Fayl yuklash - IQMath API</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 40px auto;
+    }
+    label {
+      display: block;
+      margin: 10px 0 5px;
+    }
+    input[type="text"], input[type="file"] {
+      width: 100%;
+      padding: 8px;
+      box-sizing: border-box;
+    }
+    button {
+      margin-top: 15px;
+      padding: 10px 20px;
+      cursor: pointer;
+    }
+    #result {
+      margin-top: 20px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      white-space: pre-wrap;
+    }
+  </style>
 </head>
 <body>
-  <h1>Image Choice Savol yuborish</h1>
-  <form id="questionForm" enctype="multipart/form-data">
-    <div>
-      <label>Topic ID: <input type="number" name="topic" value="1" required></label>
-    </div>
-    <div>
-      <label>Question text (UZ): <input type="text" name="question_text_uz" required></label>
-    </div>
-    <div>
-      <label>Question text (RU): <input type="text" name="question_text_ru" required></label>
-    </div>
-    <div>
-      <label>Question type:
-        <select name="question_type">
-          <option value="image_choice" selected>Image Choice</option>
-        </select>
-      </label>
-    </div>
-    <div>
-      <label>Level: <input type="number" name="level" value="1" required></label>
-    </div>
+  <h1>Fayl yuklash (upload-file API)</h1>
 
-    <h3>Variants</h3>
-    <div id="choicesContainer">
-      <!-- Boshida 3 variant -->
-      <div class="choice">
-        <label>Letter: <input type="text" name="choices[0].letter" value="A" required></label><br>
-        <label>Is correct: <input type="checkbox" name="choices[0].is_correct"></label><br>
-        <label>Image: <input type="file" name="choices[0].image" accept="image/*" required></label>
-      </div>
-      <div class="choice">
-        <label>Letter: <input type="text" name="choices[1].letter" value="B" required></label><br>
-        <label>Is correct: <input type="checkbox" name="choices[1].is_correct"></label><br>
-        <label>Image: <input type="file" name="choices[1].image" accept="image/*" required></label>
-      </div>
-      <div class="choice">
-        <label>Letter: <input type="text" name="choices[2].letter" value="C" required></label><br>
-        <label>Is correct: <input type="checkbox" name="choices[2].is_correct"></label><br>
-        <label>Image: <input type="file" name="choices[2].image" accept="image/*" required></label>
-      </div>
-    </div>
+  <!-- Token kiritish -->
+  <label for="token">JWT token (Bearer):</label>
+  <input
+    type="text"
+    id="token"
+    placeholder="Bu yerga JWT tokenni joylashtiring"
+  />
 
-    <button type="submit">Yuborish</button>
-  </form>
+  <!-- Fayl tanlash -->
+  <label for="file">Faylni tanlang (max 10 MB):</label>
+  <input type="file" id="file" />
+
+  <button id="uploadBtn">Yuklash</button>
+
+  <div id="result"></div>
 
   <script>
-    const form = document.getElementById('questionForm');
-    const apiUrl = 'https://api.iqmath.uz/api/v1/func_teacher/my-question/create/';
-    const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzYzNTQwNjYwLCJpYXQiOjE3NjM0OTM4NjAsImp0aSI6IjAyNTI2YzI2N2ZlYjQzNDdhYzk0MWRlODg5YTk5NmEwIiwidXNlcl9pZCI6MTAwLCJzdHVkZW50X2lkIjo4M30.EIY74290YaGU0m_eF0eVv0O__4GP8ZfujFki7IcqOWE';
+    const uploadBtn = document.getElementById("uploadBtn");
+    const resultDiv = document.getElementById("result");
+    const API_URL = "https://api.iqmath.uz/api/v1/management/upload-file/";
 
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
+    uploadBtn.addEventListener("click", async () => {
+      resultDiv.textContent = "";
 
-      const formData = new FormData(form);
+      const token = document.getElementById("token").value.trim();
+      const fileInput = document.getElementById("file");
+      const file = fileInput.files[0];
 
-      // Checkbox is_correct qiymatini "true"/"false" shaklida yuborish uchun:
-      document.querySelectorAll('input[type=checkbox][name^="choices"]').forEach(cb => {
-        formData.set(cb.name, cb.checked ? 'true' : 'false');
-      });
+      if (!token) {
+        resultDiv.textContent = "❌ Iltimos, token kiriting!";
+        return;
+      }
+
+      if (!file) {
+        resultDiv.textContent = "❌ Iltimos, fayl tanlang!";
+        return;
+      }
+
+      // 10 MB limit (frontend tomonda ham tekshiruv)
+      const maxSize = 10 * 1024 * 1024;
+      if (file.size > maxSize) {
+        resultDiv.textContent = "❌ Fayl hajmi 10 MB dan oshmasligi kerak!";
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("file", file);
 
       try {
-        const response = await fetch(apiUrl, {
-          method: 'POST',
+        resultDiv.textContent = "⏳ Yuklanmoqda...";
+
+        const response = await fetch(API_URL, {
+          method: "POST",
           headers: {
-            'Authorization': `Bearer ${token}`,
-            // 'Content-Type': multipart/form-data avtomatik qo‘yiladi FormData bilan
+            Authorization: `Bearer ${token}`,
+            // Content-Type qo'ymaymiz, FormData o'zi boundary bilan yuboradi
           },
-          body: formData
+          body: formData,
         });
 
         const data = await response.json();
-        if (response.ok) {
-          alert('Yuborildi! Javob: ' + JSON.stringify(data));
-          console.log(data);
-        } else {
-          alert('Xato: ' + JSON.stringify(data));
-          console.error(data);
+
+        if (!response.ok) {
+          resultDiv.textContent =
+            "❌ Xato yuz berdi:\n" + JSON.stringify(data, null, 2);
+          return;
         }
-      } catch (error) {
-        alert('Fetch xatosi: ' + error);
-        console.error(error);
+
+        // Kutilayotgan javob:
+        // { "message": "...", "file_url": "https://..." }
+        let text = "✅ Muvaffaqiyatli yuklandi!\n\n";
+        text += JSON.stringify(data, null, 2);
+
+        // Agar file_url bo'lsa, link qilib chiqaramiz
+        if (data.file_url) {
+          text += `\n\nURL: ${data.file_url}`;
+          resultDiv.innerHTML =
+            "✅ Muvaffaqiyatli yuklandi!<br>" +
+            `Fayl URL: <a href="${data.file_url}" target="_blank">${data.file_url}</a><br><br>` +
+            "<pre>" +
+            JSON.stringify(data, null, 2) +
+            "</pre>";
+        } else {
+          resultDiv.textContent = text;
+        }
+      } catch (err) {
+        console.error(err);
+        resultDiv.textContent = "❌ Fetch xatosi: " + err;
       }
     });
   </script>

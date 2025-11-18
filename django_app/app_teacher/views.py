@@ -166,60 +166,63 @@ class QuestionAddCreateView(APIView):
 
     def post(self, request):
         serializer = QuestionSerializer(data=request.data, context={'request': request})
+
         if serializer.is_valid():
             try:
                 with transaction.atomic():
                     question = serializer.save()
 
-                    # Choice savollarini saqlash
+                    # 🔥 Choice savollar
                     if question.question_type in ['choice', 'image_choice']:
                         choices_data = request.data.get('choices', [])
+
                         if not choices_data:
                             raise ValueError("Choice savollar uchun variantlar kiritilmagan")
                         
-                        # Avvalgi choicelarni o'chirish
                         question.choices.all().delete()
-                        
-                        for idx, choice_data in enumerate(choices_data):
-                            # Agar letter mavjud bo'lmasa, harflarni avtomatik belgilash
-                            if 'letter' not in choice_data or not choice_data['letter']:
-                                choice_data['letter'] = chr(65 + idx)  # 65 = 'A' ASCII kodi
-                            
-                            choice_data['question'] = question.id
-                            choice_serializer = ChoiceSerializer(data=choice_data, context={'request': request})
-                            if choice_serializer.is_valid():
-                                choice = choice_serializer.save()
-                                # Rasmni alohida saqlash
-                                if 'image' in request.FILES:
-                                    image_file = request.FILES.get(f'choices[{idx}].image')
-                                    if image_file:
-                                        choice.image = image_file
-                                        choice.save()
-                            else:
-                                raise ValueError(f"Variantdagi ma'lumotlar noto‘g‘ri: {choice_serializer.errors}")
 
-                    # Composite savollarini saqlash
+                        for idx, choice_data in enumerate(choices_data):
+
+                            # Agar letter bo‘lmasa → A,B,C qo‘yamiz
+                            if 'letter' not in choice_data or not choice_data['letter']:
+                                choice_data['letter'] = chr(65 + idx)
+
+                            choice_data['question'] = question.id
+
+                            choice_serializer = ChoiceSerializer(data=choice_data)
+
+                            if choice_serializer.is_valid():
+                                choice_serializer.save()
+                            else:
+                                raise ValueError(f"Variant xato: {choice_serializer.errors}")
+
+                    # 🔥 Composite savollar
                     elif question.question_type == 'composite':
                         sub_questions_data = request.data.get('sub_questions', [])
+
                         if not sub_questions_data:
                             raise ValueError("Composite savol uchun kichik savollar kiritilmagan")
-                        
-                        # Avvalgi sub_questionlarni o'chirish
+
                         question.sub_questions.all().delete()
-                        
+
                         for sub_data in sub_questions_data:
                             sub_data['question'] = question.id
                             sub_serializer = CompositeSubQuestionSerializer(data=sub_data)
                             if sub_serializer.is_valid():
                                 sub_serializer.save()
                             else:
-                                raise ValueError(f"Kichik savoldagi ma'lumotlar noto‘g‘ri: {sub_serializer.errors}")
+                                raise ValueError(f"Kichik savolda xato: {sub_serializer.errors}")
 
-                return Response(QuestionSerializer(question, context={'request': request}).data, status=status.HTTP_201_CREATED)
+                return Response(
+                    QuestionSerializer(question, context={'request': request}).data,
+                    status=status.HTTP_201_CREATED
+                )
+
             except Exception as e:
                 return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 ################################  QUESTION BY TEACHER DELETE ##################################################
 
 class QuestionDeleteView(APIView):
