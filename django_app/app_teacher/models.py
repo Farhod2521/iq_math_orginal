@@ -93,7 +93,7 @@ class Choice(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='choices')
     letter = models.CharField(max_length=1)  # A, B, C...
     text = RichTextField(blank=True, null=True)
-    image = models.ImageField(upload_to='choices/images/', blank=True, null=True)
+    image_url = models.CharField(max_length=500, blank=True, null=True)
     is_correct = models.BooleanField(default=False)  # To‘g‘ri variant
 
     def __str__(self):
