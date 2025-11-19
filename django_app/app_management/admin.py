@@ -147,8 +147,8 @@ class SystemSettingsAdmin(admin.ModelAdmin):
 
 @admin.register(Banner)
 class BannerAdmin(admin.ModelAdmin):
-    list_display = ['desc', 'image_preview', 'created_at']
-    list_filter = ['created_at']
+    list_display = ['desc', 'image_preview']
+
     search_fields = ['desc']
     
     def image_preview(self, obj):
@@ -172,13 +172,7 @@ class BannerAdmin(admin.ModelAdmin):
         
         super().save_model(request, obj, form, change)
     
-    def get_readonly_fields(self, request, obj=None):
-        """
-        Yangi banner qo'shishda created_at ni ko'rsatmaslik
-        """
-        if obj:
-            return ['created_at']
-        return []
+
 
 @admin.register(FAQ)
 class FAQAdmin(admin.ModelAdmin):
