@@ -203,7 +203,7 @@ class TopicSerializer(serializers.ModelSerializer):
 class ChoiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Choice
-        fields = ['id', 'letter', 'image'] + get_translation_fields('text')
+        fields = ['id', 'letter', 'image_url'] + get_translation_fields('text')
 
 
 class CompositeSubQuestionSerializer(serializers.ModelSerializer):
