@@ -76,6 +76,7 @@ class ChoiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Choice
         fields = [
+            "id",
             'question',
             'letter',
             'text_uz',
