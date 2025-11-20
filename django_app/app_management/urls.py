@@ -15,6 +15,6 @@ urlpatterns = [
     path('app/motivation-list/', MotivationAPIView.as_view(), name='statistics'),
     path('app/elon-list/', ElonListAPIView.as_view(), name='statistics'),
     path("upload-file/", UploadSingleFileAPIView.as_view(), name="upload-file"),
-    path("upload-file-delete/", DeleteFileAPIView.as_view(), name="upload-file"),
+    path("upload-file-delete/<int:id>/", DeleteFileAPIView.as_view(), name="upload-file"),
 
 ]
