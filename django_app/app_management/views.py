@@ -15,6 +15,8 @@ from datetime import timedelta
 from django.db.models import Sum, Count, Q
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
+from django.shortcuts import get_object_or_404
+
 
 class UploadSingleFileAPIView(APIView):
     # permission_classes = [IsAuthenticated]
@@ -46,7 +48,33 @@ class UploadSingleFileAPIView(APIView):
             status=status.HTTP_201_CREATED
         )
 
+class DeleteFileAPIView(APIView):
+    # permission_classes = [IsAuthenticated]
 
+    def delete(self, request, file_id, *args, **kwargs):
+        try:
+            # Faylni bazadan topamiz
+            uploaded_file = get_object_or_404(UploadedFile, id=file_id)
+            
+            # Fayl ma'lumotlarini saqlab olamiz (response uchun)
+            file_name = str(uploaded_file.file.name)
+            
+            # Faylni o'chiramiz (modeldagi delete metodi filesystemdan ham o'chiradi)
+            uploaded_file.delete()
+            
+            return Response(
+                {
+                    "message": "Fayl muvaffaqiyatli o'chirildi!",
+                    "deleted_file": file_name
+                },
+                status=status.HTTP_200_OK
+            )
+            
+        except Exception as e:
+            return Response(
+                {"error": f"Faylni o'chirishda xatolik: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 class ElonListAPIView(APIView):
     def get(self, request):
         elonlar = Elon.objects.all().order_by('-created_at')
