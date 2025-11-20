@@ -27,7 +27,7 @@ class UploadSingleFileAPIView(APIView):
         file_obj = request.FILES["file"]
 
         # 🔥 10 MB = 10 * 1024 * 1024
-        max_size = 10 * 1024 * 1024
+        max_size = 5 * 1024 * 1024
         if file_obj.size > max_size:
             return Response(
                 {"error": "Fayl hajmi 10 MB dan oshmasligi kerak!"},
