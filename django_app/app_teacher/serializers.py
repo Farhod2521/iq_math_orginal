@@ -182,7 +182,7 @@ class GeneratedQuestionOpenAiSerializer(serializers.ModelSerializer):
 class OpenAIChoiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Choice
-        fields = ['id', 'letter', 'text', 'image', 'is_correct']
+        fields = ['id', 'letter', 'text', 'image_url', 'is_correct']
 
 class OpenAICompositeSubQuestionSerializer(serializers.ModelSerializer):
     class Meta:
