@@ -5,7 +5,7 @@ from django.db import models
 import uuid
 from django.utils import timezone
 from datetime import timedelta
-
+import os
 from django_app.app_user.models import  Student, Teacher, Tutor
 
 
@@ -19,6 +19,12 @@ class UploadedFile(models.Model):
 
     def __str__(self):
         return self.file.name
+    def delete(self, *args, **kwargs):
+        # Faylni filesystemdan ham o'chiramiz
+        if self.file:
+            if os.path.isfile(self.file.path):
+                os.remove(self.file.path)
+        super().delete(*args, **kwargs)
 
 class Category(models.Model):
     title = models.CharField(max_length=200, verbose_name="Kategoriya nomi")
