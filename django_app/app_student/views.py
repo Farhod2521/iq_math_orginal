@@ -455,7 +455,7 @@ class CheckAnswersAPIView(APIView):
 
         # CHOICE SAVOLLAR
         for answer in serializer.validated_data.get('choice_answers', []):
-            question = Question.objects.filter(id=answer['question_id'], question_type='choice').first()
+            question = Question.objects.filter(id=answer['question_id'], question_type__in=['choice', 'image_choice']).first()
             if not question:
                 continue
 
