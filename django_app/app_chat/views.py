@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .models import Conversation, ConversationParticipant, Message, MessageReceipt
 from .serializers import ConversationSerializer, MessageSerializer
-from users.models import Student, Teacher  # sening user struktura
+from django_app.app_user.models import Student, Teacher  # sening user struktura
 from django.db.models import Q
 
 
