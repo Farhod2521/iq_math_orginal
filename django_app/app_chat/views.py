@@ -93,7 +93,10 @@ class SendMessageAPIView(APIView):
             part.unread_count += 1
             part.save()
 
-        return Response(MessageSerializer(message).data, status=201)
+        return Response(
+            MessageSerializer(message, context={"request": request}).data,
+            status=201
+        )
 
 
 
