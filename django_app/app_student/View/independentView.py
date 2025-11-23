@@ -49,13 +49,13 @@ class TopicHelpRequestCreateView(CreateAPIView):
             return Response({"error": "Faqat o‘quvchi murojaat yubora oladi"}, status=403)
 
         student = user.student_profile
-
-        if instance.teacher:
-            teacher_user = instance.teacher.user
-        else:
-            return Response({"error": "Bu murojaat uchun o‘qituvchi belgilanmagan"}, status=400)
-
         student_user = user
+
+        # Barcha teacherlarni olish
+        teachers = Teacher.objects.all()
+
+        if not teachers.exists():
+            return Response({"error": "Tizimda o‘qituvchilar topilmadi"}, status=400)
 
         # -------------------------
         # 3) CHECK IF DIRECT CHAT ALREADY EXISTS
