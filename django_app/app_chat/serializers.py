@@ -17,17 +17,46 @@ class ConversationSerializer(serializers.ModelSerializer):
 
 # --------------- MESSAGE SERIALIZER -----------------
 class MessageSerializer(serializers.ModelSerializer):
-    sender = serializers.CharField(source="sender.full_name", read_only=True)
+    sender_name = serializers.SerializerMethodField()
     sender_id = serializers.IntegerField(source="sender.id", read_only=True)
+    is_read = serializers.SerializerMethodField()
+
+    reply_to_text = serializers.SerializerMethodField()
+    reply_to_sender = serializers.SerializerMethodField()
 
     class Meta:
         model = Message
         fields = [
-            "id", "conversation", "sender", "sender_id",
-            "message_type", "text", "file", "reply_to",
-            "is_edited", "is_deleted", "created_at"
+            "id",
+            "conversation",
+            "sender_id",
+            "sender_name",
+            "message_type",
+            "text",
+            "file",
+            "reply_to",
+            "reply_to_text",
+            "reply_to_sender",
+            "is_edited",
+            "is_deleted",
+            "created_at",
+            "is_read",
         ]
-        read_only_fields = ["sender", "sender_id"]
+        read_only_fields = ["sender_id", "sender_name"]
+
+    def get_reply_to_text(self, obj):
+        if obj.reply_to:
+            return obj.reply_to.text
+        return None
+
+    def get_reply_to_sender(self, obj):
+        if obj.reply_to:
+            u = obj.reply_to.sender
+            if hasattr(u, "student_profile"):
+                return u.student_profile.full_name
+            if hasattr(u, "teacher_profile"):
+                return u.teacher_profile.full_name
+        return None
 
 
 
