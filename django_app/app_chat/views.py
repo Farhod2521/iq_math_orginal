@@ -149,7 +149,6 @@ class TeacherChatsAPIView(APIView):
         return Response(serializer.data, status=200)
     
 
-
 class ConversationMessagesAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -166,22 +165,32 @@ class ConversationMessagesAPIView(APIView):
         if not ConversationParticipant.objects.filter(conversation=conversation, user=user).exists():
             return Response({"error": "Siz bu chatda ishtirok etmayapsiz"}, status=403)
 
-        # chatdagi barcha xabarlar (yangi → eski)
+        # chatdagi barcha xabarlar
         messages = Message.objects.filter(conversation=conversation).order_by("created_at")
 
+        # 🔥 1. HAR BIR XABARNI 'read' QILIB BELGILAYMIZ
+        for msg in messages:
+            MessageReceipt.objects.update_or_create(
+                message=msg,
+                user=user,
+                defaults={"status": "read"}
+            )
+
+        # 🔥 2. unread_count-ni nol qilamiz (teacher yoki studentga qarab)
+        part = ConversationParticipant.objects.get(conversation=conversation, user=user)
+        part.unread_count = 0
+        part.last_read_at = now()
+        part.save()
+
+        # 🔥 3. Xabarlarni serialize qilamiz
         serializer = MessageSerializer(
             messages,
             many=True,
             context={"request": request}
         )
 
-        # o‘qilgan deb belgilash
-        part = ConversationParticipant.objects.get(conversation=conversation, user=user)
-        part.unread_count = 0
-        part.last_read_at = now()
-        part.save()
-
         return Response({
             "conversation_id": conversation.id,
             "messages": serializer.data,
         }, status=200)
+
