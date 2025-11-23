@@ -28,3 +28,32 @@ class MessageSerializer(serializers.ModelSerializer):
             "is_edited", "is_deleted", "created_at"
         ]
         read_only_fields = ["sender", "sender_id"]
+
+
+
+
+
+class ConversationListSerializer(serializers.ModelSerializer):
+    other_user_name = serializers.SerializerMethodField()
+    other_user_id = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Conversation
+        fields = [
+            "id",
+            "chat_type",
+            "last_message",
+            "last_message_at",
+            "other_user_name",
+            "other_user_id",
+        ]
+
+    def get_other_user_name(self, obj):
+        user = self.context["request"].user
+        participant = obj.participants.exclude(user=user).first()
+        return participant.user.student_profile.full_name if participant else ""
+
+    def get_other_user_id(self, obj):
+        user = self.context["request"].user
+        participant = obj.participants.exclude(user=user).first()
+        return participant.user.id if participant else None

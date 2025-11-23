@@ -2,7 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .models import Conversation, ConversationParticipant, Message, MessageReceipt
-from .serializers import ConversationSerializer, MessageSerializer
+from .serializers import ConversationSerializer, MessageSerializer, ConversationListSerializer
 from django_app.app_user.models import Student, Teacher  # sening user struktura
 from django.db.models import Q
 
@@ -124,3 +124,23 @@ class ReadMessageAPIView(APIView):
         part.save()
 
         return Response({"status": "read"}, status=200)
+
+
+
+class ConversationListAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        conversations = Conversation.objects.filter(
+            participants__user=user
+        ).order_by("-last_message_at")
+
+        serializer = ConversationListSerializer(
+            conversations,
+            many=True,
+            context={"request": request}
+        )
+
+        return Response(serializer.data, status=200)
