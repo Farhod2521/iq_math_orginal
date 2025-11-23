@@ -11,9 +11,14 @@ from bot_telegram.helped_bot import send_question_to_telegram
 from django_app.app_user.models import Teacher, Student
 from urllib.parse import quote
 from django.shortcuts import get_object_or_404
-
+from django_app.app_chat.models import (
+    Conversation,
+    ConversationParticipant,
+    Message
+)
 
 BOT_USERNAME = "iq_mathbot"
+
 class TopicHelpRequestCreateView(CreateAPIView):
     queryset = TopicHelpRequestIndependent.objects.all()
     serializer_class = TopicHelpRequestIndependentSerializer
@@ -21,37 +26,96 @@ class TopicHelpRequestCreateView(CreateAPIView):
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        context['request'] = self.request
+        context["request"] = self.request
         return context
 
     def create(self, request, *args, **kwargs):
+        user = request.user
+
+        # -------------------------
+        # 1) VALIDATE AND SAVE REQUEST
+        # -------------------------
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        instance = serializer.save()
-        instance.status = 'sent'
+        instance: TopicHelpRequestIndependent = serializer.save()
+
+        instance.status = "sent"
         instance.save()
 
-        student = getattr(request.user, 'student_profile', None)
-        telegram_id = getattr(request.user, 'telegram_id', None)
+        # -------------------------
+        # 2) FIND STUDENT AND TEACHER
+        # -------------------------
+        if not hasattr(user, "student_profile"):
+            return Response({"error": "Faqat o‘quvchi murojaat yubora oladi"}, status=403)
 
-        # deep link payload yaratamiz
-        payload = f"{instance.id}_{student.id}"
-        payload_encoded = quote(payload)
-        deep_link = f"https://t.me/{BOT_USERNAME}?start={payload_encoded}"
+        student = user.student_profile
 
-        # 🔥 BU QISMI OLIB TASHLASH - O'QITUVCHIGA AVTOMATIK YUBORILMASIN
-        # if student and telegram_id and telegram_id != 0:
-        #     send_question_to_telegram(
-        #         student_id=student.id,
-        #         student_full_name=student.full_name,
-        #         question_id=instance.id,
-        #     )
+        if instance.teacher:
+            teacher_user = instance.teacher.user
+        else:
+            return Response({"error": "Bu murojaat uchun o‘qituvchi belgilanmagan"}, status=400)
 
+        student_user = user
+
+        # -------------------------
+        # 3) CHECK IF DIRECT CHAT ALREADY EXISTS
+        # -------------------------
+        conversation = Conversation.objects.filter(
+            chat_type="direct",
+            participants__user=student_user
+        ).filter(
+            participants__user=teacher_user
+        ).first()
+
+        # -------------------------
+        # 4) IF NOT EXISTS → CREATE NEW DIRECT CHAT
+        # -------------------------
+        if not conversation:
+            conversation = Conversation.objects.create(chat_type="direct")
+
+            ConversationParticipant.objects.bulk_create([
+                ConversationParticipant(conversation=conversation, user=student_user),
+                ConversationParticipant(conversation=conversation, user=teacher_user),
+            ])
+
+        # -------------------------
+        # 5) SEND AUTOMATIC MESSAGE TO CHAT
+        # -------------------------
+        text_message = (
+            f"📝 O‘quvchi sizga yangi mavzu bo‘yicha yordam so‘radi.\n"
+            f"Murojaat ID: {instance.id}\n"
+            f"Mavzu(lar): {', '.join([t.title for t in instance.topics.all()])}"
+        )
+
+        message = Message.objects.create(
+            conversation=conversation,
+            sender=student_user,
+            text=text_message
+        )
+
+        # -------------------------
+        # 6) UPDATE CHAT LAST MESSAGE INFO
+        # -------------------------
+        conversation.last_message = text_message
+        conversation.last_message_at = message.created_at
+        conversation.save()
+
+        # -------------------------
+        # 7) UPDATE UNREAD COUNT FOR TEACHER
+        # -------------------------
+        for part in conversation.participants.exclude(user=student_user):
+            part.unread_count += 1
+            part.save()
+
+        # -------------------------
+        # 8) RETURN RESULT
+        # -------------------------
         return Response({
             "success": True,
-            "message": "Murojaat yaratildi. Telegram orqali yuborishingiz mumkin.",
-            "telegram_link": deep_link  # frontendga qaytadi
-        }, status=status.HTTP_201_CREATED)
+            "message": "Murojaat yuborildi. O‘qituvchi chat orqali siz bilan bog‘lanadi.",
+            "help_request_id": instance.id,
+            "conversation_id": conversation.id
+        }, status=201)
 
 
 class AssignTeacherAPIView(APIView):
