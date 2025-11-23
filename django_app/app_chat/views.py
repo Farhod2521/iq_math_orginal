@@ -12,26 +12,22 @@ class CreateDirectChatAPIView(APIView):
 
     def post(self, request):
         user = request.user
-        
-        # Student → Teacher permission
+
         if user.role == "student":
             student = user.student_profile
-            teacher = student.class_name.teacher_profile  # sening strukturangga mos
+            teacher = student.class_name.teacher_profile
             other_user = teacher.user
 
         elif user.role == "teacher":
-            teacher = user.teacher_profile
-            # Agar teacher student bilan yozsa — student id kelishi kerak
             student_id = request.data.get("student_id")
             try:
                 other_user = Student.objects.get(id=student_id).user
             except:
                 return Response({"error": "Student topilmadi"}, status=404)
         else:
-            return Response({"error": "Faqat student/teacher chat ochishi mumkin"}, status=403)
-        
+            return Response({"error": "Faqat student yoki teacher chat ochishi mumkin"}, status=403)
 
-        # OLDIN CHAT BORMI?
+        # direct chat bor-yo‘qligini tekshiramiz
         conversation = Conversation.objects.filter(
             chat_type="direct",
             participants__user=user
@@ -42,14 +38,12 @@ class CreateDirectChatAPIView(APIView):
         if conversation:
             return Response(ConversationSerializer(conversation).data)
 
-        # YANGI CHAT
-        conversation = Conversation.objects.create(
-            chat_type="direct"
-        )
+        # yangi chat
+        conversation = Conversation.objects.create(chat_type="direct")
 
         ConversationParticipant.objects.bulk_create([
             ConversationParticipant(conversation=conversation, user=user),
-            ConversationParticipant(conversation=conversation, user=other_user),
+            ConversationParticipant(conversation=conversation, user=other_user)
         ])
 
         return Response(ConversationSerializer(conversation).data, status=201)
@@ -64,19 +58,16 @@ class SendMessageAPIView(APIView):
         file = request.FILES.get("file")
         reply_to_id = request.data.get("reply_to")
 
-        # Chatni chaqiramiz
         try:
             conversation = Conversation.objects.get(id=conversation_id)
         except:
             return Response({"error": "Chat topilmadi"}, status=404)
 
-        # User chatda ishtirokchimi?
         if not ConversationParticipant.objects.filter(
             conversation=conversation, user=user
         ).exists():
             return Response({"error": "Ruxsat yo'q"}, status=403)
 
-        # Reply qilingan xabarni topamiz (agar bo‘lsa)
         reply_to = None
         if reply_to_id:
             try:
@@ -89,15 +80,15 @@ class SendMessageAPIView(APIView):
             sender=user,
             text=text,
             file=file,
-            reply_to=reply_to   # <<< ASOSIY QISM
+            reply_to=reply_to
         )
 
-        # Conversationni yangilaymiz
+        # last message update
         conversation.last_message = text or "📎 File"
         conversation.last_message_at = message.created_at
         conversation.save()
 
-        # Unread count yangilash
+        # unread_count update (qarshi tarafga)
         for part in conversation.participants.exclude(user=user):
             part.unread_count += 1
             part.save()
@@ -118,14 +109,12 @@ class ReadMessageAPIView(APIView):
         except:
             return Response({"error": "Xabar topilmadi"}, status=404)
 
-        # Receipt create/update
         MessageReceipt.objects.update_or_create(
             message=message,
             user=user,
             defaults={"status": "read"}
         )
 
-        # unread_countni nol qilish
         part = ConversationParticipant.objects.get(
             conversation=message.conversation,
             user=user
@@ -138,21 +127,15 @@ class ReadMessageAPIView(APIView):
 
 
 
-class TeacherChatsAPIView(APIView):
+class UniversalChatsAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         user = request.user
-        
-        # faqat TEACHER ruxsat 
-        if user.role != "teacher":
-            return Response({"error": "Faqat o‘qituvchi uchun"}, status=403)
 
-        teacher_user = user
-
-        # o‘qituvchi ishtirok etgan barcha chatlar
+        # student yoki teacher farqi yo‘q — ishtirok etgan chatlar
         conversations = Conversation.objects.filter(
-            participants__user=teacher_user
+            participants__user=user
         ).order_by("-last_message_at")
 
         serializer = ConversationListSerializer(
@@ -160,7 +143,9 @@ class TeacherChatsAPIView(APIView):
             many=True,
             context={"request": request}
         )
+
         return Response(serializer.data, status=200)
+
     
 
 class ConversationMessagesAPIView(APIView):
@@ -169,20 +154,17 @@ class ConversationMessagesAPIView(APIView):
     def get(self, request, conversation_id):
         user = request.user
 
-        # chat mavjudmi?
         try:
             conversation = Conversation.objects.get(id=conversation_id)
         except Conversation.DoesNotExist:
             return Response({"error": "Chat topilmadi"}, status=404)
 
-        # user shu chatda bormi?
         if not ConversationParticipant.objects.filter(conversation=conversation, user=user).exists():
             return Response({"error": "Siz bu chatda ishtirok etmayapsiz"}, status=403)
 
-        # chatdagi barcha xabarlar
         messages = Message.objects.filter(conversation=conversation).order_by("created_at")
 
-        # 🔥 1. HAR BIR XABARNI 'read' QILIB BELGILAYMIZ
+        # Xabarlarni READ deb belgilash
         for msg in messages:
             MessageReceipt.objects.update_or_create(
                 message=msg,
@@ -190,21 +172,17 @@ class ConversationMessagesAPIView(APIView):
                 defaults={"status": "read"}
             )
 
-        # 🔥 2. unread_count-ni nol qilamiz (teacher yoki studentga qarab)
+        # unread_count ni 0 qilamiz
         part = ConversationParticipant.objects.get(conversation=conversation, user=user)
         part.unread_count = 0
         part.last_read_at = now()
         part.save()
 
-        # 🔥 3. Xabarlarni serialize qilamiz
-        serializer = MessageSerializer(
-            messages,
-            many=True,
-            context={"request": request}
-        )
+        serializer = MessageSerializer(messages, many=True, context={"request": request})
 
         return Response({
             "conversation_id": conversation.id,
             "messages": serializer.data,
         }, status=200)
+
 

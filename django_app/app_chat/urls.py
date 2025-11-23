@@ -3,23 +3,18 @@ from .views import (
     CreateDirectChatAPIView,
     SendMessageAPIView,
     ReadMessageAPIView,
-    TeacherChatsAPIView,
+    UniversalChatsAPIView,
     ConversationMessagesAPIView,
 )
 
 urlpatterns = [
-    # Chat yaratish
-    path("chat/create-direct/", CreateDirectChatAPIView.as_view(), name="create-direct-chat"),
+    path("chat/create-direct/", CreateDirectChatAPIView.as_view()),
 
-    # Teacher uchun chatlar listi
-    path("chat/teacher/", TeacherChatsAPIView.as_view(), name="teacher-chats"),
+    path("chat/list/", UniversalChatsAPIView.as_view()),
 
-    # Chat ichidagi xabarlar
-    path("chat/<int:conversation_id>/messages/", ConversationMessagesAPIView.as_view(), name="conversation-messages"),
+    path("chat/<int:conversation_id>/messages/", ConversationMessagesAPIView.as_view()),
 
-    # Xabar yuborish
-    path("chat/<int:conversation_id>/send/", SendMessageAPIView.as_view(), name="chat-send-message"),
+    path("chat/<int:conversation_id>/send/", SendMessageAPIView.as_view()),
 
-    # Xabarni o‘qilgan deb belgilash
-    path("chat/message/<int:message_id>/read/", ReadMessageAPIView.as_view(), name="read-message"),
+    path("chat/message/<int:message_id>/read/", ReadMessageAPIView.as_view()),
 ]
