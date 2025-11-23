@@ -62,28 +62,42 @@ class SendMessageAPIView(APIView):
         user = request.user
         text = request.data.get("text")
         file = request.FILES.get("file")
+        reply_to_id = request.data.get("reply_to")
 
+        # Chatni chaqiramiz
         try:
             conversation = Conversation.objects.get(id=conversation_id)
         except:
             return Response({"error": "Chat topilmadi"}, status=404)
 
+        # User chatda ishtirokchimi?
         if not ConversationParticipant.objects.filter(
             conversation=conversation, user=user
         ).exists():
-            return Response({"error": "Ruxsat yo‘q"}, status=403)
+            return Response({"error": "Ruxsat yo'q"}, status=403)
+
+        # Reply qilingan xabarni topamiz (agar bo‘lsa)
+        reply_to = None
+        if reply_to_id:
+            try:
+                reply_to = Message.objects.get(id=reply_to_id)
+            except:
+                return Response({"error": "Reply qilinadigan xabar topilmadi"}, status=404)
 
         message = Message.objects.create(
             conversation=conversation,
             sender=user,
             text=text,
-            file=file
+            file=file,
+            reply_to=reply_to   # <<< ASOSIY QISM
         )
 
+        # Conversationni yangilaymiz
         conversation.last_message = text or "📎 File"
         conversation.last_message_at = message.created_at
         conversation.save()
 
+        # Unread count yangilash
         for part in conversation.participants.exclude(user=user):
             part.unread_count += 1
             part.save()
