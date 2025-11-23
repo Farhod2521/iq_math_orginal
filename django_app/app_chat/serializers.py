@@ -42,21 +42,35 @@ class MessageSerializer(serializers.ModelSerializer):
             "created_at",
             "is_read",
         ]
-        read_only_fields = ["sender_id", "sender_name"]
+
+    # ---------------------- FIX ----------------------
+    def get_sender_name(self, obj):
+        u = obj.sender
+        if hasattr(u, "student_profile"):
+            return u.student_profile.full_name
+        if hasattr(u, "teacher_profile"):
+            return u.teacher_profile.full_name
+        return u.phone
+    # --------------------------------------------------
+
+    def get_is_read(self, obj):
+        user = self.context["request"].user
+        receipt = MessageReceipt.objects.filter(message=obj, user=user).first()
+        return receipt.status == "read" if receipt else False
 
     def get_reply_to_text(self, obj):
-        if obj.reply_to:
-            return obj.reply_to.text
-        return None
+        return obj.reply_to.text if obj.reply_to else None
 
     def get_reply_to_sender(self, obj):
-        if obj.reply_to:
-            u = obj.reply_to.sender
-            if hasattr(u, "student_profile"):
-                return u.student_profile.full_name
-            if hasattr(u, "teacher_profile"):
-                return u.teacher_profile.full_name
-        return None
+        if not obj.reply_to:
+            return None
+        u = obj.reply_to.sender
+        if hasattr(u, "student_profile"):
+            return u.student_profile.full_name
+        if hasattr(u, "teacher_profile"):
+            return u.teacher_profile.full_name
+        return u.phone
+
 
 
 
