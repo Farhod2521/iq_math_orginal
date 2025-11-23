@@ -5,7 +5,7 @@ from .models import Conversation, ConversationParticipant, Message, MessageRecei
 from .serializers import ConversationSerializer, MessageSerializer, ConversationListSerializer
 from django_app.app_user.models import Student, Teacher  # sening user struktura
 from django.db.models import Q
-
+from django.utils.timezone import now
 
 class CreateDirectChatAPIView(APIView):
     permission_classes = [IsAuthenticated]
