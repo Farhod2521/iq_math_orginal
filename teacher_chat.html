@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>O'qituvchi Chat</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f0f2f5;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .chat-container {
+            display: flex;
+            height: 100vh;
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+            background-color: #fff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+        }
+        
+        /* Sidebar styles */
+        .sidebar {
+            width: 30%;
+            border-right: 1px solid #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            background-color: #f8f9fa;
+        }
+        
+        .sidebar-header {
+            padding: 15px;
+            background-color: #0088cc;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .sidebar-header h2 {
+            font-size: 18px;
+            font-weight: 500;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #25d366;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .search-container {
+            padding: 10px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .search-box {
+            width: 100%;
+            padding: 10px 15px;
+            border-radius: 20px;
+            border: none;
+            background-color: #f0f2f5;
+            font-size: 14px;
+        }
+        
+        .chat-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+        
+        .chat-item {
+            padding: 12px 15px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .chat-item:hover {
+            background-color: #f5f5f5;
+        }
+        
+        .chat-item.active {
+            background-color: #e9edef;
+        }
+        
+        .chat-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: #34b7f1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            margin-right: 15px;
+        }
+        
+        .chat-info {
+            flex: 1;
+        }
+        
+        .chat-name {
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+        
+        .chat-preview {
+            font-size: 13px;
+            color: #667781;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .chat-time {
+            font-size: 12px;
+            color: #667781;
+        }
+        
+        /* Main chat area */
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .chat-header {
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            background-color: #f0f2f5;
+        }
+        
+        .chat-header-info {
+            margin-left: 15px;
+        }
+        
+        .chat-header-name {
+            font-weight: 500;
+        }
+        
+        .chat-header-status {
+            font-size: 13px;
+            color: #667781;
+        }
+        
+        .messages-container {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background-color: #e5ddd5;
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23d6dbdf' fill-opacity='0.4' fill-rule='evenodd'/%3E%3C/svg%3E");
+        }
+        
+        .message {
+            max-width: 70%;
+            margin-bottom: 15px;
+            padding: 8px 12px;
+            border-radius: 7.5px;
+            position: relative;
+            word-wrap: break-word;
+        }
+        
+        .message.received {
+            background-color: white;
+            align-self: flex-start;
+            border-top-left-radius: 0;
+        }
+        
+        .message.sent {
+            background-color: #dcf8c6;
+            align-self: flex-end;
+            margin-left: auto;
+            border-top-right-radius: 0;
+        }
+        
+        .message.reply {
+            border-left: 3px solid #0088cc;
+            padding-left: 10px;
+            margin-bottom: 5px;
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+        
+        .reply-info {
+            font-size: 12px;
+            color: #0088cc;
+            font-weight: 500;
+        }
+        
+        .reply-text {
+            font-size: 13px;
+            color: #555;
+        }
+        
+        .message-sender {
+            font-weight: 500;
+            font-size: 13px;
+            margin-bottom: 3px;
+            color: #0088cc;
+        }
+        
+        .message-text {
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        
+        .message-time {
+            font-size: 11px;
+            color: #999;
+            text-align: right;
+            margin-top: 3px;
+        }
+        
+        .input-container {
+            padding: 10px;
+            background-color: #f0f2f5;
+            display: flex;
+            align-items: center;
+        }
+        
+        .input-box {
+            flex: 1;
+            padding: 12px 15px;
+            border-radius: 20px;
+            border: none;
+            background-color: white;
+            font-size: 14px;
+            margin: 0 10px;
+        }
+        
+        .send-button {
+            background-color: #0088cc;
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        
+        .action-button {
+            background: none;
+            border: none;
+            color: #54656f;
+            font-size: 20px;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .action-button:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+        
+        .reply-indicator {
+            padding: 10px 15px;
+            background-color: #f0f2f5;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .reply-info-text {
+            flex: 1;
+        }
+        
+        .reply-title {
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        .reply-preview {
+            font-size: 13px;
+            color: #667781;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .cancel-reply {
+            color: #0088cc;
+            cursor: pointer;
+        }
+        
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <!-- Sidebar with chat list -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>O'qituvchi Chat</h2>
+                <div class="user-info">
+                    <div class="user-avatar">O</div>
+                </div>
+            </div>
+            
+            <div class="search-container">
+                <input type="text" class="search-box" placeholder="Qidirish...">
+            </div>
+            
+            <div class="chat-list" id="chatList">
+                <!-- Chat items will be populated by JavaScript -->
+            </div>
+        </div>
+        
+        <!-- Main chat area -->
+        <div class="chat-area">
+            <div class="chat-header">
+                <div class="chat-avatar" id="currentChatAvatar">A</div>
+                <div class="chat-header-info">
+                    <div class="chat-header-name" id="currentChatName">Chatni tanlang</div>
+                    <div class="chat-header-status" id="currentChatStatus">Mavjud chatlar ro'yxati</div>
+                </div>
+            </div>
+            
+            <div class="messages-container" id="messagesContainer">
+                <!-- Messages will be populated by JavaScript -->
+                <div class="no-chat-selected">
+                    <p>Chatni tanlang yoki yangi xabar yozing</p>
+                </div>
+            </div>
+            
+            <div class="reply-indicator hidden" id="replyIndicator">
+                <div class="reply-info-text">
+                    <div class="reply-title" id="replyTitle">Javob berish</div>
+                    <div class="reply-preview" id="replyPreview">Xabar matni...</div>
+                </div>
+                <div class="cancel-reply" id="cancelReply">Bekor qilish</div>
+            </div>
+            
+            <div class="input-container">
+                <button class="action-button">
+                    <i class="fas fa-paperclip"></i>
+                </button>
+                <input type="text" class="input-box" id="messageInput" placeholder="Xabar yozing..." disabled>
+                <button class="send-button" id="sendButton" disabled>
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // API endpoints and tokens
+        const TEACHER_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzYzOTM0MTA5LCJpYXQiOjE3NjM4ODczMDksImp0aSI6ImJlYTI0Y2RlNzhiYTRhMTNhOGRhNTA1OTliZTZjNmEwIiwidXNlcl9pZCI6NSwidGVhY2hlcl9pZCI6NH0.0cddiXMtvMLS3ksxHg71evapQcQSRk3Z4B_18RLGzIU";
+        const API_BASE = "https://api.iqmath.uz/api/v1/func_chat/chat";
+        
+        // Global variables
+        let currentChatId = null;
+        let replyToMessageId = null;
+        
+        // DOM elements
+        const chatList = document.getElementById('chatList');
+        const messagesContainer = document.getElementById('messagesContainer');
+        const messageInput = document.getElementById('messageInput');
+        const sendButton = document.getElementById('sendButton');
+        const currentChatName = document.getElementById('currentChatName');
+        const currentChatStatus = document.getElementById('currentChatStatus');
+        const currentChatAvatar = document.getElementById('currentChatAvatar');
+        const replyIndicator = document.getElementById('replyIndicator');
+        const replyTitle = document.getElementById('replyTitle');
+        const replyPreview = document.getElementById('replyPreview');
+        const cancelReply = document.getElementById('cancelReply');
+        
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', function() {
+            loadChatList();
+            
+            // Event listeners
+            sendButton.addEventListener('click', sendMessage);
+            messageInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+            
+            cancelReply.addEventListener('click', function() {
+                replyToMessageId = null;
+                replyIndicator.classList.add('hidden');
+            });
+        });
+        
+        // Load chat list from API
+        async function loadChatList() {
+            try {
+                const response = await fetch(`${API_BASE}/list/`, {
+                    headers: {
+                        'Authorization': `Bearer ${TEACHER_TOKEN}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Chat list yuklashda xatolik');
+                }
+                
+                const chats = await response.json();
+                renderChatList(chats);
+            } catch (error) {
+                console.error('Xatolik:', error);
+                chatList.innerHTML = '<div class="error">Chatlar yuklanmadi</div>';
+            }
+        }
+        
+        // Render chat list
+        function renderChatList(chats) {
+            chatList.innerHTML = '';
+            
+            if (chats.length === 0) {
+                chatList.innerHTML = '<div class="no-chats">Hozircha chatlar mavjud emas</div>';
+                return;
+            }
+            
+            chats.forEach(chat => {
+                const chatItem = document.createElement('div');
+                chatItem.className = 'chat-item';
+                chatItem.dataset.chatId = chat.id;
+                
+                // Get initials for avatar
+                const initials = getInitials(chat.other_user_name);
+                
+                // Format time
+                const time = formatTime(chat.last_message_at);
+                
+                chatItem.innerHTML = `
+                    <div class="chat-avatar">${initials}</div>
+                    <div class="chat-info">
+                        <div class="chat-name">${chat.other_user_name}</div>
+                        <div class="chat-preview">${chat.last_message}</div>
+                    </div>
+                    <div class="chat-time">${time}</div>
+                `;
+                
+                chatItem.addEventListener('click', function() {
+                    selectChat(chat.id, chat.other_user_name, initials);
+                });
+                
+                chatList.appendChild(chatItem);
+            });
+        }
+        
+        // Select a chat and load its messages
+        async function selectChat(chatId, userName, userInitials) {
+            // Update UI
+            document.querySelectorAll('.chat-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            document.querySelector(`.chat-item[data-chat-id="${chatId}"]`).classList.add('active');
+            
+            currentChatId = chatId;
+            currentChatName.textContent = userName;
+            currentChatStatus.textContent = "Online";
+            currentChatAvatar.textContent = userInitials;
+            
+            // Enable input
+            messageInput.disabled = false;
+            sendButton.disabled = false;
+            
+            // Load messages
+            await loadMessages(chatId);
+        }
+        
+        // Load messages for a chat
+        async function loadMessages(chatId) {
+            try {
+                const response = await fetch(`${API_BASE}/${chatId}/messages/`, {
+                    headers: {
+                        'Authorization': `Bearer ${TEACHER_TOKEN}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Xabarlar yuklashda xatolik');
+                }
+                
+                const data = await response.json();
+                renderMessages(data.messages);
+            } catch (error) {
+                console.error('Xatolik:', error);
+                messagesContainer.innerHTML = '<div class="error">Xabarlar yuklanmadi</div>';
+            }
+        }
+        
+        // Render messages in the chat area
+        function renderMessages(messages) {
+            messagesContainer.innerHTML = '';
+            
+            if (messages.length === 0) {
+                messagesContainer.innerHTML = '<div class="no-messages">Hozircha xabarlar yo\'q</div>';
+                return;
+            }
+            
+            messages.forEach(message => {
+                const messageElement = document.createElement('div');
+                messageElement.className = `message ${message.sender_id === 5 ? 'sent' : 'received'}`;
+                
+                // Format time
+                const time = formatTime(message.created_at);
+                
+                let replySection = '';
+                if (message.reply_to) {
+                    replySection = `
+                        <div class="message reply">
+                            <div class="reply-info">${message.reply_to_sender}</div>
+                            <div class="reply-text">${message.reply_to_text}</div>
+                        </div>
+                    `;
+                }
+                
+                messageElement.innerHTML = `
+                    ${replySection}
+                    <div class="message-sender">${message.sender_name}</div>
+                    <div class="message-text">${message.text}</div>
+                    <div class="message-time">${time}</div>
+                `;
+                
+                // Add reply functionality
+                if (message.sender_id !== 5) { // Only allow replying to student messages
+                    messageElement.addEventListener('contextmenu', function(e) {
+                        e.preventDefault();
+                        showReplyOption(message.id, message.sender_name, message.text);
+                    });
+                }
+                
+                messagesContainer.appendChild(messageElement);
+            });
+            
+            // Scroll to bottom
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+        // Show reply option for a message
+        function showReplyOption(messageId, senderName, messageText) {
+            replyToMessageId = messageId;
+            replyTitle.textContent = `${senderName} ga javob berish`;
+            replyPreview.textContent = messageText;
+            replyIndicator.classList.remove('hidden');
+        }
+        
+        // Send a message
+        async function sendMessage() {
+            const text = messageInput.value.trim();
+            
+            if (!text || !currentChatId) {
+                return;
+            }
+            
+            // Prepare message data
+            const messageData = {
+                text: text
+            };
+            
+            // Add reply if applicable
+            if (replyToMessageId) {
+                messageData.reply_to = replyToMessageId;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/${currentChatId}/send/`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${TEACHER_TOKEN}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(messageData)
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Xabar yuborishda xatolik');
+                }
+                
+                // Clear input and reset reply
+                messageInput.value = '';
+                replyToMessageId = null;
+                replyIndicator.classList.add('hidden');
+                
+                // Reload messages to show the new one
+                await loadMessages(currentChatId);
+                
+            } catch (error) {
+                console.error('Xatolik:', error);
+                alert('Xabar yuborishda xatolik yuz berdi');
+            }
+        }
+        
+        // Helper function to get initials from name
+        function getInitials(name) {
+            return name.split(' ').map(word => word[0]).join('').toUpperCase();
+        }
+        
+        // Helper function to format time
+        function formatTime(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMins / 60);
+            const diffDays = Math.floor(diffHours / 24);
+            
+            if (diffMins < 1) {
+                return 'Hozir';
+            } else if (diffMins < 60) {
+                return `${diffMins} min`;
+            } else if (diffHours < 24) {
+                return `${diffHours} soat`;
+            } else if (diffDays < 7) {
+                return `${diffDays} kun`;
+            } else {
+                return date.toLocaleDateString('uz-UZ');
+            }
+        }
+    </script>
+</body>
+</html>
