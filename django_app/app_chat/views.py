@@ -63,17 +63,15 @@ class SendMessageAPIView(APIView):
         text = request.data.get("text")
         file = request.FILES.get("file")
 
-        # Chatni chaqiramiz
         try:
             conversation = Conversation.objects.get(id=conversation_id)
         except:
             return Response({"error": "Chat topilmadi"}, status=404)
 
-        # User chatda ishtirokchimi?
         if not ConversationParticipant.objects.filter(
             conversation=conversation, user=user
         ).exists():
-            return Response({"error": "Ruxsat yo'q"}, status=403)
+            return Response({"error": "Ruxsat yo‘q"}, status=403)
 
         message = Message.objects.create(
             conversation=conversation,
@@ -82,17 +80,16 @@ class SendMessageAPIView(APIView):
             file=file
         )
 
-        # Conversationni yangilaymiz
         conversation.last_message = text or "📎 File"
         conversation.last_message_at = message.created_at
         conversation.save()
 
-        # Unread count yangilash
         for part in conversation.participants.exclude(user=user):
             part.unread_count += 1
             part.save()
 
         return Response(MessageSerializer(message).data, status=201)
+
 
 
 
@@ -127,14 +124,21 @@ class ReadMessageAPIView(APIView):
 
 
 
-class ConversationListAPIView(APIView):
+class TeacherChatsAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         user = request.user
+        
+        # faqat TEACHER ruxsat 
+        if user.role != "teacher":
+            return Response({"error": "Faqat o‘qituvchi uchun"}, status=403)
 
+        teacher_user = user
+
+        # o‘qituvchi ishtirok etgan barcha chatlar
         conversations = Conversation.objects.filter(
-            participants__user=user
+            participants__user=teacher_user
         ).order_by("-last_message_at")
 
         serializer = ConversationListSerializer(
@@ -142,5 +146,42 @@ class ConversationListAPIView(APIView):
             many=True,
             context={"request": request}
         )
-
         return Response(serializer.data, status=200)
+    
+
+
+class ConversationMessagesAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, conversation_id):
+        user = request.user
+
+        # chat mavjudmi?
+        try:
+            conversation = Conversation.objects.get(id=conversation_id)
+        except Conversation.DoesNotExist:
+            return Response({"error": "Chat topilmadi"}, status=404)
+
+        # user shu chatda bormi?
+        if not ConversationParticipant.objects.filter(conversation=conversation, user=user).exists():
+            return Response({"error": "Siz bu chatda ishtirok etmayapsiz"}, status=403)
+
+        # chatdagi barcha xabarlar (yangi → eski)
+        messages = Message.objects.filter(conversation=conversation).order_by("created_at")
+
+        serializer = MessageSerializer(
+            messages,
+            many=True,
+            context={"request": request}
+        )
+
+        # o‘qilgan deb belgilash
+        part = ConversationParticipant.objects.get(conversation=conversation, user=user)
+        part.unread_count = 0
+        part.last_read_at = now()
+        part.save()
+
+        return Response({
+            "conversation_id": conversation.id,
+            "messages": serializer.data,
+        }, status=200)
