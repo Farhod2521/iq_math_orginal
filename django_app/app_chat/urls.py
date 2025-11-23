@@ -2,7 +2,7 @@ from django.urls import path
 from .views import (
     CreateDirectChatAPIView,
     SendMessageAPIView,
-    ReadMessageAPIView
+    ReadMessageAPIView, ConversationListAPIView
 )
 
 urlpatterns = [
@@ -14,4 +14,6 @@ urlpatterns = [
 
     # 3) Xabarni o‘qilgan deb belgilash
     path("chat/message/<int:message_id>/read/", ReadMessageAPIView.as_view(), name="read-message"),
+
+    path("conversations/", ConversationListAPIView.as_view(), name="conversation-list"),
 ]
