@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     'ckeditor',
     'ckeditor_uploader',
     'django_user_agents',
+    "channels",
 
     ############## APP ###############
     "django_app.app_user",
@@ -32,6 +33,7 @@ INSTALLED_APPS = [
     "django_app.app_payments",
     "django_app.app_management",
     "django_app.app_tutor",
+    "django_app.app_chat",
 ]
 
 MIDDLEWARE = [
