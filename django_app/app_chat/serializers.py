@@ -49,11 +49,26 @@ class ConversationListSerializer(serializers.ModelSerializer):
         ]
 
     def get_other_user_name(self, obj):
-        user = self.context["request"].user
-        participant = obj.participants.exclude(user=user).first()
-        return participant.user.student_profile.full_name if participant else ""
+        current_user = self.context["request"].user
+        participant = obj.participants.exclude(user=current_user).first()
+
+        if not participant:
+            return ""
+
+        other = participant.user
+
+        # Agar qosh taraf Student bo'lsa
+        if hasattr(other, "student_profile"):
+            return other.student_profile.full_name
+
+        # Agar qosh taraf Teacher bo'lsa
+        if hasattr(other, "teacher_profile"):
+            return other.teacher_profile.full_name
+
+        # fallback (parent/admin/tutor)
+        return other.phone
 
     def get_other_user_id(self, obj):
-        user = self.context["request"].user
-        participant = obj.participants.exclude(user=user).first()
+        current_user = self.context["request"].user
+        participant = obj.participants.exclude(user=current_user).first()
         return participant.user.id if participant else None
