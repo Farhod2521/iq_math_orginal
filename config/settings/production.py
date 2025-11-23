@@ -19,6 +19,18 @@ DATABASES = {
         'PORT': os.getenv('DB_PORT', '5432'),
     }
 }
+
+
+ASGI_APPLICATION = "config.routing.application"
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)]
+        },
+    },
+}
 CSRF_TRUSTED_ORIGINS = [
     "https://backend.iq-math.uz",
     "https://www.backend.iq-math.uz",
