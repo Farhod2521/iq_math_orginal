@@ -30,19 +30,26 @@ class UniversalCouponAPIView(APIView):
         coupon = None
 
         if role == 'student':
-            coupon = Coupon_Tutor_Student.objects.filter(created_by_student=user.student_profile).first()
+            coupon = Coupon_Tutor_Student.objects.filter(
+                created_by_student=user.student_profile
+            ).first()
 
         elif role == 'tutor':
-            coupon = Coupon_Tutor_Student.objects.filter(created_by_tutor=user.tutor_profile).first()
+            coupon = Coupon_Tutor_Student.objects.filter(
+                created_by_tutor=user.tutor_profile
+            ).first()
 
         elif role == 'teacher':
-            coupon = Coupon_Tutor_Student.objects.filter(created_by_teacher=user.teacher_profile).first()
+            coupon = Coupon_Tutor_Student.objects.filter(
+                created_by_teacher=user.teacher_profile
+            ).first()
 
         else:
             raise PermissionDenied("Role uchun ruxsat yo‘q!")
 
         if coupon is None:
-            return Response({"message": "Siz hali kupon yaratmagansiz."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"message": "Siz hali kupon yaratmagansiz."},
+                            status=status.HTTP_404_NOT_FOUND)
 
         return Response({
             "message": "Sizning kuponingiz:",
@@ -71,25 +78,34 @@ class UniversalCouponAPIView(APIView):
         # --- STUDENT ---
         if role == 'student':
             student = user.student_profile
-            existing_coupon = Coupon_Tutor_Student.objects.filter(created_by_student=student).first()
+            existing_coupon = Coupon_Tutor_Student.objects.filter(
+                created_by_student=student
+            ).first()
             creator_data = {"created_by_student": student}
+            discount_percent = settings.coupon_discount_percent   # Student uchun
 
         # --- TUTOR ---
         elif role == 'tutor':
             tutor = user.tutor_profile
-            existing_coupon = Coupon_Tutor_Student.objects.filter(created_by_tutor=tutor).first()
+            existing_coupon = Coupon_Tutor_Student.objects.filter(
+                created_by_tutor=tutor
+            ).first()
             creator_data = {"created_by_tutor": tutor}
+            discount_percent = settings.coupon_discount_percent   # Tutor uchun
 
         # --- TEACHER ---
         elif role == 'teacher':
             teacher = user.teacher_profile
-            existing_coupon = Coupon_Tutor_Student.objects.filter(created_by_teacher=teacher).first()
+            existing_coupon = Coupon_Tutor_Student.objects.filter(
+                created_by_teacher=teacher
+            ).first()
             creator_data = {"created_by_teacher": teacher}
+            discount_percent = settings.coupon_discount_percent_teacher  # 🔥 Teacher uchun alohida foiz
 
         else:
             raise PermissionDenied("Role uchun ruxsat yo‘q!")
 
-        # Agar bor bo‘lsa — mavjudini qaytarish
+        # Agar mavjud bo‘lsa — mavjudini qaytarish
         if existing_coupon:
             return Response({
                 "message": "Siz allaqachon kupon yaratgansiz",
@@ -104,7 +120,7 @@ class UniversalCouponAPIView(APIView):
 
         coupon = serializer.save(
             code=coupon_code,
-            discount_percent=settings.coupon_discount_percent,
+            discount_percent=discount_percent,      # <-- ROLE GA QARAB BERILDI
             valid_from=valid_from,
             valid_until=valid_until,
             is_active=True,
