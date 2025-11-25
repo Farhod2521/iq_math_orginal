@@ -1,7 +1,7 @@
 from django.contrib import admin
 from .models import  (
     Motivation, SystemSettings, FAQ, Product, ReferralAndCouponSettings, 
-    Banner, Coupon_Tutor_Student, SystemCoupon,ConversionRate, SolutionStatus,
+    Banner, Coupon_Tutor_Student,ConversionRate, SolutionStatus,
     Elon, Category, Tag, UploadedFile
     )
 from modeltranslation.admin import TranslationAdmin
@@ -251,9 +251,3 @@ class Coupon_Tutor_StudentAdmin(admin.ModelAdmin):
 
 
 
-@admin.register(SystemCoupon)
-class SystemCouponAdmin(admin.ModelAdmin):
-    list_display = ('code', 'discount_percent', 'valid_until', 'is_active')
-    list_filter = ('is_active', 'valid_until')
-    search_fields = ('code',)
-    ordering = ('-valid_until',)
