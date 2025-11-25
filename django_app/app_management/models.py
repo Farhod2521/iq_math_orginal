@@ -154,12 +154,12 @@ class ReferralAndCouponSettings(models.Model):
     coupon_discount_percent = models.PositiveIntegerField(
         default=0,
         help_text="Kupon kodi orqali beriladigan chegirma foizi Student va O'qtuvchilar uchun",
-        verbose_name="Kupon chegirma foizi"
+        verbose_name="Student va O'qtuvchilar kupon chegirma foizi"
     )
     coupon_discount_percent_teacher = models.PositiveIntegerField(
         default=0,
         help_text="Kupon kodi orqali beriladigan chegirma foizi Mentor uchun ",
-        verbose_name="Kupon chegirma foizi"
+        verbose_name="Mentor kupon chegirma foizi"
     )
     coupon_valid_days = models.PositiveIntegerField(
         default=30,
