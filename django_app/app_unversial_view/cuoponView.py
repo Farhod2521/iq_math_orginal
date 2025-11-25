@@ -10,7 +10,6 @@ from datetime import timedelta
 from django_app.app_management.models import Coupon_Tutor_Student, ReferralAndCouponSettings
 from .cuoponSerizalizer import CouponCreateSerializer, CouponSerializer
 
-
 class UniversalCouponAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -82,7 +81,7 @@ class UniversalCouponAPIView(APIView):
                 created_by_student=student
             ).first()
             creator_data = {"created_by_student": student}
-            discount_percent = settings.coupon_discount_percent   # Student uchun
+            discount_percent = settings.coupon_discount_percent
 
         # --- TUTOR ---
         elif role == 'tutor':
@@ -91,7 +90,7 @@ class UniversalCouponAPIView(APIView):
                 created_by_tutor=tutor
             ).first()
             creator_data = {"created_by_tutor": tutor}
-            discount_percent = settings.coupon_discount_percent   # Tutor uchun
+            discount_percent = settings.coupon_discount_percent
 
         # --- TEACHER ---
         elif role == 'teacher':
@@ -100,7 +99,7 @@ class UniversalCouponAPIView(APIView):
                 created_by_teacher=teacher
             ).first()
             creator_data = {"created_by_teacher": teacher}
-            discount_percent = settings.coupon_discount_percent_teacher  # 🔥 Teacher uchun alohida foiz
+            discount_percent = settings.coupon_discount_percent_teacher
 
         else:
             raise PermissionDenied("Role uchun ruxsat yo‘q!")
@@ -120,7 +119,7 @@ class UniversalCouponAPIView(APIView):
 
         coupon = serializer.save(
             code=coupon_code,
-            discount_percent=discount_percent,      # <-- ROLE GA QARAB BERILDI
+            discount_percent=discount_percent,
             valid_from=valid_from,
             valid_until=valid_until,
             is_active=True,
@@ -131,3 +130,44 @@ class UniversalCouponAPIView(APIView):
             "message": "Kupon muvaffaqiyatli yaratildi",
             "coupon": CouponSerializer(coupon).data
         }, status=status.HTTP_201_CREATED)
+
+    # --- DELETE: Kuponni o‘chirish ---
+    def delete(self, request):
+        user = request.user
+        role = user.role
+
+        coupon = None
+
+        # Student kuponi
+        if role == 'student':
+            coupon = Coupon_Tutor_Student.objects.filter(
+                created_by_student=user.student_profile
+            ).first()
+
+        # Tutor kuponi
+        elif role == 'tutor':
+            coupon = Coupon_Tutor_Student.objects.filter(
+                created_by_tutor=user.tutor_profile
+            ).first()
+
+        # Teacher kuponi
+        elif role == 'teacher':
+            coupon = Coupon_Tutor_Student.objects.filter(
+                created_by_teacher=user.teacher_profile
+            ).first()
+
+        else:
+            raise PermissionDenied("Role uchun ruxsat yo‘q!")
+
+        if coupon is None:
+            return Response(
+                {"message": "Sizda o‘chiradigan kupon mavjud emas."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        coupon.delete()
+
+        return Response(
+            {"message": "Kupon muvaffaqiyatli o‘chirildi."},
+            status=status.HTTP_200_OK
+        )
