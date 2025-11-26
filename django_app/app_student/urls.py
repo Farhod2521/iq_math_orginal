@@ -15,7 +15,7 @@ from .View.student_login_history import  StudentLoginHistoryListAPIView
 from .View.convertView import ConvertView
 from .View.coupon_create_apiview import StudentCouponAPIView
 from .View.student_next_topic_mobile_app import  StudentNextTopicAPIView, StudentLastProgressAPIView
-
+from .View.mobile_app import StudentRatingAPIView, WeeklyStudyStatsAPIView
 
 
 urlpatterns = [
@@ -77,5 +77,7 @@ urlpatterns = [
     ###############################################  MOBILE APP ##################################################
     path("student/next-topic/app", StudentNextTopicAPIView.as_view(), name='convert'),
     path("student/last-topic-result/app", StudentLastProgressAPIView.as_view(), name='convert'),
+    path("student/rating/app", StudentRatingAPIView.as_view(), name='convert'),
+    path("student/weklystudystats/app", WeeklyStudyStatsAPIView.as_view(), name='convert'),
 
 ]
