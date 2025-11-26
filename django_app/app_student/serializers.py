@@ -71,6 +71,40 @@ class ChapterSerializer(serializers.ModelSerializer):
         # 100 dan oshib ketmasligi uchun
         return round(min(avg_score, 100), 2)
 
+
+class Chapter_STUDENT_ID_Serializer(serializers.ModelSerializer):
+    progress = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Chapter
+        fields = ['id', 'name_uz', 'name_ru', 'subject', 'progress']
+
+    def get_progress(self, chapter):
+        student = self.context.get("student")
+
+        # 👨‍🏫 Agar teacher/admin bo‘lsa progress 100%
+        if student.user.role in ['teacher', 'admin']:
+            return 100.0
+
+        topics = Topic.objects.filter(chapter=chapter)
+        total_topics = topics.count()
+
+        if total_topics == 0:
+            return 0.0
+
+        progresses = TopicProgress.objects.filter(
+            user=student, topic__in=topics
+        )
+
+        if not progresses.exists():
+            return 0.0
+
+        total_score = sum(p.score for p in progresses)
+        avg_score = total_score / total_topics
+
+        return round(min(avg_score, 100), 2)
+
+
 class TopicSerializer1(serializers.ModelSerializer):
 
 
@@ -78,6 +112,139 @@ class TopicSerializer1(serializers.ModelSerializer):
         model = Topic
         fields = ['id', 'name_uz', 'name_ru', 'chapter', "video_url_uz", "video_url_ru","content_uz", "content_ru", "is_locked"]
 
+class Topic_STUDENT_ID_Serializer(serializers.ModelSerializer):
+    is_open = serializers.SerializerMethodField()
+    is_locked = serializers.SerializerMethodField()
+    score = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Topic
+        fields = [
+            'id', 'name_uz', 'name_ru', 'chapter',
+            "video_url_uz", "video_url_ru",
+            "content_uz", "content_ru",
+            "is_locked", "is_open", "score"
+        ]
+
+    # ================================
+    # SCORE
+    # ================================
+    def get_score(self, obj):
+        if self.context.get("is_staff"):
+            return None  # Admin/Teacher -> score ko‘rsatilmaydi
+
+        student = self.context.get("student")
+
+        progress = TopicProgress.objects.filter(
+            user=student, topic=obj
+        ).first()
+
+        return round(progress.score, 1) if progress else 0.0
+
+    # ================================
+    # LOCKED
+    # ================================
+    def get_is_locked(self, obj):
+        if self.context.get("is_staff"):
+            return False  # Admin/Teacher -> doim open
+
+        student = self.context.get("student")
+
+        # Mavzu ishlanganmi?
+        if TopicProgress.objects.filter(user=student, topic=obj).exists():
+            return False
+
+        # Chapter ichidagi topiclar
+        chapter_topics = list(Topic.objects.filter(
+            chapter=obj.chapter).order_by('order')
+        )
+
+        topic_ids = [t.id for t in chapter_topics]
+
+        try:
+            index = topic_ids.index(obj.id)
+        except ValueError:
+            return True
+
+        # BIRINCHI mavzu → doim ochiq
+        if index == 0:
+            return False
+
+        # Oldingi mavzu
+        prev_topic = chapter_topics[index - 1]
+        prev_progress = TopicProgress.objects.filter(
+            user=student, topic=prev_topic
+        ).first()
+
+        return not (prev_progress and prev_progress.score >= 80)
+
+    # ================================
+    # OPEN
+    # ================================
+    def get_is_open(self, obj):
+        if self.context.get("is_staff"):
+            return True
+
+        student = self.context.get("student")
+
+        # 1️⃣ Mavzu ishlangan → open
+        if TopicProgress.objects.filter(user=student, topic=obj).exists():
+            return True
+
+        # 2️⃣ Fanning 1-bobi → 1-mavzusi → open
+        first_chapter = Chapter.objects.filter(
+            subject=obj.chapter.subject
+        ).order_by("order").first()
+
+        if first_chapter:
+            first_topic = Topic.objects.filter(
+                chapter=first_chapter
+            ).order_by("order").first()
+
+            if first_topic and first_topic.id == obj.id:
+                return True
+
+        # 3️⃣ chapter ichidagi mavzular
+        chapter_topics = list(Topic.objects.filter(
+            chapter=obj.chapter).order_by("order")
+        )
+
+        try:
+            index = chapter_topics.index(obj)
+        except ValueError:
+            return False
+
+        # Oldingi mavzu
+        if index > 0:
+            prev_topic = chapter_topics[index - 1]
+            prev_progress = TopicProgress.objects.filter(
+                user=student, topic=prev_topic
+            ).first()
+
+            if prev_progress and prev_progress.score >= 80:
+                return True
+
+        # 4️⃣ Birinchi mavzu → oldingi bobni tekshirish
+        if index == 0:
+            prev_chapter = Chapter.objects.filter(
+                subject=obj.chapter.subject,
+                order__lt=obj.chapter.order
+            ).order_by('-order').first()
+
+            if prev_chapter:
+                last_topic_prev = Topic.objects.filter(
+                    chapter=prev_chapter
+                ).order_by('-order').first()
+
+                if last_topic_prev:
+                    prev_progress = TopicProgress.objects.filter(
+                        user=student, topic=last_topic_prev
+                    ).first()
+
+                    if prev_progress and prev_progress.score >= 80:
+                        return True
+
+        return False
 
 class TopicSerializer(serializers.ModelSerializer):
     is_open = serializers.SerializerMethodField()

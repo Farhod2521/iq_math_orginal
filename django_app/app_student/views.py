@@ -6,7 +6,7 @@ from django_app.app_user.models import  Subject, Subject_Category
 from django_app.app_user.models import Student, Class
 from .serializers import (
     SubjectSerializer, CustomQuestionSerializer, CheckAnswersSerializer, ChapterSerializer, 
-    TopicSerializer, TopicSerializer1
+    TopicSerializer, TopicSerializer1, Chapter_STUDENT_ID_Serializer, Topic_STUDENT_ID_Serializer
     )
 import random
 from django.db.models import Q
@@ -298,6 +298,98 @@ class ChapterListBySubjectAPIView(APIView):
         except Subject.DoesNotExist:
             return Response({"detail": "Subject topilmadi"}, status=status.HTTP_404_NOT_FOUND)
         
+
+class ChapterListBySubject_STUDENT_ID_APIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, subject_id):
+        student_id = request.data.get("student_id")
+
+        if not student_id:
+            return Response({"detail": "student_id talab qilinadi"}, status=400)
+
+        # Student tekshirish
+        try:
+            student = Student.objects.get(id=student_id)
+        except Student.DoesNotExist:
+            return Response({"detail": "Student topilmadi"}, status=404)
+
+        # Subject topish
+        try:
+            subject = Subject.objects.get(id=subject_id)
+        except Subject.DoesNotExist:
+            return Response({"detail": "Subject topilmadi"}, status=404)
+
+        chapters = Chapter.objects.filter(subject=subject).order_by("order")
+        serializer = Chapter_STUDENT_ID_Serializer(
+            chapters, many=True, context={"student": student}
+        )
+
+        return Response(serializer.data, status=200)
+    
+
+
+class TopicListByChapter_STUDENT_ID_APIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, chapter_id):
+        """
+        Teacher/Admin -> student_id talab qilinmaydi
+        Student -> student_id yuborishi shart
+        """
+
+        user = request.user
+        student_id = request.data.get("student_id")
+
+        # 1️⃣ Teacher/Admin → to‘g‘ridan-to‘g‘ri qaytariladi
+        if user.role in ['teacher', 'admin']:
+
+            try:
+                chapter = Chapter.objects.get(id=chapter_id)
+            except Chapter.DoesNotExist:
+                return Response({"detail": "Chapter topilmadi"}, status=404)
+
+            topics = Topic.objects.filter(chapter=chapter).order_by('order')
+            serializer = TopicSerializer(
+                topics, many=True,
+                context={"student": None, "is_staff": True}
+            )
+            return Response(serializer.data, status=200)
+
+        # 2️⃣ Student → student_id talab qilinadi
+        if not student_id:
+            return Response({"detail": "student_id talab qilinadi"}, status=400)
+
+        try:
+            student = Student.objects.get(id=student_id)
+        except Student.DoesNotExist:
+            return Response({"detail": "Student topilmadi"}, status=404)
+
+        # 3️⃣ Obuna tekshirish
+        try:
+            subscription = student.subscription
+        except Subscription.DoesNotExist:
+            return Response({"detail": "Obuna mavjud emas"}, status=403)
+
+        if subscription.end_date < timezone.now():
+            return Response({"detail": "Obuna muddati tugagan"}, status=403)
+
+        # 4️⃣ Chapter → Topics
+        try:
+            chapter = Chapter.objects.get(id=chapter_id)
+        except Chapter.DoesNotExist:
+            return Response({"detail": "Chapter topilmadi"}, status=404)
+
+        topics = Topic.objects.filter(chapter=chapter).order_by("order")
+
+        serializer = Topic_STUDENT_ID_Serializer(
+            topics,
+            many=True,
+            context={"student": student, "is_staff": False}
+        )
+
+        return Response(serializer.data, status=200)
+
 class TopicListByChapterAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
