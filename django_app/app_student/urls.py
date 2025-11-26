@@ -3,7 +3,8 @@ from .views import (
      GenerateTestAPIView, CheckAnswersAPIView, 
      StudentSubjectListAPIView, ChapterListBySubjectAPIView,QuestionListByTopicAPIView,
      TopicListByChapterAPIView, GenerateCheckAnswersAPIView, StudentScoreAPIView, DiagnostLevelOverviewAPIView,
-     DiagnostLevelDetailAPIView, Diagnostika_TopicDetailAPIView, PathFromIdsAPIView, PathFromIdsStudentAPIView
+     DiagnostLevelDetailAPIView, Diagnostika_TopicDetailAPIView, PathFromIdsAPIView, PathFromIdsStudentAPIView,
+     ChapterListBySubject_STUDENT_ID_APIView, TopicListByChapter_STUDENT_ID_APIView
 )
 from .View.app_diagnost import StudentDiagnostSubjectsAPIView, SubjectChaptersAPIView, ChapterTopicsAPIView, StudentDiagnosticHistoryAPIView
 from .View.product_exchange import ProductExchangeView, ProductExchangeListView, ProductExchangeConfirmAPIView
@@ -20,6 +21,8 @@ from .View.student_next_topic_mobile_app import  StudentNextTopicAPIView, Studen
 urlpatterns = [
     path('my-subjects/', StudentSubjectListAPIView.as_view(), name='my-subjects'),
     path('my-chapter/<int:subject_id>/', ChapterListBySubjectAPIView.as_view(), name='chapter-list-by-subject'),
+    path('my-chapter/student_id/<int:subject_id>/', ChapterListBySubject_STUDENT_ID_APIView.as_view(), name='chapter-list-by-subject'),
+    path('my-topic/student_id/<int:chapter_id>/', TopicListByChapter_STUDENT_ID_APIView.as_view(), name='chapter-list-by-subject'),
     path('my-topic/<int:chapter_id>/', TopicListByChapterAPIView.as_view()),
     path('my-question/<int:topic_id>/', QuestionListByTopicAPIView.as_view()),
     path('my-generate-test/', GenerateTestAPIView.as_view(), name='generate-test'),
