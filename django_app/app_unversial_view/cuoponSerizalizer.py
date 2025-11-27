@@ -54,3 +54,14 @@ class CouponSerializer(serializers.ModelSerializer):
     class Meta:
         model = Coupon_Tutor_Student
         fields = ['id', 'code', 'discount_percent', 'valid_from', 'valid_until', 'is_active']
+
+
+class CouponTransactionSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    student = serializers.CharField()
+    owner = serializers.CharField()
+    coupon = serializers.CharField()
+    payment_amount = serializers.DecimalField(max_digits=12, decimal_places=2)
+    cashback_amount = serializers.DecimalField(max_digits=12, decimal_places=2, required=False)
+    used_at = serializers.DateTimeField()
+    type = serializers.CharField()

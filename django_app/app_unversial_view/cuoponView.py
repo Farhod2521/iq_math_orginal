@@ -6,10 +6,12 @@ import random
 import string
 from django.utils import timezone
 from datetime import timedelta
-
+from rest_framework.permissions import IsAuthenticated
 from django_app.app_management.models import Coupon_Tutor_Student, ReferralAndCouponSettings
 from .cuoponSerizalizer import CouponCreateSerializer, CouponSerializer
-
+from django_app.app_tutor.models import TutorCouponTransaction
+from django_app.app_teacher.models import TeacherCouponTransaction
+from django_app.app_student.models import  StudentCouponTransaction
 class UniversalCouponAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -171,3 +173,138 @@ class UniversalCouponAPIView(APIView):
             {"message": "Kupon muvaffaqiyatli o‘chirildi."},
             status=status.HTTP_200_OK
         )
+
+
+
+class UniversalCouponTransactionAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        role = user.role.lower()  # ✔️ TO‘G‘RI
+
+        result = []
+
+        # 1) TUTOR
+        if role == "tutor":
+            tutor = user.tutor_profile
+            transactions = TutorCouponTransaction.objects.filter(tutor=tutor)
+
+            for t in transactions:
+                result.append({
+                    "id": t.id,
+                    "student": t.student.user.full_name,
+                    "owner": tutor.user.full_name,
+                    "coupon": t.coupon.code,
+                    "payment_amount": t.payment_amount,
+                    "cashback_amount": t.cashback_amount,
+                    "used_at": t.used_at,
+                    "type": "tutor"
+                })
+
+        # 2) TEACHER
+        elif role == "teacher":
+            teacher = user.teacher_profile
+            transactions = TeacherCouponTransaction.objects.filter(teacher=teacher)
+
+            for t in transactions:
+                result.append({
+                    "id": t.id,
+                    "student": t.student.user.full_name,
+                    "owner": teacher.user.full_name,
+                    "coupon": t.coupon.code,
+                    "payment_amount": t.payment_amount,
+                    "used_at": t.used_at,
+                    "type": "teacher"
+                })
+
+        # 3) STUDENT
+        elif role == "student":
+            student = user.student_profile
+
+            tutor_part = TutorCouponTransaction.objects.filter(student=student)
+            teacher_part = TeacherCouponTransaction.objects.filter(student=student)
+            student_part = StudentCouponTransaction.objects.filter(student=student)
+
+            # tutor
+            for t in tutor_part:
+                result.append({
+                    "id": t.id,
+                    "student": student.user.full_name,
+                    "owner": t.tutor.user.full_name,
+                    "coupon": t.coupon.code,
+                    "payment_amount": t.payment_amount,
+                    "cashback_amount": t.cashback_amount,
+                    "used_at": t.used_at,
+                    "type": "tutor"
+                })
+
+            # teacher
+            for t in teacher_part:
+                result.append({
+                    "id": t.id,
+                    "student": student.user.full_name,
+                    "owner": t.teacher.user.full_name,
+                    "coupon": t.coupon.code,
+                    "payment_amount": t.payment_amount,
+                    "used_at": t.used_at,
+                    "type": "teacher"
+                })
+
+            # student → student
+            for t in student_part:
+                result.append({
+                    "id": t.id,
+                    "student": student.user.full_name,
+                    "owner": t.by_student.user.full_name,
+                    "coupon": t.coupon.code,
+                    "payment_amount": t.payment_amount,
+                    "cashback_amount": t.cashback_amount,
+                    "used_at": t.used_at,
+                    "type": "student"
+                })
+
+        # 4) ADMIN → hammasi
+        elif role == "admin":
+            for t in TutorCouponTransaction.objects.all():
+                result.append({
+                    "id": t.id,
+                    "student": t.student.user.full_name,
+                    "owner": t.tutor.user.full_name,
+                    "coupon": t.coupon.code,
+                    "payment_amount": t.payment_amount,
+                    "cashback_amount": t.cashback_amount,
+                    "used_at": t.used_at,
+                    "type": "tutor"
+                })
+
+            for t in TeacherCouponTransaction.objects.all():
+                result.append({
+                    "id": t.id,
+                    "student": t.student.user.full_name,
+                    "owner": t.teacher.user.full_name,
+                    "coupon": t.coupon.code,
+                    "payment_amount": t.payment_amount,
+                    "used_at": t.used_at,
+                    "type": "teacher"
+                })
+
+            for t in StudentCouponTransaction.objects.all():
+                result.append({
+                    "id": t.id,
+                    "student": t.student.user.full_name,
+                    "owner": t.by_student.user.full_name,
+                    "coupon": t.coupon.code,
+                    "payment_amount": t.payment_amount,
+                    "cashback_amount": t.cashback_amount,
+                    "used_at": t.used_at,
+                    "type": "student"
+                })
+
+        else:
+            return Response({"error": "Rol aniqlanmadi"}, status=403)
+
+        # Sort by date desc
+        result = sorted(result, key=lambda x: x["used_at"], reverse=True)
+
+        return Response(result, status=200)
