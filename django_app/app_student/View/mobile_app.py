@@ -115,3 +115,51 @@ class WeeklyStudyStatsAPIView(APIView):
                 week_stats[day_key] = True
 
         return Response({"week_stats": week_stats})
+
+
+
+class StudentTopAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        type_value = request.data.get("type")       # score / coin / som
+        top_count = request.data.get("top_count")   # integer
+
+        # -------- 1) Validatsiya --------
+        if type_value not in ["score", "coin", "som"]:
+            return Response(
+                {"error": "type faqat 'score', 'coin' yoki 'som' bo‘lishi kerak"},
+                status=400
+            )
+
+        try:
+            top_count = int(top_count)
+        except:
+            return Response({"error": "top_count butun son bo‘lishi kerak"}, status=400)
+
+        # -------- 2) Dinamik tartiblash --------
+        ordering_field = f"-{type_value}"   # masalan "-score"
+
+        students = (
+            StudentScore.objects
+            .select_related("student", "student__user")
+            .order_by(ordering_field)[:top_count]
+        )
+
+        # -------- 3) JSON formatlash --------
+        data = []
+        for item in students:
+            data.append({
+                "student_id": item.student.id,
+                "full_name": item.student.user.full_name,
+                "phone": item.student.user.phone,
+                "score": item.score,
+                "coin": item.coin,
+                "som": item.som,
+            })
+
+        return Response({
+            "type": type_value,
+            "top_count": top_count,
+            "results": data
+        })
