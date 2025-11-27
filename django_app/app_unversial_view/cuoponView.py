@@ -48,7 +48,7 @@ class UniversalCouponAPIView(APIView):
 
         if coupon is None:
             return Response({"message": "Siz hali kupon yaratmagansiz."},
-                            status=status.HTTP_404_NOT_FOUND)
+                            status=status.HTTP_200_OK)
 
         return Response({
             "message": "Sizning kuponingiz:",
