@@ -287,3 +287,19 @@ class GeneratedSubQuestionOpenAi(models.Model):
     class Meta:
         verbose_name = "AI kichik savol"
         verbose_name_plural = "AI kichik savollar"
+
+from django_app.app_management.models import Coupon_Tutor_Student
+from django_app.app_user.models import Teacher
+
+class TeacherCouponTransaction(models.Model):
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='used_coupons', verbose_name="Kuponni ishlatgan student")
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='coupon_transactions', verbose_name="Kupon egasi (Teacher)")
+    coupon = models.ForeignKey(Coupon_Tutor_Student, on_delete=models.CASCADE, related_name='transactions', verbose_name="Kupon kodi")
+    used_at = models.DateTimeField(auto_now_add=True, verbose_name="Kupon ishlatilgan sana")
+
+    class Meta:
+        verbose_name = "Teacher kupon tranzaksiyasi"
+        verbose_name_plural = "Teacher kupon tranzaksiyalari"
+
+    def __str__(self):
+        return f"{self.student} → {self.coupon.code} ({self.payment_amount} so‘m)"
