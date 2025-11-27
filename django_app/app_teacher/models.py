@@ -1,8 +1,9 @@
 from django.db import models
 from django_app.app_user.models import  Subject
 from ckeditor.fields import RichTextField
-from django_app.app_management.models import Product
+from django_app.app_management.models import Product, Coupon_Tutor_Student
 from django_app.app_user.models import Teacher, Student
+
 
 from ckeditor.fields import RichTextField
 class Chapter(models.Model):
@@ -288,8 +289,7 @@ class GeneratedSubQuestionOpenAi(models.Model):
         verbose_name = "AI kichik savol"
         verbose_name_plural = "AI kichik savollar"
 
-from django_app.app_management.models import Coupon_Tutor_Student
-from django_app.app_user.models import Teacher
+
 
 class TeacherCouponTransaction(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='used_coupons', verbose_name="Kuponni ishlatgan student")
