@@ -18,6 +18,7 @@ from dateutil.relativedelta import relativedelta
 from .serializers import PaymentSerializer, SubscriptionPlanSerializer, PaymentTeacherSerializer
 from django_app.app_student.models import  StudentCouponTransaction
 from django_app.app_tutor.models import TutorCouponTransaction
+from django_app.app_teacher.models import TeacherCouponTransaction
 from django.db.models import Q
 URL_TEST = "https://dev-mesh.multicard.uz"
 URL_DEV = "https://mesh.multicard.uz"
@@ -325,8 +326,19 @@ class PaymentCallbackAPIView(APIView):
                     logger.info(f"👨‍🎓 Student cashback added: {payment.student_cashback_amount} to {student_owner.full_name} (Balance: {old_balance} -> {student_owner.balance})")
 
             elif payment.coupon_type == "system":
-                # SYSTEM KUPONI: Hech kimga keshbek BERILMAYDI
+                # SYSTEM KUPONI: Hech kimga keshbek berilmaydi
                 logger.info("ℹ️ System coupon used, no cashback applied")
+
+                # SYSTEM kuponida transaction tarixini yaratish (cashback yo'q)
+                if payment.coupon.created_by_tutor:   # kuponni kim yaratganiga qarab
+                    TeacherCouponTransaction.objects.create(
+                        student=payment.student,
+                        teacher=payment.coupon.created_by_tutor,
+                        coupon=payment.coupon,
+                        payment_amount=payment.amount
+                    )
+                    logger.info(f"📝 TeacherCouponTransaction CREATED (system coupon): {payment.coupon.code}")
+
 
             # Kupon foydalanish tarixini yozish
             CouponUsage_Tutor_Student.objects.create(
@@ -707,13 +719,16 @@ class CheckCouponAPIView(APIView):
             student=student,
             coupon=coupon
         ).exists()
-
+        used_in_teacher_tx = TeacherCouponTransaction.objects.filter(
+            student=student,
+            coupon=coupon
+        ).exists()
         used_in_student_tx = StudentCouponTransaction.objects.filter(
             student=student,
             coupon=coupon
         ).exists()
 
-        if used_in_tutor_tx or used_in_student_tx:
+        if used_in_tutor_tx or used_in_student_tx or used_in_teacher_tx:
             return Response(
                 {"active": False, "message": "Ushbu kuponni siz allaqachon ishlatgansiz"},
                 status=status.HTTP_403_FORBIDDEN

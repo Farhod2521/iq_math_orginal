@@ -310,7 +310,10 @@ class TeacherCouponTransaction(models.Model):
         related_name='teacher_transactions',
         verbose_name="Kupon kodi"
     )
+
+    payment_amount = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="To'lov summasi")
+
     used_at = models.DateTimeField(auto_now_add=True, verbose_name="Kupon ishlatilgan sana")
 
     def __str__(self):
-        return f"{self.student} → {self.coupon.code}"
+        return f"{self.student} → {self.coupon.code} ({self.payment_amount} so‘m)"
