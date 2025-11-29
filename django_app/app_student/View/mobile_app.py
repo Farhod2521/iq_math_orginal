@@ -14,10 +14,10 @@ class StudentRatingAPIView(APIView):
         user = request.user
 
         # Student profilini olamiz
-        if not hasattr(user, "student"):
+        if not hasattr(user, "student_profile"):
             return Response({"error": "Faqat talaba reytingni ko‘ra oladi"}, status=403)
 
-        student = user.student
+        student = user.student_profile   # ❗ TO‘G‘RI
 
         # StudentScore obj
         try:
