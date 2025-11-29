@@ -82,7 +82,7 @@ class WeeklyStudyStatsAPIView(APIView):
     def get(self, request):
         user = request.user
 
-        if not hasattr(user, "student"):
+        if not hasattr(user, "student_profile"):
             return Response({"error": "Faqat talaba uchun statistikalar mavjud"}, status=403)
 
         student = user.student
