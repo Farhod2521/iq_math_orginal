@@ -82,13 +82,14 @@ class WeeklyStudyStatsAPIView(APIView):
     def get(self, request):
         user = request.user
 
+        # student_profile borligini tekshirish
         if not hasattr(user, "student_profile"):
             return Response({"error": "Faqat talaba uchun statistikalar mavjud"}, status=403)
 
-        student = user.student
+        student = user.student_profile   # ❗ TO‘G‘RI
 
         today = timezone.now().date()
-        monday = today - timedelta(days=today.weekday())   # haftaning boshini topish
+        monday = today - timedelta(days=today.weekday())
 
         # boshida hamma kunlar false
         week_stats = {
