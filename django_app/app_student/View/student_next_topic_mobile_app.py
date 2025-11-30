@@ -62,11 +62,15 @@ class StudentNextTopicAPIView(APIView):
 
                 if next_topic:
                     results.append({
-                        "subject": last_topic.chapter.subject.name_uz,
-                        "chapter": next_topic.chapter.name_uz,
-                        "topic": next_topic.name_uz,
+                        "subject_name_uz": last_topic.chapter.subject.name_uz,
+                        "subject_name_ru": last_topic.chapter.subject.name_ru,
+                        "chapter_name_uz": next_topic.chapter.name_uz,
+                        "chapter_name_ru": next_topic.chapter.name_ru,
+                        "topic_name_uz": next_topic.name_uz,
+                        "topic_name_ru": next_topic.name_ru,
                         "score": 0,
-                        "reminder": f"{last_topic.chapter.subject.name_uz} fanidan '{next_topic.name_uz}' mavzusini bajarish kerak!"
+                        "reminder_uz": f"{last_topic.chapter.subject.name_uz} fanidan '{next_topic.name_uz}' mavzusini bajarish kerak!",
+                        "reminder_ru": f"По предмету {last_topic.chapter.subject.name_ru} необходимо выполнить тему «{next_topic.name_ru}»!"
                     })
 
             # ✅ Agar kamida bitta fan uchun mavjud bo‘lsa
