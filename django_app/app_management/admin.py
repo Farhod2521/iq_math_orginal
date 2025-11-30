@@ -37,17 +37,23 @@ class ElonAdmin(admin.ModelAdmin):
 
 
 
+
+
 @admin.register(Motivation)
-class MotivationAdmin(admin.ModelAdmin):
-    list_display = ("title", "is_active", "created_at")
+class MotivationAdmin(TranslationAdmin):
+    list_display = ("title_uz", "is_active", "created_at")
     list_filter = ("is_active", "created_at")
-    search_fields = ("title", "content")
+    search_fields = ("title_uz", "title_ru", "content_uz", "content_ru")
     ordering = ("-created_at",)
     readonly_fields = ("created_at", "updated_at")
 
     fieldsets = (
         ("Asosiy ma'lumotlar", {
-            "fields": ("title", "content", "is_active")
+            "fields": (
+                "title_uz", "title_ru",
+                "content_uz", "content_ru",
+                "is_active"
+            )
         }),
         ("Vaqt ma'lumotlari", {
             "fields": ("created_at", "updated_at")
@@ -57,6 +63,7 @@ class MotivationAdmin(admin.ModelAdmin):
     class Meta:
         verbose_name = "Motivatsion so‘z"
         verbose_name_plural = "Motivatsion so‘zlar"
+
 
 
 
