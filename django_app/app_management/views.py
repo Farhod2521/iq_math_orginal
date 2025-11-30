@@ -95,34 +95,32 @@ class MotivationAPIView(APIView):
 
         count = motivations.count()
 
-        # 🕒 Hozirgi vaqt
         now = datetime.now(timezone.utc)
-        # Kun boshidan o‘tgan soatlar
         hours_since_midnight = now.hour
 
-        # Har 3 soatda o‘zgaradi
         block_index = hours_since_midnight // 3
 
-        # Har 3 soatda 2 tadan chiqaramiz
         start_index = (block_index * 2) % count
         end_index = (start_index + 2) % count
 
         if end_index > start_index:
             selected = motivations[start_index:end_index]
         else:
-            # ro‘yxat aylanishi uchun
             selected = list(motivations[start_index:]) + list(motivations[:end_index])
 
         data = [
             {
-                "title": m.title,
-                "content": m.content,
+                "title_uz": m.title_uz,
+                "title_ru": m.title_ru,
+                "content_uz": m.content_uz,
+                "content_ru": m.content_ru,
                 "created_at": m.created_at.strftime("%Y-%m-%d %H:%M"),
             }
             for m in selected
         ]
 
         return Response({"motivations": data}, status=status.HTTP_200_OK)
+
 
 class SystemSettingsListView(ListAPIView):
     queryset = SystemSettings.objects.all()
