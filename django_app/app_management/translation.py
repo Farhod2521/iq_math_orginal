@@ -1,5 +1,5 @@
 from modeltranslation.translator import translator, TranslationOptions
-from .models import Product,  FAQ, SystemSettings
+from .models import Product,  FAQ, SystemSettings, Motivation
 class ProductTranslationOptions(TranslationOptions):
     fields = ('name',)
 
@@ -13,7 +13,10 @@ class FAQTranslationOptions(TranslationOptions):
 translator.register(FAQ, FAQTranslationOptions)
 
 
+class MotivationTranslationOptions(TranslationOptions):
+    fields = ('title', 'content')
 
+translator.register(Motivation, MotivationTranslationOptions)
 class SystemSettingsTranslationOptions(TranslationOptions):
     fields = ('about',)
 
