@@ -33,7 +33,7 @@ class StudentRatingAPIView(APIView):
             top = all_scores.order_by(f"-{field}")[:3]
             return [
                 {
-                    "full_name": sc.student.user.full_name,
+                    "full_name": sc.student.full_name,
                     field: getattr(sc, field)
                 }
                 for sc in top
