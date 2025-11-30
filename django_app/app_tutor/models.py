@@ -53,7 +53,7 @@ class TutorReferralTransaction(models.Model):
         verbose_name_plural = "Tutor referal tranzaksiyalari"
 
     def __str__(self):
-        return f"{self.student} → {self.referral.code} ({self.payment_amount} so‘m)"
+        return f"{self.student} → ({self.payment_amount} so‘m)"
     
 
 
