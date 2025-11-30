@@ -32,7 +32,8 @@ class StudentStatisticsDetailAPIView(APIView):
         student_diagnost_list = Diagnost_Student.objects.filter(student=student)
 
         for diagnost in student_diagnost_list:
-            subject_name = diagnost.subject.name
+            subject_name_uz = diagnost.subject.name_uz
+            subject_name_ru = diagnost.subject.name_ru
             chapters_count = diagnost.chapters.count()
             topic_ids = diagnost.topic.values_list('id', flat=True)
             total_topics = len(topic_ids)
@@ -46,7 +47,8 @@ class StudentStatisticsDetailAPIView(APIView):
             mastery_percent = round((mastered_count / total_topics) * 100, 1) if total_topics else 0
 
             diagnostika.append({
-                "subject_name": subject_name,
+                "subject_name_ru": subject_name_ru,
+                "subject_name_uz": subject_name_uz,
                 "chapters": chapters_count,
                 "topics": total_topics,
                 "mastered_topics": mastered_count,
