@@ -122,7 +122,7 @@ class StudentLastProgressAPIView(APIView):
         data = {
             "subject_name_uz": subject.name_uz,
             "subject_name_ru": subject.name_ru,
-            "subject_name_uz": subject.name_uz,
+            "topic_name_uz": topic.name_uz,
             "topic_name_ru": topic.name_ru,
             "score": round(last_progress.score, 1),
             "completed_at": last_progress.completed_at.strftime("%d/%m/%Y %H:%M") if last_progress.completed_at else None
