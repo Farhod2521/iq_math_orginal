@@ -2,7 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django_app.app_student.models import StudentScore, TopicProgress
-from django_app.app_teacher.models import Topic
+from django_app.app_teacher.models import Topic, Chapter
 from django_app.app_user.models import  Subject_Category
 from datetime import datetime, timedelta
 from django.utils import timezone
