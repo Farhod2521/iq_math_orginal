@@ -6,7 +6,7 @@ from django_app.app_user.models import Subject_Category
 class Subject_CategoryTranslationOptions(TranslationOptions):
     fields = ('name',)
 
-translator.register(Subject, Subject_CategoryTranslationOptions)
+translator.register(Subject_Category, Subject_CategoryTranslationOptions)
 
 class SubjectTranslationOptions(TranslationOptions):
     fields = ('name',)
