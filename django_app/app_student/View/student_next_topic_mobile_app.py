@@ -62,6 +62,7 @@ class StudentNextTopicAPIView(APIView):
 
                 if next_topic:
                     results.append({
+                        "topic_id": next_topic.id,
                         "subject_name_uz": last_topic.chapter.subject.name_uz,
                         "subject_name_ru": last_topic.chapter.subject.name_ru,
                         "chapter_name_uz": next_topic.chapter.name_uz,
