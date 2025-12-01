@@ -168,7 +168,7 @@ class StudentTopAPIView(APIView):
         })
     
 
-class SubjectCategoryStatsAPIView(APIView):
+class SubjectProgressAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
