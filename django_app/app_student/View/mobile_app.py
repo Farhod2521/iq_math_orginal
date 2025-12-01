@@ -225,7 +225,8 @@ class SubjectProgressAPIView(APIView):
 
             # Natija
             response_data.append({
-                "name": category.name,
+                "name_uz": category.name_uz,
+                "name_ru": category.name_ru,
                 "subject_count": subject_count,
                 "total_chapter_count": total_chapter_count,
                 "total_topic_count": total_topic_count,
