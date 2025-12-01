@@ -2,6 +2,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django_app.app_student.models import StudentScore, TopicProgress
+from django_app.app_teacher.models import Topic
+from django_app.app_user.models import  Subject_Category
 from datetime import datetime, timedelta
 from django.utils import timezone
 
@@ -164,3 +166,54 @@ class StudentTopAPIView(APIView):
             "top_count": top_count,
             "results": data
         })
+    
+
+
+class SubjectProgressAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        student = request.user.student_profile  # user → student
+
+        # Barcha fan bo‘limlarini olish
+        categories = Subject_Category.objects.all()
+
+        response_data = []
+
+        for cat in categories:
+
+            # Shu bo‘limga tegishli fanlar
+            subjects = cat.subjects.all()  
+
+            for subject in subjects:
+                chapters = subject.chapters.all()
+                topics = Topic.objects.filter(chapter__in=chapters)
+
+                chapter_count = chapters.count()
+                topic_count = topics.count()
+
+                # ⭐ Studentning shu bo‘limdagi TOPIC progreslari
+                progresses = TopicProgress.objects.filter(
+                    user=student,
+                    topic__in=topics,
+                    score__gte=80  # 80%+ bo‘lsa o‘zlashtirilgan
+                ).count()
+
+                # ⭐ Foiz hisoblash
+                if topic_count > 0:
+                    present = round((progresses / topic_count) * 100, 1)
+                else:
+                    present = 0.0
+
+                response_data.append({
+                    "name": cat.name,
+                    "subject": {
+                        "name": subject.name,
+                        "chapter_count": chapter_count,
+                        "topic_count": topic_count,
+                    },
+                    "present": present,
+                })
+
+        return Response(response_data, status=200)
+
