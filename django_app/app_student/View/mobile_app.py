@@ -195,9 +195,6 @@ class SubjectProgressAPIView(APIView):
             if subject_count == 0:
                 response_data.append({
                     "name": category.name,
-                    "subject": {
-                        "name": category.name
-                    },
                     "subject_count": 0,
                     "total_chapter_count": 0,
                     "total_topic_count": 0,
