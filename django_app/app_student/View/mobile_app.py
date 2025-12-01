@@ -168,52 +168,74 @@ class StudentTopAPIView(APIView):
         })
     
 
-
-class SubjectProgressAPIView(APIView):
+class SubjectCategoryStatsAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        student = request.user.student_profile  # user → student
+        user = request.user
 
-        # Barcha fan bo‘limlarini olish
+        # Faqat talaba bo‘lsin
+        if not hasattr(user, "student_profile"):
+            return Response(
+                {"detail": "Faqat talaba uchun ma'lumot mavjud."},
+                status=403
+            )
+
+        student = user.student_profile
+
         categories = Subject_Category.objects.all()
-
         response_data = []
 
-        for cat in categories:
+        for category in categories:
+            # Shu bo‘limga tegishli barcha fanlar
+            subjects = category.subjects.all()
+            subject_count = subjects.count()
 
-            # Shu bo‘limga tegishli fanlar
-            subjects = cat.subjects.all()  
-
-            for subject in subjects:
-                chapters = subject.chapters.all()
-                topics = Topic.objects.filter(chapter__in=chapters)
-
-                chapter_count = chapters.count()
-                topic_count = topics.count()
-
-                # ⭐ Studentning shu bo‘limdagi TOPIC progreslari
-                progresses = TopicProgress.objects.filter(
-                    user=student,
-                    topic__in=topics,
-                    score__gte=80  # 80%+ bo‘lsa o‘zlashtirilgan
-                ).count()
-
-                # ⭐ Foiz hisoblash
-                if topic_count > 0:
-                    present = round((progresses / topic_count) * 100, 1)
-                else:
-                    present = 0.0
-
+            # Agar bo‘limda fan bo‘lmasa, bo‘sh statistikani qaytaramiz
+            if subject_count == 0:
                 response_data.append({
-                    "name": cat.name,
+                    "name": category.name,
                     "subject": {
-                        "name": subject.name,
-                        "chapter_count": chapter_count,
-                        "topic_count": topic_count,
+                        "name": category.name
                     },
-                    "present": present,
+                    "subject_count": 0,
+                    "total_chapter_count": 0,
+                    "total_topic_count": 0,
+                    "total_present": 0.0,
                 })
+                continue
+
+            # Shu bo‘limdagi barcha boblar va mavzular
+            chapters = Chapter.objects.filter(subject__in=subjects)
+            topics = Topic.objects.filter(chapter__in=chapters)
+
+            total_chapter_count = chapters.count()
+            total_topic_count = topics.count()
+
+            # Studentning shu bo‘limdagi 80%+ o‘zlashtirgan mavzulari
+            mastered_topics_qs = TopicProgress.objects.filter(
+                user=student,
+                topic__in=topics,
+                score__gte=80
+            ).values("topic").distinct()
+
+            mastered_count = mastered_topics_qs.count()
+
+            if total_topic_count > 0:
+                total_present = round((mastered_count / total_topic_count) * 100, 1)
+            else:
+                total_present = 0.0
+
+            # Natija
+            response_data.append({
+                "name": category.name,
+                "subject": {
+                    "name": category.name
+                },
+                "subject_count": subject_count,
+                "total_chapter_count": total_chapter_count,
+                "total_topic_count": total_topic_count,
+                "total_present": total_present,
+            })
 
         return Response(response_data, status=200)
-
