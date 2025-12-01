@@ -77,10 +77,22 @@ class DeleteFileAPIView(APIView):
             )
 class ElonListAPIView(APIView):
     def get(self, request):
-        elonlar = Elon.objects.all().order_by('-created_at')
+        status_param = request.GET.get('status', None)
+
+        # 🔹 1) Agar status = notification_status bo‘lsa
+        if status_param == "notification_status":
+            elonlar = Elon.objects.filter(notification_status=True).order_by('-created_at')
+
+        # 🔹 2) Agar status = news_status bo‘lsa
+        elif status_param == "news_status":
+            elonlar = Elon.objects.filter(news_status=True).order_by('-created_at')
+
+        # 🔹 3) Agar all yoki yo‘q bo‘lsa
+        else:
+            elonlar = Elon.objects.all().order_by('-created_at')
+
         serializer = ElonSerializer(elonlar, many=True, context={"request": request})
         return Response(serializer.data, status=status.HTTP_200_OK)
-
 
 class MotivationAPIView(APIView):
     """

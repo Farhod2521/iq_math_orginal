@@ -2,545 +2,186 @@
 <html lang="uz">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Avtomatik Chatbot Demo</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Isometric Room</title>
+
     <style>
-        :root {
-            --primary-color: #1a5fb4;
-            --secondary-color: #2ec27e;
-            --light-color: #f6f5f4;
-            --dark-color: #241f31;
-        }
-        
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f8f9fa;
-            color: #333;
-            padding: 20px;
-        }
-        
-        .demo-container {
-            max-width: 800px;
-            margin: 0 auto;
-            text-align: center;
-        }
-        
-        .chat-container {
-            max-width: 800px;
-            margin: 30px auto;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.1);
-            background-color: white;
-        }
-        
-        .chat-header {
-            background: linear-gradient(135deg, var(--primary-color), #0d47a1);
-            color: white;
-            padding: 20px;
-            text-align: center;
-        }
-        
-        .chat-header h2 {
-            margin: 0;
-            font-weight: 600;
-            font-size: 1.5rem;
-        }
-        
-        .chat-body {
-            height: 500px;
-            overflow-y: auto;
-            padding: 20px;
-            background-color: var(--light-color);
-        }
-        
-        .message {
-            margin-bottom: 20px;
+            background: #dcdcdc;
             display: flex;
-            animation: fadeIn 0.5s ease;
+            justify-content: center;
+            padding-top: 40px;
+            font-family: Arial;
         }
-        
-        .user-message {
-            justify-content: flex-end;
-        }
-        
-        .bot-message {
-            justify-content: flex-start;
-        }
-        
-        .message-bubble {
-            max-width: 70%;
-            padding: 12px 18px;
-            border-radius: 18px;
+
+        .iso-room {
+            width: 400px;
+            height: 350px;
             position: relative;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            transform: rotateX(60deg) rotateZ(45deg);
+            transform-style: preserve-3d;
         }
-        
-        .user-bubble {
-            background-color: var(--primary-color);
-            color: white;
-            border-bottom-right-radius: 5px;
-        }
-        
-        .bot-bubble {
-            background-color: white;
-            color: var(--dark-color);
+
+        /* ---------------- Walls ---------------- */
+
+        .wall {
+            position: absolute;
+            width: 300px;
+            height: 180px;
+            background: #f7f7f7;
             border: 1px solid #e0e0e0;
-            border-bottom-left-radius: 5px;
+            transform-origin: bottom;
         }
-        
-        .avatar {
+
+        .left-wall {
+            transform: rotateY(90deg) translateX(-150px) translateZ(150px);
+        }
+
+        .right-wall {
+            transform: translateZ(300px);
+        }
+
+        /* ---------------- Floor ---------------- */
+
+        .floor {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            background: #ebebeb;
+            transform: rotateX(90deg) translateY(150px);
+            background-image:
+                linear-gradient(#ccc 1px, transparent 1px),
+                linear-gradient(90deg, #ccc 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        /* ---------------- Window ---------------- */
+
+        .window {
+            position: absolute;
+            width: 90px;
+            height: 130px;
+            background: #cce6ff;
+            transform: translateZ(8px) translateX(190px) translateY(20px);
+            border: 6px solid #ffffff;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        /* ---------------- Sofa ---------------- */
+
+        .sofa {
+            position: absolute;
+            width: 110px;
+            height: 60px;
+            background: #ffffff;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            box-shadow: 0px 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .sofa-main {
+            transform: translateZ(15px) translateX(20px) translateY(220px);
+        }
+
+        .sofa-small {
+            width: 60px;
+            height: 60px;
+            transform: translateZ(15px) translateX(130px) translateY(220px);
+        }
+
+        /* ---------------- Carpet ---------------- */
+
+        .carpet {
+            position: absolute;
+            width: 180px;
+            height: 120px;
+            background: #9b9b9b;
+            transform: translateZ(5px) translateX(20px) translateY(180px);
+            border-radius: 4px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.2);
+        }
+
+        /* ---------------- Frames ---------------- */
+
+        .frames {
+            position: absolute;
+            width: 120px;
+            height: 80px;
+            transform: translateZ(10px) translateX(200px) translateY(30px);
+            background-image: 
+                linear-gradient(90deg, transparent 0%, transparent 10%, black 10%, black 90%, transparent 90%),
+                linear-gradient(0deg, transparent 0%, transparent 10%, black 10%, black 90%, transparent 90%);
+            background-size: 40px 40px;
+            background-repeat: repeat;
+            opacity: 0.3;
+        }
+
+        /* ---------------- Lamp ---------------- */
+
+        .lamp {
+            position: absolute;
+            transform: translateZ(10px) translateX(150px) translateY(100px);
+        }
+
+        .lamp-stick {
+            width: 6px;
+            height: 80px;
+            background: #555;
+            margin-left: 20px;
+        }
+
+        .lamp-ring {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #777;
+            border-radius: 50%;
+            margin-top: 5px;
+            margin-left: 0px;
+        }
+
+        /* ---------------- Small Table ---------------- */
+
+        .table {
+            position: absolute;
             width: 40px;
             height: 40px;
             border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 10px;
-            font-size: 1.2rem;
+            background: #f7f7f7;
+            border: 2px solid #555;
+            transform: translateZ(20px) translateX(20px) translateY(200px);
         }
-        
-        .user-avatar {
-            background-color: var(--secondary-color);
-        }
-        
-        .bot-avatar {
-            background-color: #5e5c64;
-        }
-        
-        .typing-indicator {
-            display: flex;
-            align-items: center;
-            margin: 10px 0;
-            opacity: 0;
-            animation: fadeIn 0.3s ease forwards;
-        }
-        
-        .typing-dots {
-            display: flex;
-            margin-left: 10px;
-        }
-        
-        .typing-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background-color: #aaa;
-            margin: 0 2px;
-            animation: typingAnimation 1.4s infinite ease-in-out;
-        }
-        
-        .typing-dot:nth-child(1) {
-            animation-delay: -0.32s;
-        }
-        
-        .typing-dot:nth-child(2) {
-            animation-delay: -0.16s;
-        }
-        
-        .controls {
-            margin-top: 20px;
-            padding: 15px;
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        @keyframes typingAnimation {
-            0%, 60%, 100% {
-                transform: translateY(0);
-                opacity: 0.5;
-            }
-            30% {
-                transform: translateY(-10px);
-                opacity: 1;
-            }
-        }
-        
-        .message-time {
-            font-size: 0.7rem;
-            opacity: 0.7;
-            margin-top: 5px;
-            text-align: right;
-        }
-        
-        .user-message .message-time {
-            text-align: right;
-        }
-        
-        .bot-message .message-time {
-            text-align: left;
-        }
-        
-        /* Input simulation */
-        .input-simulation {
-            display: flex;
-            padding: 15px;
-            background-color: white;
-            border-top: 1px solid #e0e0e0;
-        }
-        
-        .input-field {
-            flex: 1;
-            padding: 12px 15px;
-            border: 1px solid #ddd;
-            border-radius: 30px;
-            outline: none;
-            background-color: white;
-            font-family: inherit;
-            font-size: 1rem;
-            min-height: 20px;
-        }
-        
-        .send-button {
-            margin-left: 10px;
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            border-radius: 30px;
-            padding: 10px 20px;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-width: 100px;
-        }
-        
-        .send-button:hover {
-            background-color: #0d47a1;
-        }
-        
-        .send-button:active {
-            transform: scale(0.95);
-        }
-        
-        .send-button.sending {
-            background-color: #2ec27e;
-        }
-        
-        .cursor {
-            display: inline-block;
-            width: 2px;
-            height: 1.2em;
-            background-color: #333;
-            margin-left: 2px;
-            animation: blink 1s infinite;
-            vertical-align: middle;
-        }
-        
-        @keyframes blink {
-            0%, 50% { opacity: 1; }
-            51%, 100% { opacity: 0; }
-        }
-        
-        /* Responsive design */
-        @media (max-width: 768px) {
-            .chat-container {
-                margin: 20px;
-            }
-            
-            .message-bubble {
-                max-width: 85%;
-            }
-        }
+
     </style>
 </head>
+
 <body>
-    <div class="demo-container">
 
-   
-        
-        <div class="controls">
-            <button id="startDemo" class="btn btn-primary"></button>
-            <button id="restartDemo" class="btn btn-secondary"></button>
+    <div class="iso-room">
+        <div class="wall left-wall"></div>
+        <div class="wall right-wall"></div>
+        <div class="floor"></div>
+
+        <!-- Window -->
+        <div class="window"></div>
+
+        <!-- Sofa -->
+        <div class="sofa sofa-main"></div>
+        <div class="sofa sofa-small"></div>
+
+        <!-- Carpet -->
+        <div class="carpet"></div>
+
+        <!-- Frames -->
+        <div class="frames"></div>
+
+        <!-- Lamp -->
+        <div class="lamp">
+            <div class="lamp-stick"></div>
+            <div class="lamp-ring"></div>
         </div>
-    </div>
-    
-    <div class="chat-container">
-        <div class="chat-header">
-            <h2>AI yordamchi</h2>
-            <p class="mb-0">Shahar sozlik norma va qoidalari</p>
-        </div>
-        
-        <div class="chat-body" id="chatBody">
-            <!-- Messages will be added here automatically -->
-        </div>
-        
-        <div class="input-simulation">
-            <div class="input-field" id="inputField"></div>
-            <button class="send-button" id="sendButton">
-                <span id="buttonText">Yuborish</span>
-                <div id="buttonSpinner" class="spinner-border spinner-border-sm text-light ms-2 d-none" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-            </button>
-        </div>
+
+        <!-- Small Table -->
+        <div class="table"></div>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const chatBody = document.getElementById('chatBody');
-            const startButton = document.getElementById('startDemo');
-            const restartButton = document.getElementById('restartDemo');
-            const inputField = document.getElementById('inputField');
-            const sendButton = document.getElementById('sendButton');
-            const buttonText = document.getElementById('buttonText');
-            const buttonSpinner = document.getElementById('buttonSpinner');
-            
-            // Conversation script
-            const conversation = [
-                {
-                    type: 'user_typing',
-                    message: 'Assalom alaykum',
-                    delay: 2000 // Sekinroq yozish
-                },
-                {
-                    type: 'user_sending',
-                    delay: 1000 // 1 soniya kutish
-                },
-                {
-                    type: 'bot',
-                    message: 'Assalomu alaykum! Davlat qurilish normativlari bo\'yicha savollaringizga javob berishga tayyorman. Savolingizni yozing.',
-                    delay: 1500
-                },
-                {
-                    type: 'user_typing',
-                    message: 'Ko\'p qavatli binolarda yong\'inga qarshi yo\'lak kengligi qancha bo\'lishi kerak?',
-                    delay: 3500 // Uzunroq savol, sekinroq yozish
-                },
-                {
-                    type: 'user_sending',
-                    delay: 1000 // 1 soniya kutish
-                },
-                {
-                    type: 'bot_typing',
-                    delay: 2000 // 2 soniya kutish
-                },
-                {
-                    type: 'bot',
-                    message: 'SHNQ 2.01.02-19, 3.5-bandga ko\'ra, yo\'lak kengligi kamida 1,2 metr bo\'lishi kerak.',
-                    delay: 2000
-                },
-                {
-                    type: 'user_typing',
-                    message: 'Yangi qurilayotgan binolarda liftlar soni qanday belgilanadi?',
-                    delay: 3500 // Uzunroq savol, sekinroq yozish
-                },
-                {
-                    type: 'user_sending',
-                    delay: 1000 // 1 soniya kutish
-                },
-                {
-                    type: 'bot_typing',
-                    delay: 2000 // 2 soniya kutish
-                },
-                {
-                    type: 'bot',
-                    message: 'SHNQ 2.01.02-19, 4.3-bandga ko\'ra, har 60 kvadrat metr yashash maydoni uchun kamida bitta lift o\'rnatilishi kerak.',
-                    delay: 0
-                }
-            ];
-            
-            let currentStep = 0;
-            let isDemoRunning = false;
-            let currentTypingMessage = '';
-            
-            // Start demo function
-            function startDemo() {
-                if (isDemoRunning) return;
-                
-                isDemoRunning = true;
-                currentStep = 0;
-                chatBody.innerHTML = '';
-                inputField.innerHTML = '';
-                resetSendButton();
-                
-                processNextStep();
-            }
-            
-            // Process next step in conversation
-            function processNextStep() {
-                if (currentStep >= conversation.length) {
-                    isDemoRunning = false;
-                    return;
-                }
-                
-                const step = conversation[currentStep];
-                
-                setTimeout(() => {
-                    switch(step.type) {
-                        case 'user_typing':
-                            currentTypingMessage = step.message;
-                            simulateUserTyping(step.message, () => {
-                                // Savol to'liq yozilgandan keyin keyingi qadamga o'tish
-                                currentStep++;
-                                processNextStep();
-                            });
-                            break;
-                        case 'user_sending':
-                            simulateSendingMessage(() => {
-                                currentStep++;
-                                processNextStep();
-                            });
-                            break;
-                        case 'bot':
-                            addBotMessage(step.message);
-                            currentStep++;
-                            processNextStep();
-                            break;
-                        case 'bot_typing':
-                            showTypingIndicator();
-                            setTimeout(() => {
-                                removeTypingIndicator();
-                                currentStep++;
-                                processNextStep();
-                            }, step.delay);
-                            break;
-                    }
-                }, step.delay);
-            }
-            
-            // Simulate user typing with callback
-            function simulateUserTyping(message, callback) {
-                inputField.innerHTML = '';
-                let i = 0;
-                const typingSpeed = 80; // Har bir harf uchun 80ms - sekinroq
-                
-                function typeWriter() {
-                    if (i < message.length) {
-                        inputField.innerHTML = message.substring(0, i+1) + '<span class="cursor"></span>';
-                        i++;
-                        setTimeout(typeWriter, typingSpeed);
-                    } else {
-                        inputField.innerHTML = message + '<span class="cursor"></span>';
-                        // Savol to'liq yozilgandan keyin callback chaqiramiz
-                        setTimeout(callback, 500); // Yarim soniya kutib keyin
-                    }
-                }
-                
-                typeWriter();
-            }
-            
-            // Simulate sending message with callback
-            function simulateSendingMessage(callback) {
-                // Show sending animation
-                sendButton.classList.add('sending');
-                buttonText.textContent = 'Yuborilmoqda';
-                buttonSpinner.classList.remove('d-none');
-                
-                // Tugma bosilgandek animatsiya
-                sendButton.style.transform = 'scale(0.95)';
-                
-                setTimeout(() => {
-                    // Get the message from input field
-                    const message = currentTypingMessage;
-                    
-                    // Add user message to chat
-                    addUserMessage(message);
-                    
-                    // Clear input field
-                    inputField.innerHTML = '';
-                    
-                    // Reset send button
-                    resetSendButton();
-                    
-                    // Callback chaqirish
-                    callback();
-                }, 1000); // 1 soniya davom etadi
-            }
-            
-            // Reset send button to original state
-            function resetSendButton() {
-                sendButton.classList.remove('sending');
-                buttonText.textContent = 'Yuborish';
-                buttonSpinner.classList.add('d-none');
-                sendButton.style.transform = 'scale(1)';
-            }
-            
-            // Add user message to chat
-            function addUserMessage(message) {
-                const messageDiv = document.createElement('div');
-                messageDiv.className = 'message user-message';
-                
-                const time = new Date().toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' });
-                
-                messageDiv.innerHTML = `
-                    <div class="message-bubble user-bubble">
-                        <div>${message}</div>
-                        <div class="message-time">${time}</div>
-                    </div>
-                    <div class="avatar user-avatar">👷‍♂️</div>
-                `;
-                
-                chatBody.appendChild(messageDiv);
-                scrollToBottom();
-            }
-            
-            // Add bot message to chat
-            function addBotMessage(message) {
-                const messageDiv = document.createElement('div');
-                messageDiv.className = 'message bot-message';
-                
-                const time = new Date().toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' });
-                
-                messageDiv.innerHTML = `
-                    <div class="avatar bot-avatar">🤖</div>
-                    <div class="message-bubble bot-bubble">
-                        <div>${message}</div>
-                        <div class="message-time">${time}</div>
-                    </div>
-                `;
-                
-                chatBody.appendChild(messageDiv);
-                scrollToBottom();
-            }
-            
-            // Show typing indicator
-            function showTypingIndicator() {
-                const typingDiv = document.createElement('div');
-                typingDiv.className = 'typing-indicator';
-                typingDiv.id = 'typingIndicator';
-                
-                typingDiv.innerHTML = `
-                    <div class="avatar bot-avatar">🤖</div>
-                    <div class="typing-dots">
-                        <div class="typing-dot"></div>
-                        <div class="typing-dot"></div>
-                        <div class="typing-dot"></div>
-                    </div>
-                `;
-                
-                chatBody.appendChild(typingDiv);
-                scrollToBottom();
-            }
-            
-            // Remove typing indicator
-            function removeTypingIndicator() {
-                const typingIndicator = document.getElementById('typingIndicator');
-                if (typingIndicator) {
-                    typingIndicator.remove();
-                }
-            }
-            
-            // Scroll to bottom of chat
-            function scrollToBottom() {
-                chatBody.scrollTop = chatBody.scrollHeight;
-            }
-            
-            // Event listeners
-            startButton.addEventListener('click', startDemo);
-            restartButton.addEventListener('click', startDemo);
-            
-            // Auto-start the demo after a short delay
-            setTimeout(startDemo, 1000);
-        });
-    </script>
 </body>
 </html>

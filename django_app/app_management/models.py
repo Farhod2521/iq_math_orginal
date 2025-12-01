@@ -60,7 +60,8 @@ class Elon(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Yaratilgan sana")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Yangilangan sana")
-
+    notification_status =  models.BooleanField(default=False, verbose_name="Xabarnoma")
+    news_status =  models.BooleanField(default=False,  verbose_name="Yanglik")
     def __str__(self):
         return self.title
 
