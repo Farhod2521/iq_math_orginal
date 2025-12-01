@@ -2,13 +2,16 @@ from modeltranslation.translator import translator, TranslationOptions
 from .models import (
     Subject, Topic, Question, Chapter, CompositeSubQuestion, Choice
     )
+from django_app.app_user.models import Subject_Category
+class Subject_CategoryTranslationOptions(TranslationOptions):
+    fields = ('name',)
+
+translator.register(Subject, Subject_CategoryTranslationOptions)
 
 class SubjectTranslationOptions(TranslationOptions):
     fields = ('name',)
 
 translator.register(Subject, SubjectTranslationOptions)
-
-
 class ChapterTranslationOptions(TranslationOptions):
     fields = ('name',)
 translator.register(Chapter, ChapterTranslationOptions)
