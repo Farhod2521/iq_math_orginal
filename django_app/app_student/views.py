@@ -612,8 +612,8 @@ class CheckAnswersAPIView(APIView):
                 )
                 if score > topic_progress.score:
                     topic_progress.score = score
-                    topic_progress.completed_at = timezone.now()
-                    topic_progress.save()
+                topic_progress.completed_at = timezone.now()
+                topic_progress.save()
 
         response_data = {
             "question": question_details,
