@@ -358,3 +358,54 @@ class All_Role_ListView(APIView):
             'admin': 'Administrator'
         }
         return role_displays.get(role, role)
+    
+
+
+
+
+
+class DeleteStudentProfileAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request):
+        user = request.user
+
+        # Faqat student rolidagilar o‘chirishi mumkin
+        if user.role != "student":
+            return Response(
+                {"detail": "Faqat talaba profilingizni o‘chira olasiz."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Student profilini olish
+        try:
+            student = user.student_profile
+        except Student.DoesNotExist:
+            return Response(
+                {"detail": "Talaba profili topilmadi."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Parolni olish
+        password = request.data.get("password")
+        if not password:
+            return Response(
+                {"detail": "Profilni o‘chirish uchun parolni kiriting."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Parolni tekshirish
+        if not user.check_password(password):
+            return Response(
+                {"detail": "Parol noto‘g‘ri kiritilgan."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Haqiqiy o‘chirish (CASCADE → User bilan Student o‘chadi)
+        student.delete()
+        user.delete()
+
+        return Response(
+            {"detail": "Talaba profili va foydalanuvchi akkaunti muvaffaqiyatli o‘chirildi."},
+            status=status.HTTP_200_OK
+        )
