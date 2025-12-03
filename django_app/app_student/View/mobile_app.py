@@ -70,30 +70,34 @@ class StudentRatingAPIView(APIView):
 
 
 WEEK_DAY_MAP = {
-    0: "mon",   # Monday
-    1: "tue",   # Tuesday
-    2: "wed",   # Wednesday
-    3: "thu",   # Thursday
-    4: "fri",   # Friday
-    5: "sat",   # Saturday
-    6: "sun",   # Sunday
+    0: "mon",
+    1: "tue",
+    2: "wed",
+    3: "thu",
+    4: "fri",
+    5: "sat",
+    6: "sun",
 }
+import pytz
 class WeeklyStudyStatsAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         user = request.user
 
-        # student_profile borligini tekshirish
         if not hasattr(user, "student_profile"):
             return Response({"error": "Faqat talaba uchun statistikalar mavjud"}, status=403)
 
-        student = user.student_profile   # ❗ TO‘G‘RI
+        student = user.student_profile
 
-        today = timezone.now().date()
+        # TIMEZONE TO‘G‘RI OQILYAPTI
+        tz = pytz.timezone("Asia/Tashkent")
+        now = timezone.now().astimezone(tz)
+        today = now.date()
+
+        # Hafta boshini olish
         monday = today - timedelta(days=today.weekday())
 
-        # boshida hamma kunlar false
         week_stats = {
             "mon": False,
             "tue": False,
@@ -104,7 +108,7 @@ class WeeklyStudyStatsAPIView(APIView):
             "sun": False,
         }
 
-        # Dushanbadan hozirgacha bo'lgan progresslar
+        # Hozirgi xafta ichidagi barcha ishlanganlar
         progresses = TopicProgress.objects.filter(
             user=student,
             completed_at__date__gte=monday,
@@ -113,11 +117,14 @@ class WeeklyStudyStatsAPIView(APIView):
 
         for prog in progresses:
             if prog.completed_at:
-                weekday_int = prog.completed_at.weekday()  # 0–6
+                # vaqtni lokalga o‘tkazamiz
+                completed_local = prog.completed_at.astimezone(tz)
+                weekday_int = completed_local.weekday()  # 0-6
                 day_key = WEEK_DAY_MAP[weekday_int]
                 week_stats[day_key] = True
 
         return Response({"week_stats": week_stats})
+
 
 
 
