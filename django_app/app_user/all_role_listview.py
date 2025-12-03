@@ -184,11 +184,19 @@ class All_Role_ListView(APIView):
             # Subscription qolgan kun
             subscription = getattr(student, 'subscription', None)
             end_date = subscription.end_date if subscription else None
+
             remaining_days = None
+            is_subscription_active = False   # 🔥 default qiymat
+
             if end_date:
                 today = datetime.now(pytz.timezone("Asia/Ashgabat")).date()
                 diff_days = (end_date.date() - today).days
-                remaining_days = diff_days if diff_days > 0 else 0 
+                remaining_days = diff_days if diff_days > 0 else 0
+
+                # 🔥 OBUNA FAOLMI YO‘QMI — ASOSIY QISM
+                now = datetime.now(pytz.timezone("Asia/Ashgabat"))
+                if subscription.start_date <= now <= subscription.end_date:
+                    is_subscription_active = True
 
             profile_data['json'] = {
                 "profile_id": student.id,
@@ -205,7 +213,7 @@ class All_Role_ListView(APIView):
                 "document_type": student.document_type,
                 "document": student.document,
                 "type_of_education": student.type_of_education,
-                "status": student.status,
+                "status": is_subscription_active,
                 "registration_date": student_datetime.strftime('%d/%m/%Y') if student_datetime else None,
                 "registration_time": student_datetime.strftime('%H:%M:%S') if student_datetime else None,
                 "last_login_time": last_login_formatted,
