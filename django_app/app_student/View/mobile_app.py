@@ -161,7 +161,7 @@ class StudentTopAPIView(APIView):
         for item in students:
             data.append({
                 "student_id": item.student.id,
-                "full_name": item.student.user.full_name,
+                "full_name": item.student.full_name,
                 "phone": item.student.user.phone,
                 "score": item.score,
                 "coin": item.coin,
