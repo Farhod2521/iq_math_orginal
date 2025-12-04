@@ -19,13 +19,13 @@ class StudentRatingAPIView(APIView):
         if not hasattr(user, "student_profile"):
             return Response({"error": "Faqat talaba reytingni ko‘ra oladi"}, status=403)
 
-        student = user.student_profile   # ❗ TO‘G‘RI
+        student = user.student_profile
 
-        # StudentScore obj
-        try:
-            my_score = StudentScore.objects.get(student=student)
-        except StudentScore.DoesNotExist:
-            return Response({"error": "Talabaning reytingi mavjud emas"}, status=404)
+        # StudentScore obj — bo‘lmasa yangi bo‘sh obyekt yaratamiz
+        my_score, _ = StudentScore.objects.get_or_create(
+            student=student,
+            defaults={"score": 0, "coin": 0, "som": 0}
+        )
 
         # Barcha reytinglar
         all_scores = StudentScore.objects.all()
