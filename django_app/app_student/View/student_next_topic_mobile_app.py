@@ -23,60 +23,52 @@ class StudentNextTopicAPIView(APIView):
 
         student = user.student_profile
 
-        # 🧮 1️⃣ Talabaning ishlagan barcha mavzulari
+        # 🧮 1️⃣ Talabaning ishlagan barcha mavzulari (completed_at bo‘yicha eng oxirgisi birinchi bo'ladi)
         progresses = TopicProgress.objects.filter(user=student).select_related(
             "topic", "topic__chapter", "topic__chapter__subject"
-        )
+        ).order_by('-completed_at', '-id')
 
+        # ⭐⭐⭐ YANGI QOIDA: faqat eng oxirgi ishlangan FANni olish ⭐⭐⭐
         if progresses.exists():
-            # 🎯 Har bir fan uchun eng oxirgi ishlangan mavzuni topamiz
-            subjects = {}
-            for progress in progresses.order_by('-completed_at', '-id'):  # ✅ to‘g‘rilangan joy
-                topic = progress.topic
-                subject = topic.chapter.subject
+            last_progress = progresses.first()  # 👈 Eng oxirgi ishlangan progress
+            last_topic = last_progress.topic
+            subject = last_topic.chapter.subject  # 👈 Eng oxirgi ishlangan fan
 
-                # Agar bu fan uchun hali tanlanmagan bo‘lsa — birinchi topilganini olamiz (ya’ni eng oxirgi ishlangan)
-                if subject.id not in subjects:
-                    subjects[subject.id] = topic
+            # 🔍 Shu fan bo‘yicha keyingi mavzuni topamiz
+            chapter_topics = list(Topic.objects.filter(chapter=last_topic.chapter).order_by('order'))
 
-            # 🔚 Har bir fan uchun eng oxirgi ishlangan mavzu → endi o‘sha fandan keyingi mavzuni topamiz
-            results = []
-            for subject_id, last_topic in subjects.items():
-                chapter_topics = list(Topic.objects.filter(chapter=last_topic.chapter).order_by('order'))
-                try:
-                    current_index = chapter_topics.index(last_topic)
-                    # Agar bu chapterdagi oxirgi mavzu bo‘lsa → keyingi chapterdan boshlaymiz
-                    if current_index == len(chapter_topics) - 1:
-                        next_chapter = Chapter.objects.filter(
-                            subject=last_topic.chapter.subject,
-                            order__gt=last_topic.chapter.order
-                        ).order_by('order').first()
-                        if next_chapter:
-                            next_topic = Topic.objects.filter(chapter=next_chapter).order_by('order').first()
-                        else:
-                            next_topic = None
+            try:
+                current_index = chapter_topics.index(last_topic)
+
+                # Agar bu chapterdagi oxirgi mavzu bo‘lsa → keyingi chapterga o‘tamiz
+                if current_index == len(chapter_topics) - 1:
+                    next_chapter = Chapter.objects.filter(
+                        subject=subject,
+                        order__gt=last_topic.chapter.order
+                    ).order_by('order').first()
+
+                    if next_chapter:
+                        next_topic = Topic.objects.filter(chapter=next_chapter).order_by('order').first()
                     else:
-                        next_topic = chapter_topics[current_index + 1]
-                except ValueError:
-                    next_topic = None
+                        next_topic = None
+                else:
+                    next_topic = chapter_topics[current_index + 1]
+            except ValueError:
+                next_topic = None
 
-                if next_topic:
-                    results.append({
-                        "topic_id": next_topic.id,
-                        "subject_name_uz": last_topic.chapter.subject.name_uz,
-                        "subject_name_ru": last_topic.chapter.subject.name_ru,
-                        "chapter_name_uz": next_topic.chapter.name_uz,
-                        "chapter_name_ru": next_topic.chapter.name_ru,
-                        "topic_name_uz": next_topic.name_uz,
-                        "topic_name_ru": next_topic.name_ru,
-                        "score": 0,
-                        "reminder_uz": f"{last_topic.chapter.subject.name_uz} fanidan '{next_topic.name_uz}' mavzusini bajarish kerak!",
-                        "reminder_ru": f"По предмету {last_topic.chapter.subject.name_ru} необходимо выполнить тему «{next_topic.name_ru}»!"
-                    })
-
-            # ✅ Agar kamida bitta fan uchun mavjud bo‘lsa
-            if results:
-                return Response(results, status=status.HTTP_200_OK)
+            if next_topic:
+                return Response({
+                    "topic_id": next_topic.id,
+                    "subject_name_uz": subject.name_uz,
+                    "subject_name_ru": subject.name_ru,
+                    "chapter_name_uz": next_topic.chapter.name_uz,
+                    "chapter_name_ru": next_topic.chapter.name_ru,
+                    "topic_name_uz": next_topic.name_uz,
+                    "topic_name_ru": next_topic.name_ru,
+                    "score": 0,
+                    "reminder_uz": f"{subject.name_uz} fanidan '{next_topic.name_uz}' mavzusini bajarish kerak!",
+                    "reminder_ru": f"По предмету {subject.name_ru} необходимо выполнить тему «{next_topic.name_ru}»!"
+                }, status=status.HTTP_200_OK)
 
         # 2️⃣ Agar hech qaysi mavzu ishlanmagan bo‘lsa — ro‘yxatdan o‘tgan fani bo‘yicha birinchi mavzuni ko‘rsatamiz
         if student.class_name:
@@ -94,11 +86,13 @@ class StudentNextTopicAPIView(APIView):
                         "topic_name_uz": first_topic.name_uz,
                         "topic_name_ru": first_topic.name_ru,
                         "score": 0,
-                        "reminder": f"{subject.name_uz} fanidan '{first_topic.name_uz}' mavzusini boshlang!"
+                        "reminder_uz": f"{subject.name_uz} fanidan '{first_topic.name_uz}' mavzusini boshlang!",
+                        "reminder_ru": f"По предмету {subject.name_ru} начните тему «{first_topic.name_ru}»!"
                     }, status=status.HTTP_200_OK)
 
         # 3️⃣ Aks holda hech narsa yo‘q
         return Response({"detail": "Hozircha hech qanday mavzu mavjud emas."}, status=status.HTTP_204_NO_CONTENT)
+
 
 
 class StudentLastProgressAPIView(APIView):
