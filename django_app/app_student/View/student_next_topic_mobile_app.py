@@ -86,14 +86,13 @@ class StudentNextTopicAPIView(APIView):
                 first_topic = Topic.objects.filter(chapter=first_chapter).order_by('order').first()
                 if first_topic:
                     return Response({
-                
-                        "topic_id": next_topic.id,
-                        "subject_name_uz": last_topic.chapter.subject.name_uz,
-                        "subject_name_ru": last_topic.chapter.subject.name_ru,
-                        "chapter_name_uz": next_topic.chapter.name_uz,
-                        "chapter_name_ru": next_topic.chapter.name_ru,
-                        "topic_name_uz": next_topic.name_uz,
-                        "topic_name_ru": next_topic.name_ru,
+                        "topic_id": first_topic.id,
+                        "subject_name_uz": subject.name_uz,
+                        "subject_name_ru": subject.name_ru,
+                        "chapter_name_uz": first_chapter.name_uz,
+                        "chapter_name_ru": first_chapter.name_ru,
+                        "topic_name_uz": first_topic.name_uz,
+                        "topic_name_ru": first_topic.name_ru,
                         "score": 0,
                         "reminder": f"{subject.name_uz} fanidan '{first_topic.name_uz}' mavzusini boshlang!"
                     }, status=status.HTTP_200_OK)
