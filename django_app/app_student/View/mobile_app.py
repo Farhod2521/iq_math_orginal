@@ -198,16 +198,7 @@ class SubjectProgressAPIView(APIView):
             subjects = category.subjects.all()
             subject_count = subjects.count()
 
-            # Agar bo‘limda fan bo‘lmasa, bo‘sh statistikani qaytaramiz
-            if subject_count == 0:
-                response_data.append({
-                    "name": category.name,
-                    "subject_count": 0,
-                    "total_chapter_count": 0,
-                    "total_topic_count": 0,
-                    "total_present": 0.0,
-                })
-                continue
+
 
             # Shu bo‘limdagi barcha boblar va mavzular
             chapters = Chapter.objects.filter(subject__in=subjects)
