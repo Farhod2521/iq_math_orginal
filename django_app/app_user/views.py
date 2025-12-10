@@ -1007,6 +1007,16 @@ class LoginAPIView(APIView):
                     "refresh_token": str(refresh),
                     "expires_in": expires_in,
                 }
+            elif user.role == 'superadmin':
+                profile_data = {
+                    "id": user.id,
+                    "full_name": f"{user.first_name} {user.last_name}".strip(),
+                    "phone": user.phone,
+                    "role": user.role,
+                    "access_token": str(access_token),
+                    "refresh_token": str(refresh),
+                    "expires_in": expires_in,
+                }
 
             else:
                 return Response({"detail": "Role is not supported."}, status=status.HTTP_403_FORBIDDEN)
