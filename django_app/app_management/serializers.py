@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import SystemSettings, FAQ, Product, Banner, ConversionRate, Category, Tag, Elon
+from .models import SystemSettings, FAQ, Product, Banner, ConversionRate, Category, Tag, Elon, Motivation
 
 
 
@@ -57,8 +57,12 @@ class TagSerializer(serializers.ModelSerializer):
         model = Tag
         fields = ["id", "title"]
 class ElonSerializer(serializers.ModelSerializer):
-    categories = CategorySerializer(many=True)
-    tags = TagSerializer(many=True)
+    categories = serializers.PrimaryKeyRelatedField(
+        many=True, queryset=Category.objects.all()
+    )
+    tags = serializers.PrimaryKeyRelatedField(
+        many=True, queryset=Tag.objects.all()
+    )
 
     class Meta:
         model = Elon
@@ -69,6 +73,25 @@ class ElonSerializer(serializers.ModelSerializer):
             "image",
             "categories",
             "tags",
+            "notification_status",
+            "news_status",
             "created_at",
             "updated_at",
         ]
+
+    def create(self, validated_data):
+        categories = validated_data.pop("categories", [])
+        tags = validated_data.pop("tags", [])
+
+        elon = Elon.objects.create(**validated_data)
+        elon.categories.set(categories)
+        elon.tags.set(tags)
+
+        return elon
+
+
+
+class MotivationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Motivation
+        fields = "__all__"
