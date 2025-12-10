@@ -2,8 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import BasePermission
-from .models import Elon
-from .serializers import ElonSerializer
+
 from django_app.app_management.models import Elon
 from django_app.app_management.serializers import ElonSerializer
 
