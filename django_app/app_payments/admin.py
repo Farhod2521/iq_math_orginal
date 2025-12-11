@@ -32,11 +32,10 @@ class PaymentAdmin(admin.ModelAdmin):
 class SubscriptionPlanAdmin(admin.ModelAdmin):
     list_display = (
         "name",
-        'get_plan_name',          # tarif nomi
-        'price_per_month',        # oyiga narx
-        'discount_percent',       # chegirma %
-        'get_discounted_price',   # chegirmali narx (oyiga)
-         # chegirmadan keyingi umumiy narx
+        'get_plan_name',
+        'price_per_month',
+        'discount_percent',
+        'get_discounted_price',
         'is_active',
         'created_at',
     )
@@ -44,9 +43,10 @@ class SubscriptionPlanAdmin(admin.ModelAdmin):
     search_fields = ('months',)
     ordering = ('months',)
     readonly_fields = ('created_at', 'updated_at')
+
     fieldsets = (
         (None, {
-            'fields': ('months', 'price_per_month', 'discount_percent', 'is_active')
+            'fields': ('name', 'months', 'price_per_month', 'discount_percent', 'is_active')
         }),
         ('Vaqt maʼlumotlari', {
             'fields': ('created_at', 'updated_at'),
@@ -54,12 +54,10 @@ class SubscriptionPlanAdmin(admin.ModelAdmin):
     )
 
     def get_plan_name(self, obj):
-        """Tarif nomi (oylar)"""
         return obj.get_months_display()
     get_plan_name.short_description = "Tarif nomi (oylar)"
 
     def get_discounted_price(self, obj):
-        """Chegirmali narx (oyiga)"""
         discount_amount = (obj.price_per_month * obj.discount_percent) / 100
         return obj.price_per_month - discount_amount
     get_discounted_price.short_description = "Chegirmali narx (oyiga)"
