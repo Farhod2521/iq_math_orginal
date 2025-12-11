@@ -31,6 +31,7 @@ class PaymentAdmin(admin.ModelAdmin):
 @admin.register(SubscriptionPlan)
 class SubscriptionPlanAdmin(admin.ModelAdmin):
     list_display = (
+        "name",
         'get_plan_name',          # tarif nomi
         'price_per_month',        # oyiga narx
         'discount_percent',       # chegirma %
