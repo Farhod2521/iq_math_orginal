@@ -4,7 +4,7 @@ from .views import (
     PaymentCallbackAPIView, InitiatePaymentAPIView, 
     SubscriptionTrialDaysAPIView, MyPaymentsAPIView, CheckCouponAPIView, SubscriptionPlanListAPIView, PaymentTeacherListAPIView
 )
-from .VIEW import SubscriptionPlanCRUDAPIView
+from .VIEW.subscriptionplancrud import SubscriptionPlanCRUDAPIView
 urlpatterns = [
     path("payment-callback/", PaymentCallbackAPIView.as_view(), name="payment-callback"),
     path("initiate-payment/", InitiatePaymentAPIView.as_view(), name="initiate-payment"),
