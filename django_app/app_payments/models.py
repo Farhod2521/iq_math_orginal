@@ -90,7 +90,7 @@ class SubscriptionPlan(models.Model):
         (6, '6 oylik'),
         (12, '12 oylik'),
     )
-
+    name =  models.CharField(max_length=500, null=True, blank=True)
     months = models.PositiveIntegerField(
         choices=PLAN_CHOICES,
         verbose_name="Davomiylik (oy)"
