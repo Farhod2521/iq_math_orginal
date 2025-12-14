@@ -10,7 +10,7 @@ import pytz
 from django.db.models import Q
 from .models import User, Student, Teacher, Parent, Tutor, StudentLoginHistory
 from django_app.app_payments.models import Payment
-
+from django.utils import timezone
 from datetime import datetime
 import pytz
 def escape_uri_path(path):
@@ -64,18 +64,28 @@ class All_Role_ListView(APIView):
             
         # --- STATUS FILTER ---
         if status_filter == 'active':
+            now = timezone.now()
             users = users.filter(
-                Q(student_profile__status=True) |
-                Q(teacher_profile__status=True) |
-                Q(parent_profile__status=True) |
-                Q(tutor_profile__status=True)
+                Q(
+                    role='student',
+                    student_profile__subscription__start_date__lte=now,
+                    student_profile__subscription__end_date__gte=now
+                ) |
+                Q(role='teacher', teacher_profile__status=True) |
+                Q(role='parent', parent_profile__status=True) |
+                Q(role='tutor', tutor_profile__status=True)
             )
+
         elif status_filter == 'inactive':
-            users = users.filter(
-                Q(student_profile__status=False) |
-                Q(teacher_profile__status=False) |
-                Q(parent_profile__status=False) |
-                Q(tutor_profile__status=False)
+            users = users.exclude(
+                Q(
+                    role='student',
+                    student_profile__subscription__start_date__lte=now,
+                    student_profile__subscription__end_date__gte=now
+                ) |
+                Q(role='teacher', teacher_profile__status=True) |
+                Q(role='parent', parent_profile__status=True) |
+                Q(role='tutor', tutor_profile__status=True)
             )
 
         data_json = []

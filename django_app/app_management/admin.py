@@ -2,7 +2,7 @@ from django.contrib import admin
 from .models import  (
     Motivation, SystemSettings, FAQ, Product, ReferralAndCouponSettings, 
     Banner, Coupon_Tutor_Student,ConversionRate, SolutionStatus,
-    Elon, Category, Tag, UploadedFile
+    Elon, Category, Tag, UploadedFile, UploadSetting
     )
 from modeltranslation.admin import TranslationAdmin
 from django.utils.html import format_html
@@ -258,3 +258,38 @@ class Coupon_Tutor_StudentAdmin(admin.ModelAdmin):
 
 
 
+@admin.register(UploadSetting)
+class UploadSettingAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "max_size_mb_display",
+        "max_size_bytes_display",
+        "updated_at",
+    )
+
+    readonly_fields = (
+        "updated_at",
+        "max_size_bytes_display",
+    )
+
+    fieldsets = (
+        (None, {
+            "fields": (
+                "max_size_mb",
+            )
+        }),
+        ("Texnik ma’lumotlar", {
+            "fields": (
+                "max_size_bytes_display",
+                "updated_at",
+            )
+        }),
+    )
+
+    def max_size_mb_display(self, obj):
+        return f"{obj.max_size_mb} MB"
+    max_size_mb_display.short_description = "Maksimal hajm (MB)"
+
+    def max_size_bytes_display(self, obj):
+        return f"{obj.max_size_bytes} bayt"
+    max_size_bytes_display.short_description = "Maksimal hajm (baytlarda)"
