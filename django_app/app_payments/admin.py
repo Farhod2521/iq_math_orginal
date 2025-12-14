@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import SubscriptionSetting, Subscription, Payment, SubscriptionPlan
+from .models import SubscriptionSetting, Subscription, Payment, SubscriptionPlan, SubscriptionCategory
 
 @admin.register(SubscriptionSetting)
 class SubscriptionSettingAdmin(admin.ModelAdmin):
@@ -65,3 +65,52 @@ class SubscriptionPlanAdmin(admin.ModelAdmin):
 
 
  
+
+
+
+@admin.register(SubscriptionCategory)
+class SubscriptionCategoryAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "title",
+        "slug",
+        "is_active",
+        "created_at",
+    )
+
+    list_editable = (
+        "is_active",
+    )
+
+    list_filter = (
+        "is_active",
+        "created_at",
+    )
+
+    search_fields = (
+        "title",
+        "slug",
+    )
+
+    prepopulated_fields = {
+        "slug": ("title",)
+    }
+
+    readonly_fields = (
+        "created_at",
+    )
+
+    fieldsets = (
+        (None, {
+            "fields": (
+                "title",
+                "slug",
+                "is_active",
+            )
+        }),
+        ("Vaqt ma’lumotlari", {
+            "fields": (
+                "created_at",
+            )
+        }),
+    )

@@ -79,6 +79,32 @@ class Payment(models.Model):
 
 
 
+class SubscriptionCategory(models.Model):
+    title = models.CharField(
+        max_length=100,
+        verbose_name="Kategoriya nomi"
+    )
+    slug = models.SlugField(
+        max_length=100,
+        unique=True,
+        verbose_name="Slug"
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name="Faolmi"
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Yaratilgan vaqti"
+    )
+
+    class Meta:
+        verbose_name = "Obuna kategoriyasi"
+        verbose_name_plural = "Obuna kategoriyalari"
+
+    def __str__(self):
+        return self.title
 
 
 
@@ -91,6 +117,14 @@ class SubscriptionPlan(models.Model):
         (12, '12 oylik'),
     )
     name =  models.CharField(max_length=500, null=True, blank=True,  verbose_name="Tarif reja nomi:")
+    category = models.ForeignKey(
+        SubscriptionCategory,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="plans",
+        verbose_name="Kategoriya (badge)"
+    )
     months = models.PositiveIntegerField(
         choices=PLAN_CHOICES,
         verbose_name="Davomiylik (oy)"
