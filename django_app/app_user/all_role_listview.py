@@ -21,6 +21,7 @@ class All_Role_ListView(APIView):
 
     def get(self, request):
         ashgabat_tz = pytz.timezone("Asia/Ashgabat")
+        now = timezone.now()
         export_excel = request.GET.get("export") == "excel"
         
         # --- FILTER PARAMETERS ---
@@ -64,7 +65,7 @@ class All_Role_ListView(APIView):
             
         # --- STATUS FILTER ---
         if status_filter == 'active':
-            now = timezone.now()
+            
             users = users.filter(
                 Q(
                     role='student',
