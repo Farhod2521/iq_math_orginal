@@ -29,15 +29,9 @@ class UploadSingleFileAPIView(APIView):
             )
 
         file_obj = request.FILES["file"]
-
-        # ✅ DB dan limitni olish
         setting = UploadSetting.objects.first()
-
-        # Agar admin hali kiritmagan bo‘lsa
         max_size_mb = setting.max_size_mb if setting else 5
         max_size_bytes = max_size_mb * 1024 * 1024
-
-        # ❌ Hajm tekshiruvi
         if file_obj.size > max_size_bytes:
             return Response(
                 {
@@ -46,8 +40,6 @@ class UploadSingleFileAPIView(APIView):
                 },
                 status=status.HTTP_400_BAD_REQUEST
             )
-
-        # ✅ Saqlash
         uploaded = UploadedFile.objects.create(file=file_obj)
 
         file_url = request.build_absolute_uri(uploaded.file.url)
