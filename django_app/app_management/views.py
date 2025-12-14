@@ -1,5 +1,5 @@
 from rest_framework.generics import ListAPIView
-from .models import SystemSettings, FAQ, Product, Banner, Motivation, Elon, UploadedFile
+from .models import SystemSettings, FAQ, Product, Banner, Motivation, Elon, UploadedFile, UploadSetting
 from .serializers import SystemSettingsSerializer, FAQSerializer, ProductSerializer, BannerSerializer, ElonSerializer
 from django_app.app_user.models import User, Teacher, Student, Tutor, Parent
 from django_app.app_payments.models import Subscription, Payment, SubscriptionPlan
@@ -17,25 +17,37 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 
-
 class UploadSingleFileAPIView(APIView):
     # permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
 
         if "file" not in request.FILES:
-            return Response({"error": "file yuborilmadi!"}, status=400)
+            return Response(
+                {"error": "Fayl yuborilmadi!"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         file_obj = request.FILES["file"]
 
-        # 🔥 10 MB = 10 * 1024 * 1024
-        max_size = 5 * 1024 * 1024
-        if file_obj.size > max_size:
+        # ✅ DB dan limitni olish
+        setting = UploadSetting.objects.first()
+
+        # Agar admin hali kiritmagan bo‘lsa
+        max_size_mb = setting.max_size_mb if setting else 5
+        max_size_bytes = max_size_mb * 1024 * 1024
+
+        # ❌ Hajm tekshiruvi
+        if file_obj.size > max_size_bytes:
             return Response(
-                {"error": "Fayl hajmi 10 MB dan oshmasligi kerak!"},
-                status=400
+                {
+                    "error": f"Fayl hajmi {max_size_mb} MB dan oshmasligi kerak!",
+                    "current_size_mb": round(file_obj.size / 1024 / 1024, 2)
+                },
+                status=status.HTTP_400_BAD_REQUEST
             )
 
+        # ✅ Saqlash
         uploaded = UploadedFile.objects.create(file=file_obj)
 
         file_url = request.build_absolute_uri(uploaded.file.url)
@@ -43,7 +55,8 @@ class UploadSingleFileAPIView(APIView):
         return Response(
             {
                 "message": "Fayl muvaffaqiyatli yuklandi!",
-                "file_url": file_url
+                "file_url": file_url,
+                "max_allowed_mb": max_size_mb
             },
             status=status.HTTP_201_CREATED
         )

@@ -9,6 +9,33 @@ import os
 from django_app.app_user.models import  Student, Teacher, Tutor
 
 
+class UploadSetting(models.Model):
+    max_size_mb = models.PositiveIntegerField(
+        default=5,
+        verbose_name="Maksimal fayl hajmi (MB)",
+        help_text="Yuklanadigan faylning ruxsat etilgan maksimal hajmi (megabayt)"
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name="So‘nggi yangilangan vaqti"
+    )
+
+    class Meta:
+        verbose_name = "Yuklash hajmi sozlamasi"
+        verbose_name_plural = "Yuklash hajmi sozlamalari"
+
+    def __str__(self):
+        return f"{self.max_size_mb} MB"
+
+    @property
+    def max_size_bytes(self) -> int:
+        """Maksimal hajm (baytlarda)"""
+        return self.max_size_mb * 1024 * 1024
+
+
+
+
 class UploadedFile(models.Model):
     file = models.FileField(upload_to="uploaded_files/")
     uploaded_at = models.DateTimeField(auto_now_add=True)
