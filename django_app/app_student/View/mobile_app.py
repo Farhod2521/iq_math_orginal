@@ -6,9 +6,9 @@ from django_app.app_teacher.models import Topic, Chapter
 from django_app.app_user.models import  Subject_Category
 from datetime import datetime, timedelta
 from django.utils import timezone
-
-
-
+from django_app.app_student.serializers import SubjectCategoryDetailSerializer
+from django.db.models import Sum, Count, Max
+from rest_framework import status
 class StudentRatingAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -232,3 +232,32 @@ class SubjectProgressAPIView(APIView):
             })
 
         return Response(response_data, status=200)
+    
+
+
+class SubjectCategoryDetailAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        category_id = request.data.get("category_id")
+
+        if not category_id:
+            return Response(
+                {"error": "category_id majburiy"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            category = (
+                Subject_Category.objects
+                .annotate(subjects_count=Count("subjects", distinct=True))
+                .get(id=category_id)
+            )
+        except Subject_Category.DoesNotExist:
+            return Response(
+                {"error": "Fan bo‘limi topilmadi"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        serializer = SubjectCategoryDetailSerializer(category)
+        return Response(serializer.data, status=status.HTTP_200_OK)
