@@ -4,6 +4,51 @@ from modeltranslation.utils import get_translation_fields
 
 from django_app.app_user.models import  Subject, Student, StudentLoginHistory
 from .models import TopicProgress, ChapterProgress, TopicHelpRequestIndependent, StudentReferral
+from django.db.models import Sum, Count, Max
+from django_app.app_user.models import Subject_Category
+class SubjectStatsMobileAppSerializer(serializers.ModelSerializer):
+    class_name = serializers.CharField(source="classes.name")
+    chapters_count = serializers.IntegerField()
+    topics_count = serializers.IntegerField()
+    questions_count = serializers.IntegerField()
+
+    class Meta:
+        model = Subject
+        fields = [
+            "id",
+            "name",
+            "class_name",
+            "chapters_count",
+            "topics_count",
+            "questions_count"
+        ]
+
+class SubjectCategoryDetailSerializer(serializers.ModelSerializer):
+    subjects = serializers.SerializerMethodField()
+    subjects_count = serializers.IntegerField()
+
+    class Meta:
+        model = Subject_Category
+        fields = [
+            "id",
+            "name",
+            "subjects_count",
+            "subjects"
+        ]
+
+    def get_subjects(self, obj):
+        subjects = (
+            Subject.objects.filter(category=obj)
+            .annotate(
+                chapters_count=Count("chapters", distinct=True),
+                topics_count=Count("chapters__topics", distinct=True),
+                questions_count=Count("chapters__topics__questions", distinct=True),
+            )
+            .order_by("order")
+        )
+        return SubjectStatsMobileAppSerializer(subjects, many=True).data
+
+
 class SubjectSerializer(serializers.ModelSerializer):
     class_name = serializers.CharField(source="classes.name")
     class_uz = serializers.SerializerMethodField()
