@@ -7,7 +7,7 @@ from django_app.app_user.models import Student, Subject
 from django_app.app_student.models import Diagnost_Student, TopicProgress
 from django_app.app_teacher.models import Chapter, Topic
 
-
+from rest_framework import status
 
 class StudentDiagnostSubjectsAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -120,6 +120,124 @@ class ChapterTopicsAPIView(APIView):
     
 
 
+class ParentStudentDiagnosticHistoryAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        # 🔒 Faqat parent
+        if user.role != "parent":
+            return Response(
+                {"detail": "Faqat ota-ona uchun ruxsat berilgan"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        student_id = request.query_params.get("student_id")
+        if not student_id:
+            return Response(
+                {"detail": "student_id majburiy"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            student = Student.objects.get(id=student_id)
+        except Student.DoesNotExist:
+            return Response(
+                {"detail": "Student topilmadi"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        diagnost_dict = {}
+
+        diagnost_list = (
+            Diagnost_Student.objects
+            .filter(student=student)
+            .select_related("subject")
+            .prefetch_related("topic")
+        )
+
+        for d in diagnost_list:
+            subject = d.subject
+            subject_id = subject.id
+
+            all_diagnosts = (
+                Diagnost_Student.objects
+                .filter(student=student, subject=subject)
+                .prefetch_related("topic")
+                .order_by("id")
+            )
+
+            progress_history = []
+            topic_counter = {}
+
+            for diag in all_diagnosts:
+                # 📊 Ball tarixi
+                if diag.result:
+                    try:
+                        score = diag.result.get("result", [{}])[0].get("score")
+                        if score is not None:
+                            progress_history.append({
+                                "date": diag.create_date.strftime("%Y-%m-%d %H:%M") if diag.create_date else None,
+                                "score": score
+                            })
+                    except Exception:
+                        pass
+
+                # 🔁 Takrorlangan mavzular
+                for topic in diag.topic.all():
+                    topic_counter[topic.id] = topic_counter.get(topic.id, 0) + 1
+
+            repeated_topics = [
+                {
+                    "id": t.id,
+                    "name_uz": t.name_uz,
+                    "name_ru": t.name_ru,
+                    "repeat_count": topic_counter[t.id]
+                }
+                for t in Topic.objects.filter(
+                    id__in=[tid for tid, count in topic_counter.items() if count >= 3]
+                )
+            ]
+
+            progress_percent = progress_history[-1]["score"] if progress_history else None
+            last_date = progress_history[-1]["date"] if progress_history else None
+
+            diagnost_dict[subject_id] = {
+                "progress_history": progress_history,
+                "progress_percent": progress_percent,
+                "last_date": last_date,
+                "repeated_topics": repeated_topics
+            }
+
+        subjects = (
+            Subject.objects
+            .filter(id__in=diagnost_dict.keys())
+            .select_related("classes")
+        )
+
+        data = []
+        for subject in subjects:
+            class_name = subject.classes.name if subject.classes else ""
+            info = diagnost_dict[subject.id]
+
+            data.append({
+                "id": subject.id,
+                "name_uz": subject.name_uz,
+                "name_ru": subject.name_ru,
+                "class_name": class_name,
+                "class_uz": f"{class_name}-sinf {subject.name_uz}",
+                "class_ru": f"{class_name}-класс {subject.name_ru}",
+                "image_uz": subject.image_uz.url if subject.image_uz else "",
+                "image_ru": subject.image_ru.url if subject.image_ru else "",
+                "progress_percent": info["progress_percent"],
+                "progress_history": info["progress_history"],
+                "last_date": info["last_date"],
+                "has_taken_diagnostic": True,
+                "repeated_topics": info["repeated_topics"]
+            })
+
+        return Response(data, status=status.HTTP_200_OK)
 
 
 

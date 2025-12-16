@@ -6,7 +6,7 @@ from .views import (
      DiagnostLevelDetailAPIView, Diagnostika_TopicDetailAPIView, PathFromIdsAPIView, PathFromIdsStudentAPIView,
      ChapterListBySubject_STUDENT_ID_APIView, TopicListByChapter_STUDENT_ID_APIView
 )
-from .View.app_diagnost import StudentDiagnostSubjectsAPIView, SubjectChaptersAPIView, ChapterTopicsAPIView, StudentDiagnosticHistoryAPIView
+from .View.app_diagnost import StudentDiagnostSubjectsAPIView, SubjectChaptersAPIView, ChapterTopicsAPIView, StudentDiagnosticHistoryAPIView, ParentStudentDiagnosticHistoryAPIView
 from .View.product_exchange import ProductExchangeView, ProductExchangeListView, ProductExchangeConfirmAPIView
 from  .View.unsolvedquestioncreateView import UnsolvedQuestionCreateView, UnsolvedQuestionReportListView
 from .View.student_statistics import StudentStatisticsDetailAPIView, SubjectListWithMasteryAPIView, ChapterTopicProgressAPIView, DiagnostSubjectListAPIView, MyReferralsAPIView ,DiagnostChapterTopicProgressAPIView
@@ -33,6 +33,7 @@ urlpatterns = [
     path('my-diagnost-detail/', DiagnostLevelDetailAPIView.as_view(), name='my-diagnost-level'),
     path('my-diagnost-topic-detail/<int:id>/', Diagnostika_TopicDetailAPIView.as_view(), name='my-diagnost-level'),
     path('my-diagnost/history/progress/', StudentDiagnosticHistoryAPIView.as_view(), name='student-diagnostic-progress'),
+    path("parent/student-diagnostic-history/", ParentStudentDiagnosticHistoryAPIView.as_view(), name='student-diagnostic-progress'),
 
 
     path('my-products/exchange/<int:product_id>/', ProductExchangeView.as_view(), name='product-exchange'),
