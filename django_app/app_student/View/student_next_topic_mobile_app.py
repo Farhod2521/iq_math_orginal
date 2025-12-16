@@ -92,7 +92,7 @@ class StudentNextTopicAPIView(APIView):
 
         # 3️⃣ Aks holda hech narsa yo‘q
         return Response({"detail": "Hozircha hech qanday mavzu mavjud emas."}, status=status.HTTP_204_NO_CONTENT)
- X
+
 
 
 class StudentLastProgressAPIView(APIView):

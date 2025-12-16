@@ -7,7 +7,7 @@ from django_app.app_user.models import  Subject_Category
 from datetime import datetime, timedelta
 from django.utils import timezone
 from django_app.app_student.serializers import SubjectCategoryDetailSerializer
-from django.db.models import Sum, Count, Max
+from django.db.models import Count
 from rest_framework import status
 class StudentRatingAPIView(APIView):
     permission_classes = [IsAuthenticated]
