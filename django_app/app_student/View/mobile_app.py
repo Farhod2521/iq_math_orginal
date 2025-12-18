@@ -86,16 +86,16 @@ class WeeklyStudyStatsAPIView(APIView):
         user = request.user
 
         if not hasattr(user, "student_profile"):
-            return Response({"error": "Faqat talaba uchun statistikalar mavjud"}, status=403)
+            return Response(
+                {"error": "Faqat talaba uchun statistikalar mavjud"},
+                status=403
+            )
 
         student = user.student_profile
 
-        # TIMEZONE TO‘G‘RI OQILYAPTI
         tz = pytz.timezone("Asia/Tashkent")
         now = timezone.now().astimezone(tz)
         today = now.date()
-
-        # Hafta boshini olish
         monday = today - timedelta(days=today.weekday())
 
         week_stats = {
@@ -108,22 +108,62 @@ class WeeklyStudyStatsAPIView(APIView):
             "sun": False,
         }
 
-        # Hozirgi xafta ichidagi barcha ishlanganlar
-        progresses = TopicProgress.objects.filter(
-            user=student,
-            completed_at__date__gte=monday,
-            completed_at__date__lte=today
+        week_details = {
+            "mon": [],
+            "tue": [],
+            "wed": [],
+            "thu": [],
+            "fri": [],
+            "sat": [],
+            "sun": [],
+        }
+
+        progresses = (
+            TopicProgress.objects
+            .select_related("topic__chapter__subject")
+            .filter(
+                user=student,
+                completed_at__date__gte=monday,
+                completed_at__date__lte=today
+            )
         )
 
         for prog in progresses:
-            if prog.completed_at:
-                # vaqtni lokalga o‘tkazamiz
-                completed_local = prog.completed_at.astimezone(tz)
-                weekday_int = completed_local.weekday()  # 0-6
-                day_key = WEEK_DAY_MAP[weekday_int]
-                week_stats[day_key] = True
+            completed_local = prog.completed_at.astimezone(tz)
+            day_key = WEEK_DAY_MAP[completed_local.weekday()]
 
-        return Response({"week_stats": week_stats})
+            week_stats[day_key] = True
+
+            topic = prog.topic
+            chapter = topic.chapter
+            subject = chapter.subject
+
+            week_details[day_key].append({
+                "subject": {
+                    "name_uz": subject.name_uz,
+                    "name_ru": subject.name_ru,
+                },
+                "chapter": {
+                    "name_uz": chapter.name_uz,
+                    "name_ru": chapter.name_ru,
+                },
+                "topic": {
+                    "name_uz": topic.name_uz,
+                    "name_ru": topic.name_ru,
+                },
+                "score": prog.score
+            })
+
+        # false bo‘lgan kunlar uchun message
+        for day, status in week_stats.items():
+            if not status:
+                week_details[day] = "siz mavzu ishlamagansiz"
+
+        return Response({
+            "week_stats": week_stats,
+            "details": week_details
+        })
+
 
 
 
