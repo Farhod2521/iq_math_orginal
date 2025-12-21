@@ -670,7 +670,14 @@ class StudentProfileAPIView(APIView):
                 "phone": user.phone,
                 "email": user.email,
             }
-
+        elif user.role == 'superadmin':
+            data = {
+                "role": "superadmin",
+                "id": user.id,
+                "full_name": f"{user.first_name} {user.last_name}",
+                "phone": user.phone,
+                "email": user.email,
+            }
         # TUTOR
         elif user.role == 'tutor':
             try:
