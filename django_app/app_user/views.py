@@ -6,7 +6,7 @@ UniversalRegisterSerializer, VerifySmsCodeSerializer,
 LoginSerializer, StudentProfileSerializer, TeacherRegisterSerializer, Class_Serializer,
 TeacherVerifySmsCodeSerializer, TeacherSerializer, StudentSerializer, ParentCreateSerializer, StudentSerializerParent
 )
-from .models import Student, UserSMSAttempt, Teacher, Class, StudentLoginHistory, Parent, Tutor, ParentStudentRelation
+from .models import Student, UserSMSAttempt, Teacher, Class, StudentLoginHistory, Parent, Tutor, ParentStudentRelation, TeacherLoginHistory
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.settings import api_settings
 from datetime import timedelta
@@ -955,6 +955,7 @@ class LoginAPIView(APIView):
             elif user.role == 'teacher':
                 try:
                     teacher = Teacher.objects.get(user=user)
+                    TeacherLoginHistory.objects.create(teacher=teacher)
                     access_token['teacher_id'] = teacher.id
                     profile_data = {
                         "id": teacher.id,
