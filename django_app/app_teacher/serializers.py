@@ -1,9 +1,10 @@
 from rest_framework import serializers
 from .models import (
-    Chapter, Topic, Question,Choice, CompositeSubQuestion, Group, TeacherRewardLog, GeneratedQuestionOpenAi, GeneratedChoiceOpenAi, GeneratedSubQuestionOpenAi
+    Chapter, Topic, Question,Choice, CompositeSubQuestion, Group, TeacherRewardLog, 
+    GeneratedQuestionOpenAi, GeneratedChoiceOpenAi, GeneratedSubQuestionOpenAi
     
 )
-from django_app.app_user.models import  Subject, Student
+from django_app.app_user.models import  Subject, Student, TeacherLoginHistory
 from django_app.app_student.models import ProductExchange
 from django_app.app_management.models import  Product
 class SubjectSerializer(serializers.ModelSerializer):
@@ -142,7 +143,14 @@ class QuestionSerializer(serializers.ModelSerializer):
 
 
 
+class TeacherLoginHistorySerializer(serializers.ModelSerializer):
+    date = serializers.SerializerMethodField()
+    time = serializers.SerializerMethodField()
+    logout_time = serializers.SerializerMethodField()
 
+    class Meta:
+        model = TeacherLoginHistory
+        fields = ['id', 'date', 'time', 'logout_time']
 
 class GeneratedChoiceOpenAiSerializer(serializers.ModelSerializer):
     class Meta:
