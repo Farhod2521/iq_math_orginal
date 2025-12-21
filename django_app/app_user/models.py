@@ -293,11 +293,13 @@ class TeacherLoginHistory(models.Model):
     logout_time = models.DateTimeField(null=True, blank=True)  # Yangi maydon
 
     def __str__(self):
-        return f"{self.teacher.full_name} - {self.login_time.strftime('%Y-%m-%d %H:%M:%S')}"'
+        return f"{self.teacher.full_name} - {self.login_time.strftime('%Y-%m-%d %H:%M:%S')}"
     
 
 class StudentLoginHistory(models.Model): 
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='login_history') 
     login_time = models.DateTimeField(auto_now_add=True) 
     logout_time = models.DateTimeField(null=True, blank=True) 
-    # Yangi maydon def __str__(self): return f"{self.student.full_name} - {self.login_time.strftime('%Y-%m-%d %H:%M:%S')}"
+    # Yangi maydon 
+    def __str__(self): 
+        return f"{self.student.full_name} - {self.login_time.strftime('%Y-%m-%d %H:%M:%S')}"
