@@ -771,11 +771,14 @@ class CheckCouponAPIView(APIView):
         }, status=status.HTTP_200_OK)
 
 class SubscriptionPlanListAPIView(APIView):
+
     def get(self, request):
-        plans = SubscriptionPlan.objects.filter(is_active=True).order_by('months')
+        plans = SubscriptionPlan.objects.filter(
+            is_active=True
+        ).order_by("months")
+
         serializer = SubscriptionPlanSerializer(plans, many=True)
-        return Response(serializer.data)
-    
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 

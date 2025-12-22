@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Payment, SubscriptionPlan
+from .models import Payment, SubscriptionPlan, SubscriptionBenefit
 
 class PaymentSerializer(serializers.ModelSerializer):
     class Meta:
@@ -19,38 +19,74 @@ class PaymentSerializer(serializers.ModelSerializer):
             'payment_gateway',      # To‘lov tizimi
             'receipt_url'           # Chek havolasi
         ]
+class SubscriptionBenefitStatusSerializer(serializers.ModelSerializer):
+    is_selected = serializers.BooleanField()
 
+    class Meta:
+        model = SubscriptionBenefit
+        fields = (
+            "id",
+            "title",
+            "description",
+            "is_selected",
+        )
 
 class SubscriptionPlanSerializer(serializers.ModelSerializer):
-    price_per_month = serializers.DecimalField(  # modeldagi qiymatni ham chiqaramiz
-        max_digits=10, decimal_places=2, read_only=True
+    price_per_month = serializers.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        read_only=True
     )
-    sale_price = serializers.SerializerMethodField()  # chegirmali oylik narx
+
+    sale_price = serializers.SerializerMethodField()
+    benefits = serializers.SerializerMethodField()
+    months_display = serializers.CharField(
+        source="get_months_display",
+        read_only=True
+    )
 
     class Meta:
         model = SubscriptionPlan
         fields = [
-            'id',
-            'months',
-            'get_months_display',
-            'discount_percent',
-            'price_per_month',  # modeldagi narx
-            'sale_price',       # chegirmali narx (oylik)
-            'is_active',
-            'created_at',
-            'updated_at',
+            "id",
+            "months",
+            "months_display",
+            "discount_percent",
+            "price_per_month",
+            "sale_price",
+            "benefits",
+            "is_active",
+            "created_at",
+            "updated_at",
         ]
 
     def get_sale_price(self, obj):
         """
-        Chegirmali oylik narx (faqat 1 oy uchun).
+        Chegirmali oylik narx
         """
-        # 1 oylik narx
         monthly_price = float(obj.price_per_month)
-        # chegirma summasi
         discount_amount = (monthly_price * obj.discount_percent) / 100
-        # chegirmali oylik narx
-        return float(monthly_price - discount_amount)
+        return monthly_price - discount_amount
+
+    def get_benefits(self, obj):
+        """
+        BARCHA benefitlarni chiqaradi,
+        faqat tarifga tegishlisi is_selected=True bo‘ladi
+        """
+        all_benefits = SubscriptionBenefit.objects.filter(is_active=True)
+        plan_benefit_ids = obj.benefits.values_list("id", flat=True)
+
+        result = []
+        for benefit in all_benefits:
+            result.append({
+                "id": benefit.id,
+                "title": benefit.title,
+                "description": benefit.description,
+                "is_selected": benefit.id in plan_benefit_ids
+            })
+
+        return result
+
     
 
 class PaymentTeacherSerializer(serializers.ModelSerializer):
