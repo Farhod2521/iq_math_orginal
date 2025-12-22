@@ -1,5 +1,21 @@
 from django.contrib import admin
-from .models import SubscriptionSetting, Subscription, Payment, SubscriptionPlan, SubscriptionCategory
+from .models import SubscriptionSetting, Subscription, Payment, SubscriptionPlan, SubscriptionCategory, SubscriptionBenefit
+
+
+
+
+@admin.register(SubscriptionBenefit)
+class SubscriptionBenefitAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "title",
+        "is_active",
+        "created_at",
+    )
+    list_filter = ("is_active",)
+    search_fields = ("title",)
+    ordering = ("-created_at",)
+
 
 @admin.register(SubscriptionSetting)
 class SubscriptionSettingAdmin(admin.ModelAdmin):
