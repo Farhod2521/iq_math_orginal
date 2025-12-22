@@ -65,10 +65,6 @@ class SubscriptionPlanAdmin(admin.ModelAdmin):
         "name",
     )
 
-    filter_horizontal = (
-        "benefits",
-    )
-
     ordering = ("-created_at",)
 
     readonly_fields = (
@@ -93,7 +89,7 @@ class SubscriptionPlanAdmin(admin.ModelAdmin):
         }),
         ("Kurs ustunliklari", {
             "fields": (
-                "benefits",
+                "benefits",  # 👈 checkbox bo‘lib chiqadi
             )
         }),
         ("Vaqt maʼlumotlari", {
@@ -103,7 +99,6 @@ class SubscriptionPlanAdmin(admin.ModelAdmin):
             )
         }),
     )
-
 
 
 
