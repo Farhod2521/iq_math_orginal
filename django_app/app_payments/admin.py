@@ -43,40 +43,83 @@ class PaymentAdmin(admin.ModelAdmin):
 
 
     
-
+from decimal import Decimal
 @admin.register(SubscriptionPlan)
 class SubscriptionPlanAdmin(admin.ModelAdmin):
     list_display = (
         "name",
-        'get_plan_name',
-        'price_per_month',
-        'discount_percent',
-        'get_discounted_price',
-        'is_active',
-        'created_at',
+        "get_plan_name",
+        "price_per_month",
+        "discount_percent",
+        "get_discounted_price",
+        "is_active",
+        "created_at",
     )
-    list_filter = ('is_active', 'months',)
-    search_fields = ('months',)
-    ordering = ('months',)
-    readonly_fields = ('created_at', 'updated_at')
+
+    list_filter = (
+        "is_active",
+        "months",
+        "category",
+    )
+
+    search_fields = (
+        "name",
+    )
+
+    ordering = ("months",)
+
+    readonly_fields = (
+        "created_at",
+        "updated_at",
+    )
+
+    filter_horizontal = (
+        "benefits",   # 🔥 ManyToMany qulay select
+    )
 
     fieldsets = (
-        (None, {
-            'fields': ('name', 'months', 'price_per_month', 'discount_percent', 'is_active')
+        ("Asosiy maʼlumotlar", {
+            "fields": (
+                "name",
+                "category",
+                "months",
+                "is_active",
+            )
         }),
-        ('Vaqt maʼlumotlari', {
-            'fields': ('created_at', 'updated_at'),
+        ("Narx va chegirma", {
+            "fields": (
+                "price_per_month",
+                "discount_percent",
+            )
+        }),
+        ("Kurs ustunliklari", {
+            "fields": (
+                "benefits",
+            )
+        }),
+        ("Vaqt maʼlumotlari", {
+            "fields": (
+                "created_at",
+                "updated_at",
+            )
         }),
     )
 
     def get_plan_name(self, obj):
         return obj.get_months_display()
-    get_plan_name.short_description = "Tarif nomi (oylar)"
+    get_plan_name.short_description = "Tarif (oylar)"
 
     def get_discounted_price(self, obj):
-        discount_amount = (obj.price_per_month * obj.discount_percent) / 100
-        return obj.price_per_month - discount_amount
+        """
+        Oyiga chegirmali narx
+        """
+        if obj.discount_percent:
+            discount = (obj.price_per_month * Decimal(obj.discount_percent)) / Decimal(100)
+            return obj.price_per_month - discount
+        return obj.price_per_month
+
     get_discounted_price.short_description = "Chegirmali narx (oyiga)"
+
 
 
 
