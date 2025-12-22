@@ -106,7 +106,29 @@ class SubscriptionCategory(models.Model):
     def __str__(self):
         return self.title
 
+class SubscriptionBenefit(models.Model):
+    title = models.CharField(
+        max_length=255,
+        verbose_name="Ustunlik nomi"
+    )
+    description = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="Izoh (ixtiyoriy)"
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name="Faolmi"
+    )
 
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.title
+
+    class Meta:
+        verbose_name = "Kurs ustunligi"
+        verbose_name_plural = "Kurs ustunliklari"
 
 
 class SubscriptionPlan(models.Model):
@@ -116,7 +138,14 @@ class SubscriptionPlan(models.Model):
         (6, '6 oylik'),
         (12, '12 oylik'),
     )
-    name =  models.CharField(max_length=500, null=True, blank=True,  verbose_name="Tarif reja nomi:")
+
+    name = models.CharField(
+        max_length=500,
+        null=True,
+        blank=True,
+        verbose_name="Tarif reja nomi"
+    )
+
     category = models.ForeignKey(
         SubscriptionCategory,
         on_delete=models.SET_NULL,
@@ -125,40 +154,45 @@ class SubscriptionPlan(models.Model):
         related_name="plans",
         verbose_name="Kategoriya (badge)"
     )
+
     months = models.PositiveIntegerField(
         choices=PLAN_CHOICES,
         verbose_name="Davomiylik (oy)"
     )
+
+    benefits = models.ManyToManyField(
+        SubscriptionBenefit,
+        blank=True,
+        related_name="plans",
+        verbose_name="Kurs ustunliklari"
+    )
+
     discount_percent = models.PositiveIntegerField(
         default=0,
         verbose_name="Chegirma foizi"
     )
+
     price_per_month = models.DecimalField(
         max_digits=10,
         decimal_places=2,
         verbose_name="Oyiga narx"
     )
+
     is_active = models.BooleanField(
         default=True,
         verbose_name="Faolmi"
     )
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name="Yaratilgan vaqti"
-    )
-    updated_at = models.DateTimeField(
-        auto_now=True,
-        verbose_name="Yangilangan vaqti"
-    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def total_price(self):
-        """Chegirmadan keyingi umumiy narx"""
         full_price = self.months * self.price_per_month
         discount_amount = (full_price * self.discount_percent) / 100
         return full_price - discount_amount
 
     def __str__(self):
-        return f"{self.get_months_display()} (chegirma: {self.discount_percent}%)"
+        return f"{self.get_months_display()} ({self.discount_percent}% chegirma)"
 
     class Meta:
         verbose_name = "Obuna rejasi"
