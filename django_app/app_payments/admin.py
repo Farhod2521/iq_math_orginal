@@ -42,7 +42,6 @@ class PaymentAdmin(admin.ModelAdmin):
 
 
 
-    
 @admin.register(SubscriptionPlan)
 class SubscriptionPlanAdmin(admin.ModelAdmin):
     list_display = (
@@ -61,16 +60,11 @@ class SubscriptionPlanAdmin(admin.ModelAdmin):
         "category",
     )
 
-    search_fields = (
-        "name",
-    )
+    search_fields = ("name",)
 
     ordering = ("-created_at",)
 
-    readonly_fields = (
-        "created_at",
-        "updated_at",
-    )
+    readonly_fields = ("created_at", "updated_at")
 
     fieldsets = (
         ("Asosiy maʼlumotlar", {
@@ -88,15 +82,10 @@ class SubscriptionPlanAdmin(admin.ModelAdmin):
             )
         }),
         ("Kurs ustunliklari", {
-            "fields": (
-                "benefits",  # 👈 checkbox bo‘lib chiqadi
-            )
+            "fields": ("benefits",)  # checkbox ko‘rinishida chiqadi
         }),
         ("Vaqt maʼlumotlari", {
-            "fields": (
-                "created_at",
-                "updated_at",
-            )
+            "fields": ("created_at", "updated_at")
         }),
     )
 
