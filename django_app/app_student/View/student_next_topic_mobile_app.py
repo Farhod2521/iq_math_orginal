@@ -103,32 +103,48 @@ class StudentLastProgressAPIView(APIView):
 
         # ✅ Faqat student kirishi mumkin
         if not hasattr(user, 'student_profile'):
-            return Response({"detail": "Faqat o‘quvchilar uchun."}, status=status.HTTP_403_FORBIDDEN)
+            return Response(
+                {"detail": "Faqat o‘quvchilar uchun."},
+                status=status.HTTP_403_FORBIDDEN
+            )
 
         student = user.student_profile
 
-        # 🔍 Eng oxirgi ishlangan mavzuni olish
-        last_progress = (
+        # 🔍 Oxirgi ishlangan 5 ta mavzu
+        progresses = (
             TopicProgress.objects
             .filter(user=student)
-            .select_related('topic', 'topic__chapter', 'topic__chapter__subject')
-            .order_by('-completed_at')
-            .first()
+            .select_related(
+                'topic',
+                'topic__chapter',
+                'topic__chapter__subject'
+            )
+            .order_by('-completed_at')[:5]
         )
 
-        if not last_progress:
-            return Response({"detail": "Hali hech qanday mavzu ishlanmagan."}, status=status.HTTP_204_NO_CONTENT)
+        # 🆕 Agar hali hech narsa ishlanmagan bo‘lsa — bo‘sh list
+        if not progresses.exists():
+            return Response([], status=status.HTTP_200_OK)
 
-        topic = last_progress.topic
-        subject = topic.chapter.subject
+        data = []
 
-        data = {
-            "subject_name_uz": subject.name_uz,
-            "subject_name_ru": subject.name_ru,
-            "topic_name_uz": topic.name_uz,
-            "topic_name_ru": topic.name_ru,
-            "score": round(last_progress.score, 1),
-            "completed_at": last_progress.completed_at.strftime("%d/%m/%Y %H:%M") if last_progress.completed_at else None
-        }
+        for progress in progresses:
+            topic = progress.topic
+            chapter = topic.chapter
+            subject = chapter.subject
+
+            data.append({
+                "subject_name_uz": subject.name_uz,
+                "subject_name_ru": subject.name_ru,
+                "chapter_name_uz": chapter.name_uz,
+                "chapter_name_ru": chapter.name_ru,
+                "topic_name_uz": topic.name_uz,
+                "topic_name_ru": topic.name_ru,
+                "score": round(progress.score, 1),
+                "completed_at": (
+                    progress.completed_at.strftime("%d/%m/%Y %H:%M")
+                    if progress.completed_at else None
+                )
+            })
 
         return Response(data, status=status.HTTP_200_OK)
