@@ -114,3 +114,72 @@ class PaymentTeacherSerializer(serializers.ModelSerializer):
             "payment_date",
             "created_at",
         ]
+
+
+class SubscriptionPlanCREATESerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SubscriptionPlan
+        fields = [
+            "id",
+            "name",
+            "category",        # category_id keladi
+            "months",
+            "benefits",        # benefit_id lar list
+            "discount_percent",
+            "price_per_month",
+            "is_active",
+        ]
+
+
+class SubscriptionREADPlanSerializer(serializers.ModelSerializer):
+    months_display = serializers.CharField(
+        source="get_months_display",
+        read_only=True
+    )
+    sale_price = serializers.SerializerMethodField()
+    benefits = serializers.SerializerMethodField()
+    category = serializers.SerializerMethodField()
+
+    class Meta:
+        model = SubscriptionPlan
+        fields = [
+            "id",
+            "name",
+            "category",
+            "months",
+            "months_display",
+            "discount_percent",
+            "price_per_month",
+            "sale_price",
+            "benefits",
+            "is_active",
+            "created_at",
+            "updated_at",
+        ]
+
+    def get_category(self, obj):
+        if obj.category:
+            return {
+                "id": obj.category.id,
+                "title": obj.category.title
+            }
+        return None
+
+    def get_sale_price(self, obj):
+        monthly_price = float(obj.price_per_month)
+        discount_amount = (monthly_price * obj.discount_percent) / 100
+        return monthly_price - discount_amount
+
+    def get_benefits(self, obj):
+        all_benefits = SubscriptionBenefit.objects.filter(is_active=True)
+        plan_benefit_ids = obj.benefits.values_list("id", flat=True)
+
+        return [
+            {
+                "id": b.id,
+                "title": b.title,
+                "description": b.description,
+                "is_selected": b.id in plan_benefit_ids
+            }
+            for b in all_benefits
+        ]

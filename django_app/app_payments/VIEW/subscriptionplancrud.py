@@ -3,12 +3,12 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import BasePermission
 from django_app.app_payments.models import SubscriptionPlan
-from django_app.app_payments.serializers import SubscriptionPlanSerializer
+from django_app.app_payments.serializers import SubscriptionPlanCREATESerializer, SubscriptionREADPlanSerializer
 
-
+from django.shortcuts import get_object_or_404
 class SubscriptionPlanCRUDAPIView(APIView):
 
-    # 🔐 SUPERADMIN PERMISSION
+    # 🔐 SUPERADMIN
     class IsSuperAdmin(BasePermission):
         def has_permission(self, request, view):
             return (
@@ -18,54 +18,53 @@ class SubscriptionPlanCRUDAPIView(APIView):
 
     permission_classes = [IsSuperAdmin]
 
-    # 📌 GET — LIST yoki DETAIL
+    # 📌 GET — LIST / DETAIL
     def get(self, request, pk=None):
         if pk:
-            try:
-                plan = SubscriptionPlan.objects.get(pk=pk)
-            except SubscriptionPlan.DoesNotExist:
-                return Response({"error": "Tarif reja topilmadi"}, status=404)
-
-            serializer = SubscriptionPlanSerializer(plan)
+            plan = get_object_or_404(SubscriptionPlan, pk=pk)
+            serializer = SubscriptionREADPlanSerializer(plan)
             return Response(serializer.data)
 
         plans = SubscriptionPlan.objects.all().order_by("-created_at")
-        serializer = SubscriptionPlanSerializer(plans, many=True)
+        serializer = SubscriptionREADPlanSerializer(plans, many=True)
         return Response(serializer.data)
 
     # 📌 CREATE
     def post(self, request):
-        serializer = SubscriptionPlanSerializer(data=request.data)
+        serializer = SubscriptionPlanCREATESerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+        plan = serializer.save()
 
         return Response(
-            {"message": "Tarif reja yaratildi", "data": serializer.data},
+            {
+                "message": "Tarif reja yaratildi",
+                "data": SubscriptionREADPlanSerializer(plan).data
+            },
             status=status.HTTP_201_CREATED
         )
 
     # 📌 UPDATE
     def put(self, request, pk):
-        try:
-            plan = SubscriptionPlan.objects.get(pk=pk)
-        except SubscriptionPlan.DoesNotExist:
-            return Response({"error": "Tarif reja topilmadi"}, status=404)
+        plan = get_object_or_404(SubscriptionPlan, pk=pk)
 
-        serializer = SubscriptionPlanSerializer(plan, data=request.data, partial=True)
+        serializer = SubscriptionPlanCREATESerializer(
+            plan, data=request.data, partial=True
+        )
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+        plan = serializer.save()
 
         return Response(
-            {"message": "Tarif reja yangilandi", "data": serializer.data},
-            status=200
+            {
+                "message": "Tarif reja yangilandi",
+                "data": SubscriptionREADPlanSerializer(plan).data
+            }
         )
 
     # 📌 DELETE
     def delete(self, request, pk):
-        try:
-            plan = SubscriptionPlan.objects.get(pk=pk)
-        except SubscriptionPlan.DoesNotExist:
-            return Response({"error": "Tarif reja topilmadi"}, status=404)
-
+        plan = get_object_or_404(SubscriptionPlan, pk=pk)
         plan.delete()
-        return Response({"message": "Tarif reja o‘chirildi"}, status=204)
+        return Response(
+            {"message": "Tarif reja o‘chirildi"},
+            status=status.HTTP_204_NO_CONTENT
+        )
