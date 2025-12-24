@@ -135,8 +135,11 @@ class StudentLastProgressAPIView(APIView):
             class_name =  chapter.subject.classes.name
 
             data.append({
-                "subject_name_uz": f"{class_name}-{subject.name_uz}",
-                "subject_name_ru": f"{class_name}-{subject.name_ru}",
+                "class_name_uz": f"{class_name}-sinf",
+                "class_name_ru": f"{class_name}-класс",
+    
+                "subject_name_uz": subject.name_uz,
+                "subject_name_ru": subject.name_ru,
                 "chapter_name_uz": chapter.name_uz,
                 "chapter_name_ru": chapter.name_ru,
                 "topic_name_uz": topic.name_uz,
