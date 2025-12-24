@@ -45,10 +45,14 @@ class SubscriptionPlanSerializer(serializers.ModelSerializer):
         read_only=True
     )
 
+    category = serializers.SerializerMethodField()
+
     class Meta:
         model = SubscriptionPlan
         fields = [
             "id",
+            "name",          # ✅ plan nomi
+            "category",      # ✅ category title
             "months",
             "months_display",
             "discount_percent",
@@ -60,32 +64,32 @@ class SubscriptionPlanSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
 
+    def get_category(self, obj):
+        if obj.category:
+            return {
+                "id": obj.category.id,
+                "title": obj.category.title
+            }
+        return None
+
     def get_sale_price(self, obj):
-        """
-        Chegirmali oylik narx
-        """
         monthly_price = float(obj.price_per_month)
         discount_amount = (monthly_price * obj.discount_percent) / 100
         return monthly_price - discount_amount
 
     def get_benefits(self, obj):
-        """
-        BARCHA benefitlarni chiqaradi,
-        faqat tarifga tegishlisi is_selected=True bo‘ladi
-        """
         all_benefits = SubscriptionBenefit.objects.filter(is_active=True)
         plan_benefit_ids = obj.benefits.values_list("id", flat=True)
 
-        result = []
-        for benefit in all_benefits:
-            result.append({
+        return [
+            {
                 "id": benefit.id,
                 "title": benefit.title,
                 "description": benefit.description,
                 "is_selected": benefit.id in plan_benefit_ids
-            })
-
-        return result
+            }
+            for benefit in all_benefits
+        ]
 
     
 
