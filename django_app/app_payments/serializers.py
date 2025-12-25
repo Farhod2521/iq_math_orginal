@@ -68,7 +68,8 @@ class SubscriptionPlanSerializer(serializers.ModelSerializer):
         if obj.category:
             return {
                 "id": obj.category.id,
-                "title": obj.category.title
+                "title_uz": obj.category.title_uz,
+                "title_ru": obj.category.title_ru
             }
         return None
 
@@ -84,7 +85,8 @@ class SubscriptionPlanSerializer(serializers.ModelSerializer):
         return [
             {
                 "id": benefit.id,
-                "title": benefit.title,
+                "title_uz": benefit.title_uz,
+                "title_ru": benefit.title_ru,
                 "description": benefit.description,
                 "is_selected": benefit.id in plan_benefit_ids
             }
