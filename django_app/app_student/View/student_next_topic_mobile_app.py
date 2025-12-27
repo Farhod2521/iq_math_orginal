@@ -144,6 +144,7 @@ class StudentLastProgressAPIView(APIView):
                 "chapter_name_ru": chapter.name_ru,
                 "topic_name_uz": topic.name_uz,
                 "topic_name_ru": topic.name_ru,
+                "topic_id":topic.id,
                 "score": round(progress.score, 1),
                 "completed_at": (
                     progress.completed_at.strftime("%d/%m/%Y %H:%M")
