@@ -27,13 +27,19 @@ class TagAdmin(admin.ModelAdmin):
 
 
 @admin.register(Elon)
-class ElonAdmin(admin.ModelAdmin):
+class ElonAdmin(TranslationAdmin):
     list_display = ("id", "title", "created_at", "updated_at")
-    search_fields = ("title", "text")
+    search_fields = (
+        "title",
+        "title_uz",
+        "title_ru",
+        "text",
+        "text_uz",
+        "text_ru",
+    )
     list_filter = ("created_at", "categories", "tags")
     filter_horizontal = ("categories", "tags")
     readonly_fields = ("created_at", "updated_at")
-
 
 
 
