@@ -137,9 +137,12 @@ class WeeklyStudyStatsAPIView(APIView):
             topic = prog.topic
             chapter = topic.chapter
             subject = chapter.subject
+            class_name =  subject.classes.name
 
             week_details[day_key].append({
                 "subject": {
+                    "class_name_uz": f"{class_name}-sinf",
+                    "class_name_ru": f"{class_name}-класс",
                     "name_uz": subject.name_uz,
                     "name_ru": subject.name_ru,
                 },
