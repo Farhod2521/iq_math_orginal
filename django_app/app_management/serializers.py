@@ -68,8 +68,10 @@ class ElonSerializer(serializers.ModelSerializer):
         model = Elon
         fields = [
             "id",
-            "title",
-            "text",
+            "title_uz",
+            "title_ru",
+            "text_uz",
+            "text_ru",
             "image",
             "categories",
             "tags",
@@ -78,7 +80,6 @@ class ElonSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-
     def create(self, validated_data):
         categories = validated_data.pop("categories", [])
         tags = validated_data.pop("tags", [])
