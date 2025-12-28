@@ -142,6 +142,7 @@ class StudentLastProgressAPIView(APIView):
                 "subject_name_ru": subject.name_ru,
                 "chapter_name_uz": chapter.name_uz,
                 "chapter_name_ru": chapter.name_ru,
+                "chapter_id":chapter.id, 
                 "topic_name_uz": topic.name_uz,
                 "topic_name_ru": topic.name_ru,
                 "topic_id":topic.id,
