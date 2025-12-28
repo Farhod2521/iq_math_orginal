@@ -16,7 +16,8 @@ class SubjectStatsMobileAppSerializer(serializers.ModelSerializer):
         model = Subject
         fields = [
             "id",
-            "name",
+            "name_uz",
+            "name_ru",
             "class_name",
             "chapters_count",
             "topics_count",
@@ -31,7 +32,8 @@ class SubjectCategoryDetailSerializer(serializers.ModelSerializer):
         model = Subject_Category
         fields = [
             "id",
-            "name",
+            "name_uz",
+            "name_ru",
             "subjects_count",
             "subjects"
         ]
