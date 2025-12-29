@@ -160,80 +160,58 @@ EMAIL_USE_SSL = False
 
 CKEDITOR_BASEPATH = "/static/ckeditor/ckeditor/"
 
-CKEDITOR_CONFIGS = {
-    'default': {
-        'toolbar': 'full',
-        'extraAllowedContent': 'iframe[*]',
-        'allowedContent': True,
-        'skin': 'moono',
-        # 'skin': 'office2013',
-        'toolbar_Basic': [
-            ['Source', '-', 'Bold', 'Italic']
-        ],
-        'toolbar_YourCustomToolbarConfig': [
-            {'name': 'document', 'items': ['Source', '-', 'Save', 'NewPage', 'Preview', 'Print', '-', 'Templates']},
-            {'name': 'clipboard', 'items': ['Cut', 'Copy', 'Paste', 'PasteText', 'PasteFromWord', '-', 'Undo', 'Redo']},
-            {'name': 'editing', 'items': ['Find', 'Replace', '-', 'SelectAll']},
-            {'name': 'forms',
-             'items': ['Form', 'Checkbox', 'Radio', 'TextField', 'Textarea', 'Select', 'Button', 'ImageButton',
-                       'HiddenField']},
-            '/',
-            {'name': 'basicstyles',
-             'items': ['Bold', 'Italic', 'Underline', 'Strike', 'Subscript', 'Superscript', '-', 'RemoveFormat']},
-            {'name': 'paragraph',
-             'items': ['NumberedList', 'BulletedList', '-', 'Outdent', 'Indent', '-', 'Blockquote', 'CreateDiv', '-',
-                       'JustifyLeft', 'JustifyCenter', 'JustifyRight', 'JustifyBlock', '-', 'BidiLtr', 'BidiRtl',
-                       'Language']},
-            {'name': 'links', 'items': ['Link', 'Unlink', 'Anchor']},
-            {'name': 'insert',
-             'items': ['Image', 'Flash', 'Table', 'HorizontalRule', 'Smiley', 'SpecialChar', 'PageBreak', 'Iframe']},
-            '/',
-            {'name': 'styles', 'items': ['Styles', 'Format', 'Font', 'FontSize']},
-            {'name': 'colors', 'items': ['TextColor', 'BGColor']},
-            {'name': 'tools', 'items': ['Maximize', 'ShowBlocks']},
-            {'name': 'about', 'items': ['About']},
-            {'name': 'math', 'items': ['Mathjax']},
-            {'name': 'youtube', 'items': ['Youtube',]},
-            '/',  # put this to force next toolbar on new line
-            {'name': 'yourcustomtools', 'items': [
-                # put the name of your editor.ui.addButton here
-                'Preview',
-                'Maximize',
+CKEDITOR_ALLOW_NONIMAGE_FILES = True
 
-            ]},
+CKEDITOR_CONFIGS = {
+    "default": {
+        # 🔧 Asosiy sozlamalar
+        "skin": "moono",
+        "height": 350,
+        "width": "100%",
+        "tabSpaces": 4,
+
+        # ❗ IFRAME VA HTMLNI O‘CHIRMASLIK
+        "allowedContent": True,
+        "extraAllowedContent": "iframe[*]; div[*]; span[*]",
+
+        # 🧰 Toolbar
+        "toolbar": "Custom",
+
+        "toolbar_Custom": [
+            ["Source", "-", "Undo", "Redo"],
+            ["Bold", "Italic", "Underline", "Strike"],
+            ["NumberedList", "BulletedList", "-", "Outdent", "Indent"],
+            ["JustifyLeft", "JustifyCenter", "JustifyRight", "JustifyBlock"],
+            ["Link", "Unlink", "Anchor"],
+            ["Image", "Table", "HorizontalRule", "Smiley", "SpecialChar"],
+            ["Iframe", "Youtube"],  # 🎬 IFRAME + YOUTUBE
+            ["Styles", "Format", "Font", "FontSize"],
+            ["TextColor", "BGColor"],
+            ["Maximize", "ShowBlocks"],
         ],
-        'toolbar': 'YourCustomToolbarConfig',  # put selected toolbar config here
-        # 'toolbarGroups': [{ 'name': 'document', 'groups': [ 'mode', 'document', 'doctools' ] }],
-        # 'height': 291,
-        # 'width': '100%',
-        # 'filebrowserWindowHeight': 725,
-        # 'filebrowserWindowWidth': 940,
-        # 'toolbarCanCollapse': True,
-        "mediaEmbed": {"previewsInData": "true"},
-        'mathJaxLib': 'https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML',
-        'tabSpaces': 4,
-        'extraPlugins': ','.join([
-            'uploadimage',  # the upload image feature
-            # your extra plugins here
-            'div',
-            'autolink',
-            'autoembed',
-            'embedsemantic',
-            'autogrow',
-            # 'devtools',
-            'widget',
-            'iframe',
-            'mathjax',
-            'codesnippet',
-            'image2',
-            'embed',
-            'tableresize',
-            'lineutils',
-            'clipboard',
-            'dialog',
-            'dialogui',
-            'elementspath'
+
+        # 🔌 Pluginlar (FAQAT KERAKLILARI)
+        "extraPlugins": ",".join([
+            "iframe",
+            "youtube",
+            "uploadimage",
+            "autogrow",
+            "widget",
+            "mathjax",
+            "codesnippet",
+            "image2",
+            "embed",
+            "autoembed",
+            "embedsemantic",
         ]),
+
+        # 📐 MathJax
+        "mathJaxLib": "https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js?config=TeX-AMS_HTML",
+
+        # 📎 Media embed
+        "mediaEmbed": {
+            "previewsInData": True
+        },
     }
 }
 
