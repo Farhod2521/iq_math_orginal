@@ -1,9 +1,19 @@
 from rest_framework import serializers
-from .models import SystemSettings, FAQ, Product, Banner, ConversionRate, Category, Tag, Elon, Motivation
+from .models import SystemSettings, FAQ, Product, Banner, ConversionRate, Category, Tag, Elon, Motivation, AndroidVersion
 
 
 
 
+class AndroidVersionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AndroidVersion
+        fields = [
+            "id",
+            "android_latest_version",
+            "android_force_update",
+            "ios_latest_version",
+            "ios_force_update",
+        ]
 
 class SystemSettingsSerializer(serializers.ModelSerializer):
     class Meta:

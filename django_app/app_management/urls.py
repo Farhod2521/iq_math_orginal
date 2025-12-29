@@ -4,7 +4,7 @@ from .views import ( SystemSettingsListView, FAQListView, ProductListView, FullS
 from .VIEW.elonapiviewcrud import ElonCRUDAPIView
 from .VIEW.motivationapiviewcrud import  MotivationCRUDAPIView
 from .VIEW.systemsettingsapiviewcrud import  SystemSettingsCRUDAPIView
-
+from .VIEW.andriod_version import AndroidVersionAPIView
 urlpatterns = [
     path('system-settings/', SystemSettingsListView.as_view(), name='system-settings-list'),
     path('banner/', BannerListView.as_view(), name='system-settings-list'),
@@ -18,6 +18,8 @@ urlpatterns = [
     path('app/elon-list/', ElonListAPIView.as_view(), name='statistics'),
     path("upload-file/", UploadSingleFileAPIView.as_view(), name="upload-file"),
     path("upload-file-delete/<int:id>/", DeleteFileAPIView.as_view(), name="upload-file"),
+    path("mobile/version/", AndroidVersionAPIView.as_view()),
+
 
 
     ##########################  SUPERADMIN ###############################################
