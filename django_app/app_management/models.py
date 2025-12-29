@@ -11,12 +11,23 @@ from django_app.app_user.models import  Student, Teacher, Tutor
 
 
 
-class   AndroidVersion(models.Model):
-    android_latest_version =  models.CharField(max_length=200, verbose_name="andriod version")
-    android_force_update  =  models.BooleanField()
-    ios_latest_version  =  models.CharField(max_length=200,  verbose_name="ios verision" )
-    ios_force_update = models.BooleanField()
+class AndroidVersion(models.Model):
+    android_latest_version = models.CharField(
+        max_length=200, verbose_name="Android version"
+    )
+    android_force_update = models.BooleanField(default=False)
 
+    ios_latest_version = models.CharField(
+        max_length=200, verbose_name="iOS version"
+    )
+    ios_force_update = models.BooleanField(default=False)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return "Mobile App Versions"
+    
     
 class UploadSetting(models.Model):
     max_size_mb = models.PositiveIntegerField(
