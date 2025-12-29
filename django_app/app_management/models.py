@@ -9,6 +9,15 @@ import os
 from django_app.app_user.models import  Student, Teacher, Tutor
 
 
+
+
+class   AndroidVersion(models.Model):
+    android_latest_version =  models.CharField(max_length=200, verbose_name="andriod version")
+    android_force_update  =  models.BooleanField()
+    ios_latest_version  =  models.CharField(max_length=200,  verbose_name="ios verision" )
+    ios_force_update = models.BooleanField()
+
+    
 class UploadSetting(models.Model):
     max_size_mb = models.PositiveIntegerField(
         default=5,
