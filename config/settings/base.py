@@ -162,6 +162,9 @@ CKEDITOR_BASEPATH = "/static/ckeditor/ckeditor/"
 
 CKEDITOR_CONFIGS = {
     'default': {
+        'toolbar': 'full',
+        'extraAllowedContent': 'iframe[*]',
+        'allowedContent': True,
         'skin': 'moono',
         # 'skin': 'office2013',
         'toolbar_Basic': [
@@ -219,6 +222,7 @@ CKEDITOR_CONFIGS = {
             'autogrow',
             # 'devtools',
             'widget',
+            'iframe',
             'mathjax',
             'codesnippet',
             'image2',
