@@ -43,10 +43,11 @@ class PaymentAdmin(admin.ModelAdmin):
 
 
 @admin.register(SubscriptionPlan)
-class SubscriptionPlanAdmin(admin.ModelAdmin):
+class SubscriptionPlanAdmin(TranslationAdmin):
     list_display = (
         "id",
-        "name",
+        "name_uz",
+        "name_ru",
         "months",
         "price_per_month",
         "discount_percent",
@@ -60,7 +61,7 @@ class SubscriptionPlanAdmin(admin.ModelAdmin):
         "category",
     )
 
-    search_fields = ("name",)
+    search_fields = ("name_uz",)
 
     ordering = ("-created_at",)
 
