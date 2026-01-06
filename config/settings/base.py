@@ -234,8 +234,6 @@ CKEDITOR_CONFIGS = {
             'dialog',
             'dialogui',
             'elementspath',
-            'youtube',
-            'iframe',
         ]),
     }
 }
