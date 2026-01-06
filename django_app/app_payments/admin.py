@@ -1,19 +1,19 @@
 from django.contrib import admin
 from .models import SubscriptionSetting, Subscription, Payment, SubscriptionPlan, SubscriptionCategory, SubscriptionBenefit
-
-
+from modeltranslation.admin import TranslationAdmin
 
 
 @admin.register(SubscriptionBenefit)
-class SubscriptionBenefitAdmin(admin.ModelAdmin):
+class SubscriptionBenefitAdmin(TranslationAdmin):
     list_display = (
         "id",
-        "title",
+        "title_uz",
+        "title_ru",
         "is_active",
         "created_at",
     )
     list_filter = ("is_active",)
-    search_fields = ("title",)
+    search_fields = ("title_uz", "title_ru")
     ordering = ("-created_at",)
 
 
