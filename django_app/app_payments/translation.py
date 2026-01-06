@@ -1,6 +1,6 @@
 from modeltranslation.translator import translator, TranslationOptions
 from .models import (
-    SubscriptionBenefit, SubscriptionCategory
+    SubscriptionBenefit, SubscriptionCategory, SubscriptionPlan
     )
 
 class SubscriptionBenefitTranslationOptions(TranslationOptions):
@@ -13,3 +13,8 @@ translator.register(SubscriptionBenefit, SubscriptionBenefitTranslationOptions)
 class SubscriptionCategoryTranslationOptions(TranslationOptions):
     fields = ('title',)
 translator.register(SubscriptionCategory, SubscriptionCategoryTranslationOptions)
+
+
+class SubscriptionPlanTranslationOptions(TranslationOptions):
+    fields = ('name',)
+translator.register(SubscriptionPlan, SubscriptionPlanTranslationOptions)
