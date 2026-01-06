@@ -178,7 +178,7 @@ class  Banner(models.Model):
 class FAQ(models.Model):
     question = models.CharField(max_length=500, verbose_name="Savol")
     answer = RichTextField(verbose_name="Javob")
-
+    url =  models.CharField(max_length=1000, null=True, blank=True)
     class Meta:
         verbose_name = "TSS"  # "Tez-tez so'raladigan savollar"
         verbose_name_plural = "Tez-tez so‘raladigan savollar"
