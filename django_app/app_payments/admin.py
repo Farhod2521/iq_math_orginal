@@ -97,10 +97,11 @@ class SubscriptionPlanAdmin(admin.ModelAdmin):
 
 
 @admin.register(SubscriptionCategory)
-class SubscriptionCategoryAdmin(admin.ModelAdmin):
+class SubscriptionCategoryAdmin(TranslationAdmin):
     list_display = (
         "id",
-        "title",
+        "title_uz",
+        "title_ru",
         "slug",
         "is_active",
         "created_at",
@@ -116,13 +117,12 @@ class SubscriptionCategoryAdmin(admin.ModelAdmin):
     )
 
     search_fields = (
-        "title",
+        "title_uz",
+        "title_ru",
         "slug",
     )
 
-    prepopulated_fields = {
-        "slug": ("title",)
-    }
+
 
     readonly_fields = (
         "created_at",
