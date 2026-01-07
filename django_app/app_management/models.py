@@ -416,8 +416,6 @@ class SolutionStatus(models.Model):
 
 
 
-from django.db import models
-
 
 class Mathematician(models.Model):
     # Title — Olim FIO
