@@ -114,7 +114,11 @@ class Message(models.Model):
         default="text",
         verbose_name="Xabar turi"
     )
-
+    url = models.CharField(
+        null=True,
+        blank=True,
+        verbose_name="url"
+    )
     text = models.TextField(
         null=True,
         blank=True,
