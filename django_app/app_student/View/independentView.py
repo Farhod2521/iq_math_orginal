@@ -77,7 +77,9 @@ class TopicHelpRequestCreateView(CreateAPIView):
             text_message = (
                 f"📝 O‘quvchi sizga yangi mavzu bo‘yicha yordam so‘radi.\n"
                 f"Murojaat ID: {instance.id}\n"
-                f"Mavzu(lar): {', '.join([t.name_uz for t in instance.topics.all()])}"
+                f"Mavzu(lar): {', '.join([t.name_uz for t in instance.topics.all()])}\n"
+                f"Batafsil: https://iqmath.uz/dashboard/teacher/student-examples/{instance.id}?student_name={instance.student.full_name} "
+
             )
 
             message = Message.objects.create(
