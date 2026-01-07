@@ -79,85 +79,9 @@ WEEK_DAY_MAP = {
     6: "sun",
 }
 
-DAY_NAME_MAP = {
-    "mon": {"uz": "Dushanba", "ru": "Понедельник"},
-    "tue": {"uz": "Seshanba", "ru": "Вторник"},
-    "wed": {"uz": "Chorshanba", "ru": "Среда"},
-    "thu": {"uz": "Payshanba", "ru": "Четверг"},
-    "fri": {"uz": "Juma", "ru": "Пятница"},
-    "sat": {"uz": "Shanba", "ru": "Суббота"},
-    "sun": {"uz": "Yakshanba", "ru": "Воскресенье"},
-}
-
 class WeeklyStudyStatsAPIView(APIView):
     permission_classes = [IsAuthenticated]
-    
-    def get_week_range(self, year, month, week_num):
-        """
-        Berilgan yil, oy va hafta raqamiga ko'ra haftaning boshlanish va tugash kunlarini hisoblaydi
-        """
-        # Oyning birinchi kunini topamiz
-        first_day_of_month = date(year, month, 1)
-        
-        # Oyning birinchi haftasining dushanbasini topamiz
-        # Dushanba haftaning birinchi kuni deb hisoblaymiz
-        first_monday = first_day_of_month - timedelta(days=first_day_of_month.weekday())
-        
-        # Berilgan haftaning dushanbasini hisoblaymiz
-        target_monday = first_monday + timedelta(weeks=week_num - 1)
-        target_sunday = target_monday + timedelta(days=6)
-        
-        # Agar haftaning ba'zi kunlari oldingi oyda bo'lsa, oyning birinchi kunidan boshlaymiz
-        if target_monday.month != month:
-            target_monday = first_day_of_month
-            
-        # Agar haftaning ba'zi kunlari keyingi oyda bo'lsa, oyning oxirgi kunida tugatamiz
-        last_day_of_month = (first_day_of_month.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
-        if target_sunday.month != month:
-            target_sunday = last_day_of_month
-            
-        return target_monday, target_sunday
-    
-    def get_month_calendar(self, year, month):
-        """
-        Oy kalendarini yaratadi - har bir hafta uchun kunlar ro'yxati
-        """
-        # Oyning birinchi va oxirgi kunlari
-        first_day = date(year, month, 1)
-        last_day = (first_day.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
-        
-        # Kalendar uchun bo'sh ro'yxat
-        calendar = []
-        
-        # Hozirgi haftani boshlash
-        current_week = []
-        
-        # Oyning birinchi kunigacha bo'sh joylar
-        first_weekday = first_day.weekday()
-        for _ in range(first_weekday):
-            current_week.append(None)
-        
-        # Oyning barcha kunlarini qo'shamiz
-        current_day = first_day
-        while current_day <= last_day:
-            current_week.append(current_day.day)
-            
-            # Agar hafta tugagan bo'lsa (yakshanba), yangi haftani boshlaymiz
-            if current_day.weekday() == 6:
-                calendar.append(current_week)
-                current_week = []
-            
-            current_day += timedelta(days=1)
-        
-        # Oxirgi haftani to'ldiramiz
-        if current_week:
-            # Oxirgi haftani to'ldirish uchun bo'sh joylar
-            while len(current_week) < 7:
-                current_week.append(None)
-            calendar.append(current_week)
-        
-        return calendar
-    
+
     def get(self, request):
         user = request.user
 
@@ -172,75 +96,60 @@ class WeeklyStudyStatsAPIView(APIView):
         now = timezone.now().astimezone(tz)
         today = now.date()
         
-        # GET parametrlarini olamiz
-        year = request.GET.get('year')
-        month = request.GET.get('month')
-        week = request.GET.get('week')
+        # GET parametrlarini olish
+        year_param = request.GET.get('year')
+        month_param = request.GET.get('month')
+        week_param = request.GET.get('week')
         
-        # Agar parametrlar berilmagan bo'lsa, joriy haftani ko'rsatamiz
-        if not year or not month:
-            year = today.year
-            month = today.month
-        
-        # Oyni raqamga aylantiramiz
-        try:
-            year = int(year)
-            month = int(month)
-            
-            # Oylarni o'tgan/kelgan oylarga o'tish imkoniyati
-            if request.GET.get('prev_month'):
-                month -= 1
-                if month == 0:
-                    month = 12
-                    year -= 1
-            elif request.GET.get('next_month'):
-                month += 1
-                if month == 13:
-                    month = 1
-                    year += 1
-            
-            # Haftani aniqlash
-            if week:
-                week_num = int(week)
-                # Hafta raqamini tekshiramiz
-                if week_num < 1:
-                    week_num = 1
-                elif week_num > 6:  # Bir oyda maksimum 6 hafta bo'lishi mumkin
-                    week_num = 6
-            else:
-                # Agar hafta berilmagan bo'lsa, joriy haftani topamiz
-                week_num = ((today - date(year, month, 1)).days // 7) + 1
-                if week_num < 1:
-                    week_num = 1
-                elif week_num > 6:
-                    week_num = 6
+        # Agar parametrlar berilgan bo'lsa, berilgan haftani ko'rsatamiz
+        if year_param and month_param:
+            try:
+                year = int(year_param)
+                month = int(month_param)
                 
-                # Agar joriy oy bo'lmasa, birinchi haftani ko'rsatamiz
-                if today.year != year or today.month != month:
-                    week_num = 1
-            
-            # Haftaning boshlanish va tugash kunlarini hisoblaymiz
-            week_start, week_end = self.get_week_range(year, month, week_num)
-            
-            # Oy kalendarini tayyorlaymiz
-            month_calendar = self.get_month_calendar(year, month)
-            
-            # Hozirgi haftaning kunlar ro'yxati
-            week_dates = []
-            current_date = week_start
-            while current_date <= week_end:
-                week_dates.append(current_date)
-                current_date += timedelta(days=1)
-            
-        except (ValueError, TypeError) as e:
-            # Agar parametrlarda xatolik bo'lsa, joriy haftani ko'rsatamiz
+                # Oyning birinchi kuni
+                first_day_of_month = date(year, month, 1)
+                
+                # Agar hafta parametri berilgan bo'lsa
+                if week_param:
+                    week_num = int(week_param)
+                    # Haftani hisoblash
+                    # Birinchi dushanbani topamiz
+                    first_monday = first_day_of_month - timedelta(days=first_day_of_month.weekday())
+                    # Berilgan haftaning dushanbasi
+                    target_monday = first_monday + timedelta(weeks=week_num - 1)
+                    target_sunday = target_monday + timedelta(days=6)
+                    
+                    # Agar haftaning ba'zi kunlari oldingi oyda bo'lsa
+                    if target_monday.month != month:
+                        target_monday = first_day_of_month
+                    
+                    # Agar haftaning ba'zi kunlari keyingi oyda bo'lsa
+                    last_day_of_month = (first_day_of_month.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
+                    if target_sunday.month != month:
+                        target_sunday = last_day_of_month
+                    
+                    week_start = target_monday
+                    week_end = target_sunday
+                else:
+                    # Agar hafta berilmagan bo'lsa, oyning birinchi haftasini ko'rsatamiz
+                    week_start = first_day_of_month - timedelta(days=first_day_of_month.weekday())
+                    if week_start.month != month:
+                        week_start = first_day_of_month
+                    
+                    week_end = week_start + timedelta(days=6)
+                    last_day_of_month = (first_day_of_month.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
+                    if week_end.month != month:
+                        week_end = last_day_of_month
+                    
+            except (ValueError, TypeError):
+                # Agar parametrlarda xatolik bo'lsa, joriy haftani ko'rsatamiz
+                week_start = today - timedelta(days=today.weekday())
+                week_end = week_start + timedelta(days=6)
+        else:
+            # Hech qanday parametr berilmagan bo'lsa, joriy haftani ko'rsatamiz
             week_start = today - timedelta(days=today.weekday())
             week_end = week_start + timedelta(days=6)
-            year = today.year
-            month = today.month
-            week_num = ((today - date(year, month, 1)).days // 7) + 1
-            month_calendar = self.get_month_calendar(year, month)
-            week_dates = [week_start + timedelta(days=i) for i in range(7)]
 
         # Hafta statistikasini tayyorlash
         week_stats = {
@@ -262,8 +171,8 @@ class WeeklyStudyStatsAPIView(APIView):
             "sat": [],
             "sun": [],
         }
-        
-        # Ma'lumotlarni olish
+
+        # Ma'lumotlarni bazadan olish
         progresses = (
             TopicProgress.objects
             .select_related("topic__chapter__subject")
@@ -300,69 +209,40 @@ class WeeklyStudyStatsAPIView(APIView):
                     "name_uz": topic.name_uz,
                     "name_ru": topic.name_ru,
                 },
-                "score": prog.score,
-                "completed_at": completed_local.strftime("%Y-%m-%d %H:%M")
+                "score": prog.score
             })
 
         # false bo'lgan kunlar uchun message
         for day, status in week_stats.items():
             if not status:
-                week_details[day] = {
-                    "message_uz": "Siz mavzu ishlamagansiz",
-                    "message_ru": "Вы не изучали темы"
-                }
+                week_details[day] = "siz mavzu ishlamagansiz"
 
-        # Har bir kun uchun to'liq ma'lumot
-        week_days_info = {}
-        for i, day_date in enumerate(week_dates):
-            day_key = WEEK_DAY_MAP[i]
-            week_days_info[day_key] = {
-                "date": day_date.strftime("%Y-%m-%d"),
-                "day_name": DAY_NAME_MAP[day_key],
-                "is_today": day_date == today,
-                "is_current_month": day_date.month == month
-            }
-
-        return Response({
-            "year": year,
-            "month": month,
-            "month_name_uz": self.get_month_name_uz(month),
-            "month_name_ru": self.get_month_name_ru(month),
-            "week_number": week_num,
+        # Hafta haqida qo'shimcha ma'lumot
+        week_info = {
             "week_start": week_start.strftime("%Y-%m-%d"),
             "week_end": week_end.strftime("%Y-%m-%d"),
-            "month_calendar": month_calendar,
-            "week_days": week_days_info,
+            "current_week": (week_start <= today <= week_end),
+            "year": week_start.year,
+            "month": week_start.month,
+            "week_number": self.get_week_number(week_start)
+        }
+
+        return Response({
+            "week_info": week_info,
             "week_stats": week_stats,
-            "details": week_details,
-            "navigation": {
-                "prev_month": f"/api/study-stats/weekly/?year={year}&month={month-1 if month > 1 else 12}&week=1",
-                "next_month": f"/api/study-stats/weekly/?year={year}&month={month+1 if month < 12 else 1}&week=1",
-                "prev_week": f"/api/study-stats/weekly/?year={year}&month={month}&week={week_num-1 if week_num > 1 else 1}",
-                "next_week": f"/api/study-stats/weekly/?year={year}&month={month}&week={week_num+1 if week_num < 6 else 6}",
-                "current_week": f"/api/study-stats/weekly/"
-            }
+            "details": week_details
         })
     
-    def get_month_name_uz(self, month):
-        """O'zbekcha oy nomlari"""
-        months = {
-            1: "Yanvar", 2: "Fevral", 3: "Mart", 4: "Aprel",
-            5: "May", 6: "Iyun", 7: "Iyul", 8: "Avgust",
-            9: "Sentabr", 10: "Oktabr", 11: "Noyabr", 12: "Dekabr"
-        }
-        return months.get(month, "")
-    
-    def get_month_name_ru(self, month):
-        """Ruscha oy nomlari"""
-        months = {
-            1: "Январь", 2: "Февраль", 3: "Март", 4: "Апрель",
-            5: "Май", 6: "Июнь", 7: "Июль", 8: "Август",
-            9: "Сентябрь", 10: "Октябрь", 11: "Ноябрь", 12: "Декабрь"
-        }
-        return months.get(month, "")
-
-
+    def get_week_number(self, date_obj):
+        """Oy ichidagi hafta raqamini hisoblaydi"""
+        first_day = date(date_obj.year, date_obj.month, 1)
+        # Oyning birinchi dushanbasi
+        first_monday = first_day - timedelta(days=first_day.weekday())
+        
+        # Berilgan kun nechanchi haftada ekanligini hisoblaymiz
+        week_number = ((date_obj - first_monday).days // 7) + 1
+        
+        return week_number
 
 
 class StudentTopAPIView(APIView):
