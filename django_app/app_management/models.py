@@ -440,7 +440,7 @@ class Mathematician(models.Model):
 
     # Rasm
     image = models.ImageField(
-        upload_to="/FILES/mathematicians/",
+        upload_to="FILES/mathematicians/",
         verbose_name="Rasm"
     )
 
