@@ -33,6 +33,7 @@ class MessageSerializer(serializers.ModelSerializer):
             "sender_name",
             "message_type",
             "text",
+            "url",
             "file",
             "reply_to",
             "reply_to_text",
