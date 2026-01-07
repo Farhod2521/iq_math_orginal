@@ -81,7 +81,7 @@ class TopicHelpRequestCreateView(CreateAPIView):
                 
 
             )
-            url_message = f"Batafsil: https://iqmath.uz/dashboard/teacher/student-examples/{instance.id}?student_name={instance.student.full_name} "
+            url_message = f"https://iqmath.uz/dashboard/teacher/student-examples/{instance.id}?student_name={instance.student.full_name} "
 
             message = Message.objects.create(
                 conversation=conversation,
