@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import SystemSettings, FAQ, Product, Banner, ConversionRate, Category, Tag, Elon, Motivation, AndroidVersion
+from .models import SystemSettings, FAQ, Product, Banner, ConversionRate, Category, Tag, Elon, Motivation, AndroidVersion, Mathematician
 
 
 
@@ -106,3 +106,34 @@ class MotivationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Motivation
         fields = "__all__"
+
+
+
+class MathematicianListSerializer(serializers.ModelSerializer):
+    image = serializers.ImageField(read_only=True)
+
+    class Meta:
+        model = Mathematician
+        fields = (
+            "id",
+            "title",
+            "subtitle",
+            "life_years",
+            "image",
+        )
+
+
+class MathematicianDetailSerializer(serializers.ModelSerializer):
+    image = serializers.ImageField(read_only=True)
+
+    class Meta:
+        model = Mathematician
+        fields = (
+            "id",
+            "title",
+            "subtitle",
+            "life_years",
+            "image",
+            "description",
+            "created_at",
+        )

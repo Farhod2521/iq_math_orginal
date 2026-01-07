@@ -1,6 +1,6 @@
-from rest_framework.generics import ListAPIView
-from .models import SystemSettings, FAQ, Product, Banner, Motivation, Elon, UploadedFile, UploadSetting
-from .serializers import SystemSettingsSerializer, FAQSerializer, ProductSerializer, BannerSerializer, ElonSerializer
+from rest_framework.generics import ListAPIView, RetrieveAPIView
+from .models import SystemSettings, FAQ, Product, Banner, Motivation, Elon, UploadedFile, UploadSetting, Mathematician
+from .serializers import SystemSettingsSerializer, FAQSerializer, ProductSerializer, BannerSerializer, ElonSerializer, MathematicianListSerializer, MathematicianDetailSerializer
 from django_app.app_user.models import User, Teacher, Student, Tutor, Parent
 from django_app.app_payments.models import Subscription, Payment, SubscriptionPlan
 from rest_framework.views import APIView
@@ -286,3 +286,17 @@ class FullStatisticsAPIView(APIView):
 
 
 
+
+class MathematicianListAPIView(ListAPIView):
+    serializer_class = MathematicianListSerializer
+
+    def get_queryset(self):
+        return Mathematician.objects.filter(is_active=True)
+
+
+class MathematicianDetailAPIView(RetrieveAPIView):
+    serializer_class = MathematicianDetailSerializer
+    lookup_field = "id"
+
+    def get_queryset(self):
+        return Mathematician.objects.filter(is_active=True)
