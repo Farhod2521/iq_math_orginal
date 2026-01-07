@@ -2,12 +2,22 @@ from django.contrib import admin
 from .models import  (
     Motivation, SystemSettings, FAQ, Product, ReferralAndCouponSettings, 
     Banner, Coupon_Tutor_Student,ConversionRate, SolutionStatus,
-    Elon, Category, Tag, UploadedFile, UploadSetting
+    Elon, Category, Tag, UploadedFile, UploadSetting, Mathematician
     )
 from modeltranslation.admin import TranslationAdmin
 from django.utils.html import format_html
 import os
 
+@admin.register(Mathematician)
+class MathematicianAdmin(TranslationAdmin):
+    list_display = (
+        "id",
+        "title_uz",
+        "title_ru",
+        "is_active",
+        "created_at",
+    )
+    list_filter = ("is_active",)
 
 
 @admin.register(UploadedFile)

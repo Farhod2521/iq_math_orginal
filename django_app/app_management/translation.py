@@ -1,11 +1,20 @@
 from modeltranslation.translator import translator, TranslationOptions
-from .models import Product,  FAQ, SystemSettings, Motivation, Elon
+from .models import Product,  FAQ, SystemSettings, Motivation, Elon, Mathematician
 class ProductTranslationOptions(TranslationOptions):
     fields = ('name',)
 
 translator.register(Product, ProductTranslationOptions)
 
+class MathematicianTranslationOptions(TranslationOptions):
+    fields = (
+        'title',
+        'subtitle',
+        'life_years',
+        'description',
+    )
 
+
+translator.register(Mathematician, MathematicianTranslationOptions)
 
 class FAQTranslationOptions(TranslationOptions):
     fields = ('question','answer')

@@ -413,3 +413,56 @@ class SolutionStatus(models.Model):
             f"Fanlar: {'Yoqilgan' if self.subject_is_active else 'O‘chirilgan'} | "
             f"Tavsiyalar: {'Yoqilgan' if self.recommendation_is_active else 'O‘chirilgan'}"
         )
+
+
+
+from django.db import models
+
+
+class Mathematician(models.Model):
+    # Title — Olim FIO
+    title = models.CharField(
+        max_length=255,
+        verbose_name="Olim FIO"
+    )
+
+    # Subtitle — qaysi fanlarga hissa qo‘shgan
+    subtitle = models.CharField(
+        max_length=500,
+        verbose_name="Fanlarga qo‘shgan hissasi"
+    )
+
+    # Text — tug‘ilgan va vafot etgan yillari
+    life_years = models.CharField(
+        max_length=100,
+        verbose_name="Tug‘ilgan va vafot etgan yillari"
+    )
+
+    # Rasm
+    image = models.ImageField(
+        upload_to="/FILES/mathematicians/",
+        verbose_name="Rasm"
+    )
+
+    # Opisaniya — batafsil ma’lumot
+    description = models.TextField(
+        verbose_name="Batafsil ma'lumot"
+    )
+
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name="Faol"
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Yaratilgan sana"
+    )
+
+    class Meta:
+        verbose_name = "Matematik olim"
+        verbose_name_plural = "Matematik olimlar"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return self.title
