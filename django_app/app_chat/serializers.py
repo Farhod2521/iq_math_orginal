@@ -85,12 +85,6 @@ class MessageSerializer(serializers.ModelSerializer):
     # ---------------------- NEW METHOD ----------------------
 
     def get_independent_data(self, obj):
-        """
-        independent mavjud bo‘lsa:
-        - TopicHelpRequestIndependent dan ma’lumot olib keladi
-        - faqat 1 marta yuboriladi
-        """
-
         if not obj.independent:
             return None
 
@@ -98,7 +92,6 @@ class MessageSerializer(serializers.ModelSerializer):
         if not request:
             return None
 
-        # 🔒 Bir martalik yuborish
         session_key = f"independent_sent_message_{obj.id}"
         if request.session.get(session_key):
             return None
@@ -114,7 +107,15 @@ class MessageSerializer(serializers.ModelSerializer):
             return None
 
         result_json = independent_obj.result_json or {}
-        result_list = result_json.get("result", [])
+
+        # 🔥 MUHIM FIX (dict yoki list bo‘lishidan qat’i nazar)
+        if isinstance(result_json, dict):
+            result_list = result_json.get("result", [])
+        elif isinstance(result_json, list):
+            result_list = result_json
+        else:
+            result_list = []
+
         result = result_list[0] if result_list else {}
 
         data = {
@@ -146,9 +147,7 @@ class MessageSerializer(serializers.ModelSerializer):
             }
         }
 
-        # ✅ belgilab qo‘yamiz → keyingi so‘rovda chiqmaydi
         request.session[session_key] = True
-
         return data
 
 
