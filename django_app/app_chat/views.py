@@ -162,30 +162,42 @@ class ConversationMessagesAPIView(APIView):
         except Conversation.DoesNotExist:
             return Response({"error": "Chat topilmadi"}, status=404)
 
-        if not ConversationParticipant.objects.filter(conversation=conversation, user=user).exists():
+        if not ConversationParticipant.objects.filter(
+            conversation=conversation, user=user
+        ).exists():
             return Response({"error": "Siz bu chatda ishtirok etmayapsiz"}, status=403)
 
-        messages = Message.objects.filter(conversation=conversation).order_by("created_at")
+        messages = (
+            Message.objects
+            .filter(conversation=conversation)
+            .select_related("sender")
+            .order_by("created_at")
+        )
 
-        # Xabarlarni READ deb belgilash
-        for msg in messages:
-            MessageReceipt.objects.update_or_create(
-                message=msg,
-                user=user,
-                defaults={"status": "read"}
-            )
+        # READ status
+        MessageReceipt.objects.filter(
+            message__in=messages,
+            user=user
+        ).update(status="read")
 
-        # unread_count ni 0 qilamiz
-        part = ConversationParticipant.objects.get(conversation=conversation, user=user)
+        part = ConversationParticipant.objects.get(
+            conversation=conversation,
+            user=user
+        )
         part.unread_count = 0
         part.last_read_at = now()
-        part.save()
+        part.save(update_fields=["unread_count", "last_read_at"])
 
-        serializer = MessageSerializer(messages, many=True, context={"request": request})
+        serializer = MessageSerializer(
+            messages,
+            many=True,
+            context={"request": request}
+        )
 
         return Response({
             "conversation_id": conversation.id,
             "messages": serializer.data,
         }, status=200)
+
 
 
