@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from .models import Conversation, ConversationParticipant, Message, MessageReceipt
 from django.contrib.auth import get_user_model
-
+from django_app.app_student.models import TopicHelpRequestIndependent
 User = get_user_model()
 
 
