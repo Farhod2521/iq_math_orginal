@@ -82,12 +82,13 @@ class TopicHelpRequestCreateView(CreateAPIView):
 
             )
             url_message = f"https://iqmath.uz/dashboard/teacher/student-examples/{instance.id}?student_name={instance.student.full_name} "
-
+            independent_id = instance.id
             message = Message.objects.create(
                 conversation=conversation,
                 sender=student_user,
                 text=text_message,
-                url = url_message
+                url = url_message,
+                independent = independent_id
             )
 
             # 6) UPDATE LAST MESSAGE

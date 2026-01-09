@@ -124,6 +124,7 @@ class Message(models.Model):
         blank=True,
         verbose_name="Matn"
     )
+    independent = models.CharField(max_length=10, blank=True, null=True)
     file = models.FileField(
         upload_to="chat/files/",
         null=True,

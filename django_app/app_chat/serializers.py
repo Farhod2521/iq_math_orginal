@@ -24,6 +24,9 @@ class MessageSerializer(serializers.ModelSerializer):
     reply_to_text = serializers.SerializerMethodField()
     reply_to_sender = serializers.SerializerMethodField()
 
+    # 🔥 YANGI QO‘SHIMCHA
+    independent_data = serializers.SerializerMethodField()
+
     class Meta:
         model = Message
         fields = [
@@ -42,9 +45,14 @@ class MessageSerializer(serializers.ModelSerializer):
             "is_deleted",
             "created_at",
             "is_read",
+
+            # 🔥 YANGI FIELD
+            "independent",
+            "independent_data",
         ]
 
-    # ---------------------- FIX ----------------------
+    # ---------------------- OLD METHODS ----------------------
+
     def get_sender_name(self, obj):
         u = obj.sender
         if hasattr(u, "student_profile"):
@@ -52,11 +60,13 @@ class MessageSerializer(serializers.ModelSerializer):
         if hasattr(u, "teacher_profile"):
             return u.teacher_profile.full_name
         return u.phone
-    # --------------------------------------------------
 
     def get_is_read(self, obj):
         user = self.context["request"].user
-        receipt = MessageReceipt.objects.filter(message=obj, user=user).first()
+        receipt = MessageReceipt.objects.filter(
+            message=obj,
+            user=user
+        ).first()
         return receipt.status == "read" if receipt else False
 
     def get_reply_to_text(self, obj):
@@ -71,6 +81,76 @@ class MessageSerializer(serializers.ModelSerializer):
         if hasattr(u, "teacher_profile"):
             return u.teacher_profile.full_name
         return u.phone
+
+    # ---------------------- NEW METHOD ----------------------
+
+    def get_independent_data(self, obj):
+        """
+        independent mavjud bo‘lsa:
+        - TopicHelpRequestIndependent dan ma’lumot olib keladi
+        - faqat 1 marta yuboriladi
+        """
+
+        if not obj.independent:
+            return None
+
+        request = self.context.get("request")
+        if not request:
+            return None
+
+        # 🔒 Bir martalik yuborish
+        session_key = f"independent_sent_message_{obj.id}"
+        if request.session.get(session_key):
+            return None
+
+        try:
+            independent_obj = (
+                TopicHelpRequestIndependent.objects
+                .select_related("subject")
+                .prefetch_related("chapters", "topics")
+                .get(id=obj.independent)
+            )
+        except TopicHelpRequestIndependent.DoesNotExist:
+            return None
+
+        result_json = independent_obj.result_json or {}
+        result_list = result_json.get("result", [])
+        result = result_list[0] if result_list else {}
+
+        data = {
+            "subject": {
+                "id": independent_obj.subject.id,
+                "name_uz": independent_obj.subject.name_uz,
+                "name_ru": independent_obj.subject.name_ru,
+            },
+            "chapters": [
+                {
+                    "id": ch.id,
+                    "name_uz": ch.name_uz,
+                    "name_ru": ch.name_ru,
+                }
+                for ch in independent_obj.chapters.all()
+            ],
+            "topics": [
+                {
+                    "id": tp.id,
+                    "name_uz": tp.name_uz,
+                    "name_ru": tp.name_ru,
+                }
+                for tp in independent_obj.topics.all()
+            ],
+            "result": {
+                "score": result.get("score"),
+                "total_answers": result.get("total_answers"),
+                "correct_answers": result.get("correct_answers"),
+            }
+        }
+
+        # ✅ belgilab qo‘yamiz → keyingi so‘rovda chiqmaydi
+        request.session[session_key] = True
+
+        return data
+
 
 
 
