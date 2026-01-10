@@ -83,6 +83,7 @@ class ElonSerializer(serializers.ModelSerializer):
             "text_uz",
             "text_ru",
             "image",
+            "video",
             "categories",
             "tags",
             "notification_status",
