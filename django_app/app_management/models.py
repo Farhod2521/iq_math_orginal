@@ -103,7 +103,7 @@ class Elon(models.Model):
 
     categories = models.ManyToManyField(Category, blank=True, related_name="elons", verbose_name="Kategoriyalar")
     tags = models.ManyToManyField(Tag, blank=True, related_name="elons", verbose_name="Teglar")
-
+    video = models.FileField(upload_to="FILES/Yanglik_Video", null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Yaratilgan sana")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Yangilangan sana")
     notification_status =  models.BooleanField(default=False, verbose_name="Xabarnoma")
