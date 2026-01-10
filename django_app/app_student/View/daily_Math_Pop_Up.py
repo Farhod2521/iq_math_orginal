@@ -6,7 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from django_app.app_student.models import TopicProgress
 from django_app.app_teacher.models import Question
 
-
+from django_app.app_user.models import Student
 
 
 
@@ -15,32 +15,37 @@ class QuickMathQuestionAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        student = request.user  # Student model bilan bog‘langan bo‘lishi kerak
+        try:
+            student = request.user.student_profile
+        except Student.DoesNotExist:
+            return Response(
+                {"detail": "Student profili topilmadi"},
+                status=404
+            )
 
-        # 1️⃣ Score > 60 bo‘lgan Topiclar
         topic_ids = TopicProgress.objects.filter(
             user=student,
             score__gt=60
         ).values_list("topic_id", flat=True)
 
         if not topic_ids:
-            return Response({
-                "detail": "Mos mavzu topilmadi"
-            }, status=404)
+            return Response(
+                {"detail": "Score 60 dan yuqori mavzular topilmadi"},
+                status=404
+            )
 
-        # 2️⃣ Random Topic
         topic_id = random.choice(list(topic_ids))
 
-        # 3️⃣ Shu topic ichidan faqat TEXT savol
         questions = Question.objects.filter(
             topic_id=topic_id,
             question_type="text"
         )
 
         if not questions.exists():
-            return Response({
-                "detail": "Bu mavzuda text savollar yo‘q"
-            }, status=404)
+            return Response(
+                {"detail": "Text savollar topilmadi"},
+                status=404
+            )
 
         question = random.choice(list(questions))
 
@@ -51,6 +56,7 @@ class QuickMathQuestionAPIView(APIView):
             "question_text": question.question_text,
             "level": question.level
         })
+
 
 
 class SubmitQuickMathAnswerAPIView(APIView):
