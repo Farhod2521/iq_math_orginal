@@ -25,7 +25,7 @@ class QuickMathQuestionAPIView(APIView):
 
         topic_ids = TopicProgress.objects.filter(
             user=student,
-            score__gt=60
+            score__gt=0
         ).values_list("topic_id", flat=True)
 
         if not topic_ids:
