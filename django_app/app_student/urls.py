@@ -16,7 +16,7 @@ from .View.convertView import ConvertView
 from .View.coupon_create_apiview import StudentCouponAPIView
 from .View.student_next_topic_mobile_app import  StudentNextTopicAPIView, StudentLastProgressAPIView
 from .View.mobile_app import StudentRatingAPIView, WeeklyStudyStatsAPIView, StudentTopAPIView, SubjectProgressAPIView, SubjectCategoryDetailAPIView
-
+from .View.daily_Math_Pop_Up import  SubmitQuickMathAnswerAPIView, QuickMathQuestionAPIView
 
 urlpatterns = [
     path('my-subjects/', StudentSubjectListAPIView.as_view(), name='my-subjects'),
@@ -83,5 +83,6 @@ urlpatterns = [
     path("student/studenttop/app", StudentTopAPIView.as_view(), name='convert'),
     path("student/subjectprogress/app", SubjectProgressAPIView.as_view(), name='convert'),
     path("student/subject-category-detail/app", SubjectCategoryDetailAPIView.as_view(), name='convert'),
-
+    path("quick-math/question/", QuickMathQuestionAPIView.as_view()),
+    path("quick-math/submit/", SubmitQuickMathAnswerAPIView.as_view()),
 ]
