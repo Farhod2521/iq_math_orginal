@@ -45,7 +45,7 @@ class Conversation(models.Model):
     )
 
     closed_by = models.ForeignKey(
-        Teacher,
+        User,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
