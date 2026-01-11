@@ -3,8 +3,8 @@ from .views import (
     CreateDirectChatAPIView,
     SendMessageAPIView,
     ReadMessageAPIView,
-    UniversalChatsAPIView,
-    ConversationMessagesAPIView,
+    UniversalChatsAPIView, RateConversationAPIView,
+    ConversationMessagesAPIView,  CloseConversationAPIView
 )
 
 urlpatterns = [
@@ -17,4 +17,6 @@ urlpatterns = [
     path("chat/<int:conversation_id>/send/", SendMessageAPIView.as_view()),
 
     path("chat/message/<int:message_id>/read/", ReadMessageAPIView.as_view()),
+    path("conversations/<int:conversation_id>/close/", CloseConversationAPIView.as_view(), name="close-conversation"),
+    path("conversations/<int:conversation_id>/rate/", RateConversationAPIView.as_view(), name="rate-conversation"),
 ]
