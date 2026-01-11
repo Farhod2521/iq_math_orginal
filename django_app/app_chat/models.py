@@ -1,6 +1,6 @@
 from django.db import models
 from django.conf import settings
-
+from django_app.app_user.models import  Teacher
 User = settings.AUTH_USER_MODEL
 
 
@@ -33,7 +33,25 @@ class Conversation(models.Model):
     # Chatlar ro‘yxatini tez chiqarish uchun
     last_message = models.TextField(blank=True, null=True)
     last_message_at = models.DateTimeField(blank=True, null=True)
+    is_closed = models.BooleanField(
+        default=False,
+        verbose_name="Chat yopilganmi?"
+    )
 
+    closed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Yopilgan vaqt"
+    )
+
+    closed_by = models.ForeignKey(
+        Teacher,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="closed_conversations",
+        verbose_name="Chatni yopgan foydalanuvchi"
+    )
     def __str__(self):
         if self.chat_type == "direct":
             return f"Direct Chat #{self.id}"
@@ -219,3 +237,51 @@ class TypingIndicator(models.Model):
 
     def __str__(self):
         return f"{self.user} yozmoqda: {self.is_typing}"
+
+
+
+
+
+
+
+class ConversationRating(models.Model):
+    conversation = models.OneToOneField(
+        Conversation,
+        on_delete=models.CASCADE,
+        related_name="rating",
+        verbose_name="Chat"
+    )
+
+    student = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="given_ratings",
+        verbose_name="Student"
+    )
+
+    mentor = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="received_ratings",
+        verbose_name="Mentor"
+    )
+
+    stars = models.PositiveSmallIntegerField(
+        choices=[(i, f"{i} ⭐") for i in range(1, 6)],
+        verbose_name="Baho"
+    )
+
+    comment = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="Izoh (ixtiyoriy)"
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.stars}⭐ - Chat {self.conversation_id}"
+
+    class Meta:
+        verbose_name = "Chat bahosi"
+        verbose_name_plural = "Chat baholari"
