@@ -2,11 +2,12 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .models import Conversation, ConversationParticipant, Message, MessageReceipt
-from .serializers import ConversationSerializer, MessageSerializer, ConversationListSerializer
+from .serializers import ConversationSerializer, MessageSerializer, ConversationListSerializer, ConversationRatingSerializer
 from django_app.app_user.models import Student, Teacher  # sening user struktura
 from django.db.models import Q
 from django.utils.timezone import now
-
+from rest_framework import status
+from django.utils import timezone
 class CreateDirectChatAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -201,3 +202,143 @@ class ConversationMessagesAPIView(APIView):
 
 
 
+
+class CloseConversationAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, conversation_id):
+        user = request.user
+
+        # 1️⃣ Chatni olish
+        try:
+            conversation = Conversation.objects.get(id=conversation_id)
+        except Conversation.DoesNotExist:
+            return Response(
+                {"detail": "Chat topilmadi"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # 2️⃣ Chat yopilganmi?
+        if conversation.is_closed:
+            return Response(
+                {"detail": "Chat allaqachon yopilgan"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # 3️⃣ User chat ishtirokchisimi?
+        if not ConversationParticipant.objects.filter(
+            conversation=conversation,
+            user=user
+        ).exists():
+            return Response(
+                {"detail": "Siz bu chat ishtirokchisi emassiz"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # 4️⃣ Mentorligini tekshirish (MISOL)
+        # ❗️ buni o‘zingdagi role tizimga moslab o‘zgartir
+        if not hasattr(user, "Teacher profile"):
+            return Response(
+                {"detail": "Faqat mentor chatni yopishi mumkin"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # 5️⃣ Chatni yopish
+        conversation.is_closed = True
+        conversation.closed_at = timezone.now()
+        conversation.closed_by = user
+        conversation.save(update_fields=[
+            "is_closed", "closed_at", "closed_by"
+        ])
+
+        return Response(
+            {
+                "detail": "Chat muvaffaqiyatli yopildi",
+                "conversation_id": conversation.id,
+                "closed_at": conversation.closed_at
+            },
+            status=status.HTTP_200_OK
+        )
+    
+
+class RateConversationAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, conversation_id):
+        user = request.user
+
+        # 1️⃣ Faqat STUDENT baho bera oladi
+        if user.role != "student":
+            return Response(
+                {"detail": "Faqat student baho bera oladi"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # 2️⃣ Chatni olish
+        try:
+            conversation = Conversation.objects.get(id=conversation_id)
+        except Conversation.DoesNotExist:
+            return Response(
+                {"detail": "Chat topilmadi"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # 3️⃣ Chat YOPILGAN bo‘lishi shart
+        if not conversation.is_closed:
+            return Response(
+                {"detail": "Chat yopilmagan, hozircha baho berib bo‘lmaydi"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # 4️⃣ Student chat ishtirokchisimi?
+        if not ConversationParticipant.objects.filter(
+            conversation=conversation,
+            user=user
+        ).exists():
+            return Response(
+                {"detail": "Siz bu chat ishtirokchisi emassiz"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # 5️⃣ Bu chat allaqachon baholanganmi?
+        if hasattr(conversation, "rating"):
+            return Response(
+                {"detail": "Bu chat allaqachon baholangan"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # 6️⃣ Mentor kimligini topamiz
+        mentor_participant = ConversationParticipant.objects.filter(
+            conversation=conversation,
+            user__role__in=["teacher", "tutor"]
+        ).first()
+
+        if not mentor_participant:
+            return Response(
+                {"detail": "Mentor topilmadi"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        mentor = mentor_participant.user
+
+        # 7️⃣ Serializer bilan baho saqlash
+        serializer = ConversationRatingSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        rating = serializer.save(
+            conversation=conversation,
+            student=user,
+            mentor=mentor
+        )
+
+        return Response(
+            {
+                "detail": "Chat muvaffaqiyatli baholandi",
+                "rating": {
+                    "stars": rating.stars,
+                    "comment": rating.comment,
+                    "mentor_id": mentor.id
+                }
+            },
+            status=status.HTTP_201_CREATED
+        )
