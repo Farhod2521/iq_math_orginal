@@ -4,7 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from .models import Conversation, ConversationParticipant, Message, MessageReceipt, ConversationRating
 from .serializers import ConversationSerializer, MessageSerializer, ConversationListSerializer, ConversationRatingSerializer
 from django_app.app_user.models import Student, Teacher  # sening user struktura
-from django.db.models import Q
+from django.db.models import Count, Avg, Q
 from django.utils.timezone import now
 from rest_framework import status
 from django.utils import timezone
