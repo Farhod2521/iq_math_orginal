@@ -18,3 +18,5 @@ translator.register(SubscriptionCategory, SubscriptionCategoryTranslationOptions
 class SubscriptionPlanTranslationOptions(TranslationOptions):
     fields = ('name',)
 translator.register(SubscriptionPlan, SubscriptionPlanTranslationOptions)
+
+

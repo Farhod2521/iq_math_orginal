@@ -1,7 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from .models import Conversation, ConversationParticipant, Message, MessageReceipt
+from .models import Conversation, ConversationParticipant, Message, MessageReceipt, ConversationRating
 from .serializers import ConversationSerializer, MessageSerializer, ConversationListSerializer, ConversationRatingSerializer
 from django_app.app_user.models import Student, Teacher  # sening user struktura
 from django.db.models import Q
@@ -359,3 +359,54 @@ class RateConversationAPIView(APIView):
             },
             status=status.HTTP_201_CREATED
         )
+    
+
+
+
+class TeacherClosedChatsStatsAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        # Role tekshirish
+        if user.role not in ("teacher", "tutor"):
+            return Response({"detail": "Foydalanuvchi o'qituvchi emas"}, status=403)
+
+        now = timezone.now()
+
+        # Vaqt chegaralari
+        start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        start_of_week = (start_of_day - timezone.timedelta(days=start_of_day.weekday()))
+        start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        start_of_year = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+
+        # Baza so‘rovlari
+        base_filter = Q(closed_by=user, is_closed=True)
+
+        def get_stats(start_date=None):
+            filt = base_filter
+            if start_date:
+                filt &= Q(closed_at__gte=start_date)
+            chats = Conversation.objects.filter(filt)
+
+            count = chats.count()
+
+            avg_rating = ConversationRating.objects.filter(
+                conversation__in=chats
+            ).aggregate(avg=Avg('stars'))['avg']
+
+            return {
+                "closed_chats_count": count,
+                "average_rating": round(avg_rating, 2) if avg_rating else None
+            }
+
+        data = {
+            "total": get_stats(),
+            "today": get_stats(start_of_day),
+            "week": get_stats(start_of_week),
+            "month": get_stats(start_of_month),
+            "year": get_stats(start_of_year),
+        }
+
+        return Response(data, status=200)
