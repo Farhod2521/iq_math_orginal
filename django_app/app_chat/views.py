@@ -149,8 +149,25 @@ class UniversalChatsAPIView(APIView):
         )
 
         return Response(serializer.data, status=200)
+from django.db.models import Sum
+class TotalUnreadChatsAPIView(APIView):
+    permission_classes = [IsAuthenticated]
 
-    
+    def get(self, request):
+        user = request.user
+
+        total_unread = (
+            user.chat_participations.aggregate(
+                total=Sum("unread_count")
+            )["total"] or 0
+        )
+
+        return Response(
+            {
+                "total_unread_messages": total_unread
+            },
+            status=200
+        )
 
 class ConversationMessagesAPIView(APIView):
     permission_classes = [IsAuthenticated]
