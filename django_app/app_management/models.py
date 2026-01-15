@@ -443,7 +443,7 @@ class Mathematician(models.Model):
     )
 
     # Opisaniya — batafsil ma’lumot
-    description = models.TextField(
+    description = RichTextField(
         verbose_name="Batafsil ma'lumot"
     )
 

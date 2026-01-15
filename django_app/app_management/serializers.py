@@ -117,9 +117,12 @@ class MathematicianListSerializer(serializers.ModelSerializer):
         model = Mathematician
         fields = (
             "id",
-            "title",
-            "subtitle",
-            "life_years",
+            "title_uz",
+            "title_ru",
+            "subtitle_uz",
+            "subtitle_ru",
+            "life_years_uz",
+            "life_years_ru",
             "image",
         )
 
@@ -131,10 +134,14 @@ class MathematicianDetailSerializer(serializers.ModelSerializer):
         model = Mathematician
         fields = (
             "id",
-            "title",
-            "subtitle",
-            "life_years",
+            "title_uz",
+            "title_ru",
+            "subtitle_uz",
+            "subtitle_ru",
+            "life_years_uz",
+            "life_years_ru",
             "image",
-            "description",
+            "description_uz",
+            "description_ru",
             "created_at",
         )
