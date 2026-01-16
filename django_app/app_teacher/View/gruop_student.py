@@ -38,6 +38,7 @@ class AddStudentsToGroupAPIView(APIView):
         return Response({"message": "Talabalar guruhga qo'shildi."}, status=status.HTTP_200_OK)
     
     def put(self, request, pk):
+
         teacher = get_object_or_404(Teacher, user=request.user)
         group = get_object_or_404(Group, pk=pk, teacher=teacher)
         
@@ -48,6 +49,7 @@ class AddStudentsToGroupAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
+        # Guruhni o'chirish uchun
         teacher = get_object_or_404(Teacher, user=request.user)
         group = get_object_or_404(Group, pk=pk, teacher=teacher)
         group.delete()
@@ -55,15 +57,11 @@ class AddStudentsToGroupAPIView(APIView):
     
 
 
-class GroupNewStudentsAPIView(APIView):
+class StudentsWithoutGroupAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, group_id):
-        teacher = get_object_or_404(Teacher, user=request.user)
-        group = get_object_or_404(Group, id=group_id, teacher=teacher)
-
-        # Talabalarni student_date bo'yicha so'nggi 10 ta qo'shilganlarni olish
-        new_students = group.students.order_by('-student_date')[:10]
-        
-        serializer = StudentSerializer(new_students, many=True)
+    def get(self, request):
+        # Hozircha biron guruhga tegishli bo'lmagan talabalar
+        students_without_group = Student.objects.filter(groups__isnull=True)
+        serializer = StudentSerializer(students_without_group, many=True)
         return Response(serializer.data)
