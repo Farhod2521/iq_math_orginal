@@ -6,7 +6,7 @@ from django_app.app_user.models import Teacher, Student
 from django_app.app_teacher.models import Group
 from django_app.app_teacher.serializers import GroupSerializer, GroupSerializer_DETAIL
 from django.shortcuts import get_object_or_404
-
+from django_app.app_user.serializers import StudentSerializer
 class GroupListAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -37,11 +37,33 @@ class AddStudentsToGroupAPIView(APIView):
         group.students.add(*students)
         return Response({"message": "Talabalar guruhga qo'shildi."}, status=status.HTTP_200_OK)
     
-class GroupDetailAPIView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request, pk):
+    def put(self, request, pk):
         teacher = get_object_or_404(Teacher, user=request.user)
         group = get_object_or_404(Group, pk=pk, teacher=teacher)
-        serializer = GroupSerializer_DETAIL(group)
+        
+        serializer = GroupSerializer(group, data=request.data, partial=True)  # partial=True faqat bir nechta maydon o'zgarishi uchun
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        teacher = get_object_or_404(Teacher, user=request.user)
+        group = get_object_or_404(Group, pk=pk, teacher=teacher)
+        group.delete()
+        return Response({"message": "Guruh muvaffaqiyatli o'chirildi."}, status=status.HTTP_204_NO_CONTENT)
+    
+
+
+class GroupNewStudentsAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, group_id):
+        teacher = get_object_or_404(Teacher, user=request.user)
+        group = get_object_or_404(Group, id=group_id, teacher=teacher)
+
+        # Talabalarni student_date bo'yicha so'nggi 10 ta qo'shilganlarni olish
+        new_students = group.students.order_by('-student_date')[:10]
+        
+        serializer = StudentSerializer(new_students, many=True)
         return Response(serializer.data)
