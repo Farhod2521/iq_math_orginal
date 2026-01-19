@@ -149,7 +149,7 @@ class InitiatePaymentAPIView(APIView):
                     "price": amount_in_tiyin,
                     "qty": 1,
                     "name": coupon_text,
-                    "package_code": "1508099",
+                    "package_code": "1165336",
                     "mxik": "10899001001000000",
                     "total": amount_in_tiyin
                 }
