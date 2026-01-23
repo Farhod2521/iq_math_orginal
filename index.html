@@ -1,187 +1,114 @@
 <!DOCTYPE html>
 <html lang="uz">
 <head>
-    <meta charset="UTF-8">
-    <title>Isometric Room</title>
-
-    <style>
-        body {
-            background: #dcdcdc;
-            display: flex;
-            justify-content: center;
-            padding-top: 40px;
-            font-family: Arial;
-        }
-
-        .iso-room {
-            width: 400px;
-            height: 350px;
-            position: relative;
-            transform: rotateX(60deg) rotateZ(45deg);
-            transform-style: preserve-3d;
-        }
-
-        /* ---------------- Walls ---------------- */
-
-        .wall {
-            position: absolute;
-            width: 300px;
-            height: 180px;
-            background: #f7f7f7;
-            border: 1px solid #e0e0e0;
-            transform-origin: bottom;
-        }
-
-        .left-wall {
-            transform: rotateY(90deg) translateX(-150px) translateZ(150px);
-        }
-
-        .right-wall {
-            transform: translateZ(300px);
-        }
-
-        /* ---------------- Floor ---------------- */
-
-        .floor {
-            position: absolute;
-            width: 300px;
-            height: 300px;
-            background: #ebebeb;
-            transform: rotateX(90deg) translateY(150px);
-            background-image:
-                linear-gradient(#ccc 1px, transparent 1px),
-                linear-gradient(90deg, #ccc 1px, transparent 1px);
-            background-size: 40px 40px;
-        }
-
-        /* ---------------- Window ---------------- */
-
-        .window {
-            position: absolute;
-            width: 90px;
-            height: 130px;
-            background: #cce6ff;
-            transform: translateZ(8px) translateX(190px) translateY(20px);
-            border: 6px solid #ffffff;
-            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-
-        /* ---------------- Sofa ---------------- */
-
-        .sofa {
-            position: absolute;
-            width: 110px;
-            height: 60px;
-            background: #ffffff;
-            border-radius: 6px;
-            border: 1px solid #ccc;
-            box-shadow: 0px 5px 15px rgba(0,0,0,0.2);
-        }
-
-        .sofa-main {
-            transform: translateZ(15px) translateX(20px) translateY(220px);
-        }
-
-        .sofa-small {
-            width: 60px;
-            height: 60px;
-            transform: translateZ(15px) translateX(130px) translateY(220px);
-        }
-
-        /* ---------------- Carpet ---------------- */
-
-        .carpet {
-            position: absolute;
-            width: 180px;
-            height: 120px;
-            background: #9b9b9b;
-            transform: translateZ(5px) translateX(20px) translateY(180px);
-            border-radius: 4px;
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.2);
-        }
-
-        /* ---------------- Frames ---------------- */
-
-        .frames {
-            position: absolute;
-            width: 120px;
-            height: 80px;
-            transform: translateZ(10px) translateX(200px) translateY(30px);
-            background-image: 
-                linear-gradient(90deg, transparent 0%, transparent 10%, black 10%, black 90%, transparent 90%),
-                linear-gradient(0deg, transparent 0%, transparent 10%, black 10%, black 90%, transparent 90%);
-            background-size: 40px 40px;
-            background-repeat: repeat;
-            opacity: 0.3;
-        }
-
-        /* ---------------- Lamp ---------------- */
-
-        .lamp {
-            position: absolute;
-            transform: translateZ(10px) translateX(150px) translateY(100px);
-        }
-
-        .lamp-stick {
-            width: 6px;
-            height: 80px;
-            background: #555;
-            margin-left: 20px;
-        }
-
-        .lamp-ring {
-            width: 40px;
-            height: 40px;
-            border: 4px solid #777;
-            border-radius: 50%;
-            margin-top: 5px;
-            margin-left: 0px;
-        }
-
-        /* ---------------- Small Table ---------------- */
-
-        .table {
-            position: absolute;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: #f7f7f7;
-            border: 2px solid #555;
-            transform: translateZ(20px) translateX(20px) translateY(200px);
-        }
-
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WS Chat Test (2 Token)</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f6f6f6; margin: 0; padding: 20px; }
+    .wrap { max-width: 900px; margin: 0 auto; background: #fff; border: 1px solid #ddd; border-radius: 10px; padding: 20px; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .panel { border: 1px solid #e0e0e0; border-radius: 10px; padding: 12px; background: #fafafa; }
+    h2 { margin: 0 0 8px; }
+    input, button, textarea { width: 100%; padding: 8px; margin-top: 8px; }
+    .log { height: 160px; overflow: auto; background: #fff; border: 1px solid #ddd; padding: 8px; font-size: 12px; }
+    .muted { color: #666; font-size: 12px; }
+  </style>
 </head>
-
 <body>
+  <div class="wrap">
+    <h2>WebSocket Chat Test (2 Token)</h2>
+    <div class="muted">Eslatma: JWT token query param bilan ishlashi uchun backendda token middleware bo‘lishi kerak.</div>
 
-    <div class="iso-room">
-        <div class="wall left-wall"></div>
-        <div class="wall right-wall"></div>
-        <div class="floor"></div>
-
-        <!-- Window -->
-        <div class="window"></div>
-
-        <!-- Sofa -->
-        <div class="sofa sofa-main"></div>
-        <div class="sofa sofa-small"></div>
-
-        <!-- Carpet -->
-        <div class="carpet"></div>
-
-        <!-- Frames -->
-        <div class="frames"></div>
-
-        <!-- Lamp -->
-        <div class="lamp">
-            <div class="lamp-stick"></div>
-            <div class="lamp-ring"></div>
-        </div>
-
-        <!-- Small Table -->
-        <div class="table"></div>
+    <div class="panel">
+      <label>Conversation ID</label>
+      <input id="conversationId" value="49" />
+      <label>Host</label>
+      <input id="host" value="wss://api.iqmath.uz" />
     </div>
 
+    <div class="row" style="margin-top:12px;">
+      <div class="panel">
+        <h3>User A</h3>
+        <label>Token 1</label>
+        <textarea id="token1" rows="4"></textarea>
+        <button onclick="connectA()">Ulash</button>
+        <div class="log" id="logA"></div>
+        <input id="msgA" placeholder="A dan yuborish..." />
+        <button onclick="sendA()">Yuborish</button>
+      </div>
+
+      <div class="panel">
+        <h3>User B</h3>
+        <label>Token 2</label>
+        <textarea id="token2" rows="4"></textarea>
+        <button onclick="connectB()">Ulash</button>
+        <div class="log" id="logB"></div>
+        <input id="msgB" placeholder="B dan yuborish..." />
+        <button onclick="sendB()">Yuborish</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let wsA = null;
+    let wsB = null;
+
+    function buildUrl(token) {
+      const host = document.getElementById("host").value.trim();
+      const conversationId = document.getElementById("conversationId").value.trim();
+      let url = `${host}/ws/chat/${conversationId}/`;
+      if (token) {
+        url += `?token=${encodeURIComponent(token)}`;
+      }
+      return url;
+    }
+
+    function log(id, msg) {
+      const el = document.getElementById(id);
+      el.innerHTML += msg + "<br>";
+      el.scrollTop = el.scrollHeight;
+    }
+
+    function connectA() {
+      const token = document.getElementById("token1").value.trim();
+      wsA = new WebSocket(buildUrl(token));
+      wsA.onopen = () => log("logA", "✅ Ulandi");
+      wsA.onmessage = (e) => log("logA", "📩 " + e.data);
+      wsA.onerror = (e) => log("logA", "❌ Xato: " + e.type);
+      wsA.onclose = (e) => log("logA", `🔌 Yopildi: code=${e.code}`);
+    }
+
+    function connectB() {
+      const token = document.getElementById("token2").value.trim();
+      wsB = new WebSocket(buildUrl(token));
+      wsB.onopen = () => log("logB", "✅ Ulandi");
+      wsB.onmessage = (e) => log("logB", "📩 " + e.data);
+      wsB.onerror = (e) => log("logB", "❌ Xato: " + e.type);
+      wsB.onclose = (e) => log("logB", `🔌 Yopildi: code=${e.code}`);
+    }
+
+    function sendA() {
+      if (!wsA || wsA.readyState !== WebSocket.OPEN) {
+        log("logA", "❌ Ulanmagan");
+        return;
+      }
+      const text = document.getElementById("msgA").value.trim();
+      if (!text) return;
+      wsA.send(JSON.stringify({ text }));
+      document.getElementById("msgA").value = "";
+    }
+
+    function sendB() {
+      if (!wsB || wsB.readyState !== WebSocket.OPEN) {
+        log("logB", "❌ Ulanmagan");
+        return;
+      }
+      const text = document.getElementById("msgB").value.trim();
+      if (!text) return;
+      wsB.send(JSON.stringify({ text }));
+      document.getElementById("msgB").value = "";
+    }
+  </script>
 </body>
 </html>
