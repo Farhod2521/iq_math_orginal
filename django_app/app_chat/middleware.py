@@ -1,8 +1,11 @@
 from urllib.parse import parse_qs
+import logging
 
 from django.contrib.auth.models import AnonymousUser
 from django.db import close_old_connections
 from rest_framework_simplejwt.authentication import JWTAuthentication
+
+logger = logging.getLogger(__name__)
 
 
 class JwtAuthMiddleware:
@@ -33,8 +36,12 @@ class JwtAuthMiddleware:
                 jwt_auth = JWTAuthentication()
                 validated = jwt_auth.get_validated_token(token)
                 scope["user"] = jwt_auth.get_user(validated)
-            except Exception:
+                logger.info("WS auth ok user_id=%s path=%s", scope["user"].id, scope.get("path"))
+            except Exception as exc:
                 scope["user"] = AnonymousUser()
+                logger.warning("WS auth failed path=%s err=%s", scope.get("path"), exc)
+        else:
+            logger.warning("WS missing token path=%s", scope.get("path"))
 
         return await self.inner(scope, receive, send)
 
