@@ -3,6 +3,7 @@ import logging
 
 from django.contrib.auth.models import AnonymousUser
 from django.db import close_old_connections
+from channels.db import database_sync_to_async
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
 logger = logging.getLogger(__name__)
@@ -33,9 +34,7 @@ class JwtAuthMiddleware:
 
         if token:
             try:
-                jwt_auth = JWTAuthentication()
-                validated = jwt_auth.get_validated_token(token)
-                scope["user"] = jwt_auth.get_user(validated)
+                scope["user"] = await database_sync_to_async(self._get_user)(token)
                 logger.info("WS auth ok user_id=%s path=%s", scope["user"].id, scope.get("path"))
             except Exception as exc:
                 scope["user"] = AnonymousUser()
@@ -44,6 +43,12 @@ class JwtAuthMiddleware:
             logger.warning("WS missing token path=%s", scope.get("path"))
 
         return await self.inner(scope, receive, send)
+
+    @staticmethod
+    def _get_user(token):
+        jwt_auth = JWTAuthentication()
+        validated = jwt_auth.get_validated_token(token)
+        return jwt_auth.get_user(validated)
 
 
 def JwtAuthMiddlewareStack(inner):
