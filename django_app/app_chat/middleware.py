@@ -12,6 +12,10 @@ class JwtAuthMiddleware:
     async def __call__(self, scope, receive, send):
         close_old_connections()
 
+        existing_user = scope.get("user")
+        if existing_user and getattr(existing_user, "is_authenticated", False):
+            return await self.inner(scope, receive, send)
+
         token = None
         query_string = scope.get("query_string", b"").decode()
         if query_string:
@@ -31,8 +35,6 @@ class JwtAuthMiddleware:
                 scope["user"] = jwt_auth.get_user(validated)
             except Exception:
                 scope["user"] = AnonymousUser()
-        else:
-            scope["user"] = AnonymousUser()
 
         return await self.inner(scope, receive, send)
 
