@@ -1,8 +1,10 @@
 import json
+import logging
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from .services import create_message, user_in_conversation
 
+logger = logging.getLogger(__name__)
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -11,6 +13,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         user = self.scope.get("user")
 
         if not user or not user.is_authenticated:
+            logger.warning("WS reject unauthenticated conversation_id=%s", self.conversation_id)
             await self.close()
             return
 
@@ -19,6 +22,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             user=user,
         )
         if not allowed:
+            logger.warning("WS reject not participant user_id=%s conversation_id=%s", user.id, self.conversation_id)
             await self.close()
             return
 
