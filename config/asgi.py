@@ -1,8 +1,13 @@
 import os
+import django
 
-# 🔥 ENG MUHIM QATOR — ENG BIRINCHI
+# 1️⃣ AVVAL settings
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 
+# 2️⃣ KEYIN django setup (🔥 MUHIM)
+django.setup()
+
+# 3️⃣ ENDI xavfsiz importlar
 from django.core.asgi import get_asgi_application
 from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
