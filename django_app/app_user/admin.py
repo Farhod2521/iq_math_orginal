@@ -6,7 +6,7 @@ from django.contrib.admin.models import LogEntry
 
 ##########################  Teacher ##################################################
 class TeacherAdmin(admin.ModelAdmin):
-    list_display = ('full_name', 'region', 'districts', "teacher_date", 'status', 'user_phone')
+    list_display = ('full_name', 'region', 'districts', "teacher_date", 'status', 'user_phone', "support")
     list_filter = ('full_name', 'region', 'districts', "teacher_date", 'status')
     search_fields = ('full_name', 'region', 'districts', "teacher_date")
 
