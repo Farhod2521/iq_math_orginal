@@ -32,31 +32,48 @@ class TopicHelpRequestCreateView(CreateAPIView):
     def create(self, request, *args, **kwargs):
         user = request.user
 
-        # 1) VALIDATE REQUEST AND SAVE
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
-
         instance.status = "sent"
         instance.save()
 
-        # 2) STUDENT TEKSHIRUV
+        # ❗ FAQAT STUDENT
         if not hasattr(user, "student_profile"):
-            return Response({"error": "Faqat o‘quvchi murojaat yubora oladi"}, status=403)
+            return Response(
+                {"error": "Faqat o‘quvchi murojaat yubora oladi"},
+                status=403
+            )
 
         student = user.student_profile
         student_user = user
 
-        # 3) BARCHA TEACHERLARNI OLAMIZ
-        teachers = Teacher.objects.all()
-        if not teachers.exists():
-            return Response({"error": "Tizimda o‘qituvchilar topilmadi"}, status=400)
+        # ================================
+        # 🔑 ASOSIY LOGIKA SHU YERDA
+        # ================================
 
-        # 4) EVERY TEACHER GA ALOHIDA CHAT VA XABAR
+        if student.groups.exists():
+            # 1️⃣ STUDENT GROUPDA BOR → O‘SHA GROUP TEACHERI
+            group = student.groups.first()   # agar bir nechta bo‘lsa, birinchisi
+            teachers = Teacher.objects.filter(id=group.teacher_id)
+
+        else:
+            # 2️⃣ YANGI STUDENT → SUPPORT TEACHERLAR
+            teachers = Teacher.objects.filter(support=True)
+
+        if not teachers.exists():
+            return Response(
+                {"error": "Mos o‘qituvchi topilmadi"},
+                status=400
+            )
+
+        # ================================
+        # 🔁 CHAT VA MESSAGE
+        # ================================
+
         for teacher in teachers:
             teacher_user = teacher.user
 
-            # DIRECT CHAT BORMI?
             conversation = Conversation.objects.filter(
                 chat_type="direct",
                 participants__user=student_user
@@ -64,49 +81,47 @@ class TopicHelpRequestCreateView(CreateAPIView):
                 participants__user=teacher_user
             ).first()
 
-            # CHAT YO‘Q BO‘LSA → YARATILADI
             if not conversation:
                 conversation = Conversation.objects.create(chat_type="direct")
-
                 ConversationParticipant.objects.bulk_create([
                     ConversationParticipant(conversation=conversation, user=student_user),
                     ConversationParticipant(conversation=conversation, user=teacher_user),
                 ])
 
-            # 5) AUTO MESSAGE
             text_message = (
                 f"📝 O‘quvchi sizga yangi mavzu bo‘yicha yordam so‘radi.\n"
                 f"Murojaat ID: {instance.id}\n"
                 f"Mavzu(lar): {', '.join([t.name_uz for t in instance.topics.all()])}\n"
-                
-
             )
-            url_message = f"https://iqmath.uz/dashboard/teacher/student-examples/{instance.id}?student_name={instance.student.full_name} "
-            independent_id = instance.id
+
+            url_message = (
+                f"https://iqmath.uz/dashboard/teacher/"
+                f"student-examples/{instance.id}"
+                f"?student_name={instance.student.full_name}"
+            )
+
             message = Message.objects.create(
                 conversation=conversation,
                 sender=student_user,
                 text=text_message,
-                url = url_message,
-                independent = independent_id
+                url=url_message,
+                independent=instance.id
             )
 
-            # 6) UPDATE LAST MESSAGE
             conversation.last_message = text_message
             conversation.last_message_at = message.created_at
             conversation.save()
 
-            # 7) UNREAD +1 O‘QITUVCHI UCHUN
             for part in conversation.participants.exclude(user=student_user):
                 part.unread_count += 1
                 part.save()
 
-        # 8) SUCCESS RESPONSE
         return Response({
             "success": True,
-            "message": "Murojaat barcha o‘qituvchilarga yuborildi.",
+            "message": "Murojaat muvaffaqiyatli yuborildi",
             "help_request_id": instance.id
         }, status=201)
+
 
 
 class AssignTeacherAPIView(APIView):

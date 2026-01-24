@@ -95,6 +95,7 @@ class Teacher(models.Model):
     status = models.BooleanField(default=False, verbose_name="Holat")
     is_verified_teacher = models.BooleanField(default=False, verbose_name="O‘qituvchi")
     teacher_date = models.DateTimeField(auto_now=True, null=True, verbose_name="Ro‘yxatdan o‘tgan sana")
+    support  =  models.BooleanField(default=False)
     
 
     def __str__(self):
