@@ -51,7 +51,8 @@ class SubscriptionPlanSerializer(serializers.ModelSerializer):
         model = SubscriptionPlan
         fields = [
             "id",
-            "name",          # ✅ plan nomi
+            "name_uz",          # ✅ plan nomi
+            "name_ru",          # ✅ plan nomi
             "category",      # ✅ category title
             "months",
             "months_display",
