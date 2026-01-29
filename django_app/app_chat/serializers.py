@@ -2,6 +2,7 @@ from rest_framework import serializers
 from .models import Conversation, ConversationParticipant, Message, MessageReceipt, ConversationRating
 from django.contrib.auth import get_user_model
 from django_app.app_student.models import TopicHelpRequestIndependent
+from django_app.app_user.models import Teacher
 User = get_user_model()
 
 
@@ -10,6 +11,26 @@ class ConversationRatingSerializer(serializers.ModelSerializer):
         model = ConversationRating
         fields = ("stars", "comment")
 
+
+
+class TeacherListSerializer(serializers.ModelSerializer):
+
+
+    class Meta:
+        model = Teacher
+        fields = (
+            "id",
+            "full_name"
+            "support",
+        )
+
+
+class ConversationTransferSerializer(serializers.Serializer):
+    conversation_id = serializers.IntegerField()
+    teacher_id = serializers.IntegerField()
+    reason = serializers.CharField(required=False, allow_blank=True)
+
+    
 # ---------------- CONVERSATION SERIALIZER ----------------
 class ConversationSerializer(serializers.ModelSerializer):
     last_message = serializers.CharField(read_only=True)
