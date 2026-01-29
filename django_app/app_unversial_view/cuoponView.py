@@ -28,34 +28,36 @@ class UniversalCouponAPIView(APIView):
         user = request.user
         role = user.role
 
-        coupon = None
-
         if role == 'student':
-            coupon = Coupon_Tutor_Student.objects.filter(
+            coupons = Coupon_Tutor_Student.objects.filter(
                 created_by_student=user.student_profile
-            ).first()
+            )
 
         elif role == 'tutor':
-            coupon = Coupon_Tutor_Student.objects.filter(
+            coupons = Coupon_Tutor_Student.objects.filter(
                 created_by_tutor=user.tutor_profile
-            ).first()
+            )
 
         elif role == 'teacher':
-            coupon = Coupon_Tutor_Student.objects.filter(
+            coupons = Coupon_Tutor_Student.objects.filter(
                 created_by_teacher=user.teacher_profile
-        )
+            )
+
         else:
             raise PermissionDenied("Role uchun ruxsat yo‘q!")
 
-        if coupon is None:
-            return Response({"message": "Siz hali kupon yaratmagansiz."},
-                            status=status.HTTP_200_OK)
+        if not coupons.exists():
+            return Response(
+                {"message": "Siz hali kupon yaratmagansiz."},
+                status=status.HTTP_200_OK
+            )
+
+        serializer = CouponSerializer(coupons, many=True)
 
         return Response({
-            "message": "Sizning kuponingiz:",
-            "coupon": CouponSerializer(coupon).data
+            "message": "Sizning kuponlaringiz:",
+            "coupons": serializer.data
         }, status=status.HTTP_200_OK)
-
     # --- POST: Yangi kupon yaratish ---
     def post(self, request):
         user = request.user
