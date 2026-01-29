@@ -10,12 +10,12 @@ from rest_framework import status
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
 
-
+from .permissions import IsTeacher
 
 
 
 class ConversationTransferAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsTeacher]
 
     # 🔹 GET — o‘qituvchilar ro‘yxati
     def get(self, request):
