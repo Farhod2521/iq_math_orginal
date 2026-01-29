@@ -79,7 +79,7 @@ class UniversalCouponAPIView(APIView):
 
             return Response({
                 "message": "Sizning kuponlaringiz:",
-                "coupons": serializer.data
+                "coupon": serializer.data
             }, status=status.HTTP_200_OK)
 
         else:
