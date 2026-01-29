@@ -43,8 +43,7 @@ class UniversalCouponAPIView(APIView):
         elif role == 'teacher':
             coupon = Coupon_Tutor_Student.objects.filter(
                 created_by_teacher=user.teacher_profile
-            ).first()
-
+        )
         else:
             raise PermissionDenied("Role uchun ruxsat yo‘q!")
 
