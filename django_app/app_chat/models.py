@@ -63,6 +63,46 @@ class Conversation(models.Model):
         ordering = ['-last_message_at']
 
 
+class ConversationAssignment(models.Model):
+    conversation = models.ForeignKey(
+        Conversation,
+        on_delete=models.CASCADE,
+        related_name="assignments"
+    )
+
+    from_teacher = models.ForeignKey(
+        Teacher,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="transferred_from"
+    )
+
+    to_teacher = models.ForeignKey(
+        Teacher,
+        on_delete=models.CASCADE,
+        related_name="transferred_to"
+    )
+
+    reason = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        verbose_name="Nega o‘tkazildi"
+    )
+
+    assigned_at = models.DateTimeField(auto_now_add=True)
+
+    assigned_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="chat_assignments"
+    )
+
+    def __str__(self):
+        return f"Chat {self.conversation_id} → {self.to_teacher}"
+
 # ------------------------------
 # 2. PARTICIPANTS (Kim chatda?)
 # ------------------------------

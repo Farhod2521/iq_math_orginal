@@ -1,13 +1,105 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from .models import Conversation, ConversationParticipant, Message, MessageReceipt, ConversationRating
-from .serializers import ConversationSerializer, MessageSerializer, ConversationListSerializer, ConversationRatingSerializer
+from .models import Conversation, ConversationParticipant, Message, MessageReceipt, ConversationRating, ConversationAssignment
+from .serializers import ConversationSerializer, MessageSerializer, ConversationListSerializer, ConversationRatingSerializer, TeacherListSerializer, ConversationTransferSerializer
 from django_app.app_user.models import Student, Teacher  # sening user struktura
 from django.db.models import Count, Avg, Q
 from django.utils.timezone import now
 from rest_framework import status
 from django.utils import timezone
+from django.shortcuts import get_object_or_404
+
+
+
+
+
+class ConversationTransferAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    # 🔹 GET — o‘qituvchilar ro‘yxati
+    def get(self, request):
+        teachers = Teacher.objects.filter(
+            is_verified_teacher=True,
+            status=True
+        )
+
+        serializer = TeacherListSerializer(teachers, many=True)
+        return Response(serializer.data)
+
+    # 🔹 POST — chatni boshqa o‘qituvchiga o‘tkazish
+    def post(self, request):
+        serializer = ConversationTransferSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        conversation_id = serializer.validated_data["conversation_id"]
+        teacher_id = serializer.validated_data["teacher_id"]
+        reason = serializer.validated_data.get("reason", "")
+
+        conversation = get_object_or_404(Conversation, id=conversation_id)
+        new_teacher = get_object_or_404(Teacher, id=teacher_id)
+
+        # 🔍 eski teacher (chatda turgani)
+        old_teacher = Teacher.objects.filter(
+            user__chat_participations__conversation=conversation
+        ).first()
+
+        # ❌ eski teacherni chatdan chiqaramiz
+        if old_teacher:
+            ConversationParticipant.objects.filter(
+                conversation=conversation,
+                user=old_teacher.user
+            ).delete()
+
+        # ✅ yangi teacherni chatga qo‘shamiz
+        ConversationParticipant.objects.get_or_create(
+            conversation=conversation,
+            user=new_teacher.user
+        )
+
+        # 🧠 transfer tarixi
+        ConversationAssignment.objects.create(
+            conversation=conversation,
+            from_teacher=old_teacher,
+            to_teacher=new_teacher,
+            reason=reason,
+            assigned_by=request.user
+        )
+
+        # 📢 system xabar
+        Message.objects.create(
+            conversation=conversation,
+            sender=request.user,
+            message_type="system",
+            text=f"Chat {new_teacher.full_name} ga o‘tkazildi"
+        )
+
+        # 🕒 chat meta update
+        conversation.last_message = "Chat boshqa o‘qituvchiga o‘tkazildi"
+        conversation.last_message_at = timezone.now()
+        conversation.save(update_fields=["last_message", "last_message_at"])
+
+        return Response({
+            "success": True,
+            "message": "Chat muvaffaqiyatli o‘tkazildi",
+            "to_teacher": {
+                "id": new_teacher.id,
+                "full_name": new_teacher.full_name
+            }
+        })
+
+
+
+
+
+
+
+
+
+
+
+
+
 class CreateDirectChatAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
