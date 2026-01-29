@@ -89,61 +89,50 @@ class UniversalCouponAPIView(APIView):
         user = request.user
         role = user.role
 
-        # SETTINGS
         try:
             settings = ReferralAndCouponSettings.objects.latest('updated_at')
         except ReferralAndCouponSettings.DoesNotExist:
-            return Response({"error": "ReferralAndCouponSettings topilmadi"},
-                            status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "ReferralAndCouponSettings topilmadi"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
-        # Kupon muddati
         valid_from = timezone.now()
         valid_until = valid_from + timedelta(days=settings.coupon_valid_days)
 
-        existing_coupon = None
-        creator_data = {}
-
-        # --- STUDENT ---
+        # STUDENT / TUTOR → oldindan tekshiramiz
         if role == 'student':
-            student = user.student_profile
-            existing_coupon = Coupon_Tutor_Student.objects.filter(
-                created_by_student=student
-            ).first()
-            creator_data = {"created_by_student": student}
+            if Coupon_Tutor_Student.objects.filter(created_by_student=user.student_profile).exists():
+                return Response(
+                    {"message": "Siz allaqachon kupon yaratgansiz"},
+                    status=status.HTTP_200_OK
+                )
             discount_percent = settings.coupon_discount_percent
 
-        # --- TUTOR ---
         elif role == 'tutor':
-            tutor = user.tutor_profile
-            existing_coupon = Coupon_Tutor_Student.objects.filter(
-                created_by_tutor=tutor
-            ).first()
-            creator_data = {"created_by_tutor": tutor}
+            if Coupon_Tutor_Student.objects.filter(created_by_tutor=user.tutor_profile).exists():
+                return Response(
+                    {"message": "Siz allaqachon kupon yaratgansiz"},
+                    status=status.HTTP_200_OK
+                )
             discount_percent = settings.coupon_discount_percent
 
-        # --- TEACHER ---
         elif role == 'teacher':
-            teacher = user.teacher_profile
-            existing_coupon = Coupon_Tutor_Student.objects.filter(
-                created_by_teacher=teacher
-            ).first()
-            creator_data = {"created_by_teacher": teacher}
-            discount_percent = settings.coupon_discount_percent_teacher
+            # teacher POST qilsa → oladi, qilmasa → settings
+            discount_percent = request.data.get(
+                'discount_percent',
+                settings.coupon_discount_percent_teacher
+            )
 
         else:
             raise PermissionDenied("Role uchun ruxsat yo‘q!")
 
-        # Agar mavjud bo‘lsa — mavjudini qaytarish
-        if existing_coupon:
-            return Response({
-                "message": "Siz allaqachon kupon yaratgansiz",
-                "coupon": CouponSerializer(existing_coupon).data
-            }, status=status.HTTP_200_OK)
-
-        # Yangi kupon kodi
         coupon_code = self._generate_unique_coupon_code()
 
-        serializer = CouponCreateSerializer(data=request.data, context={'request': request})
+        serializer = CouponCreateSerializer(
+            data=request.data,
+            context={'request': request}
+        )
         serializer.is_valid(raise_exception=True)
 
         coupon = serializer.save(
@@ -151,8 +140,7 @@ class UniversalCouponAPIView(APIView):
             discount_percent=discount_percent,
             valid_from=valid_from,
             valid_until=valid_until,
-            is_active=True,
-            **creator_data
+            is_active=True
         )
 
         return Response({
