@@ -35,10 +35,7 @@ class CouponCreateSerializer(serializers.ModelSerializer):
 
         # Teacher
         elif user.role == 'teacher':
-            teacher = user.teacher_profile
-            if Coupon_Tutor_Student.objects.filter(created_by_teacher=teacher).exists():
-                raise serializers.ValidationError({"error": "Siz allaqachon kupon yaratgansiz"})
-            attrs['created_by_teacher'] = teacher
+            attrs['created_by_teacher'] = user.teacher_profile
 
         else:
             raise serializers.ValidationError({"error": "Bu rolda kupon yaratish mumkin emas"})
