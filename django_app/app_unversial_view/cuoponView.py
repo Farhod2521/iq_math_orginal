@@ -65,17 +65,17 @@ class UniversalCouponAPIView(APIView):
             }, status=status.HTTP_200_OK)
 
         elif role == 'teacher':
-            coupons = Coupon_Tutor_Student.objects.filter(
+            coupon = Coupon_Tutor_Student.objects.filter(
                 created_by_teacher=user.teacher_profile
             )
 
-            if not coupons.exists():
+            if not coupon.exists():
                 return Response(
                     {"message": "Siz hali kupon yaratmagansiz."},
                     status=status.HTTP_200_OK
                 )
 
-            serializer = CouponSerializer(coupons, many=True)
+            serializer = CouponSerializer(coupon, many=True)
 
             return Response({
                 "message": "Sizning kuponlaringiz:",
