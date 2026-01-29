@@ -3,9 +3,9 @@ from .views import (
     CreateDirectChatAPIView,
     SendMessageAPIView,
     ReadMessageAPIView,
-    UniversalChatsAPIView, RateConversationAPIView,
-    ConversationMessagesAPIView,  CloseConversationAPIView, TotalUnreadChatsAPIView, TeacherClosedChatsStatsAPIView,
-    ConversationTransferAPIView
+    UniversalChatsAPIView,
+    ConversationMessagesAPIView, TotalUnreadChatsAPIView, TeacherClosedChatsStatsAPIView,
+    ConversationTransferAPIView, RequestCloseConversationAPIView, ConfirmCloseAndRateAPIView
 )
 
 urlpatterns = [
@@ -18,9 +18,10 @@ urlpatterns = [
     path("chat/<int:conversation_id>/send/", SendMessageAPIView.as_view()),
 
     path("chat/message/<int:message_id>/read/", ReadMessageAPIView.as_view()),
-    path("conversations/<int:conversation_id>/close/", CloseConversationAPIView.as_view(), name="close-conversation"),
-    path("conversations/<int:conversation_id>/rate/", RateConversationAPIView.as_view(), name="rate-conversation"),
     path("chats/unread-total/",TotalUnreadChatsAPIView.as_view(),name="total-unread-chats"),
     path("teacher/closed-chats-stats/",TeacherClosedChatsStatsAPIView.as_view(),name="teacher-closed-chats-stats"),
     path("conversation/transfer/", ConversationTransferAPIView.as_view()),
+    path("conversation/<int:conversation_id>/request-close/", RequestCloseConversationAPIView.as_view()),
+    path("conversation/<int:conversation_id>/confirm-close/", ConfirmCloseAndRateAPIView.as_view()),
+
 ]

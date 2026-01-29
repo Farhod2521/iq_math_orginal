@@ -52,6 +52,26 @@ class Conversation(models.Model):
         related_name="closed_conversations",
         verbose_name="Chatni yopgan foydalanuvchi"
     )
+    is_close_requested = models.BooleanField(
+        default=False,
+        verbose_name="Chat yopish so‘ralganmi?"
+    )
+
+    close_requested_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Yopish so‘rovi vaqti"
+    )
+
+    close_requested_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="close_requests",
+        verbose_name="Yopishni so‘ragan"
+    )
+
     def __str__(self):
         if self.chat_type == "direct":
             return f"Direct Chat #{self.id}"

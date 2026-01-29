@@ -2,14 +2,19 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .models import Conversation, ConversationParticipant, Message, MessageReceipt, ConversationRating, ConversationAssignment
-from .serializers import ConversationSerializer, MessageSerializer, ConversationListSerializer, ConversationRatingSerializer, TeacherListSerializer, ConversationTransferSerializer
+from .serializers import (
+    ConversationSerializer, MessageSerializer, ConversationListSerializer, 
+    TeacherListSerializer, ConversationTransferSerializer,
+    ConfirmCloseAndRateSerializer
+    
+    )
 from django_app.app_user.models import Student, Teacher  # sening user struktura
 from django.db.models import Count, Avg, Q
 from django.utils.timezone import now
 from rest_framework import status
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
-
+from django.db import transaction
 from .permissions import IsTeacher
 
 
@@ -309,92 +314,93 @@ class ConversationMessagesAPIView(APIView):
         }, status=200)
 
 
-
-
-class CloseConversationAPIView(APIView):
+class RequestCloseConversationAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, conversation_id):
         user = request.user
 
-        # 1️⃣ Chatni olish
-        try:
-            conversation = Conversation.objects.get(id=conversation_id)
-        except Conversation.DoesNotExist:
-            return Response(
-                {"detail": "Chat topilmadi"},
-                status=status.HTTP_404_NOT_FOUND
-            )
+        conversation = get_object_or_404(Conversation, id=conversation_id)
 
-        # 2️⃣ Chat yopilganmi?
         if conversation.is_closed:
             return Response(
                 {"detail": "Chat allaqachon yopilgan"},
-                status=status.HTTP_400_BAD_REQUEST
+                status=400
             )
 
-        # 3️⃣ User chat ishtirokchisimi?
+        # Faqat teacher
+        if user.role != "teacher":
+            return Response(
+                {"detail": "Faqat o‘qituvchi chatni yopishni so‘rashi mumkin"},
+                status=403
+            )
+
+        # Chatda ishtirokchimi?
         if not ConversationParticipant.objects.filter(
             conversation=conversation,
             user=user
         ).exists():
             return Response(
-                {"detail": "Siz bu chat ishtirokchisi emassiz"},
-                status=status.HTTP_403_FORBIDDEN
+                {"detail": "Siz bu chatda ishtirok etmaysiz"},
+                status=403
             )
 
-        # 4️⃣ Mentorligini tekshirish (MISOL)
-        # ❗️ buni o‘zingdagi role tizimga moslab o‘zgartir
-        if not hasattr(user, "Teacher profile"):
+        # Allaqachon so‘ralganmi?
+        if conversation.is_close_requested:
             return Response(
-                {"detail": "Faqat mentor chatni yopishi mumkin"},
-                status=status.HTTP_403_FORBIDDEN
+                {"detail": "Yopish so‘rovi allaqachon yuborilgan"},
+                status=400
             )
 
-        # 5️⃣ Chatni yopish
-        conversation.is_closed = True
-        conversation.closed_at = timezone.now()
-        conversation.closed_by = user
+        # 🔹 Close request
+        conversation.is_close_requested = True
+        conversation.close_requested_at = timezone.now()
+        conversation.close_requested_by = user
         conversation.save(update_fields=[
-            "is_closed", "closed_at", "closed_by"
+            "is_close_requested",
+            "close_requested_at",
+            "close_requested_by"
         ])
 
-        return Response(
-            {
-                "detail": "Chat muvaffaqiyatli yopildi",
-                "conversation_id": conversation.id,
-                "closed_at": conversation.closed_at
-            },
-            status=status.HTTP_200_OK
+        # 📢 Studentga system xabar
+        Message.objects.create(
+            conversation=conversation,
+            sender=user,
+            message_type="system",
+            text="O‘qituvchi chatni yopmoqchi. Boshqa savolingiz yo‘qmi?"
         )
-    
 
-class RateConversationAPIView(APIView):
+        return Response({
+            "detail": "Chat yopish so‘rovi studentga yuborildi"
+        })
+
+
+class ConfirmCloseAndRateAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, conversation_id):
         user = request.user
 
-        # 1️⃣ Faqat STUDENT baho bera oladi
+        # 1️⃣ Faqat STUDENT
         if user.role != "student":
             return Response(
-                {"detail": "Faqat student baho bera oladi"},
+                {"detail": "Faqat student tasdiqlab baho bera oladi"},
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        # 2️⃣ Chatni olish
-        try:
-            conversation = Conversation.objects.get(id=conversation_id)
-        except Conversation.DoesNotExist:
+        conversation = get_object_or_404(Conversation, id=conversation_id)
+
+        # 2️⃣ Chat yopish so‘rovi bo‘lishi shart
+        if not conversation.is_close_requested:
             return Response(
-                {"detail": "Chat topilmadi"},
-                status=status.HTTP_404_NOT_FOUND
+                {"detail": "Chat yopish so‘rovi mavjud emas"},
+                status=status.HTTP_400_BAD_REQUEST
             )
 
-        # 3️⃣ Chat YOPILGAN bo‘lishi shart
-        if not conversation.is_closed:
+        # 3️⃣ Chat allaqachon yopilganmi?
+        if conversation.is_closed:
             return Response(
-                {"detail": "Chat yopilmagan, hozircha baho berib bo‘lmaydi"},
+                {"detail": "Chat allaqachon yopilgan"},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -408,14 +414,14 @@ class RateConversationAPIView(APIView):
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        # 5️⃣ Bu chat allaqachon baholanganmi?
+        # 5️⃣ Oldin baho berilganmi?
         if hasattr(conversation, "rating"):
             return Response(
                 {"detail": "Bu chat allaqachon baholangan"},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # 6️⃣ Mentor kimligini topamiz
+        # 6️⃣ Mentor topamiz
         mentor_participant = ConversationParticipant.objects.filter(
             conversation=conversation,
             user__role__in=["teacher", "tutor"]
@@ -429,19 +435,42 @@ class RateConversationAPIView(APIView):
 
         mentor = mentor_participant.user
 
-        # 7️⃣ Serializer bilan baho saqlash
-        serializer = ConversationRatingSerializer(data=request.data)
+        serializer = ConfirmCloseAndRateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        rating = serializer.save(
-            conversation=conversation,
-            student=user,
-            mentor=mentor
-        )
+        # 🔐 HAMMASI BITTA TRANZAKSIYADA
+        with transaction.atomic():
+
+            # 🔒 Chatni yopamiz
+            conversation.is_closed = True
+            conversation.closed_at = timezone.now()
+            conversation.closed_by = conversation.close_requested_by
+            conversation.save(update_fields=[
+                "is_closed",
+                "closed_at",
+                "closed_by"
+            ])
+
+            # ⭐ Rating
+            rating = ConversationRating.objects.create(
+                conversation=conversation,
+                student=user,
+                mentor=mentor,
+                stars=serializer.validated_data["stars"],
+                comment=serializer.validated_data.get("comment", "")
+            )
+
+            # 📢 System xabar
+            Message.objects.create(
+                conversation=conversation,
+                sender=user,
+                message_type="system",
+                text="Student chatni yopishni tasdiqladi va baho berdi."
+            )
 
         return Response(
             {
-                "detail": "Chat muvaffaqiyatli baholandi",
+                "detail": "Chat yopildi va baho berildi",
                 "rating": {
                     "stars": rating.stars,
                     "comment": rating.comment,
@@ -450,7 +479,6 @@ class RateConversationAPIView(APIView):
             },
             status=status.HTTP_201_CREATED
         )
-    
 
 
 
