@@ -20,7 +20,7 @@ class TeacherListSerializer(serializers.ModelSerializer):
         model = Teacher
         fields = (
             "id",
-            "full_name"
+            "full_name",
             "support",
         )
 
@@ -30,7 +30,7 @@ class ConversationTransferSerializer(serializers.Serializer):
     teacher_id = serializers.IntegerField()
     reason = serializers.CharField(required=False, allow_blank=True)
 
-    
+
 # ---------------- CONVERSATION SERIALIZER ----------------
 class ConversationSerializer(serializers.ModelSerializer):
     last_message = serializers.CharField(read_only=True)
