@@ -20,7 +20,6 @@ class ConversationTransferAPIView(APIView):
     # 🔹 GET — o‘qituvchilar ro‘yxati
     def get(self, request):
         teachers = Teacher.objects.filter(
-            is_verified_teacher=True,
             status=True
         )
 
