@@ -6,12 +6,12 @@ from django_app.app_user.models import Teacher
 User = get_user_model()
 
 
-class ConversationRatingSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ConversationRating
-        fields = ("stars", "comment")
 
 
+
+class ConfirmCloseAndRateSerializer(serializers.Serializer):
+    stars = serializers.IntegerField(min_value=1, max_value=5)
+    comment = serializers.CharField(required=False, allow_blank=True)
 
 class TeacherListSerializer(serializers.ModelSerializer):
 
