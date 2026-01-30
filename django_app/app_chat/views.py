@@ -16,6 +16,9 @@ from django.utils import timezone
 from django.shortcuts import get_object_or_404
 from django.db import transaction
 from .permissions import IsTeacher
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+from .services import create_message
 
 
 
@@ -144,6 +147,88 @@ class CreateDirectChatAPIView(APIView):
         ])
 
         return Response(ConversationSerializer(conversation).data, status=201)
+
+
+class StudentSupportChatMessageAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        text = request.data.get("text")
+        reply_to_id = request.data.get("reply_to")
+
+        if not text and not reply_to_id:
+            return Response({"error": "text yoki reply_to yuboring"}, status=400)
+
+        if not hasattr(user, "student_profile"):
+            return Response({"error": "Faqat o‘quvchi chat yozishi mumkin"}, status=403)
+
+        student = user.student_profile
+
+        teacher = None
+        if student.groups.exists():
+            group = student.groups.first()
+            teacher = group.teacher
+        else:
+            teacher = Teacher.objects.filter(support=True).first()
+
+        if not teacher:
+            return Response({"error": "Mos o‘qituvchi topilmadi"}, status=400)
+
+        other_user = teacher.user
+
+        conversation = Conversation.objects.filter(
+            chat_type="direct",
+            participants__user=user
+        ).filter(
+            participants__user=other_user
+        ).first()
+
+        if not conversation:
+            conversation = Conversation.objects.create(chat_type="direct")
+            ConversationParticipant.objects.bulk_create([
+                ConversationParticipant(conversation=conversation, user=user),
+                ConversationParticipant(conversation=conversation, user=other_user)
+            ])
+
+        try:
+            message = create_message(
+                conversation_id=conversation.id,
+                sender=user,
+                text=text,
+                reply_to_id=reply_to_id,
+            )
+        except Exception:
+            return Response({"error": "Xabar yuborib bo‘lmadi"}, status=400)
+
+        channel_layer = get_channel_layer()
+        if channel_layer:
+            sender_name = (
+                getattr(user, "full_name", None)
+                or getattr(user, "get_full_name", lambda: "")()
+                or str(user)
+            )
+            async_to_sync(channel_layer.group_send)(
+                f"chat_{conversation.id}",
+                {
+                    "type": "chat.message",
+                    "message": {
+                        "id": message.id,
+                        "text": message.text,
+                        "sender_id": message.sender_id,
+                        "sender_name": sender_name,
+                        "created_at": message.created_at.isoformat(),
+                    },
+                },
+            )
+
+        return Response(
+            {
+                "conversation": ConversationSerializer(conversation).data,
+                "message": MessageSerializer(message, context={"request": request}).data,
+            },
+            status=201,
+        )
 
 
 class SendMessageAPIView(APIView):
