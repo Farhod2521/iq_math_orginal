@@ -1,6 +1,7 @@
 from django.urls import path
 from .views import (
     CreateDirectChatAPIView,
+    StudentSupportChatMessageAPIView,
     SendMessageAPIView,
     ReadMessageAPIView,
     UniversalChatsAPIView,
@@ -10,6 +11,7 @@ from .views import (
 
 urlpatterns = [
     path("chat/create-direct/", CreateDirectChatAPIView.as_view()),
+    path("chat/student-support/send/", StudentSupportChatMessageAPIView.as_view()),
 
     path("chat/list/", UniversalChatsAPIView.as_view()),
 
