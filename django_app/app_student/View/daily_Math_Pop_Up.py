@@ -74,8 +74,10 @@ class QuickMathQuestionAPIView(APIView):
         return Response({
             "question_id": question.id,
             "topic_id": question.topic.id,
-            "topic_name": question.topic.name,
-            "question_text": question.question_text,
+            "topic_name_uz": question.topic.name_uz,
+            "topic_name_ru": question.topic.name_ru,
+            "question_text_uz": question.question_text_uz,
+            "question_text_ru": question.question_text_ru,
             "level": question.level
         })
 
