@@ -574,7 +574,7 @@ class TeacherClosedChatsStatsAPIView(APIView):
         user = request.user
 
         # Role tekshirish
-        if user.role not in ("teacher", "tutor"):
+        if user.role not in ("teacher"):
             return Response({"detail": "Foydalanuvchi o'qituvchi emas"}, status=403)
 
         now = timezone.now()
@@ -612,5 +612,69 @@ class TeacherClosedChatsStatsAPIView(APIView):
             "month": get_stats(start_of_month),
             "year": get_stats(start_of_year),
         }
+
+        return Response(data, status=200)
+
+
+
+class SuperAdminTeachersClosedChatsStatsAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        if user.role != "superadmin":
+            return Response(
+                {"detail": "Faqat superadmin uchun"},
+                status=403
+            )
+
+        now = timezone.now()
+
+        # vaqtlar
+        start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        start_of_week = start_of_day - timezone.timedelta(days=start_of_day.weekday())
+        start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        start_of_year = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+
+        teachers = Teacher.objects.select_related('user').filter(
+            user__role="teacher",
+            is_verified_teacher=True
+        )
+
+        def get_stats(teacher_user, start_date=None):
+            filt = Q(
+                closed_by=teacher_user,
+                is_closed=True
+            )
+            if start_date:
+                filt &= Q(closed_at__gte=start_date)
+
+            chats = Conversation.objects.filter(filt)
+
+            count = chats.count()
+
+            avg_rating = ConversationRating.objects.filter(
+                conversation__in=chats
+            ).aggregate(avg=Avg('stars'))['avg']
+
+            return {
+                "closed_chats_count": count,
+                "average_rating": round(avg_rating, 2) if avg_rating else None
+            }
+
+        data = []
+
+        for teacher in teachers:
+            data.append({
+                "teacher_id": teacher.id,
+                "full_name": teacher.full_name,
+                "region": teacher.region,
+                "total": get_stats(teacher.user),
+                "today": get_stats(teacher.user, start_of_day),
+                "week": get_stats(teacher.user, start_of_week),
+                "month": get_stats(teacher.user, start_of_month),
+                "year": get_stats(teacher.user, start_of_year),
+            })
 
         return Response(data, status=200)
