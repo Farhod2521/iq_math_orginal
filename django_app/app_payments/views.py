@@ -777,9 +777,13 @@ class SubscriptionPlanListAPIView(APIView):
             is_active=True
         ).order_by("months")
 
-        serializer = SubscriptionPlanSerializer(plans, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        serializer = SubscriptionPlanSerializer(
+            plans,
+            many=True,
+            context={"request": request}   # 🔥 muhim
+        )
 
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class PaymentTeacherListAPIView(APIView):

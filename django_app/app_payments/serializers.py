@@ -32,6 +32,7 @@ class SubscriptionBenefitStatusSerializer(serializers.ModelSerializer):
         )
 
 class SubscriptionPlanSerializer(serializers.ModelSerializer):
+
     price_per_month = serializers.DecimalField(
         max_digits=10,
         decimal_places=2,
@@ -40,6 +41,7 @@ class SubscriptionPlanSerializer(serializers.ModelSerializer):
 
     sale_price = serializers.SerializerMethodField()
     benefits = serializers.SerializerMethodField()
+
     months_display = serializers.CharField(
         source="get_months_display",
         read_only=True
@@ -47,13 +49,16 @@ class SubscriptionPlanSerializer(serializers.ModelSerializer):
 
     category = serializers.SerializerMethodField()
 
+    # 🔥 sotib olingan yoki yo‘qligi
+    is_purchased = serializers.SerializerMethodField()
+
     class Meta:
         model = SubscriptionPlan
         fields = [
             "id",
-            "name_uz",          # ✅ plan nomi
-            "name_ru",          # ✅ plan nomi
-            "category",      # ✅ category title
+            "name_uz",
+            "name_ru",
+            "category",
             "months",
             "months_display",
             "discount_percent",
@@ -61,10 +66,14 @@ class SubscriptionPlanSerializer(serializers.ModelSerializer):
             "sale_price",
             "benefits",
             "is_active",
+            "is_purchased",   # 👈 yangi field
             "created_at",
             "updated_at",
         ]
 
+    # ================================
+    # CATEGORY
+    # ================================
     def get_category(self, obj):
         if obj.category:
             return {
@@ -74,11 +83,17 @@ class SubscriptionPlanSerializer(serializers.ModelSerializer):
             }
         return None
 
+    # ================================
+    # SALE PRICE
+    # ================================
     def get_sale_price(self, obj):
         monthly_price = float(obj.price_per_month)
         discount_amount = (monthly_price * obj.discount_percent) / 100
         return monthly_price - discount_amount
 
+    # ================================
+    # BENEFITS
+    # ================================
     def get_benefits(self, obj):
         all_benefits = SubscriptionBenefit.objects.filter(is_active=True)
         plan_benefit_ids = obj.benefits.values_list("id", flat=True)
@@ -94,6 +109,26 @@ class SubscriptionPlanSerializer(serializers.ModelSerializer):
             for benefit in all_benefits
         ]
 
+    # ================================
+    # PURCHASE STATUS (TRUE/FALSE)
+    # ================================
+    def get_is_purchased(self, obj):
+        request = self.context.get("request")
+
+        if not request or not request.user.is_authenticated:
+            return False
+
+        student = getattr(request.user, "student", None)
+
+        if not student:
+            return False
+
+        # 👉 Payment ichidan shu oyga mos successful to‘lovni tekshiradi
+        return Payment.objects.filter(
+            student=student,
+            status="success",
+            subscription_months=obj.months
+        ).exists()
     
 
 class PaymentTeacherSerializer(serializers.ModelSerializer):
