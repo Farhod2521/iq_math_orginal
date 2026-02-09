@@ -149,6 +149,7 @@ class UniversalRegisterSerializer(serializers.Serializer):
         queryset=Subject.objects.all(), required=False, allow_null=True
     )
     referral_code = serializers.CharField(required=False, allow_blank=True)
+    lang = serializers.CharField(required=False, allow_blank=True, allow_null=True)
 
     def validate(self, attrs):
         phone = attrs.get("phone")
@@ -196,7 +197,7 @@ class UniversalRegisterSerializer(serializers.Serializer):
         phone = validated_data['phone']
         role = validated_data['role']
         full_name = validated_data['full_name']
-        lang = validated_data.get('lang', None)
+        lang = validated_data.pop('lang', None)
         class_name = validated_data.pop('class_name', None)
         referral_code = validated_data.pop('referral_code', None)
 
@@ -208,6 +209,9 @@ class UniversalRegisterSerializer(serializers.Serializer):
         if user:
             # Agar mavjud bo‘lsa va hali tasdiqlanmagan bo‘lsa — sms_code yangilanadi
             if hasattr(user, 'student_profile') and not user.student_profile.status:
+                if lang not in (None, ''):
+                    user.student_profile.lang = lang
+                    user.student_profile.save(update_fields=['lang'])
                 user.sms_code = sms_code
                 user.save(update_fields=['sms_code'])
                 send_sms(phone, sms_code)
@@ -233,14 +237,16 @@ class UniversalRegisterSerializer(serializers.Serializer):
 
         # 3. Role bo‘yicha profil yaratish
         if role == "student":
-            student = Student.objects.create(
-                user=user,
-                full_name=full_name,
-                class_name=class_name,
-                lang=lang,
-                status=False,
-                student_date=now()
-            )
+            student_kwargs = {
+                "user": user,
+                "full_name": full_name,
+                "class_name": class_name,
+                "status": False,
+                "student_date": now(),
+            }
+            if lang not in (None, ""):
+                student_kwargs["lang"] = lang
+            student = Student.objects.create(**student_kwargs)
 
             # 🎁 Trial obuna
             free_days = SubscriptionSetting.objects.first().free_trial_days
