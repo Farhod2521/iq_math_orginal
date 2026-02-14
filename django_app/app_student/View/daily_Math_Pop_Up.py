@@ -8,67 +8,56 @@ from django_app.app_teacher.models import Question, Topic
 
 from django_app.app_user.models import Student
 
-
+from rest_framework import status
 
 
 class QuickMathQuestionAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        try:
-            student = request.user.student_profile
-        except Student.DoesNotExist:
+        # 1️⃣ Student profilini olish
+        student = getattr(request.user, "student_profile", None)
+        if not student:
             return Response(
                 {"detail": "Student profili topilmadi"},
-                status=404
+                status=status.HTTP_404_NOT_FOUND
             )
 
-        # 1️⃣ Oldin ishlangan mavzularni tekshiramiz
+        # 2️⃣ Oldin ishlangan topiclarni olish
         topic_ids = TopicProgress.objects.filter(
             user=student,
             score__gt=0
         ).values_list("topic_id", flat=True)
 
-        # 2️⃣ Agar ishlangan mavzular bo‘lsa
-        if topic_ids.exists():
-            topic_id = random.choice(list(topic_ids))
-            topics = Topic.objects.filter(id=topic_id)
-
-        # 3️⃣ Aks holda: student tanlagan fanidan olamiz
-        else:
-            subject = student.class_name  # bu Subject
-
-            if not subject:
-                return Response(
-                    {"detail": "Student fan tanlamagan"},
-                    status=404
-                )
-
-            topics = Topic.objects.filter(
-                chapter__subject=subject
-            )
-
-            if not topics.exists():
-                return Response(
-                    {"detail": "Bu fan uchun mavzular topilmadi"},
-                    status=404
-                )
-
-            topic = random.choice(list(topics))
-            topic_id = topic.id
-
-        # 4️⃣ O‘sha topic bo‘yicha savollar
+        # 3️⃣ Savollarni shakllantirish
         questions = Question.objects.filter(
-            topic_id=topic_id,
             question_type="text"
         )
 
-        if not questions.exists():
-            return Response(
-                {"detail": "Text savollar topilmadi"},
-                status=404
+        # Agar ishlangan topiclar bo‘lsa → o‘shalardan
+        if topic_ids.exists():
+            questions = questions.filter(topic_id__in=topic_ids)
+        else:
+            # Aks holda student fanidan
+            subject = student.class_name
+            if not subject:
+                return Response(
+                    {"detail": "Student fan tanlamagan"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            questions = questions.filter(
+                topic__chapter__subject=subject
             )
 
+        # 4️⃣ Agar savol topilmasa
+        if not questions.exists():
+            return Response(
+                {"detail": "Mos text savol topilmadi"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # 5️⃣ Random savol tanlash
         question = random.choice(list(questions))
 
         return Response({
@@ -79,7 +68,7 @@ class QuickMathQuestionAPIView(APIView):
             "question_text_uz": question.question_text_uz,
             "question_text_ru": question.question_text_ru,
             "level": question.level
-        })
+        }, status=status.HTTP_200_OK)
 
 
 
