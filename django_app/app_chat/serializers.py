@@ -147,7 +147,7 @@ class MessageSerializer(serializers.ModelSerializer):
         data = {
             "subject": {
                 "id": independent_obj.subject.id,
-                "class_num": independent_obj.subject.classes,
+                "class_num": independent_obj.subject.classes.name,
                 "name_uz": independent_obj.subject.name_uz,
                 "name_ru": independent_obj.subject.name_ru,
             },
