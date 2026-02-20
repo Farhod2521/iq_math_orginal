@@ -21,30 +21,17 @@ def clean_latex(expr):
     if not expr:
         return expr
 
-    # \left \right ni olib tashlash
+
     expr = re.sub(r'\\left|\\right', '', expr)
-
-    # Inline va display math delimiters ni olib tashlash
     expr = re.sub(r'\\\(|\\\)|\\\[|\\\]', '', expr)
-
-    # \frac{a}{b} -> (a)/(b)
     expr = re.sub(r'\\frac\{([^}]+)\}\{([^}]+)\}', r'(\1)/(\2)', expr)
-
-    # \sqrt{a} -> sqrt(a)
     expr = re.sub(r'\\sqrt\{([^}]+)\}', r'sqrt(\1)', expr)
-
-    # Tengsizlik belgilarini normal ko‘rinishga o‘tkazish
     expr = expr.replace(r'\le', '<=')
     expr = expr.replace(r'\ge', '>=')
     expr = expr.replace(r'\lt', '<')
     expr = expr.replace(r'\gt', '>')
-
-    # Ortiqcha backslashlarni olib tashlash
     expr = expr.replace('\\', '')
-
-    # Bo‘sh joylarni olib tashlash
     expr = expr.replace(' ', '')
-
     return expr
 
 def insert_multiplication(expr):
