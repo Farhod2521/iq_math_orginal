@@ -153,7 +153,7 @@ from django.utils.safestring import mark_safe
 @admin.register(Question)
 class QuestionAdmin(TranslationAdmin):
     list_display = ('id','question_text_uz','question_text_ru', 'question_type', 'level')
-    list_filter = ('question_type', 'level')
+    list_filter = ('question_type', 'level','id',)
     search_fields = ('question_text', 'id',)
     inlines = [ChoiceInline, CompositeSubQuestionInline]
 
