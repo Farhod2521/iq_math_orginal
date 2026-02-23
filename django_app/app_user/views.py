@@ -206,7 +206,7 @@ class SendCodeAPIView(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
+from rest_framework.permissions import IsAuthenticated
 class UserSessionListAPIVIEW(APIView):
     permission_classes = [IsAuthenticated] 
 
