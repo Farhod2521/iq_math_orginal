@@ -205,50 +205,18 @@ class SendCodeAPIView(APIView):
             )
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-class MyAccountsAPIView(APIView):
-    def get(self, request):
-        device_id = request.query_params.get("device_id")
 
-        if not device_id:
-            return Response({"error": "device_id required"}, status=400)
 
-        try:
-            device = Device.objects.get(id=device_id)
-        except Device.DoesNotExist:
-            return Response({"accounts": []})
-
-        sessions = UserSession.objects.filter(device=device, is_active=True).select_related("user")
-
-        data = SessionListSerializer(sessions, many=True).data
-        return Response({"accounts": data})
-def get_session_from_request(request):
-    auth_header = request.headers.get("Authorization")
-    if not auth_header:
-        raise AuthenticationFailed("Token yuborilmadi")
-
-    token = auth_header.split()[1]
-
-    try:
-        session = UserSession.objects.select_related("user", "device").filter(
-            is_active=True
-        ).get(access_token=token)
-    except UserSession.DoesNotExist:
-        raise AuthenticationFailed("Session expired")
-
-    return session
 class UserSessionListAPIVIEW(APIView):
+    permission_classes = [IsAuthenticated] 
 
     def get(self, request):
-        session = get_session_from_request(request)
-        device = session.device
-
+        user = request.user
         sessions = UserSession.objects.filter(
-            device=device,
+            user=user,
             is_active=True
         ).select_related("user")
-
         return Response({
-            "current_session_id": session.id,
             "accounts": SessionListSerializer(sessions, many=True).data
         })
 
@@ -257,7 +225,7 @@ class SwitchAccountAPIView(APIView):
     def post(self, request):
         from .utils import create_user_tokens
 
-        current_session = get_session_from_request(request)
+        
         target_session_id = request.data.get("session_id")
 
         if not target_session_id:
@@ -266,7 +234,7 @@ class SwitchAccountAPIView(APIView):
         try:
             target_session = UserSession.objects.get(
                 id=target_session_id,
-                device=current_session.device,
+          
                 is_active=True
             )
         except UserSession.DoesNotExist:
