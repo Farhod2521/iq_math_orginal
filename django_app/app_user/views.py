@@ -223,25 +223,17 @@ class MyAccountsAPIView(APIView):
         return Response({"accounts": data})
 def get_session_from_request(request):
     auth_header = request.headers.get("Authorization")
-
     if not auth_header:
         raise AuthenticationFailed("Token yuborilmadi")
 
-    try:
-        prefix, token = auth_header.split()
-    except ValueError:
-        raise AuthenticationFailed("Token noto'g'ri format")
-
-    if prefix.lower() != "bearer":
-        raise AuthenticationFailed("Bearer bo'lishi kerak")
+    token = auth_header.split()[1]
 
     try:
-        session = UserSession.objects.select_related("user", "device").get(
-            access_token=token,
+        session = UserSession.objects.select_related("user", "device").filter(
             is_active=True
-        )
+        ).get(access_token=token)
     except UserSession.DoesNotExist:
-        raise AuthenticationFailed("Session topilmadi yoki chiqib ketilgan")
+        raise AuthenticationFailed("Session expired")
 
     return session
 class UserSessionListAPIVIEW(APIView):
@@ -263,6 +255,8 @@ class UserSessionListAPIVIEW(APIView):
 class SwitchAccountAPIView(APIView):
 
     def post(self, request):
+        from .utils import create_user_tokens
+
         current_session = get_session_from_request(request)
         target_session_id = request.data.get("session_id")
 
@@ -280,19 +274,20 @@ class SwitchAccountAPIView(APIView):
 
         user = target_session.user
 
-        # yangi token beramiz
-        refresh = RefreshToken.for_user(user)
-        access = str(refresh.access_token)
+        access, refresh, expires_in = create_user_tokens(user)
 
         target_session.access_token = access
-        target_session.refresh_token = str(refresh)
+        target_session.refresh_token = refresh
         target_session.save()
 
         return Response({
             "access_token": access,
-            "refresh_token": str(refresh),
-            "role": user.role
-        }, status=status.HTTP_200_OK)
+            "refresh_token": refresh,
+            "expires_in": expires_in,
+            "role": user.role,
+            "phone": user.phone,
+            "session_id": target_session.id
+        })
 ##############################################################
 ###################     TEACHER     VERIFY SMS   #############
 ##############################################################

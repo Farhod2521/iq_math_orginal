@@ -165,25 +165,24 @@ class VerifyCodeSerializer(serializers.Serializer):
         if user.sms_code != code:
             raise serializers.ValidationError("Kod noto‘g‘ri")
 
-
-
         attrs["user"] = user
         return attrs
 
     def create(self, validated_data):
+        from .utils import create_user_tokens
+
         user = validated_data["user"]
         device_id = validated_data["device_id"]
 
-        refresh = RefreshToken.for_user(user)
-        access = str(refresh.access_token)
+        access, refresh, expires_in = create_user_tokens(user)
 
         device, _ = Device.objects.get_or_create(id=device_id)
 
-        UserSession.objects.create(
+        session = UserSession.objects.create(
             user=user,
             device=device,
             access_token=access,
-            refresh_token=str(refresh)
+            refresh_token=refresh
         )
 
         user.sms_code = None
@@ -191,10 +190,12 @@ class VerifyCodeSerializer(serializers.Serializer):
 
         return {
             "access_token": access,
-            "refresh_token": str(refresh),
-            "role": user.role
+            "refresh_token": refresh,
+            "expires_in": expires_in,
+            "session_id": session.id,
+            "role": user.role,
+            "phone": user.phone
         }
-            
 class SessionListSerializer(serializers.ModelSerializer):
     user_id = serializers.IntegerField(source="user.id")
     phone = serializers.CharField(source="user.phone")
