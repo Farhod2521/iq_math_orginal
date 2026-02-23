@@ -142,8 +142,9 @@ class SendCodeSerializer(serializers.Serializer):
     def create(self, validated_data):
         phone = validated_data["phone"]
         user, _ = User.objects.get_or_create(phone=phone)
-        code = str(random.randint(10000, 99999))
-        user.sms_code = code
+        sms_code = str(random.randint(10000, 99999))
+        user.sms_code = sms_code
+        send_sms(phone, sms_code)
         user.save()
 
         return user
