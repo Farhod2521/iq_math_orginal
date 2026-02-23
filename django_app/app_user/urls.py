@@ -6,7 +6,8 @@ from .views import (
     LogoutDeviceAPIView, RegisterAPIView, RegisterTeacherAPIView, TeacherVerifySmsCodeAPIView,
     ClassListView, TeacherLoginAPIView, TeacherProfileAPIView, UpdateStudentFieldAPIView, UserProfileAPIView,
       LogoutAPIView, TelegramIDCheckAPIView, ParentCreateAPIView, UpdateTelegramIDAPIView, AddChildRequestAPIView,
-      ConfirmChildAPIView, ParentChildrenListAPIView, TeacherTelegramIdListView
+      ConfirmChildAPIView, ParentChildrenListAPIView, TeacherTelegramIdListView, SendCodeAPIView, VerifyCodeAPIView,
+      MyAccountsAPIView, UserSessionListAPIVIEW, SwitchAccountAPIView
 
 )
 from .all_role_listview import All_Role_ListView, DeleteStudentProfileAPIView
@@ -69,6 +70,16 @@ urlpatterns = [
     path('user/update-profile/', UniversalUpdateView.as_view(), name='update-profile'),
     path('user/change-password/', ChangePasswordView.as_view(), name='change-password'),
     path('user/verify-phone-change/', VerifyPhoneChangeView.as_view(), name='verify-phone-change'),
+
+
+    ########################################################################################
+    ########################   TELEGRAM STICH AKKOUNT   ###################################
+    ########################################################################################
+    path("user/auth/send-code/", SendCodeAPIView.as_view(), name="send-code"),
+    path("user/auth/verify-code/", VerifyCodeAPIView.as_view(), name="verify-code"),
+    path("user/auth/my-accounts/", MyAccountsAPIView.as_view(), name="my-accounts"),
+    path("user/auth/sessions/", UserSessionListAPIVIEW.as_view(), name="session-list"),
+    path("user/auth/switch-account/", SwitchAccountAPIView.as_view(), name="switch-account"),
 ]
 
 

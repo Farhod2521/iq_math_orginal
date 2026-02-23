@@ -4,9 +4,10 @@ from rest_framework import status
 from .serializers import (
 UniversalRegisterSerializer, VerifySmsCodeSerializer, 
 LoginSerializer, StudentProfileSerializer, TeacherRegisterSerializer, Class_Serializer,
-TeacherVerifySmsCodeSerializer, TeacherSerializer, StudentSerializer, ParentCreateSerializer, StudentSerializerParent
+TeacherVerifySmsCodeSerializer, TeacherSerializer, StudentSerializer, ParentCreateSerializer, StudentSerializerParent,
+SendCodeSerializer, VerifyCodeSerializer, SessionListSerializer
 )
-from .models import Student, UserSMSAttempt, Teacher, Class, StudentLoginHistory, Parent, Tutor, ParentStudentRelation, TeacherLoginHistory
+from .models import Student, UserSMSAttempt, Teacher, Class, StudentLoginHistory, Parent, Tutor, ParentStudentRelation, TeacherLoginHistory, Device, UserSession
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.settings import api_settings
 from datetime import timedelta
@@ -182,7 +183,119 @@ class RegisterAPIView(APIView):
 ##############################################################
 ###################     TEACHER     VERIFY SMS   #############
 ##############################################################
+class VerifyCodeAPIView(APIView):
+    def post(self, request):
+        serializer = VerifyCodeSerializer(data=request.data)
 
+        if serializer.is_valid():
+            data = serializer.save()
+            return Response(data, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class SendCodeAPIView(APIView):
+    def post(self, request):
+        serializer = SendCodeSerializer(data=request.data)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
+                {"message": "Sms kodi yuborildi"},
+                status=status.HTTP_200_OK
+            )
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+class MyAccountsAPIView(APIView):
+    def get(self, request):
+        device_id = request.query_params.get("device_id")
+
+        if not device_id:
+            return Response({"error": "device_id required"}, status=400)
+
+        try:
+            device = Device.objects.get(id=device_id)
+        except Device.DoesNotExist:
+            return Response({"accounts": []})
+
+        sessions = UserSession.objects.filter(device=device, is_active=True).select_related("user")
+
+        data = SessionListSerializer(sessions, many=True).data
+        return Response({"accounts": data})
+def get_session_from_request(request):
+    auth_header = request.headers.get("Authorization")
+
+    if not auth_header:
+        raise AuthenticationFailed("Token yuborilmadi")
+
+    try:
+        prefix, token = auth_header.split()
+    except ValueError:
+        raise AuthenticationFailed("Token noto'g'ri format")
+
+    if prefix.lower() != "bearer":
+        raise AuthenticationFailed("Bearer bo'lishi kerak")
+
+    try:
+        session = UserSession.objects.select_related("user", "device").get(
+            access_token=token,
+            is_active=True
+        )
+    except UserSession.DoesNotExist:
+        raise AuthenticationFailed("Session topilmadi yoki chiqib ketilgan")
+
+    return session
+class UserSessionListAPIVIEW(APIView):
+
+    def get(self, request):
+        session = get_session_from_request(request)
+        device = session.device
+
+        sessions = UserSession.objects.filter(
+            device=device,
+            is_active=True
+        ).select_related("user")
+
+        return Response({
+            "current_session_id": session.id,
+            "accounts": SessionListSerializer(sessions, many=True).data
+        })
+
+class SwitchAccountAPIView(APIView):
+
+    def post(self, request):
+        current_session = get_session_from_request(request)
+        target_session_id = request.data.get("session_id")
+
+        if not target_session_id:
+            return Response({"error": "session_id kerak"}, status=400)
+
+        try:
+            target_session = UserSession.objects.get(
+                id=target_session_id,
+                device=current_session.device,
+                is_active=True
+            )
+        except UserSession.DoesNotExist:
+            return Response({"error": "Account topilmadi"}, status=404)
+
+        user = target_session.user
+
+        # yangi token beramiz
+        refresh = RefreshToken.for_user(user)
+        access = str(refresh.access_token)
+
+        target_session.access_token = access
+        target_session.refresh_token = str(refresh)
+        target_session.save()
+
+        return Response({
+            "access_token": access,
+            "refresh_token": str(refresh),
+            "role": user.role
+        }, status=status.HTTP_200_OK)
+##############################################################
+###################     TEACHER     VERIFY SMS   #############
+##############################################################
 class TeacherVerifySmsCodeAPIView(APIView):
     def post(self, request, *args, **kwargs):
         serializer = TeacherVerifySmsCodeSerializer(data=request.data)

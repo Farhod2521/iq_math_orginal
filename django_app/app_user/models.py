@@ -5,7 +5,7 @@ from django.utils.timezone import now
 
 
 
-
+import uuid
 import random
 
 
@@ -65,6 +65,26 @@ def generate_tutor_identification():
     count_today = Tutor.objects.filter(tutor_date__date=now().date()).count() + 1
     return f"T{today}{random_part:03d}{count_today:03d}"  
 
+class Device(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    device_name = models.CharField(max_length=255, blank=True, null=True)  # Chrome, Redmi
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return str(self.id)
+class UserSession(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sessions")
+    device = models.ForeignKey(Device, on_delete=models.CASCADE, related_name="sessions")
+
+    access_token = models.TextField()
+    refresh_token = models.TextField()
+
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_used = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.user.phone} | {self.device_id}"
 class Tutor(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='tutor_profile', verbose_name="Foydalanuvchi")
     identification = models.CharField(max_length=20, unique=True, default=generate_tutor_identification)
