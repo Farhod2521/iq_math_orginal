@@ -7,7 +7,7 @@ from .views import (
     ClassListView, TeacherLoginAPIView, TeacherProfileAPIView, UpdateStudentFieldAPIView, UserProfileAPIView,
       LogoutAPIView, TelegramIDCheckAPIView, ParentCreateAPIView, UpdateTelegramIDAPIView, AddChildRequestAPIView,
       ConfirmChildAPIView, ParentChildrenListAPIView, TeacherTelegramIdListView, SendCodeAPIView, VerifyCodeAPIView,
-      MyAccountsAPIView, UserSessionListAPIVIEW, SwitchAccountAPIView
+       UserSessionListAPIVIEW, SwitchAccountAPIView
 
 )
 from .all_role_listview import All_Role_ListView, DeleteStudentProfileAPIView
