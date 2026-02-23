@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Student, UserSMSAttempt, Class, Teacher, Subject, Referral, Parent, Tutor, StudentLoginHistory
+from .models import User, Student, UserSMSAttempt, Class, Teacher, Subject, Referral, Parent, Tutor, StudentLoginHistory, Device, UserSession
 from django.core.cache import cache
 import random
 from .sms_service import send_sms, send_verification_email, send_login_parol_email# SMS sending function
@@ -10,6 +10,7 @@ from django_app.app_payments.models import Subscription, SubscriptionSetting, Pa
 from django_app.app_student.models import  StudentReferralTransaction
 from django_app.app_tutor.models import TutorReferralTransaction
 from django_app.app_management.models import  ReferralAndCouponSettings
+from rest_framework_simplejwt.tokens import RefreshToken
 User = get_user_model()
 
 from datetime import timedelta
@@ -135,9 +136,73 @@ class TeacherRegisterSerializer(serializers.Serializer):
         send_sms(phone, sms_code)
 
         return user
+class SendCodeSerializer(serializers.Serializer):
+    phone = serializers.CharField()
+
+    def create(self, validated_data):
+        phone = validated_data["phone"]
+        user, _ = User.objects.get_or_create(phone=phone)
+        code = str(random.randint(10000, 99999))
+        user.sms_code = code
+        user.save()
+
+        return user
+class VerifyCodeSerializer(serializers.Serializer):
+    phone = serializers.CharField()
+    code = serializers.CharField()
+    device_id = serializers.UUIDField()
+
+    def validate(self, attrs):
+        phone = attrs["phone"]
+        code = attrs["code"]
+
+        try:
+            user = User.objects.get(phone=phone)
+        except User.DoesNotExist:
+            raise serializers.ValidationError("User topilmadi")
+
+        if user.sms_code != code:
+            raise serializers.ValidationError("Kod noto‘g‘ri")
 
 
 
+        attrs["user"] = user
+        return attrs
+
+    def create(self, validated_data):
+        user = validated_data["user"]
+        device_id = validated_data["device_id"]
+
+        refresh = RefreshToken.for_user(user)
+        access = str(refresh.access_token)
+
+        device, _ = Device.objects.get_or_create(id=device_id)
+
+        UserSession.objects.create(
+            user=user,
+            device=device,
+            access_token=access,
+            refresh_token=str(refresh)
+        )
+
+        user.sms_code = None
+        user.save()
+
+        return {
+            "access_token": access,
+            "refresh_token": str(refresh),
+            "role": user.role
+        }
+            
+class SessionListSerializer(serializers.ModelSerializer):
+    user_id = serializers.IntegerField(source="user.id")
+    phone = serializers.CharField(source="user.phone")
+    role = serializers.CharField(source="user.role")
+    device_id = serializers.UUIDField(source="device.id")
+
+    class Meta:
+        model = UserSession
+        fields = ["id", "user_id", "phone", "role", "device_id", "created_at"]
 ##############################################################
 ###################     STUNDENT    REGISTER   ###############
 ##############################################################
