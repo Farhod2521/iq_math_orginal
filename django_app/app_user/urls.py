@@ -77,7 +77,6 @@ urlpatterns = [
     ########################################################################################
     path("user/auth/send-code/", SendCodeAPIView.as_view(), name="send-code"),
     path("user/auth/verify-code/", VerifyCodeAPIView.as_view(), name="verify-code"),
-    path("user/auth/my-accounts/", MyAccountsAPIView.as_view(), name="my-accounts"),
     path("user/auth/sessions/", UserSessionListAPIVIEW.as_view(), name="session-list"),
     path("user/auth/switch-account/", SwitchAccountAPIView.as_view(), name="switch-account"),
 ]
