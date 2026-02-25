@@ -7,6 +7,7 @@ asgiref==3.8.1
 async-timeout==5.0.1
 attrs==24.3.0
 beautifulsoup4==4.13.4
+celery==5.4.0
 certifi==2024.12.14
 cffi==1.17.1
 charset-normalizer==3.4.1
@@ -59,6 +60,7 @@ python-telegram-bot==20.7
 pytz==2024.2
 PyYAML==6.0.2
 requests==2.32.3
+redis==5.2.1
 rsa==4.9
 selenium==4.27.1
 six==1.17.0
