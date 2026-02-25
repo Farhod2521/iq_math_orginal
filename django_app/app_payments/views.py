@@ -8,7 +8,7 @@ from .models import Payment, Subscription, SubscriptionSetting, SubscriptionPlan
 from django_app.app_management.models import  Coupon_Tutor_Student, CouponUsage_Tutor_Student, ReferralAndCouponSettings
 from datetime import timedelta
 import hashlib
-from .utils import get_multicard_token 
+from .utils import get_multicard_token, expire_pending_payments
 from django_app.app_user.models import Student, User
 import requests
 import uuid
@@ -34,6 +34,9 @@ class InitiatePaymentAPIView(APIView):
             student = Student.objects.get(user=request.user)
         except Student.DoesNotExist:
             return Response({"error": "Talaba topilmadi"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Muddatidan o'tgan pending paymentlarni failed holatiga o'tkazamiz
+        expire_pending_payments(student=student)
 
         # Subscription plan tekshirish
         if not subscription_id:
@@ -227,6 +230,7 @@ class PaymentCallbackAPIView(APIView):
         """
         try:
             # 1. Ma'lumotlarni olish va validatsiya qilish
+            expire_pending_payments()
             data = request.data
             logger.info(f"🔔 Payment callback received: {data}")
             
@@ -665,6 +669,7 @@ class MyPaymentsAPIView(APIView):
 
     def get(self, request):
         student = request.user.student_profile    # Agar Student modelida OneToOneField bo'lsa
+        expire_pending_payments(student=student)
         payments = Payment.objects.filter(student=student)
         serializer = PaymentSerializer(payments, many=True)
         return Response(serializer.data)
@@ -790,6 +795,7 @@ class PaymentTeacherListAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        expire_pending_payments()
         user = request.user
 
         # faqat teacher kirsin

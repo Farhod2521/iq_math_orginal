@@ -249,3 +249,6 @@ SESSION_ENGINE = "django.contrib.sessions.backends.db"  # Sessiyalarni bazada sa
 SESSION_COOKIE_AGE = 86400  # 1 kun (sekundlarda)
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # Brauzer yopilganda sessiya tugashi
 SESSION_SAVE_EVERY_REQUEST = True  # Har bir requestda sessiyani yangilash
+
+# Payment pending holati uchun timeout (daqiqalarda)
+PAYMENT_PENDING_TIMEOUT_MINUTES = 10
