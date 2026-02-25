@@ -60,7 +60,7 @@ python-telegram-bot==20.7
 pytz==2024.2
 PyYAML==6.0.2
 requests==2.32.3
-redis==5.2.1
+redis
 rsa==4.9
 selenium==4.27.1
 six==1.17.0
