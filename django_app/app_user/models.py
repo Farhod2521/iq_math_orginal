@@ -49,6 +49,7 @@ class User(AbstractUser):
     )
     sms_code = models.CharField(max_length=6, blank=True, null=True, verbose_name="SMS kod")
     telegram_id = models.BigIntegerField(default=0)
+    device =  models.CharField(max_length=50, verbose_name="web/mobile", blank=True, null=True)
     USERNAME_FIELD = 'phone' 
     REQUIRED_FIELDS = []  
     objects = UserManager()  
