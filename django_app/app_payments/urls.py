@@ -2,7 +2,8 @@
 from django.urls import path
 from .views import (
     PaymentCallbackAPIView, InitiatePaymentAPIView, 
-    SubscriptionTrialDaysAPIView, MyPaymentsAPIView, CheckCouponAPIView, SubscriptionPlanListAPIView, PaymentTeacherListAPIView
+    SubscriptionTrialDaysAPIView, MyPaymentsAPIView, CheckCouponAPIView, SubscriptionPlanListAPIView, PaymentTeacherListAPIView,
+    PaymentSuperAdminAPIView
 )
 from .VIEW.subscriptionplancrud import SubscriptionPlanCRUDAPIView, SubscriptionCategoryCRUDAPIView, SubscriptionBenefitCRUDAPIView
 urlpatterns = [
@@ -18,6 +19,8 @@ urlpatterns = [
     #############################   SUPER ADMIN ###########################################
     path("superadmin/subscription-plan/", SubscriptionPlanCRUDAPIView.as_view()),          # GET list, POST create
     path("superadmin/subscription-plan/<int:pk>/", SubscriptionPlanCRUDAPIView.as_view()),
+    path("superadmin/payments/", PaymentSuperAdminAPIView.as_view(), name="superadmin-payment-list"),
+    path("superadmin/payments/<int:pk>/", PaymentSuperAdminAPIView.as_view(), name="superadmin-payment-detail"),
 
 
 

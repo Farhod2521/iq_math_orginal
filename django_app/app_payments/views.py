@@ -20,6 +20,7 @@ from django_app.app_student.models import  StudentCouponTransaction
 from django_app.app_tutor.models import TutorCouponTransaction
 from django_app.app_teacher.models import TeacherCouponTransaction
 from django.db.models import Q
+from rest_framework.permissions import BasePermission
 URL_TEST = "https://dev-mesh.multicard.uz"
 URL_DEV = "https://mesh.multicard.uz"
 class InitiatePaymentAPIView(APIView):
@@ -840,3 +841,45 @@ class PaymentTeacherListAPIView(APIView):
         }
 
         return Response(table_data, status=status.HTTP_200_OK)
+
+
+class PaymentSuperAdminAPIView(APIView):
+    class IsSuperAdmin(BasePermission):
+        def has_permission(self, request, view):
+            return (
+                request.user.is_authenticated
+                and getattr(request.user, "role", None) == "superadmin"
+            )
+
+    permission_classes = [IsSuperAdmin]
+
+    def get(self, request, pk=None):
+        if pk is not None:
+            try:
+                payment = Payment.objects.get(pk=pk)
+            except Payment.DoesNotExist:
+                return Response(
+                    {"detail": "Payment topilmadi."},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            serializer = PaymentSerializer(payment)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        payments = Payment.objects.all().order_by("-created_at")
+        serializer = PaymentSerializer(payments, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def delete(self, request, pk):
+        try:
+            payment = Payment.objects.get(pk=pk)
+        except Payment.DoesNotExist:
+            return Response(
+                {"detail": "Payment topilmadi."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        payment.delete()
+        return Response(
+            {"detail": "Payment muvaffaqiyatli o'chirildi."},
+            status=status.HTTP_200_OK
+        )
