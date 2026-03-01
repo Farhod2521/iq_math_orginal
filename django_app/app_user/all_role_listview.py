@@ -107,6 +107,7 @@ class All_Role_ListView(APIView):
                     "role": user.role,
                     "phone": user.phone,
                     "email": user.email,
+                    "device": user.device,
                     **{k: v for k, v in profile_data['json'].items() if k != 'profile_id'}
                 })
                 
@@ -118,6 +119,7 @@ class All_Role_ListView(APIView):
                     "F.I.Sh.": profile_data['excel'].get('full_name', ''),
                     "Telefon": user.phone,
                     "Email": user.email or '',
+                    "Qurilma": user.device or '',
                     "Viloyat": profile_data['excel'].get('region', ''),
                     "Tuman": profile_data['excel'].get('districts', ''),
                     "Manzil": profile_data['excel'].get('address', ''),
