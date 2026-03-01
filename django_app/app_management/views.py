@@ -99,6 +99,13 @@ class ElonListAPIView(APIView):
         serializer = ElonSerializer(elonlar, many=True, context={"request": request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+
+class ElonDetailAPIView(APIView):
+    def get(self, request, id):
+        elon = get_object_or_404(Elon, id=id)
+        serializer = ElonSerializer(elon, context={"request": request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
 class MotivationAPIView(APIView):
     """
     Har 3 soatda 2 ta motivatsion so‘zni chiqaruvchi API.

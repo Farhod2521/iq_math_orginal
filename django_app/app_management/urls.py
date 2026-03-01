@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import ( SystemSettingsListView, FAQListView, ProductListView, FullStatisticsAPIView, 
-                    BannerListView, MotivationAPIView, ElonListAPIView, UploadSingleFileAPIView, DeleteFileAPIView, MathematicianListAPIView, MathematicianDetailAPIView)
+                    BannerListView, MotivationAPIView, ElonListAPIView, ElonDetailAPIView, UploadSingleFileAPIView, DeleteFileAPIView, MathematicianListAPIView, MathematicianDetailAPIView)
 from .VIEW.elonapiviewcrud import ElonCRUDAPIView
 from .VIEW.motivationapiviewcrud import  MotivationCRUDAPIView
 from .VIEW.systemsettingsapiviewcrud import  SystemSettingsCRUDAPIView
@@ -16,6 +16,7 @@ urlpatterns = [
     ######################  MOBILE APP ####################################
     path('app/motivation-list/', MotivationAPIView.as_view(), name='statistics'),
     path('app/elon-list/', ElonListAPIView.as_view(), name='statistics'),
+    path('app/elon-list/<int:id>/', ElonDetailAPIView.as_view(), name='elon-detail'),
     path("upload-file/", UploadSingleFileAPIView.as_view(), name="upload-file"),
     path("upload-file-delete/<int:id>/", DeleteFileAPIView.as_view(), name="upload-file"),
     path("mobile/version/", AndroidVersionAPIView.as_view()),
