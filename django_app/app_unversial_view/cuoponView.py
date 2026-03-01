@@ -148,44 +148,39 @@ class UniversalCouponAPIView(APIView):
             "coupon": CouponSerializer(coupon).data
         }, status=status.HTTP_201_CREATED)
 
-    # --- DELETE: Kuponni o‘chirish ---
-    def delete(self, request):
+    # --- DELETE: Kuponni ID orqali o‘chirish ---
+    def delete(self, request, pk=None):
         user = request.user
         role = user.role
 
-        coupon = None
-
-        # Student kuponi
-        if role == 'student':
-            coupon = Coupon_Tutor_Student.objects.filter(
-                created_by_student=user.student_profile
-            ).first()
-
-        # Tutor kuponi
-        elif role == 'tutor':
-            coupon = Coupon_Tutor_Student.objects.filter(
-                created_by_tutor=user.tutor_profile
-            ).first()
-
-        # Teacher kuponi
-        elif role == 'teacher':
-            coupon = Coupon_Tutor_Student.objects.filter(
-                created_by_teacher=user.teacher_profile
-            ).first()
-
-        else:
-            raise PermissionDenied("Role uchun ruxsat yo‘q!")
-
-        if coupon is None:
+        if not pk:
             return Response(
-                {"message": "Sizda o‘chiradigan kupon mavjud emas."},
+                {"error": "Kupon ID berilmagan"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            coupon = Coupon_Tutor_Student.objects.get(id=pk)
+        except Coupon_Tutor_Student.DoesNotExist:
+            return Response(
+                {"error": "Kupon topilmadi"},
                 status=status.HTTP_404_NOT_FOUND
             )
+
+        # 🔐 Security check — kim o‘chiryapti?
+        if role == "student" and coupon.created_by_student != user.student_profile:
+            raise PermissionDenied("Bu kupon sizga tegishli emas!")
+
+        if role == "tutor" and coupon.created_by_tutor != user.tutor_profile:
+            raise PermissionDenied("Bu kupon sizga tegishli emas!")
+
+        if role == "teacher" and coupon.created_by_teacher != user.teacher_profile:
+            raise PermissionDenied("Bu kupon sizga tegishli emas!")
 
         coupon.delete()
 
         return Response(
-            {"message": "Kupon muvaffaqiyatli o‘chirildi."},
+            {"message": "Kupon muvaffaqiyatli o‘chirildi"},
             status=status.HTTP_200_OK
         )
 
