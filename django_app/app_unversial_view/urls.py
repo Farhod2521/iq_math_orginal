@@ -4,4 +4,8 @@ from .cuoponView import UniversalCouponAPIView, UniversalCouponTransactionAPIVie
 urlpatterns = [
     path('coupon-generate/', UniversalCouponAPIView.as_view(), name='coupon-generate'),
     path('coupon-transaction/', UniversalCouponTransactionAPIView.as_view(), name='coupon-generate'),
+    path(
+    "api/v1/universal/coupon-generate/<int:pk>/",
+    UniversalCouponAPIView.as_view(),
+    ),
 ]
