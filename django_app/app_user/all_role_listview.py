@@ -30,7 +30,8 @@ class All_Role_ListView(APIView):
         class_num = request.GET.get("class_num", "").strip()
         subject_name = request.GET.get("subject_name", "").strip()
         status_filter = request.GET.get("status", "").strip()  # active, inactive, all
-        lang_filter = request.GET.get("lang", "").strip() 
+        lang_filter = request.GET.get("lang", "").strip()
+        device_filter = request.GET.get("device", "").strip()
         
         # --- BASE QUERY ---
         users = User.objects.all().order_by('-date_joined')
@@ -38,6 +39,10 @@ class All_Role_ListView(APIView):
         # --- ROLE FILTER ---
         if role and role != 'all':
             users = users.filter(role=role)
+
+        # --- DEVICE FILTER ---
+        if device_filter and device_filter != 'all':
+            users = users.filter(device__iexact=device_filter)
             
         # --- SEARCH FILTER ---
         if search_query:

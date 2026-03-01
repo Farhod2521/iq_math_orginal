@@ -217,6 +217,7 @@ class UniversalRegisterSerializer(serializers.Serializer):
     )
     referral_code = serializers.CharField(required=False, allow_blank=True)
     lang = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    device = serializers.CharField(required=False, allow_blank=True, allow_null=True)
 
     def validate(self, attrs):
         phone = attrs.get("phone")
@@ -265,6 +266,7 @@ class UniversalRegisterSerializer(serializers.Serializer):
         role = validated_data['role']
         full_name = validated_data['full_name']
         lang = validated_data.pop('lang', None)
+        device = validated_data.pop('device', None)
         class_name = validated_data.pop('class_name', None)
         referral_code = validated_data.pop('referral_code', None)
 
@@ -280,24 +282,42 @@ class UniversalRegisterSerializer(serializers.Serializer):
                     user.student_profile.lang = lang
                     user.student_profile.save(update_fields=['lang'])
                 user.sms_code = sms_code
-                user.save(update_fields=['sms_code'])
+                update_fields = ['sms_code']
+                if device not in (None, ''):
+                    user.device = device
+                    update_fields.append('device')
+                user.save(update_fields=update_fields)
                 send_sms(phone, sms_code)
                 return user
 
             if hasattr(user, 'parent_profile') and not user.parent_profile.status:
                 user.sms_code = sms_code
-                user.save(update_fields=['sms_code'])
+                update_fields = ['sms_code']
+                if device not in (None, ''):
+                    user.device = device
+                    update_fields.append('device')
+                user.save(update_fields=update_fields)
                 send_sms(phone, sms_code)
                 return user
 
             if hasattr(user, 'tutor_profile') and not user.tutor_profile.status:
                 user.sms_code = sms_code
-                user.save(update_fields=['sms_code'])
+                update_fields = ['sms_code']
+                if device not in (None, ''):
+                    user.device = device
+                    update_fields.append('device')
+                user.save(update_fields=update_fields)
                 send_sms(phone, sms_code)
                 return user
 
         # 2. Yangi foydalanuvchi yaratish
-        user = User.objects.create(phone=phone, role=role)
+        user_create_kwargs = {
+            "phone": phone,
+            "role": role,
+        }
+        if device not in (None, ""):
+            user_create_kwargs["device"] = device
+        user = User.objects.create(**user_create_kwargs)
         user.sms_code = sms_code
         user.set_unusable_password()
         user.save()
