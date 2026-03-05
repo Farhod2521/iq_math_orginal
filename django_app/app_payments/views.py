@@ -146,7 +146,7 @@ class InitiatePaymentAPIView(APIView):
             "amount": amount_in_tiyin,
             "invoice_id": transaction_id,
             "return_url": "https://iqmath.uz/",
-            "callback_url": "https://backend.iqmath.uz/api/v1/payments/payment-callback/",
+            "callback_url": "https://api.iqmath.uz/api/v1/payments/payment-callback/",
             "ofd": [
                 {
                     "vat": 0,
