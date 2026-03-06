@@ -211,13 +211,39 @@ class UserSessionListAPIVIEW(APIView):
     permission_classes = [IsAuthenticated] 
 
     def get(self, request):
-        user = request.user
-        sessions = UserSession.objects.filter(
-            user=user,
+        auth_header = request.headers.get("Authorization", "")
+        if not auth_header.startswith("Bearer "):
+            return Response({"error": "Authorization token topilmadi"}, status=status.HTTP_401_UNAUTHORIZED)
+
+        access_token = auth_header.split(" ", 1)[1].strip()
+        current_session = UserSession.objects.filter(
+            access_token=access_token,
             is_active=True
-        ).select_related("user")
+        ).select_related("device").first()
+
+        if not current_session:
+            return Response(
+                {"error": "Joriy sessiya topilmadi. Qayta login qiling."},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        # Shu qurilmaga ulangan barcha accountlar. Bir user bir necha marta kirgan bo'lsa,
+        # eng oxirgi sessiyani qoldiramiz.
+        raw_sessions = UserSession.objects.filter(
+            device=current_session.device,
+            is_active=True
+        ).select_related("user", "device").order_by("-last_used")
+
+        unique_sessions = []
+        seen_user_ids = set()
+        for item in raw_sessions:
+            if item.user_id in seen_user_ids:
+                continue
+            seen_user_ids.add(item.user_id)
+            unique_sessions.append(item)
+
         return Response({
-            "accounts": SessionListSerializer(sessions, many=True).data
+            "accounts": SessionListSerializer(unique_sessions, many=True).data
         })
 
 class SwitchAccountAPIView(APIView):
