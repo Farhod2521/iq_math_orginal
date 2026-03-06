@@ -221,10 +221,37 @@ class UserSessionListAPIVIEW(APIView):
             is_active=True
         ).select_related("device").first()
 
+        # Agar token UserSession jadvalidagi access_token bilan bir xil bo'lmasa
+        # (masalan, student/login orqali olingan token), user bo'yicha fallback qilamiz.
+        if not current_session:
+            device_id = request.query_params.get("device_id") or request.headers.get("X-Device-Id")
+
+            if device_id:
+                user_has_device = UserSession.objects.filter(
+                    user=request.user,
+                    device_id=device_id,
+                    is_active=True
+                ).exists()
+                if not user_has_device:
+                    return Response(
+                        {"error": "Bu device sizning accountga biriktirilmagan."},
+                        status=status.HTTP_403_FORBIDDEN
+                    )
+
+                current_session = UserSession.objects.filter(
+                    device_id=device_id,
+                    is_active=True
+                ).select_related("device").order_by("-last_used").first()
+            else:
+                current_session = UserSession.objects.filter(
+                    user=request.user,
+                    is_active=True
+                ).select_related("device").order_by("-last_used").first()
+
         if not current_session:
             return Response(
-                {"error": "Joriy sessiya topilmadi. Qayta login qiling."},
-                status=status.HTTP_401_UNAUTHORIZED
+                {"error": "Joriy sessiya topilmadi. Avval verify-code orqali ushbu qurilmada account qo'shing."},
+                status=status.HTTP_404_NOT_FOUND
             )
 
         # Shu qurilmaga ulangan barcha accountlar. Bir user bir necha marta kirgan bo'lsa,
