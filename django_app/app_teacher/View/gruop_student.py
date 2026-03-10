@@ -55,11 +55,9 @@ class AddStudentsToGroupAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
-        # Guruhni o'chirish uchun
-        teacher = get_object_or_404(Teacher, user=request.user)
-        group = get_object_or_404(Group, pk=pk, teacher=teacher)
+        group = get_object_or_404(Group, pk=pk)
         group.delete()
-        return Response({"message": "Guruh muvaffaqiyatli o'chirildi."}, status=status.HTTP_204_NO_CONTENT)
+        return Response({"message": "Guruh muvaffaqiyatli o'chirildi."}, status=status.HTTP_200_OK)
     
 
 
