@@ -1,11 +1,12 @@
 from rest_framework.permissions import BasePermission
 
-class IsTeacher(BasePermission):
+class IsTeacherOrSuperAdmin(BasePermission):
     """
-    Faqat Teacher rolidagi foydalanuvchilar ko‘ra oladi
+    Teacher va SuperAdmin rollari kira oladi
     """
     def has_permission(self, request, view):
-        # Agar sizda User modelida role degan field bo‘lsa:
-        return bool(request.user and request.user.is_authenticated and request.user.role == 'teacher')
-
-
+        return bool(
+            request.user 
+            and request.user.is_authenticated 
+            and request.user.role in ['teacher', 'superadmin']
+        )

@@ -5,7 +5,7 @@ from django_app.app_user.models import User, Teacher, Student, Tutor, Parent
 from django_app.app_payments.models import Subscription, Payment, SubscriptionPlan
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from django_app.app_management.permissions import IsTeacher
+from django_app.app_management.permissions import IsTeacherOrSuperAdmin
 
 from datetime import timedelta
 
@@ -168,7 +168,7 @@ class ProductListView(ListAPIView):
 
 
 class FullStatisticsAPIView(APIView):
-    permission_classes = [IsTeacher]
+    permission_classes = [IsTeacherOrSuperAdmin]
 
     def get(self, request):
         # 🟩 Parametrlar
