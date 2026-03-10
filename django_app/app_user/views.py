@@ -748,7 +748,20 @@ class StudentProfileAPIView(APIView):
                 student_time = None
 
             has_diagnost = Diagnost_Student.objects.filter(student=student).exists()
+            subscription = getattr(student, 'subscription', None)
+            end_date = subscription.end_date if subscription else None
+            remaining_days = None
+            is_subscription_active = False   # 🔥 default qiymat
 
+            if end_date:
+                today = datetime.now(pytz.timezone("Asia/Ashgabat")).date()
+                diff_days = (end_date.date() - today).days
+                remaining_days = diff_days if diff_days > 0 else 0
+
+                # 🔥 OBUNA FAOLMI YO‘QMI — ASOSIY QISM
+                now = datetime.now(pytz.timezone("Asia/Ashgabat"))
+                if subscription.start_date <= now <= subscription.end_date:
+                    is_subscription_active = True
             data = {
                 "id": student.id,
                 "identification": student.identification,
@@ -771,6 +784,8 @@ class StudentProfileAPIView(APIView):
                 "student_time": student_time,
                 "role": "student",
                 "has_diagnost": has_diagnost,
+                "status": is_subscription_active,
+                "remaining_days":remaining_days,
             }
 
         # TEACHER
