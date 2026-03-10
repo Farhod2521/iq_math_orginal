@@ -587,6 +587,7 @@ class ResendSMSCodeView(APIView):
         return Response({
             "message": "Yangi SMS kodi yuborildi. Iltimos, uni tekshirib ko'ring."
         }, status=status.HTTP_200_OK)
+from datetime import datetime
 class UserProfileAPIView(APIView):
 
     def get(self, request, *args, **kwargs):
@@ -627,6 +628,21 @@ class UserProfileAPIView(APIView):
                 student_date = None
                 student_time = None
             has_diagnost = Diagnost_Student.objects.filter(student=student).exists()
+            subscription = getattr(student, 'subscription', None)
+            end_date = subscription.end_date if subscription else None
+
+            remaining_days = None
+            is_subscription_active = False   # 🔥 default qiymat
+
+            if end_date:
+                today = datetime.now(pytz.timezone("Asia/Ashgabat")).date()
+                diff_days = (end_date.date() - today).days
+                remaining_days = diff_days if diff_days > 0 else 0
+
+                # 🔥 OBUNA FAOLMI YO‘QMI — ASOSIY QISM
+                now = datetime.now(pytz.timezone("Asia/Ashgabat"))
+                if subscription.start_date <= now <= subscription.end_date:
+                    is_subscription_active = True
             data = {
             "id": student.id, 
             "identification": student.identification, 
@@ -644,6 +660,8 @@ class UserProfileAPIView(APIView):
             'class_name_ru': f"{student.class_name.classes.name}-класс {student.class_name.name_ru}" if student.class_name else None,
             'document_type': student.document_type,
             'document': student.document,
+            "status": is_subscription_active,
+            "remaining_days":remaining_days,
             'type_of_education': student.type_of_education,
             'student_date': student_date,
             'student_time': student_time,
