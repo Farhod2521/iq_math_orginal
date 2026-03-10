@@ -29,7 +29,13 @@ class GroupCreateAPIView(APIView):
 
 class AddStudentsToGroupAPIView(APIView):
     permission_classes = [IsAuthenticated]
+    def get(self, request, pk):
+        # Guruh detail
+        teacher = get_object_or_404(Teacher, user=request.user)
+        group = get_object_or_404(Group, pk=pk, teacher=teacher)
 
+        serializer = GroupSerializer(group)
+        return Response(serializer.data, status=status.HTTP_200_OK)
     def post(self, request, group_id):
         group = get_object_or_404(Group, id=group_id, teacher__user=request.user)
         student_ids = request.data.get("student_ids", [])
