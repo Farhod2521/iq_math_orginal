@@ -6,7 +6,7 @@ from .views import(
        ChoiceQuestionToXlsxImport, CompenQuestionToXlsxImport, UploadQuestionsAPIView, OpenAIQuestionListView, OpenAIProcessAPIView
 )
 from .View.unsolved import  TeacherUnsolvedQuestionReportListView, TeacherAnswerUnsolvedQuestionView
-from  .View.gruop_student import AddStudentsToGroupAPIView, GroupCreateAPIView, GroupListAPIView, AddStudentsToGroupAPIView, StudentsWithoutGroupAPIView
+from  .View.gruop_student import AddStudentsToGroupAPIView, GroupCreateAPIView, GroupListAPIView, StudentsWithoutGroupAPIView
 from .View.reorderOrderIndex  import  ReorderTopicAPIView, ReorderChapterAPIView, ReorderSubjectAPIView
 from .View.independentView import  TeacherTopicHelpRequestListAPIView, TeacherTopicHelpRequestDeleteAPIView,TeacherTopicHelpRequestDetailAPIView, GetTelegramIDFromHelpRequestAPIView,TeacherTopicHelpRequestFromTelegramAPIView,TeacherCommitToHelpRequestAPIView, TeacherHelpRequestNotificationAPIView
 from .View.coupon import   CreateTeacherCouponAPIView
@@ -42,7 +42,7 @@ urlpatterns = [
 
     path("my-groups/create", GroupCreateAPIView.as_view(), name="group-list-create"),
     path("my-groups/list", GroupListAPIView.as_view(), name="group-list-create"),
-    path("my-groups/detail/<int:pk>/", AddStudentsToGroupAPIView.as_view(), name="group-list-create"),
+    path("my-groups/detail/<int:pk>/", GroupListAPIView.as_view(), name="group-list-create"),
     path("my-groups/<int:group_id>/add-students/", AddStudentsToGroupAPIView.as_view(), name="group-add-students"),
     path('students/without-group/new-students/', StudentsWithoutGroupAPIView.as_view(), name='group-new-students'),
 
