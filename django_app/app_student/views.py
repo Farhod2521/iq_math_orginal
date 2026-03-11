@@ -285,6 +285,35 @@ class StudentSubjectListAPIView(APIView):
         except Student.DoesNotExist:
             return Response({"detail": "Student topilmadi"}, status=status.HTTP_404_NOT_FOUND)
 
+
+class SubjectNameListAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        subjects = Subject.objects.select_related("classes").order_by("order", "id")
+
+        if request.user.role not in ["teacher", "admin", "superadmin"]:
+            subjects = subjects.filter(active=True)
+
+        data = [
+            {
+                "id": subject.id,
+                "name_uz": subject.name_uz,
+                "name_ru": subject.name_ru,
+                "class_name_uz": (
+                    f"{subject.classes.name}-sinf {subject.name_uz}"
+                    if subject.classes else subject.name_uz
+                ),
+                "class_name_ru": (
+                    f"{subject.classes.name}-класс {subject.name_ru}"
+                    if subject.classes else subject.name_ru
+                ),
+            }
+            for subject in subjects
+        ]
+
+        return Response(data, status=status.HTTP_200_OK)
+
 class ChapterListBySubjectAPIView(APIView):
     permission_classes = [IsAuthenticated]
 

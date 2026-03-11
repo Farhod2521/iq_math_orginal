@@ -4,7 +4,7 @@ from .views import (
      StudentSubjectListAPIView, ChapterListBySubjectAPIView,QuestionListByTopicAPIView,
      TopicListByChapterAPIView, GenerateCheckAnswersAPIView, StudentScoreAPIView, DiagnostLevelOverviewAPIView,
      DiagnostLevelDetailAPIView, Diagnostika_TopicDetailAPIView, PathFromIdsAPIView, PathFromIdsStudentAPIView,
-     ChapterListBySubject_STUDENT_ID_APIView, TopicListByChapter_STUDENT_ID_APIView
+     ChapterListBySubject_STUDENT_ID_APIView, TopicListByChapter_STUDENT_ID_APIView, SubjectNameListAPIView
 )
 from .View.app_diagnost import StudentDiagnostSubjectsAPIView, SubjectChaptersAPIView, ChapterTopicsAPIView, StudentDiagnosticHistoryAPIView, ParentStudentDiagnosticHistoryAPIView
 from .View.product_exchange import ProductExchangeView, ProductExchangeListView, ProductExchangeConfirmAPIView
@@ -19,6 +19,7 @@ from .View.mobile_app import StudentRatingAPIView, WeeklyStudyStatsAPIView, Stud
 from .View.daily_Math_Pop_Up import  SubmitQuickMathAnswerAPIView, QuickMathQuestionAPIView
 
 urlpatterns = [
+    path('subject/name-list/', SubjectNameListAPIView.as_view(), name='subject-name-list'),
     path('my-subjects/', StudentSubjectListAPIView.as_view(), name='my-subjects'),
     path('my-chapter/<int:subject_id>/', ChapterListBySubjectAPIView.as_view(), name='chapter-list-by-subject'),
     path('my-chapter/student_id/<int:subject_id>/', ChapterListBySubject_STUDENT_ID_APIView.as_view(), name='chapter-list-by-subject'),
