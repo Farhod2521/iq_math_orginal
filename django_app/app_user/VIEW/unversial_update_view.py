@@ -4,7 +4,7 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth import authenticate
 import random
-from django_app.app_user.models import User, UserSMSAttempt
+from django_app.app_user.models import User, UserSMSAttempt, Subject
 from django_app.app_user.sms_service import send_sms
 
 
@@ -152,6 +152,7 @@ class UniversalUpdateView(APIView):
             
             # Role bo'yicha profilni yangilash
             profile_data = self.prepare_profile_data(user.role, data)
+            profile_data = self.normalize_profile_data(user.role, profile_data)
             self.update_role_profile(user, profile_data)
             
             return Response({
@@ -170,6 +171,36 @@ class UniversalUpdateView(APIView):
                 {"error": f"Ma'lumotlarni yangilashda xatolik: {str(e)}"},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+    def normalize_profile_data(self, role, profile_data):
+        """
+        Rolega xos fieldlarni modelga saqlashdan oldin normalize qilish.
+        """
+        if role != 'student' or 'class_name' not in profile_data:
+            return profile_data
+
+        raw_class_name = profile_data.get('class_name')
+
+        # class_name ni bo'sh yuborsa, null qilib saqlashga ruxsat beramiz
+        if raw_class_name in (None, '', 'null'):
+            profile_data['class_name'] = None
+            return profile_data
+
+        class_name_id = raw_class_name
+        if isinstance(raw_class_name, dict):
+            class_name_id = raw_class_name.get('id') or raw_class_name.get('subject_id')
+
+        try:
+            class_name_id = int(class_name_id)
+        except (TypeError, ValueError):
+            raise Exception("class_name uchun Subject ID yuboring.")
+
+        try:
+            profile_data['class_name'] = Subject.objects.get(id=class_name_id)
+        except Subject.DoesNotExist:
+            raise Exception("Berilgan class_name topilmadi.")
+
+        return profile_data
     
     def prepare_profile_data(self, role, data):
         """
