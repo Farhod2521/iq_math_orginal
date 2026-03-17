@@ -10,7 +10,7 @@ from .views import (
        UserSessionListAPIVIEW, SwitchAccountAPIView
 
 )
-from .all_role_listview import All_Role_ListView, DeleteStudentProfileAPIView
+from .all_role_listview import All_Role_ListView, DeleteStudentProfileAPIView, ParentDetailAPIView
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
@@ -61,6 +61,7 @@ urlpatterns = [
     path("parent/add-child/", AddChildRequestAPIView.as_view()),
     path("parent/confirm-child/", ConfirmChildAPIView.as_view()),
     path("parent/confirm-child/list/", ParentChildrenListAPIView.as_view()),
+    path("parent/<int:pk>/detail/", ParentDetailAPIView.as_view(), name="parent-detail"),
     path("teacher-telegram-id/list/", TeacherTelegramIdListView.as_view()),
 
     ###################################################################################

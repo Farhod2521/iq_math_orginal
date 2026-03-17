@@ -6,7 +6,8 @@ from django.utils import timezone
 from datetime import timedelta
 
 from django_app.app_user.models import Teacher
-from django_app.app_management.models import  Coupon, ReferralAndCouponSettings
+from django_app.app_management.models import Coupon, ReferralAndCouponSettings
+from django_app.app_teacher.models import TeacherCouponTransaction
 
 class CreateTeacherCouponAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -68,3 +69,39 @@ class CreateTeacherCouponAPIView(APIView):
         }, status=status.HTTP_201_CREATED)
 
 
+class TeacherCouponStudentsAPIView(APIView):
+    """
+    O'qituvchining promokodini ishlatgan o'quvchilar ro'yxati
+    GET /api/v1/func_teacher/teacher/coupon-students/
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        try:
+            teacher = user.teacher_profile
+        except Teacher.DoesNotExist:
+            return Response({
+                "error_uz": "O'qituvchi profili mavjud emas.",
+                "error_ru": "Профиль преподавателя не найден."
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        transactions = TeacherCouponTransaction.objects.filter(
+            teacher=teacher
+        ).select_related('student', 'coupon').order_by('-used_at')
+
+        data = []
+        for tx in transactions:
+            student = tx.student
+            data.append({
+                "student_id": student.id,
+                "student_identification": student.identification,
+                "student_full_name": student.full_name,
+                "coupon_code": tx.coupon.code,
+                "discount_percent": tx.coupon.discount_percent,
+                "payment_amount": tx.payment_amount,
+                "used_at": tx.used_at,
+            })
+
+        return Response(data, status=status.HTTP_200_OK)
