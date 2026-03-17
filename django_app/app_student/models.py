@@ -116,6 +116,30 @@ class StudentScoreLog(models.Model):
         return f"{self.student_score.student} - {self.question.id}"
 
 
+class StudentDailyCoinLog(models.Model):
+    """
+    Har bir o'quvchi uchun kunlik yig'ilgan tanga soni.
+    Admin panelda kun bo'yicha ko'rish va cheklash uchun ishlatiladi.
+    """
+    student = models.ForeignKey(
+        Student,
+        on_delete=models.CASCADE,
+        related_name='daily_coin_logs',
+        verbose_name="O'quvchi"
+    )
+    date = models.DateField(verbose_name="Sana")
+    coin_count = models.PositiveIntegerField(default=0, verbose_name="Yig'ilgan tanga soni")
+
+    class Meta:
+        unique_together = ('student', 'date')
+        verbose_name = "Kunlik tanga tarixi"
+        verbose_name_plural = "Kunlik tanga tarixi"
+        ordering = ['-date']
+
+    def __str__(self):
+        return f"{self.student.full_name} | {self.date} | {self.coin_count} tanga"
+
+
 class ProductExchange(models.Model):
     DELIVERY_STATUS = (
         ('new', 'Yangi kelgan xabar'),

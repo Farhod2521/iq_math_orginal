@@ -245,6 +245,22 @@ class ReferralAndCouponSettings(models.Model):
         verbose_name_plural = "Referal va kupon sozlamalari"
 
 
+class DailyCoinSettings(models.Model):
+    daily_coin_limit = models.PositiveIntegerField(
+        default=10,
+        verbose_name="Kunlik tanga chegrasi",
+        help_text="Bir o'quvchi kuniga olishi mumkin bo'lgan maksimal tanga soni"
+    )
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Yangilangan vaqti")
+
+    def __str__(self):
+        return f"Kunlik tanga chegrasi: {self.daily_coin_limit} ta"
+
+    class Meta:
+        verbose_name = "Kunlik tanga sozlamasi"
+        verbose_name_plural = "Kunlik tanga sozlamasi"
+
+
 class Product(models.Model):
     name = models.CharField(max_length=255, verbose_name="Mahsulot nomi")
     image = models.ImageField(upload_to='products/', verbose_name="Mahsulot rasmi")
