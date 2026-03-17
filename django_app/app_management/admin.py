@@ -1,9 +1,10 @@
 from django.contrib import admin
-from .models import  (
-    Motivation, SystemSettings, FAQ, Product, ReferralAndCouponSettings, 
-    Banner, Coupon_Tutor_Student,ConversionRate, SolutionStatus,
-    Elon, Category, Tag, UploadedFile, UploadSetting, Mathematician
-    )
+from .models import (
+    Motivation, SystemSettings, FAQ, Product, ReferralAndCouponSettings,
+    Banner, Coupon_Tutor_Student, ConversionRate, SolutionStatus,
+    Elon, Category, Tag, UploadedFile, UploadSetting, Mathematician,
+    DailyCoinSettings,
+)
 from modeltranslation.admin import TranslationAdmin
 from django.utils.html import format_html
 import os
@@ -256,6 +257,20 @@ class ProductAdmin(TranslationAdmin):  # model.ModelAdmin o'rniga TranslationAdm
 class ConversionRateAdmin(admin.ModelAdmin):
     list_display = ("coin_to_score", "coin_to_money", "updated_at")
     readonly_fields = ("updated_at",)
+
+
+@admin.register(DailyCoinSettings)
+class DailyCoinSettingsAdmin(admin.ModelAdmin):
+    list_display = ("daily_coin_limit", "updated_at")
+    readonly_fields = ("updated_at",)
+
+    def has_add_permission(self, request):
+        if DailyCoinSettings.objects.count() >= 1:
+            return False
+        return True
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 
 

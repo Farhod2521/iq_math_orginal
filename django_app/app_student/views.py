@@ -491,7 +491,7 @@ class QuestionListByTopicAPIView(APIView):
 
 from django.utils.html import strip_tags
 from .math_answer_check import advanced_math_check  
-from .helper_coin import get_today_coin_count
+from .helper_coin import get_today_coin_count, get_daily_coin_limit, get_or_create_daily_log
 class CheckAnswersAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -523,22 +523,29 @@ class CheckAnswersAPIView(APIView):
         index = 1
         last_question_topic = None
         today_coin_count = get_today_coin_count(student_score) if not is_staff_user else 0
+        daily_limit = get_daily_coin_limit() if not is_staff_user else 0
+        daily_log = get_or_create_daily_log(student_instance) if not is_staff_user else None
 
         def process_question(question, is_correct):
-            nonlocal correct_answers, student_score, awarded_questions, student_instance, today_coin_count
+            nonlocal correct_answers, student_score, awarded_questions, student_instance, today_coin_count, daily_log
 
             if is_correct:
                 correct_answers += 1
 
                 if not is_staff_user and question.id not in awarded_questions:
                     awarded_questions.add(question.id)
-                    student_score.score += 1
 
                     give_coin = False
-                    if today_coin_count < 10:
+                    if today_coin_count < daily_limit:
+                        # Kunlik chegara to'lmagan: faqat tanga beriladi
                         student_score.coin += 1
                         today_coin_count += 1
                         give_coin = True
+                        if daily_log is not None:
+                            daily_log.coin_count += 1
+                    else:
+                        # Kunlik chegara to'lgan: faqat ball beriladi
+                        student_score.score += 1
 
                     StudentScoreLog.objects.create(
                         student_score=student_score,
@@ -634,6 +641,8 @@ class CheckAnswersAPIView(APIView):
         # Faqat student uchun saqlaymiz
         if not is_staff_user:
             student_score.save()
+            if daily_log is not None:
+                daily_log.save()
 
             if last_question_topic:
                 topic_progress, _ = TopicProgress.objects.get_or_create(

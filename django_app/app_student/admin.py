@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Diagnost_Student, TopicProgress, StudentScore, StudentScoreLog, ChapterProgress, ProductExchange, TopicHelpRequestIndependent
+from .models import Diagnost_Student, TopicProgress, StudentScore, StudentScoreLog, ChapterProgress, ProductExchange, TopicHelpRequestIndependent, StudentDailyCoinLog
 from modeltranslation.admin import TranslationAdmin
 
 admin.site.register(Diagnost_Student)
@@ -40,11 +40,21 @@ class StudentScoreAdmin(admin.ModelAdmin):
 
 @admin.register(StudentScoreLog)
 class StudentScoreLogAdmin(admin.ModelAdmin):
-    list_display = ('student_score', 'question', 'awarded_at')
+    list_display = ('student_score', 'question', 'awarded_coin', 'awarded_at')
+    list_filter = ('awarded_coin', 'awarded_at')
     search_fields = ('student_score__student__user__username', 'question__question_text_uz')
     ordering = ('-awarded_at',)
     verbose_name = "Ball olish tarixi"
     verbose_name_plural = "Ballar olish tarixi"
+
+
+@admin.register(StudentDailyCoinLog)
+class StudentDailyCoinLogAdmin(admin.ModelAdmin):
+    list_display = ('student', 'date', 'coin_count')
+    list_filter = ('date',)
+    search_fields = ('student__full_name', 'student__user__phone')
+    ordering = ('-date', '-coin_count')
+    readonly_fields = ('student', 'date', 'coin_count')
 
 
 
