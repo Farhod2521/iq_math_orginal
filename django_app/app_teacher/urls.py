@@ -9,7 +9,7 @@ from .View.unsolved import  TeacherUnsolvedQuestionReportListView, TeacherAnswer
 from  .View.gruop_student import AddStudentsToGroupAPIView, GroupCreateAPIView, GroupListAPIView, StudentsWithoutGroupAPIView
 from .View.reorderOrderIndex  import  ReorderTopicAPIView, ReorderChapterAPIView, ReorderSubjectAPIView
 from .View.independentView import  TeacherTopicHelpRequestListAPIView, TeacherTopicHelpRequestDeleteAPIView,TeacherTopicHelpRequestDetailAPIView, GetTelegramIDFromHelpRequestAPIView,TeacherTopicHelpRequestFromTelegramAPIView,TeacherCommitToHelpRequestAPIView, TeacherHelpRequestNotificationAPIView
-from .View.coupon import   CreateTeacherCouponAPIView
+from .View.coupon import CreateTeacherCouponAPIView, TeacherCouponStudentsAPIView
 from .View.login_as_student import LoginAsStudentAPIView, ChangeStudentPasswordAPIView
 from  .View.teacherreward import  TeacherRewardAPIView, TeacherRewardListAPIView
 from  .View.productexchange import TeacherUpdateProductExchangeStatusAPIView, TeacherProductExchangeListAPIView
@@ -61,6 +61,7 @@ urlpatterns = [
 
     ####################################################################################################
     path('teacher/create-coupon/', CreateTeacherCouponAPIView.as_view(), name='teacher-create-coupon'),
+    path('teacher/coupon-students/', TeacherCouponStudentsAPIView.as_view(), name='teacher-coupon-students'),
         ####################################################################################################
     path('teacher/login-as-student/<int:student_id>/', LoginAsStudentAPIView.as_view(), name='login-as-student'),
     path('teacher/student/<int:student_id>/change-password/', ChangeStudentPasswordAPIView.as_view(), name='change-student-password'),

@@ -8,7 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 from openpyxl import Workbook
 import pytz
 from django.db.models import Q
-from .models import User, Student, Teacher, Parent, Tutor, StudentLoginHistory
+from .models import User, Student, Teacher, Parent, Tutor, StudentLoginHistory, ParentStudentRelation
 from django_app.app_payments.models import Payment
 from django.utils import timezone
 from datetime import datetime
@@ -388,6 +388,88 @@ class All_Role_ListView(APIView):
 
 
 
+
+
+class ParentDetailAPIView(APIView):
+    """
+    Ota-ona ID orqali to'liq ma'lumot + biriktirilgan farzandlar ro'yxati
+    GET /api/v1/auth/parent/<id>/detail/
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        ashgabat_tz = pytz.timezone("Asia/Ashgabat")
+
+        try:
+            parent = Parent.objects.select_related('user').get(pk=pk)
+        except Parent.DoesNotExist:
+            return Response({"detail": "Ota-ona topilmadi."}, status=status.HTTP_404_NOT_FOUND)
+
+        user = parent.user
+        parent_datetime = parent.parent_date.astimezone(ashgabat_tz) if parent.parent_date else None
+
+        parent_data = {
+            "profile_id": parent.id,
+            "identification": parent.identification,
+            "full_name": parent.full_name,
+            "phone": user.phone,
+            "email": user.email,
+            "region": parent.region,
+            "districts": parent.districts,
+            "address": parent.address,
+            "status": parent.status,
+            "device": user.device,
+            "registration_date": parent_datetime.strftime('%d/%m/%Y') if parent_datetime else None,
+            "registration_time": parent_datetime.strftime('%H:%M:%S') if parent_datetime else None,
+        }
+
+        # Biriktirilgan va tasdiqlangan farzandlar
+        relations = ParentStudentRelation.objects.filter(
+            parent=parent, is_confirmed=True
+        ).select_related('student__user', 'student__class_name')
+
+        children = []
+        for rel in relations:
+            student = rel.student
+            student_datetime = student.student_date.astimezone(ashgabat_tz) if student.student_date else None
+
+            last_login_obj = StudentLoginHistory.objects.filter(student=student).order_by('-login_time').first()
+            last_login = last_login_obj.login_time.astimezone(ashgabat_tz).strftime('%d/%m/%Y %H:%M') if last_login_obj else None
+
+            last_payment = Payment.objects.filter(student=student, status="success").order_by('-payment_date').first()
+
+            subscription = getattr(student, 'subscription', None)
+            end_date = subscription.end_date if subscription else None
+            remaining_days = None
+            if end_date:
+                today = datetime.now(pytz.timezone("Asia/Ashgabat")).date()
+                diff = (end_date.date() - today).days
+                remaining_days = diff if diff > 0 else 0
+
+            children.append({
+                "student_id": student.id,
+                "identification": student.identification,
+                "full_name": student.full_name,
+                "phone": student.user.phone,
+                "region": student.region,
+                "districts": student.districts,
+                "class_num": student.class_name.classes.name if student.class_name else None,
+                "subject_name_uz": student.class_name.name_uz if student.class_name else None,
+                "subject_name_ru": student.class_name.name_ru if student.class_name else None,
+                "status": student.status,
+                "registration_date": student_datetime.strftime('%d/%m/%Y') if student_datetime else None,
+                "last_login_time": last_login,
+                "last_payment_amount": float(last_payment.amount) if last_payment else 0,
+                "subscription_end_date": end_date.strftime('%d/%m/%Y') if end_date else None,
+                "remaining_days": remaining_days,
+                "linked_at": rel.created_at.astimezone(ashgabat_tz).strftime('%d/%m/%Y %H:%M'),
+            })
+
+        return Response({
+            "parent": parent_data,
+            "children_count": len(children),
+            "children": children,
+        }, status=status.HTTP_200_OK)
 
 
 class DeleteStudentProfileAPIView(APIView):

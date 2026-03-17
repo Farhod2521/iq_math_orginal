@@ -1,7 +1,8 @@
 from django.urls import path
 from .views import (
-TutorCouponTransactionListAPIView, TutorReferralTransactionListAPIView, 
-TutorCouponViewSet, TutorReferralViewSet, TutorEarningsAPIView, TutorWithdrawalCreateAPIView,TutorWithdrawalListAPIView
+TutorCouponTransactionListAPIView, TutorReferralTransactionListAPIView,
+TutorCouponViewSet, TutorReferralViewSet, TutorEarningsAPIView, TutorWithdrawalCreateAPIView,
+TutorWithdrawalListAPIView, TutorDetailAPIView
 )
 
 
@@ -13,6 +14,7 @@ router.register(r'tutor/referrals', TutorReferralViewSet, basename='tutor-referr
 
 
 urlpatterns = [
+    path('tutor/<int:pk>/detail/', TutorDetailAPIView.as_view(), name='tutor-detail'),
     path('tutor/coupon-transactions/', TutorCouponTransactionListAPIView.as_view(), name='tutor-coupon-transactions'),
     path('tutor/referral-transactions/', TutorReferralTransactionListAPIView.as_view(), name='tutor-referral-transactions'),
     path('tutor/payments/', TutorEarningsAPIView.as_view(), name='tutor-earnings'),

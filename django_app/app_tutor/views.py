@@ -3,7 +3,8 @@ from rest_framework.response import Response
 from rest_framework import viewsets, permissions, status
 from django.utils import timezone
 from datetime import timedelta
-from django_app.app_management.models import  Coupon_Tutor_Student, ReferralAndCouponSettings, Referral_Tutor_Student
+from django_app.app_management.models import Coupon_Tutor_Student, ReferralAndCouponSettings, Referral_Tutor_Student
+from django_app.app_user.models import Tutor
 from .serializers import (
     CouponCreateSerializer, ReferralCreateSerializer, 
       TutorCouponTransactionSerializer, TutorReferralTransactionSerializer,
@@ -310,3 +311,60 @@ class TutorWithdrawalListAPIView(APIView):
         withdrawals = TutorWithdrawal.objects.filter(tutor=tutor).order_by("-created_at")
         serializer = TutorWithdrawalSerializer(withdrawals, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class TutorDetailAPIView(APIView):
+    """
+    Tutor ID orqali to'liq ma'lumot + kupon orqali ulangan o'quvchilar
+    GET /api/v1/tutor/tutor/<id>/detail/
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, pk):
+        try:
+            tutor = Tutor.objects.select_related('user').get(pk=pk)
+        except Tutor.DoesNotExist:
+            return Response({"detail": "Tutor topilmadi."}, status=status.HTTP_404_NOT_FOUND)
+
+        user = tutor.user
+
+        tutor_data = {
+            "profile_id": tutor.id,
+            "identification": tutor.identification,
+            "full_name": tutor.full_name,
+            "phone": user.phone,
+            "email": user.email,
+            "region": tutor.region,
+            "districts": tutor.districts,
+            "address": tutor.address,
+            "status": tutor.status,
+            "device": user.device,
+            "registration_date": tutor.tutor_date.strftime('%d/%m/%Y') if tutor.tutor_date else None,
+            "registration_time": tutor.tutor_date.strftime('%H:%M:%S') if tutor.tutor_date else None,
+        }
+
+        # Tutor kuponi orqali ro'yxatdan o'tgan o'quvchilar
+        transactions = TutorCouponTransaction.objects.filter(
+            tutor=tutor
+        ).select_related('student__user', 'coupon').order_by('-used_at')
+
+        students = []
+        for tx in transactions:
+            student = tx.student
+            students.append({
+                "student_id": student.id,
+                "identification": student.identification,
+                "full_name": student.full_name,
+                "phone": student.user.phone,
+                "coupon_code": tx.coupon.code,
+                "discount_percent": tx.coupon.discount_percent,
+                "payment_amount": float(tx.payment_amount),
+                "cashback_amount": float(tx.cashback_amount),
+                "used_at": tx.used_at.strftime('%d/%m/%Y %H:%M'),
+            })
+
+        return Response({
+            "tutor": tutor_data,
+            "coupon_students_count": len(students),
+            "coupon_students": students,
+        }, status=status.HTTP_200_OK)
