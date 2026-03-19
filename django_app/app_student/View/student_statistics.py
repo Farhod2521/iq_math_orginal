@@ -3,10 +3,13 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Sum, Count, Max
 from django_app.app_payments.models import Payment, Subscription
-from django_app.app_student.models import StudentScore,  Diagnost_Student, TopicProgress, StudentReferral
+from django_app.app_student.models import (
+    StudentScore, Diagnost_Student, TopicProgress, StudentReferral,
+    StudentReferralTransaction, StudentCouponTransaction,
+)
 from django_app.app_user.models import Student, Subject
 from django.shortcuts import get_object_or_404
-from  django_app.app_student.serializers import  ReferredStudentSerializer, DiagnostSubjectSerializer
+from django_app.app_student.serializers import ReferredStudentSerializer, DiagnostSubjectSerializer
 from django.utils import timezone
 class StudentStatisticsDetailAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -63,6 +66,38 @@ class StudentStatisticsDetailAPIView(APIView):
         except Subscription.DoesNotExist:
             is_active = False
 
+        # === Referral orqali ulangan o'quvchilar ===
+        referral_students = []
+        for tx in StudentReferralTransaction.objects.filter(
+            by_student=student
+        ).select_related('student').order_by('-used_at'):
+            s = tx.student
+            referral_students.append({
+                "student_id": s.id,
+                "full_name": s.full_name,
+                "identification": s.identification,
+                "payment_amount": float(tx.payment_amount),
+                "bonus_amount": float(tx.bonus_amount),
+                "joined_at": tx.used_at.strftime("%d/%m/%Y %H:%M"),
+            })
+
+        # === Kupon orqali ulangan o'quvchilar ===
+        coupon_students = []
+        for tx in StudentCouponTransaction.objects.filter(
+            by_student=student
+        ).select_related('student', 'coupon').order_by('-used_at'):
+            s = tx.student
+            coupon_students.append({
+                "student_id": s.id,
+                "full_name": s.full_name,
+                "identification": s.identification,
+                "coupon_code": tx.coupon.code,
+                "discount_percent": tx.coupon.discount_percent,
+                "payment_amount": float(tx.payment_amount),
+                "cashback_amount": float(tx.cashback_amount),
+                "used_at": tx.used_at.strftime("%d/%m/%Y %H:%M"),
+            })
+
         # === Response JSON ===
         data = {
             'student_id': student.id,
@@ -79,8 +114,12 @@ class StudentStatisticsDetailAPIView(APIView):
                 'failed': failed_payments.count(),
             },
             'total_paid_amount': float(total_paid_amount),
-            'is_active': is_active,      # 🔥 Yangi maydon qo‘shildi
-            'student_diagnost': diagnostika
+            'is_active': is_active,
+            'student_diagnost': diagnostika,
+            'referral_students': referral_students,
+            'referral_students_count': len(referral_students),
+            'coupon_students': coupon_students,
+            'coupon_students_count': len(coupon_students),
         }
 
         return Response(data)
@@ -142,7 +181,7 @@ class SubjectListWithMasteryAPIView(APIView):
 
             mastery_percent = round((mastered_topic_count / all_topic_count) * 100, 1)
 
-            # 🔒 Faqat mastery > 0 bo‘lsa, ro'yxatga qo‘shamiz
+            # 🔒 Faqat mastery > 0 bo'lsa, ro'yxatga qo'shamiz
             if mastery_percent > 0:
                 result.append({
                     "id": subject.id,
@@ -167,7 +206,7 @@ class DiagnostSubjectListAPIView(APIView):
     def get(self, request, student_id):
         student = get_object_or_404(Student, id=student_id)
 
-        # Har bir subject bo‘yicha eng oxirgi diagnostika id sini topamiz
+        # Har bir subject bo'yicha eng oxirgi diagnostika id sini topamiz
         latest_diagnost_ids = Diagnost_Student.objects.filter(
             student=student,
             subject=OuterRef('subject')
@@ -260,7 +299,7 @@ class MyReferralsAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        student = request.user.student_profile  # Agar sizda `user -> student` bog‘lanishi bo‘lsa
+        student = request.user.student_profile  # Agar sizda `user -> student` bog'lanishi bo'lsa
         referrals = StudentReferral.objects.filter(referrer=student)
         serializer = ReferredStudentSerializer(referrals, many=True)
         return Response(serializer.data)
