@@ -29,11 +29,11 @@ def check_login_attempts(phone):
     if attempts >= 5:
         return False  # 5 martadan keyin bloklanadi
 
-    cache.set(cache_key, attempts + 1, timeout=600)  # 15 daqiqa ichida 5 martadan ortiq bo‘lsa bloklash
+    cache.set(cache_key, attempts + 1, timeout=600)  # 15 daqiqa ichida 5 martadan ortiq bo'lsa bloklash
     return True
 
 def reset_login_attempts(phone):
-    """Agar foydalanuvchi to‘g‘ri kirsa, urinishlar sonini 0 ga tushiramiz."""
+    """Agar foydalanuvchi to'g'ri kirsa, urinishlar sonini 0 ga tushiramiz."""
     cache.delete(f"login_attempts_{phone}")
 class LoginSerializer(serializers.Serializer):
     phone = serializers.CharField(required=True)
@@ -47,7 +47,7 @@ class LoginSerializer(serializers.Serializer):
 
         # Foydalanuvchi bloklanganligini tekshirish
         if not check_login_attempts(phone):
-            raise serializers.ValidationError("Ko‘p noto‘g‘ri urinishlar! 5 daqiqa kuting.")
+            raise serializers.ValidationError("Ko'p noto'g'ri urinishlar! 5 daqiqa kuting.")
 
         # Foydalanuvchini autentifikatsiya qilish
         user = authenticate(phone=phone, password=password)
@@ -87,10 +87,10 @@ class TeacherRegisterSerializer(serializers.Serializer):
                     minutes = remaining_time // 60
                     seconds = remaining_time % 60
                     raise serializers.ValidationError(
-                        f"Qayta urinib ko‘rish uchun {minutes} daqiqa {seconds} soniya kuting."
+                        f"Qayta urinib ko'rish uchun {minutes} daqiqa {seconds} soniya kuting."
                     )
 
-                # 5 daqiqadan keyin userni o‘chirish
+                # 5 daqiqadan keyin userni o'chirish
                 user.delete()
             else:
                 raise serializers.ValidationError("Bu telefon raqam allaqachon ro'yxatdan o'tgan.")
@@ -163,7 +163,7 @@ class VerifyCodeSerializer(serializers.Serializer):
             raise serializers.ValidationError("User topilmadi")
 
         if user.sms_code != code:
-            raise serializers.ValidationError("Kod noto‘g‘ri")
+            raise serializers.ValidationError("Kod noto'g'ri")
 
         attrs["user"] = user
         return attrs
@@ -264,17 +264,17 @@ class UniversalRegisterSerializer(serializers.Serializer):
     def create(self, validated_data):
         from .redis_client import save_pending_registration, get_pending_registration
 
-        phone = validated_data[‘phone’]
-        role = validated_data[‘role’]
-        full_name = validated_data[‘full_name’]
-        lang = validated_data.get(‘lang’) or None
-        device = validated_data.get(‘device’) or None
-        class_name = validated_data.get(‘class_name’)
-        referral_code = validated_data.get(‘referral_code’) or None
+        phone = validated_data['phone']
+        role = validated_data['role']
+        full_name = validated_data['full_name']
+        lang = validated_data.get('lang') or None
+        device = validated_data.get('device') or None
+        class_name = validated_data.get('class_name')
+        referral_code = validated_data.get('referral_code') or None
 
         sms_code = str(random.randint(10000, 99999))
 
-        # Agar Redisda avvalgi so’rov bo’lsa — SMS kodni yangilaydi
+        # Agar Redisda avvalgi so'rov bo'lsa — SMS kodni yangilaydi
         existing = get_pending_registration(phone)
         if existing:
             existing["sms_code"] = sms_code
@@ -282,7 +282,7 @@ class UniversalRegisterSerializer(serializers.Serializer):
             send_sms(phone, sms_code)
             return None
 
-        # Barcha ma’lumotlarni Redisga saqlaymiz (bazaga YOZILMAYDI)
+        # Barcha ma'lumotlarni Redisga saqlaymiz (bazaga YOZILMAYDI)
         redis_data = {
             "phone": phone,
             "role": role,
@@ -322,12 +322,12 @@ class VerifySmsCodeSerializer(serializers.Serializer):
         chars = string.ascii_letters + string.digits
         password = "".join(random.choice(chars) for _ in range(8))
 
-        # ── YANGI OQIM: ma’lumotlar Redisda ──────────────────────────────────
+        # ── YANGI OQIM: ma'lumotlar Redisda ──────────────────────────────────
         reg_data = get_pending_registration(phone)
         if reg_data:
             if str(reg_data.get("sms_code", "")) != str(sms_code):
                 raise serializers.ValidationError({
-                    "non_field_errors": ["Kod noto’g’ri. Qayta urinib ko’ring."]
+                    "non_field_errors": ["Kod noto'g'ri. Qayta urinib ko'ring."]
                 })
 
             role = reg_data["role"]
@@ -337,7 +337,7 @@ class VerifySmsCodeSerializer(serializers.Serializer):
             class_name_id = reg_data.get("class_name_id")
             referral_code = reg_data.get("referral_code") or None
 
-            # User yaratish (to’g’ridan-to’g’ri active)
+            # User yaratish (to'g'ridan-to'g'ri active)
             user_kwargs = {"phone": phone, "role": role}
             if device:
                 user_kwargs["device"] = device
@@ -348,7 +348,7 @@ class VerifySmsCodeSerializer(serializers.Serializer):
             if user.email:
                 send_login_parol_email(user.email, phone, password)
 
-            # Role bo’yicha profil (status=True — to’g’ridan-to’g’ri faol)
+            # Role bo'yicha profil (status=True — to'g'ridan-to'g'ri faol)
             if role == "student":
                 class_name = Subject.objects.filter(id=class_name_id).first() if class_name_id else None
                 student_kwargs = {
@@ -400,7 +400,7 @@ class VerifySmsCodeSerializer(serializers.Serializer):
             elif role == "tutor":
                 Tutor.objects.create(user=user, full_name=full_name, status=True)
 
-            # Redis kalitini o’chirish
+            # Redis kalitini o'chirish
             delete_pending_registration(phone)
 
         # ── FALLBACK: DB da nofaol foydalanuvchi (eski oqim) ─────────────────
@@ -414,7 +414,7 @@ class VerifySmsCodeSerializer(serializers.Serializer):
 
             if not user.sms_code or str(user.sms_code) != str(sms_code):
                 raise serializers.ValidationError({
-                    "non_field_errors": ["Telefon raqam yoki kod noto’g’ri."]
+                    "non_field_errors": ["Telefon raqam yoki kod noto'g'ri."]
                 })
 
             user.set_password(password)
@@ -443,7 +443,7 @@ class VerifySmsCodeSerializer(serializers.Serializer):
                 tutor.status = True
                 tutor.save()
             else:
-                raise serializers.ValidationError({"non_field_errors": ["Noma’lum role."]})
+                raise serializers.ValidationError({"non_field_errors": ["Noma'lum role."]})
 
         data["phone"] = phone
         data["password"] = password
@@ -661,7 +661,7 @@ class StudentSerializerParent(serializers.ModelSerializer):
             return diff_days if diff_days > 0 else 0
         return 0
 
-    # 🔹 Bu yerda status ni dinamik tarzda o‘zgartiramiz
+    # 🔹 Bu yerda status ni dinamik tarzda o'zgartiramiz
     def to_representation(self, instance):
         data = super().to_representation(instance)
         remaining_days = data.get("remaining_days")
