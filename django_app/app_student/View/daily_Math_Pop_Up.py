@@ -23,51 +23,44 @@ class QuickMathQuestionAPIView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        # 2️⃣ Oldin ishlangan topiclarni olish
+        all_text_qs = Question.objects.filter(question_type="text")
+
+        # 2️⃣ Birinchi: ishlangan topiclardan text savol
         topic_ids = TopicProgress.objects.filter(
-            user=student,
-            score__gt=0
+            user=student, score__gt=0
         ).values_list("topic_id", flat=True)
 
-        # 3️⃣ Savollarni shakllantirish
-        questions = Question.objects.filter(
-            question_type="text"
+        if topic_ids:
+            questions = all_text_qs.filter(topic_id__in=topic_ids)
+            if questions.exists():
+                return self._respond(random.choice(list(questions)))
+
+        # 3️⃣ Ikkinchi: studentning o'z fanidan text savol
+        subject = student.class_name
+        if subject:
+            questions = all_text_qs.filter(topic__chapter__subject=subject)
+            if questions.exists():
+                return self._respond(random.choice(list(questions)))
+
+        # 4️⃣ Fallback: ixtiyoriy fandan text savol
+        questions = all_text_qs
+        if questions.exists():
+            return self._respond(random.choice(list(questions)))
+
+        return Response(
+            {"detail": "Tizimda hech qanday text savol mavjud emas"},
+            status=status.HTTP_404_NOT_FOUND
         )
 
-        # Agar ishlangan topiclar bo‘lsa → o‘shalardan
-        if topic_ids.exists():
-            questions = questions.filter(topic_id__in=topic_ids)
-        else:
-            # Aks holda student fanidan
-            subject = student.class_name
-            if not subject:
-                return Response(
-                    {"detail": "Student fan tanlamagan"},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-            questions = questions.filter(
-                topic__chapter__subject=subject
-            )
-
-        # 4️⃣ Agar savol topilmasa
-        if not questions.exists():
-            return Response(
-                {"detail": "Mos text savol topilmadi"},
-                status=status.HTTP_404_NOT_FOUND
-            )
-
-        # 5️⃣ Random savol tanlash
-        question = random.choice(list(questions))
-
+    def _respond(self, question):
         return Response({
-            "question_id": question.id,
-            "topic_id": question.topic.id,
-            "topic_name_uz": question.topic.name_uz,
-            "topic_name_ru": question.topic.name_ru,
-            "question_text_uz": question.question_text_uz,
-            "question_text_ru": question.question_text_ru,
-            "level": question.level
+            "question_id":       question.id,
+            "topic_id":          question.topic.id,
+            "topic_name_uz":     question.topic.name_uz,
+            "topic_name_ru":     question.topic.name_ru,
+            "question_text_uz":  question.question_text_uz,
+            "question_text_ru":  question.question_text_ru,
+            "level":             question.level,
         }, status=status.HTTP_200_OK)
 
 
