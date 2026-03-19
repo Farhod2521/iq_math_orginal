@@ -253,6 +253,10 @@ SESSION_SAVE_EVERY_REQUEST = True  # Har bir requestda sessiyani yangilash
 # Payment pending holati uchun timeout (daqiqalarda)
 PAYMENT_PENDING_TIMEOUT_MINUTES = 10
 
+# Ro'yxatdan o'tish vaqtinchalik ma'lumotlari uchun Redis (db=2, Celery db=0 ga ta'sir qilmaydi)
+REGISTRATION_REDIS_URL = os.getenv("REGISTRATION_REDIS_URL", "redis://127.0.0.1:6379/2")
+REGISTRATION_REDIS_TTL = 600  # 10 daqiqa (soniyalarda)
+
 # Celery sozlamalari
 CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://127.0.0.1:6379/0")
 CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", CELERY_BROKER_URL)

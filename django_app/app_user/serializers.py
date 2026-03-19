@@ -262,136 +262,42 @@ class UniversalRegisterSerializer(serializers.Serializer):
         return attrs
 
     def create(self, validated_data):
-        phone = validated_data['phone']
-        role = validated_data['role']
-        full_name = validated_data['full_name']
-        lang = validated_data.pop('lang', None)
-        device = validated_data.pop('device', None)
-        class_name = validated_data.pop('class_name', None)
-        referral_code = validated_data.pop('referral_code', None)
+        from .redis_client import save_pending_registration, get_pending_registration
+
+        phone = validated_data[‘phone’]
+        role = validated_data[‘role’]
+        full_name = validated_data[‘full_name’]
+        lang = validated_data.get(‘lang’) or None
+        device = validated_data.get(‘device’) or None
+        class_name = validated_data.get(‘class_name’)
+        referral_code = validated_data.get(‘referral_code’) or None
 
         sms_code = str(random.randint(10000, 99999))
 
-        # 1. Mavjud userni tekshirish
-        user = User.objects.filter(phone=phone).first()
+        # Agar Redisda avvalgi so’rov bo’lsa — SMS kodni yangilaydi
+        existing = get_pending_registration(phone)
+        if existing:
+            existing["sms_code"] = sms_code
+            save_pending_registration(phone, existing)
+            send_sms(phone, sms_code)
+            return None
 
-        if user:
-            # Agar mavjud bo‘lsa va hali tasdiqlanmagan bo‘lsa — sms_code yangilanadi
-            if hasattr(user, 'student_profile') and not user.student_profile.status:
-                if lang not in (None, ''):
-                    user.student_profile.lang = lang
-                    user.student_profile.save(update_fields=['lang'])
-                user.sms_code = sms_code
-                update_fields = ['sms_code']
-                if device not in (None, ''):
-                    user.device = device
-                    update_fields.append('device')
-                user.save(update_fields=update_fields)
-                send_sms(phone, sms_code)
-                return user
-
-            if hasattr(user, 'parent_profile') and not user.parent_profile.status:
-                user.sms_code = sms_code
-                update_fields = ['sms_code']
-                if device not in (None, ''):
-                    user.device = device
-                    update_fields.append('device')
-                user.save(update_fields=update_fields)
-                send_sms(phone, sms_code)
-                return user
-
-            if hasattr(user, 'tutor_profile') and not user.tutor_profile.status:
-                user.sms_code = sms_code
-                update_fields = ['sms_code']
-                if device not in (None, ''):
-                    user.device = device
-                    update_fields.append('device')
-                user.save(update_fields=update_fields)
-                send_sms(phone, sms_code)
-                return user
-
-        # 2. Yangi foydalanuvchi yaratish
-        user_create_kwargs = {
+        # Barcha ma’lumotlarni Redisga saqlaymiz (bazaga YOZILMAYDI)
+        redis_data = {
             "phone": phone,
             "role": role,
+            "full_name": full_name,
+            "sms_code": sms_code,
+            "class_name_id": class_name.id if class_name else None,
+            "referral_code": referral_code,
+            "lang": lang,
+            "device": device,
         }
-        if device not in (None, ""):
-            user_create_kwargs["device"] = device
-        user = User.objects.create(**user_create_kwargs)
-        user.sms_code = sms_code
-        user.set_unusable_password()
-        user.save()
+        save_pending_registration(phone, redis_data)
 
-        # 3. Role bo‘yicha profil yaratish
-        if role == "student":
-            student_kwargs = {
-                "user": user,
-                "full_name": full_name,
-                "class_name": class_name,
-                "status": False,
-                "student_date": now(),
-            }
-            if lang not in (None, ""):
-                student_kwargs["lang"] = lang
-            student = Student.objects.create(**student_kwargs)
-
-            # 🎁 Trial obuna
-            free_days = SubscriptionSetting.objects.first().free_trial_days
-            Subscription.objects.create(
-                student=student,
-                start_date=now(),
-                end_date=now() + timedelta(days=free_days),
-                is_paid=False
-            )
-
-            # 🧩 REFERAL LOGIKA
-            if referral_code:
-                referral_code = referral_code.strip()
-
-                # Tutor referali (T bilan boshlansa)
-                if referral_code.startswith('T'):
-                    try:
-                        ref_tutor = Tutor.objects.get(identification=referral_code)
-                        TutorReferralTransaction.objects.create(
-                            student=student,
-                            tutor=ref_tutor,
-                            payment_amount=0,
-                            bonus_amount=0
-                        )
-                    except Tutor.DoesNotExist:
-                        pass
-
-                # Student referali (faqat raqam)
-                elif referral_code.isdigit():
-                    try:
-                        ref_student = Student.objects.get(identification=referral_code)
-                        StudentReferralTransaction.objects.create(
-                            student=student,
-                            by_student=ref_student,
-                            payment_amount=0,
-                            bonus_amount=0
-                        )
-                    except Student.DoesNotExist:
-                        pass
-
-        elif role == "parent":
-            Parent.objects.create(
-                user=user,
-                full_name=full_name,
-                status=False
-            )
-
-        elif role == "tutor":
-            Tutor.objects.create(
-                user=user,
-                full_name=full_name,
-                status=False
-            )
-
-        # 4. SMS yuborish
+        # SMS yuborish
         send_sms(phone, sms_code)
-
-        return user
+        return None
 
 
         
@@ -408,62 +314,141 @@ class VerifySmsCodeSerializer(serializers.Serializer):
     sms_code = serializers.CharField(required=True)
 
     def validate(self, data):
+        from .redis_client import get_pending_registration, delete_pending_registration
+
         phone = data.get("phone")
         sms_code = data.get("sms_code")
 
-        try:
-            user = User.objects.get(phone=phone)
-        except User.DoesNotExist:
-            raise serializers.ValidationError({
-                "non_field_errors": ["Bunday foydalanuvchi topilmadi."]
-            })
-
-        # Kodni solishtirish
-        if not user.sms_code or str(user.sms_code) != str(sms_code):
-            raise serializers.ValidationError({
-                "non_field_errors": ["Telefon raqam yoki kod noto'g'ri."]
-            })
-
-        # Random parol generatsiya
         chars = string.ascii_letters + string.digits
         password = "".join(random.choice(chars) for _ in range(8))
 
-        user.set_password(password)
-        user.sms_code = None  # ❗️ Kod bir martalik
-        user.save()
+        # ── YANGI OQIM: ma’lumotlar Redisda ──────────────────────────────────
+        reg_data = get_pending_registration(phone)
+        if reg_data:
+            if str(reg_data.get("sms_code", "")) != str(sms_code):
+                raise serializers.ValidationError({
+                    "non_field_errors": ["Kod noto’g’ri. Qayta urinib ko’ring."]
+                })
 
-        # Agar email bo‘lsa login-parol yuborish
-        if user.email:
-            send_login_parol_email(user.email, phone, password)
+            role = reg_data["role"]
+            full_name = reg_data["full_name"]
+            lang = reg_data.get("lang") or None
+            device = reg_data.get("device") or None
+            class_name_id = reg_data.get("class_name_id")
+            referral_code = reg_data.get("referral_code") or None
 
-        # Role bo‘yicha profil statusni yoqish
-        if user.role == "student":
-            student = Student.objects.filter(user=user).first()
-            if not student:
-                raise serializers.ValidationError({"non_field_errors": ["Student profili topilmadi."]})
-            student.status = True
-            student.save()
+            # User yaratish (to’g’ridan-to’g’ri active)
+            user_kwargs = {"phone": phone, "role": role}
+            if device:
+                user_kwargs["device"] = device
+            user = User.objects.create(**user_kwargs)
+            user.set_password(password)
+            user.save()
 
-        elif user.role == "parent":
-            parent = Parent.objects.filter(user=user).first()
-            if not parent:
-                raise serializers.ValidationError({"non_field_errors": ["Parent profili topilmadi."]})
-            parent.status = True
-            parent.save()
+            if user.email:
+                send_login_parol_email(user.email, phone, password)
 
-        elif user.role == "tutor":
-            tutor = Tutor.objects.filter(user=user).first()
-            if not tutor:
-                raise serializers.ValidationError({"non_field_errors": ["Tutor profili topilmadi."]})
-            tutor.status = True
-            tutor.save()
+            # Role bo’yicha profil (status=True — to’g’ridan-to’g’ri faol)
+            if role == "student":
+                class_name = Subject.objects.filter(id=class_name_id).first() if class_name_id else None
+                student_kwargs = {
+                    "user": user,
+                    "full_name": full_name,
+                    "class_name": class_name,
+                    "status": True,
+                    "student_date": now(),
+                }
+                if lang:
+                    student_kwargs["lang"] = lang
+                student = Student.objects.create(**student_kwargs)
 
+                # Trial obuna
+                setting = SubscriptionSetting.objects.first()
+                free_days = setting.free_trial_days if setting else 7
+                Subscription.objects.create(
+                    student=student,
+                    start_date=now(),
+                    end_date=now() + timedelta(days=free_days),
+                    is_paid=False,
+                )
+
+                # Referal
+                if referral_code:
+                    referral_code = referral_code.strip()
+                    if referral_code.startswith("T"):
+                        try:
+                            ref_tutor = Tutor.objects.get(identification=referral_code)
+                            TutorReferralTransaction.objects.create(
+                                student=student, tutor=ref_tutor,
+                                payment_amount=0, bonus_amount=0,
+                            )
+                        except Tutor.DoesNotExist:
+                            pass
+                    elif referral_code.isdigit():
+                        try:
+                            ref_student = Student.objects.get(identification=referral_code)
+                            StudentReferralTransaction.objects.create(
+                                student=student, by_student=ref_student,
+                                payment_amount=0, bonus_amount=0,
+                            )
+                        except Student.DoesNotExist:
+                            pass
+
+            elif role == "parent":
+                Parent.objects.create(user=user, full_name=full_name, status=True)
+
+            elif role == "tutor":
+                Tutor.objects.create(user=user, full_name=full_name, status=True)
+
+            # Redis kalitini o’chirish
+            delete_pending_registration(phone)
+
+        # ── FALLBACK: DB da nofaol foydalanuvchi (eski oqim) ─────────────────
         else:
-            raise serializers.ValidationError({
-                "non_field_errors": ["Noma'lum role."]
-            })
+            try:
+                user = User.objects.get(phone=phone)
+            except User.DoesNotExist:
+                raise serializers.ValidationError({
+                    "non_field_errors": ["Bunday foydalanuvchi topilmadi."]
+                })
 
-        return {"phone": phone, "password": password, "user": user}
+            if not user.sms_code or str(user.sms_code) != str(sms_code):
+                raise serializers.ValidationError({
+                    "non_field_errors": ["Telefon raqam yoki kod noto’g’ri."]
+                })
+
+            user.set_password(password)
+            user.sms_code = None
+            user.save()
+
+            if user.email:
+                send_login_parol_email(user.email, phone, password)
+
+            if user.role == "student":
+                student = Student.objects.filter(user=user).first()
+                if not student:
+                    raise serializers.ValidationError({"non_field_errors": ["Student profili topilmadi."]})
+                student.status = True
+                student.save()
+            elif user.role == "parent":
+                parent = Parent.objects.filter(user=user).first()
+                if not parent:
+                    raise serializers.ValidationError({"non_field_errors": ["Parent profili topilmadi."]})
+                parent.status = True
+                parent.save()
+            elif user.role == "tutor":
+                tutor = Tutor.objects.filter(user=user).first()
+                if not tutor:
+                    raise serializers.ValidationError({"non_field_errors": ["Tutor profili topilmadi."]})
+                tutor.status = True
+                tutor.save()
+            else:
+                raise serializers.ValidationError({"non_field_errors": ["Noma’lum role."]})
+
+        data["phone"] = phone
+        data["password"] = password
+        data["user"] = user
+        return data
 
 
 
