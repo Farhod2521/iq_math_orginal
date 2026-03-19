@@ -45,7 +45,35 @@ class TutorAdmin(admin.ModelAdmin):
     ordering = ("-tutor_date",)
 
 class UserAdmin(admin.ModelAdmin):
-    list_filter = ('phone',  'sms_code',)  # Status bo‘yicha filter qo‘shish
+    list_display = ('phone', 'role', 'profile_status', 'sms_confirmed', 'date_joined')
+    list_filter = ('role',)
+    search_fields = ('phone',)
+    ordering = ('-date_joined',)
+
+    def profile_status(self, obj):
+        """Profilning tasdiqlangan yoki tasdiqlanmagan holati"""
+        from django.utils.html import format_html
+        profile = (
+            getattr(obj, 'student_profile', None)
+            or getattr(obj, 'parent_profile', None)
+            or getattr(obj, 'tutor_profile', None)
+            or getattr(obj, 'teacher_profile', None)
+        )
+        if profile is None:
+            return format_html('<span style="color:gray;">—</span>')
+        if profile.status:
+            return format_html('<span style="color:green; font-weight:bold;">✔ Tasdiqlangan</span>')
+        return format_html('<span style="color:red;">✘ Tasdiqlanmagan</span>')
+    profile_status.short_description = 'Status'
+
+    def sms_confirmed(self, obj):
+        """SMS kod tozalanganmi — ya'ni tasdiqlangan"""
+        from django.utils.html import format_html
+        if obj.sms_code:
+            return format_html('<span style="color:orange;">⏳ SMS kutilmoqda</span>')
+        return format_html('<span style="color:green;">✔</span>')
+    sms_confirmed.short_description = 'SMS'
+
 admin.site.register(User, UserAdmin)
 
 
