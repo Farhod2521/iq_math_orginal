@@ -43,7 +43,13 @@ class User(AbstractUser):
     phone = models.CharField(max_length=15, unique=True, verbose_name="Telefon raqam")
     role = models.CharField(
         max_length=10,
-        choices=[('student', 'Student'), ('teacher', 'Mentor'), ('admin', 'Admin'), ('superadmin', 'SuperAdmin'), ('parent', 'Ota-ona'), ('tutor', "O'qtuvchi"),],
+        choices=[
+            ('student', 'Student'), 
+            ('teacher', 'Mentor'), 
+            ('admin', 'Admin'), 
+            ('superadmin', 'SuperAdmin'), 
+            ('parent', 'Ota-ona'), 
+            ('tutor', "O'qtuvchi"),],
         default='student',
         verbose_name="Foydalanuvchi roli"
     )
