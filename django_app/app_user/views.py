@@ -173,7 +173,7 @@ class RegisterAPIView(APIView):
     def post(self, request, *args, **kwargs):
         serializer = UniversalRegisterSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            serializer.create(serializer.validated_data)
             return Response(
                 {"message": "Telefon raqamga SMS kodi yuborildi. Kodni tasdiqlang."},
                 status=status.HTTP_200_OK
