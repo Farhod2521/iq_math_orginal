@@ -104,7 +104,7 @@ class All_Role_ListView(APIView):
                 data_json.append({
                     "id": profile_data['json'].get('profile_id', user.id),
                     "user_id": user.id,
-                    "role": user.role,
+                    
                     "phone": user.phone,
                     "email": user.email,
                     "device": user.device,
@@ -219,6 +219,7 @@ class All_Role_ListView(APIView):
             profile_data['json'] = {
                 "profile_id": student.id,
                 "full_name": student.full_name,
+                "role": "Student",
                 "region": student.region,
                 "districts": student.districts,
                 "address": student.address,
@@ -266,6 +267,7 @@ class All_Role_ListView(APIView):
             profile_data['json'] = {
                 "profile_id": teacher.id,  # Teacher profil id sini qaytaramiz
                 "full_name": teacher.full_name,
+                "role": "Mentor",
                 "region": teacher.region,
                 "districts": teacher.districts,
                 "address": teacher.address,
@@ -302,6 +304,7 @@ class All_Role_ListView(APIView):
             profile_data['json'] = {
                 "profile_id": parent.id,  # Parent profil id sini qaytaramiz
                 "full_name": parent.full_name,
+                "role": "Ota-ona",
                 "region": parent.region,
                 "districts": parent.districts,
                 "address": parent.address,
@@ -329,6 +332,7 @@ class All_Role_ListView(APIView):
             profile_data['json'] = {
                 "profile_id": tutor.id,  # Tutor profil id sini qaytaramiz
                 "full_name": tutor.full_name,
+                "role": "O'qtuvchi",
                 "region": tutor.region,
                 "districts": tutor.districts,
                 "address": tutor.address,
@@ -367,6 +371,7 @@ class All_Role_ListView(APIView):
                 'districts': '',
                 'address': '',
                 'status_display': 'Aktiv',
+                "role": "admin",
                 'registration_date': user_datetime.strftime('%d/%m/%Y') if user_datetime else '',
                 'registration_time': user_datetime.strftime('%H:%M:%S') if user_datetime else '',
                 'extra_fields': {}
