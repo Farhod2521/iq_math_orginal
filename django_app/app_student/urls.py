@@ -17,6 +17,7 @@ from .View.coupon_create_apiview import StudentCouponAPIView
 from .View.student_next_topic_mobile_app import  StudentNextTopicAPIView, StudentLastProgressAPIView
 from .View.mobile_app import StudentRatingAPIView, WeeklyStudyStatsAPIView, StudentTopAPIView, SubjectProgressAPIView, SubjectCategoryDetailAPIView
 from .View.daily_Math_Pop_Up import  SubmitQuickMathAnswerAPIView, QuickMathQuestionAPIView
+from .View.som_transfer import SomTransferRequestAPIView, SomTransferConfirmAPIView, SomTransferHistoryAPIView
 
 urlpatterns = [
     path('subject/name-list/', SubjectNameListAPIView.as_view(), name='subject-name-list'),
@@ -86,4 +87,9 @@ urlpatterns = [
     path("student/subject-category-detail/app", SubjectCategoryDetailAPIView.as_view(), name='convert'),
     path("quick-math/question/", QuickMathQuestionAPIView.as_view()),
     path("quick-math/submit/", SubmitQuickMathAnswerAPIView.as_view()),
+
+    ###############################################  SOM TRANSFER  ##################################################
+    path("som-transfer/request/", SomTransferRequestAPIView.as_view(), name="som-transfer-request"),
+    path("som-transfer/confirm/", SomTransferConfirmAPIView.as_view(), name="som-transfer-confirm"),
+    path("som-transfer/history/", SomTransferHistoryAPIView.as_view(), name="som-transfer-history"),
 ]

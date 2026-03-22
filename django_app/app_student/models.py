@@ -177,7 +177,33 @@ class ProductExchange(models.Model):
     def __str__(self):
         return f"{self.student.full_name} → {self.product.name} ({self.used_coin} ball)"
 
-    
+
+class SomTransferLog(models.Model):
+    """
+    Student ↔ Student so'm o'tkazish logi.
+    - is_confirmed=False  →  OTP kutilmoqda (pending)
+    - is_confirmed=True   →  Tasdiqlangan, so'm o'tkazilgan
+    - is_expired=True     →  Muddati o'tgan yoki bekor qilingan
+    """
+    sender   = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='sent_transfers',    verbose_name="Yuboruvchi")
+    receiver = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='received_transfers', verbose_name="Qabul qiluvchi")
+    amount   = models.PositiveIntegerField(verbose_name="O'tkazilgan so'm")
+
+    otp_code     = models.CharField(max_length=5, verbose_name="OTP kod")
+    is_confirmed = models.BooleanField(default=False, verbose_name="Tasdiqlandi")
+    is_expired   = models.BooleanField(default=False, verbose_name="Muddati o'tgan")
+
+    created_at   = models.DateTimeField(auto_now_add=True, verbose_name="So'rov vaqti")
+    confirmed_at = models.DateTimeField(null=True, blank=True, verbose_name="Tasdiq vaqti")
+
+    def __str__(self):
+        return f"{self.sender.full_name} → {self.receiver.full_name} | {self.amount} so'm"
+
+    class Meta:
+        verbose_name = "So'm o'tkazish"
+        verbose_name_plural = "So'm o'tkazishlar"
+        ordering = ['-created_at']
+
 
 class TopicHelpRequestIndependent(models.Model):
     STATUS_CHOICES = [
