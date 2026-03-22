@@ -496,12 +496,17 @@ class CheckAnswersAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        from django.db import transaction
         serializer = CheckAnswersSerializer(data=request.data)
         if not serializer.is_valid():
-            return Response({"message": "Noto‘g‘ri formatdagi ma'lumotlar."}, status=400)
+            return Response({"message": "Noto’g’ri formatdagi ma’lumotlar."}, status=400)
 
-        # Admin yoki Teacher bo‘lsa student sifatida log yozilmaydi
-        is_staff_user = request.user.role in ['teacher', 'admin']
+        with transaction.atomic():
+            return self._handle(request, serializer)
+
+    def _handle(self, request, serializer):
+        # Admin yoki Teacher bo’lsa student sifatida log yozilmaydi
+        is_staff_user = request.user.role in [‘teacher’, ‘admin’]
 
         student_instance = None
         student_score = None
@@ -510,7 +515,7 @@ class CheckAnswersAPIView(APIView):
         if not is_staff_user:
             try:
                 student_instance = Student.objects.get(user=request.user)
-                student_score, _ = StudentScore.objects.get_or_create(student=student_instance)
+                student_score, _ = StudentScore.objects.select_for_update().get_or_create(student=student_instance)
                 awarded_questions = set(
                     StudentScoreLog.objects.filter(student_score=student_score).values_list('question_id', flat=True)
                 )
