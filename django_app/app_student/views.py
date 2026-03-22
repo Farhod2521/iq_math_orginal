@@ -556,6 +556,7 @@ class CheckAnswersAPIView(APIView):
                         student_score=student_score,
                         question=question,
                         awarded_coin=give_coin,
+                        award_type='coin' if give_coin else 'score',
                         awarded_at=timezone.now()
                     )
 

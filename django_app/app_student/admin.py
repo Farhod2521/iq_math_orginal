@@ -40,12 +40,14 @@ class StudentScoreAdmin(admin.ModelAdmin):
 
 @admin.register(StudentScoreLog)
 class StudentScoreLogAdmin(admin.ModelAdmin):
-    list_display = ('student_score', 'question', 'awarded_coin', 'awarded_at')
-    list_filter = ('awarded_coin', 'awarded_at')
-    search_fields = ('student_score__student__user__username', 'question__question_text_uz')
+    list_display = ('get_student_name', 'award_type', 'question', 'awarded_at')
+    list_filter = ('award_type', 'awarded_at')
+    search_fields = ('student_score__student__full_name', 'student_score__student__user__phone')
     ordering = ('-awarded_at',)
-    verbose_name = "Ball olish tarixi"
-    verbose_name_plural = "Ballar olish tarixi"
+
+    @admin.display(description="O'quvchi", ordering='student_score__student__full_name')
+    def get_student_name(self, obj):
+        return obj.student_score.student.full_name
 
 
 @admin.register(StudentDailyCoinLog)
