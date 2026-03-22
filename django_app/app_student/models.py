@@ -101,19 +101,30 @@ class ConversionHistory(models.Model):
 
 
 class StudentScoreLog(models.Model):
+    AWARD_TYPE_CHOICES = (
+        ('coin', 'Tanga'),
+        ('score', 'Ball'),
+    )
+
     student_score = models.ForeignKey(StudentScore, on_delete=models.CASCADE)
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
     awarded_at = models.DateTimeField(auto_now_add=True)
     awarded_coin = models.BooleanField(default=False)
+    award_type = models.CharField(
+        max_length=5,
+        choices=AWARD_TYPE_CHOICES,
+        default='score',
+        verbose_name="Mukofot turi"
+    )
 
     class Meta:
-        unique_together = ('student_score', 'question')  
+        unique_together = ('student_score', 'question')
         verbose_name = "Ball olish tarixi"
         verbose_name_plural = "Ballar olish tarixi"
         ordering = ['-awarded_at']
 
     def __str__(self):
-        return f"{self.student_score.student} - {self.question.id}"
+        return f"{self.student_score.student.full_name} - {self.award_type} - {self.question.id}"
 
 
 class StudentDailyCoinLog(models.Model):
