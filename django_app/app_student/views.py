@@ -46,14 +46,14 @@ class GenerateTestAPIView(APIView):
         try:
             level = int(request.data.get("level"))
         except (TypeError, ValueError):
-            return Response({"message": "Level noto‘g‘ri formatda"}, status=400)
+            return Response({"message": "Level noto'g'ri formatda"}, status=400)
 
         subject_id = request.data.get("subject_id")
         if subject_id:
             try:
                 subject = Subject.objects.get(id=subject_id)
             except Subject.DoesNotExist:
-                return Response({"message": "Berilgan subject_id bo‘yicha fan topilmadi"}, status=404)
+                return Response({"message": "Berilgan subject_id bo'yicha fan topilmadi"}, status=404)
         else:
             subjects = Subject.objects.filter(classes=current_class).order_by("id")
             if not subjects.exists():
@@ -70,7 +70,7 @@ class GenerateTestAPIView(APIView):
         return Response({
             "questions": filtered_data,
             "level": level,
-            "subject_id": subject.id  # kerak bo‘lsa frontga subject qaytariladi
+            "subject_id": subject.id  # kerak bo'lsa frontga subject qaytariladi
         })
 
 
@@ -81,7 +81,7 @@ class GenerateCheckAnswersAPIView(APIView):
     def post(self, request):
         serializer = CheckAnswersSerializer(data=request.data)
         if not serializer.is_valid():
-            return Response({"message": "Noto‘g‘ri formatdagi ma'lumotlar."}, status=400)
+            return Response({"message": "Noto'g'ri formatdagi ma'lumotlar."}, status=400)
 
         try:
             student_instance = Student.objects.get(user=request.user)
@@ -215,7 +215,7 @@ class GenerateCheckAnswersAPIView(APIView):
             level=level,
             subject=subject,
             result=result_json,
-            create_date=timezone.now() + timedelta(hours=5)  # 🇺🇿 O‘zbekiston vaqti
+            create_date=timezone.now() + timedelta(hours=5)  # 🇺🇿 O'zbekiston vaqti
         )
 
         # Xato qilingan topic va chapterlarni yozamiz
@@ -235,7 +235,7 @@ class StudentSubjectListAPIView(APIView):
     def get(self, request):
         user = request.user
 
-        # 👉 Agar teacher yoki admin bo‘lsa — barcha fanlar to‘liq ochiq
+        # 👉 Agar teacher yoki admin bo'lsa — barcha fanlar to'liq ochiq
         if user.role in ['teacher', 'admin']:
             all_subjects = Subject.objects.all().order_by('order')
             result = []
@@ -249,7 +249,7 @@ class StudentSubjectListAPIView(APIView):
 
             return Response(result, status=status.HTTP_200_OK)
 
-        # 👉 Student bo‘lsa
+        # 👉 Student bo'lsa
         try:
             student = Student.objects.get(user=user)
             now_time = now()
@@ -370,7 +370,7 @@ class TopicListByChapter_STUDENT_ID_APIView(APIView):
         user = request.user
         student_id = request.data.get("student_id")
 
-        # 1️⃣ Teacher/Admin → to‘g‘ridan-to‘g‘ri qaytariladi
+        # 1️⃣ Teacher/Admin → to'g'ridan-to'g'ri qaytariladi
         if user.role in ['teacher', 'admin']:
 
             try:
@@ -425,7 +425,7 @@ class TopicListByChapterAPIView(APIView):
     def get(self, request, chapter_id):
         user = request.user
 
-        # 👨‍🏫👨‍💼 Agar teacher yoki admin bo‘lsa, to‘g‘ridan-to‘g‘ri barcha mavzular ko‘rsatiladi
+        # 👨‍🏫👨‍💼 Agar teacher yoki admin bo'lsa, to'g'ridan-to'g'ri barcha mavzular ko'rsatiladi
         if user.role in ['teacher', 'admin']:
             try:
                 chapter = Chapter.objects.get(id=chapter_id)
@@ -435,7 +435,7 @@ class TopicListByChapterAPIView(APIView):
             except Chapter.DoesNotExist:
                 return Response({"detail": "Chapter topilmadi"}, status=status.HTTP_404_NOT_FOUND)
 
-        # 👩‍🎓 Student bo‘lsa, subscription tekshiriladi
+        # 👩‍🎓 Student bo'lsa, subscription tekshiriladi
         student = getattr(user, 'student_profile', None)
         if not student:
             return Response({"detail": "Foydalanuvchi uchun student profili topilmadi"}, status=status.HTTP_400_BAD_REQUEST)
@@ -443,10 +443,10 @@ class TopicListByChapterAPIView(APIView):
         try:
             subscription = student.subscription
         except Subscription.DoesNotExist:
-            return Response({"detail": "Obuna mavjud emas. To‘lovni amalga oshiring"}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"detail": "Obuna mavjud emas. To'lovni amalga oshiring"}, status=status.HTTP_403_FORBIDDEN)
 
         if subscription.end_date < timezone.now():
-            return Response({"detail": "Obuna muddati tugagan. Iltimos, to‘lovni amalga oshiring."}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"detail": "Obuna muddati tugagan. Iltimos, to'lovni amalga oshiring."}, status=status.HTTP_403_FORBIDDEN)
 
         try:
             chapter = Chapter.objects.get(id=chapter_id)
@@ -499,14 +499,14 @@ class CheckAnswersAPIView(APIView):
         from django.db import transaction
         serializer = CheckAnswersSerializer(data=request.data)
         if not serializer.is_valid():
-            return Response({"message": "Noto’g’ri formatdagi ma’lumotlar."}, status=400)
+            return Response({"message": "Noto'g'ri formatdagi ma'lumotlar."}, status=400)
 
         with transaction.atomic():
             return self._handle(request, serializer)
 
     def _handle(self, request, serializer):
-        # Admin yoki Teacher bo’lsa student sifatida log yozilmaydi
-        is_staff_user = request.user.role in [‘teacher’, ‘admin’]
+        # Admin yoki Teacher bo'lsa student sifatida log yozilmaydi
+        is_staff_user = request.user.role in ['teacher', 'admin']
 
         student_instance = None
         student_score = None
@@ -667,7 +667,7 @@ class CheckAnswersAPIView(APIView):
             }]
         }
 
-        # Qo‘shimcha info
+        # Qo'shimcha info
         if last_question_topic:
             topic = last_question_topic
             chapter = topic.chapter
@@ -693,10 +693,10 @@ class StudentScoreAPIView(APIView):
     def get(self, request):
         user = request.user
 
-        # Agar teacher bo‘lsa, oddiy javob qaytariladi
+        # Agar teacher bo'lsa, oddiy javob qaytariladi
         if hasattr(user, 'teacher_profile'):
             return Response({
-                "detail": "Bu sahifa faqat talaba profili uchun mo‘ljallangan.",
+                "detail": "Bu sahifa faqat talaba profili uchun mo'ljallangan.",
                 "score": 9999
             }, status=status.HTTP_200_OK)
 
@@ -821,7 +821,7 @@ class PathFromIdsAPIView(APIView):
             }
             return Response([subject_data], status=status.HTTP_200_OK)
 
-        # chapter bo‘lsa, uni ham qaytaramiz
+        # chapter bo'lsa, uni ham qaytaramiz
         chapter = get_object_or_404(Chapter, id=chapter_id, subject=subject)
         response_data = [
             {
@@ -836,7 +836,7 @@ class PathFromIdsAPIView(APIView):
             }
         ]
 
-        # topic bo‘lsa, uni ham qo‘shamiz
+        # topic bo'lsa, uni ham qo'shamiz
         if topic_id:
             topic = get_object_or_404(Topic, id=topic_id, chapter=chapter)
             response_data.append({
@@ -870,7 +870,7 @@ class PathFromIdsStudentAPIView(APIView):
         # Javob tuzish
         path_data = []
 
-        # Faqat subject bo‘lsa
+        # Faqat subject bo'lsa
         if not chapter_id:
             path_data.append({
                 "id": str(subject.id),
@@ -878,7 +878,7 @@ class PathFromIdsStudentAPIView(APIView):
                 "title_ru": f"{subject.classes.name}-класс {subject.name_ru}"
             })
         else:
-            # chapterni ham qo‘shamiz
+            # chapterni ham qo'shamiz
             chapter = get_object_or_404(Chapter, id=chapter_id, subject=subject)
             path_data.extend([
                 {
@@ -893,7 +893,7 @@ class PathFromIdsStudentAPIView(APIView):
                 }
             ])
 
-            # agar topic bo‘lsa, uni ham qo‘shamiz
+            # agar topic bo'lsa, uni ham qo'shamiz
             if topic_id:
                 topic = get_object_or_404(Topic, id=topic_id, chapter=chapter)
                 path_data.append({
