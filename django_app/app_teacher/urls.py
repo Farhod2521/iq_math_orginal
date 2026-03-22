@@ -14,6 +14,7 @@ from .View.login_as_student import LoginAsStudentAPIView, ChangeStudentPasswordA
 from  .View.teacherreward import  TeacherRewardAPIView, TeacherRewardListAPIView
 from  .View.productexchange import TeacherUpdateProductExchangeStatusAPIView, TeacherProductExchangeListAPIView
 from .View.teacher_login_history import TeacherLoginHistoryListAPIView
+from .View.online_duration import TeacherOnlineDurationAPIView
 urlpatterns = [
     path("my-subjects/", TeacherSubjectsAPIView.as_view(), name="teacher-subjects"),
     path("subject-list/", SubjectListAPIView.as_view(), name="teacher-subjects"),
@@ -79,6 +80,7 @@ urlpatterns = [
     path('teacher/exchange/<int:pk>/status/', TeacherUpdateProductExchangeStatusAPIView.as_view(), name='product-reward'),
     #########################################  GENERETE QUESITON OPEN AI ############################################
     path('teacher/login-history-list/', TeacherLoginHistoryListAPIView.as_view(), name='product-reward'),
+    path('teacher/online-duration/<int:teacher_id>/', TeacherOnlineDurationAPIView.as_view(), name='teacher-online-duration'),
 
 
 
