@@ -10,6 +10,25 @@ from django_app.app_student.models import StudentScore, SomTransferLog
 from django_app.app_user.sms_service import send_sms
 
 
+class StudentByIdentificationAPIView(APIView):
+    """
+    GET /student/by-identification/<identification>/
+    Identification raqami bo'yicha student ism-familyasini qaytaradi.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, identification):
+        try:
+            student = Student.objects.get(identification=identification)
+        except Student.DoesNotExist:
+            return Response({"error": "Bu identification raqamli student topilmadi."}, status=404)
+
+        return Response({
+            "identification": student.identification,
+            "full_name": student.full_name,
+        })
+
+
 class SomTransferRequestAPIView(APIView):
     """
     1-qadam: So'm o'tkazish so'rovi.
