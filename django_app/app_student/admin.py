@@ -40,7 +40,7 @@ class StudentScoreAdmin(admin.ModelAdmin):
 
 @admin.register(StudentScoreLog)
 class StudentScoreLogAdmin(admin.ModelAdmin):
-    list_display = ('get_student_name', 'award_type', 'question', 'awarded_at')
+    list_display = ('get_student_name', 'award_type', 'get_subject', 'get_question_uz', 'awarded_at')
     list_filter = ('award_type', 'awarded_at')
     search_fields = ('student_score__student__full_name', 'student_score__student__user__phone')
     ordering = ('-awarded_at',)
@@ -48,6 +48,19 @@ class StudentScoreLogAdmin(admin.ModelAdmin):
     @admin.display(description="O'quvchi", ordering='student_score__student__full_name')
     def get_student_name(self, obj):
         return obj.student_score.student.full_name
+
+    @admin.display(description="Fan")
+    def get_subject(self, obj):
+        subject = obj.question.topic.chapter.subject
+        sinf = subject.classes.name if subject.classes else ''
+        return f"{sinf} {subject.name}".strip()
+
+    @admin.display(description="Savol (O'zbekcha)")
+    def get_question_uz(self, obj):
+        text = obj.question.question_text_uz or obj.question.question_text or ''
+        from django.utils.html import strip_tags
+        clean = strip_tags(str(text))
+        return clean[:80] + '...' if len(clean) > 80 else clean
 
 
 @admin.register(StudentDailyCoinLog)
