@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import SystemSettings, FAQ, Product, Banner, ConversionRate, Category, Tag, Elon, Motivation, AndroidVersion, Mathematician
+from .models import SystemSettings, FAQ, Product, Banner, ConversionRate, Category, Tag, Elon, Motivation, AndroidVersion, Mathematician, DailyCoinSettings
 
 
 
@@ -26,6 +26,13 @@ class FAQSerializer(serializers.ModelSerializer):
         model = FAQ
         fields = '__all__'
 
+
+
+class DailyCoinSettingsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DailyCoinSettings
+        fields = ['id', 'daily_coin_limit', 'updated_at']
+        read_only_fields = ['updated_at']
 
 
 class ProductSerializer(serializers.ModelSerializer):

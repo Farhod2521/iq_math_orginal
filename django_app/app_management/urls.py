@@ -5,6 +5,7 @@ from .VIEW.elonapiviewcrud import ElonCRUDAPIView
 from .VIEW.motivationapiviewcrud import  MotivationCRUDAPIView
 from .VIEW.systemsettingsapiviewcrud import  SystemSettingsCRUDAPIView
 from .VIEW.andriod_version import AndroidVersionAPIView
+from .VIEW.dailycoinsettingscrud import DailyCoinSettingsCRUDAPIView
 urlpatterns = [
     path('system-settings/', SystemSettingsListView.as_view(), name='system-settings-list'),
     path('banner/', BannerListView.as_view(), name='system-settings-list'),
@@ -32,5 +33,8 @@ urlpatterns = [
     path("superadmin/motivation/<int:pk>/", MotivationCRUDAPIView.as_view()), # GET | PUT | DELETE
     path("system-settings/", SystemSettingsCRUDAPIView.as_view()),          # GET list, POST create
     path("system-settings/<int:pk>/", SystemSettingsCRUDAPIView.as_view()), # GET detail, PUT, DELETE
+
+    path("daily-coin-settings/", DailyCoinSettingsCRUDAPIView.as_view()),           # GET list | POST create
+    path("daily-coin-settings/<int:pk>/", DailyCoinSettingsCRUDAPIView.as_view()),  # GET detail | PUT | DELETE
 
 ]
