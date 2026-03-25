@@ -13,6 +13,7 @@ from django_app.app_payments.models import Payment
 from django.utils import timezone
 from datetime import datetime
 import pytz
+from django_app.app_student.models import Diagnost_Student
 def escape_uri_path(path):
     """Fayl nomini URLga moslashtirish"""
     return quote(path)
@@ -215,7 +216,7 @@ class All_Role_ListView(APIView):
                 now = datetime.now(pytz.timezone("Asia/Ashgabat"))
                 if subscription.start_date <= now <= subscription.end_date:
                     is_subscription_active = True
-
+            has_diagnost = Diagnost_Student.objects.filter(student=student).exists()
             profile_data['json'] = {
                 "profile_id": student.id,
                 "full_name": student.full_name,
@@ -237,6 +238,7 @@ class All_Role_ListView(APIView):
                 "registration_time": student_datetime.strftime('%H:%M:%S') if student_datetime else None,
                 "last_login_time": last_login_formatted,
                 "lang": student.lang,
+                "has_diagnost": has_diagnost,
                 "last_payment_amount": last_payment_amount,
                  "subscription_end_date": end_date.strftime('%d/%m/%Y') if end_date else None,
                 "remaining_days": remaining_days,  # qolgan kunlar (int yoki None)
