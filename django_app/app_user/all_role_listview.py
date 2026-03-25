@@ -33,6 +33,7 @@ class All_Role_ListView(APIView):
         status_filter = request.GET.get("status", "").strip()  # active, inactive, all
         lang_filter = request.GET.get("lang", "").strip()
         device_filter = request.GET.get("device", "").strip()
+        has_diagnost_filter = request.GET.get("has_diagnost", "").strip()  # "true" | "false"
         
         # --- BASE QUERY ---
         users = User.objects.all().order_by('-date_joined')
@@ -68,7 +69,14 @@ class All_Role_ListView(APIView):
             )
         if lang_filter and role == 'student':
             users = users.filter(student_profile__lang=lang_filter)
-            
+
+        # --- HAS_DIAGNOST FILTER (faqat studentlar uchun) ---
+        if has_diagnost_filter in ('true', 'false') and role == 'student':
+            if has_diagnost_filter == 'true':
+                users = users.filter(student_profile__diagnost_student_set__isnull=False).distinct()
+            else:
+                users = users.filter(student_profile__diagnost_student_set__isnull=True)
+
         # --- STATUS FILTER ---
         if status_filter == 'active':
             
