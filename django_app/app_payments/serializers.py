@@ -118,12 +118,18 @@ class SubscriptionPlanSerializer(serializers.ModelSerializer):
         if not request or not request.user.is_authenticated:
             return False
 
-        student = getattr(request.user, "student", None)
+        student = getattr(request.user, "student_profile", None)
 
         if not student:
             return False
 
-        # 👉 Payment ichidan shu oyga mos successful to‘lovni tekshiradi
+        # Oxirgi muvaffaqiyatli to’lov shu planga mos keladimi va obuna hali faolmi
+        from django.utils import timezone
+        now = timezone.now()
+        subscription = getattr(student, "subscription", None)
+        if not subscription or subscription.end_date < now:
+            return False
+
         return Payment.objects.filter(
             student=student,
             status="success",
