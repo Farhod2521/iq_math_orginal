@@ -80,6 +80,30 @@ class DeleteFileAPIView(APIView):
                 {"error": f"Faylni o'chirishda xatolik: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+class UploadedFileListAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, file_id=None):
+        if file_id:
+            uploaded_file = get_object_or_404(UploadedFile, id=file_id)
+            return Response({
+                "id": uploaded_file.id,
+                "file_url": request.build_absolute_uri(uploaded_file.file.url),
+                "uploaded_at": uploaded_file.uploaded_at,
+            })
+
+        files = UploadedFile.objects.all().order_by('-uploaded_at')
+        data = [
+            {
+                "id": f.id,
+                "file_url": request.build_absolute_uri(f.file.url),
+                "uploaded_at": f.uploaded_at,
+            }
+            for f in files
+        ]
+        return Response(data)
+
+
 class ElonListAPIView(APIView):
     def get(self, request):
         status_param = request.GET.get('status', None)
