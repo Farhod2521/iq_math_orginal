@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import SystemSettings, FAQ, Product, Banner, ConversionRate, Category, Tag, Elon, Motivation, AndroidVersion, Mathematician, DailyCoinSettings
+from .models import SystemSettings, FAQ, Product, Banner, ConversionRate, Category, Tag, Elon, Motivation, AndroidVersion, Mathematician, DailyCoinSettings, SolutionStatus, UploadSetting
 
 
 
@@ -33,6 +33,19 @@ class DailyCoinSettingsSerializer(serializers.ModelSerializer):
         model = DailyCoinSettings
         fields = ['id', 'daily_coin_limit', 'updated_at']
         read_only_fields = ['updated_at']
+
+
+class UploadSettingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UploadSetting
+        fields = ['id', 'max_size_mb', 'updated_at']
+        read_only_fields = ['updated_at']
+
+
+class SolutionStatusSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SolutionStatus
+        fields = ['id', 'subject_is_active', 'recommendation_is_active']
 
 
 class ProductSerializer(serializers.ModelSerializer):

@@ -16,6 +16,8 @@ from .VIEW.faq_crud import FAQCRUDAPIView
 from .VIEW.category_supermentor_crud import CategoryCRUDAPIView
 from .VIEW.product_supermentor_crud import ProductCRUDAPIView
 from .VIEW.conversion_rate_crud import ConversionRateCRUDAPIView
+from .VIEW.solution_status_crud import SolutionStatusCRUDAPIView
+from .VIEW.upload_setting_crud import UploadSettingCRUDAPIView
 urlpatterns = [
     path('system-settings/', SystemSettingsListView.as_view(), name='system-settings-list'),
     path('banner/', BannerListView.as_view(), name='system-settings-list'),
@@ -71,4 +73,9 @@ urlpatterns = [
     path("superadmin/faq/", FAQCRUDAPIView.as_view()),
     path("superadmin/faq/<int:pk>/", FAQCRUDAPIView.as_view()),
 
+    path("superadmin/solution-status/", SolutionStatusCRUDAPIView.as_view()),
+    path("superadmin/solution-status/<int:pk>/", SolutionStatusCRUDAPIView.as_view()),
+
+    path("superadmin/upload-setting/", UploadSettingCRUDAPIView.as_view()),
+    path("superadmin/upload-setting/<int:pk>/", UploadSettingCRUDAPIView.as_view()),
 ]
