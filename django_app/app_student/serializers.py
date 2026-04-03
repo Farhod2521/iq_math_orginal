@@ -66,10 +66,16 @@ class SubjectSerializer(serializers.ModelSerializer):
         ]
 
     def get_class_uz(self, obj):
-        return f"{obj.classes.name}-sinf {obj.name_uz}"
+        class_name = obj.classes.name if obj.classes else ""
+        if class_name.isdigit():
+            return f"{class_name}-sinf {obj.name_uz}"
+        return obj.name_uz
 
     def get_class_ru(self, obj):
-        return f"{obj.classes.name}-класс {obj.name_ru}"
+        class_name = obj.classes.name if obj.classes else ""
+        if class_name.isdigit():
+            return f"{class_name}-класс {obj.name_ru}"
+        return obj.name_ru
 
     def get_is_open(self, obj):
         return self.context.get("is_open", False)
