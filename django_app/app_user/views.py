@@ -1087,6 +1087,12 @@ class LoginAPIView(APIView):
         if serializer.is_valid():
             user = serializer.validated_data["user"]
 
+            # Device yangilash
+            device = request.data.get("device")
+            if device:
+                user.device = device
+                user.save(update_fields=["device"])
+
             # Tokenlarni yaratish
             refresh = RefreshToken.for_user(user)
             access_token = refresh.access_token
