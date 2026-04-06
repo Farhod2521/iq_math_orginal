@@ -35,15 +35,18 @@ class SubscriptionPlanCRUDAPIView(APIView):
 
     # 📌 CREATE
     def post(self, request, pk=None):
+        if pk:
+            plan = get_object_or_404(SubscriptionPlan, pk=pk)
+            serializer = SubscriptionPlanCREATESerializer(plan, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            plan = serializer.save()
+            return Response({"message": "Tarif reja yangilandi", "data": SubscriptionREADPlanSerializer(plan).data})
+
         serializer = SubscriptionPlanCREATESerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         plan = serializer.save()
-
         return Response(
-            {
-                "message": "Tarif reja yaratildi",
-                "data": SubscriptionREADPlanSerializer(plan).data
-            },
+            {"message": "Tarif reja yaratildi", "data": SubscriptionREADPlanSerializer(plan).data},
             status=status.HTTP_201_CREATED
         )
 
@@ -102,15 +105,18 @@ class SubscriptionCategoryCRUDAPIView(APIView):
 
     # 📌 CREATE
     def post(self, request, pk=None):
+        if pk:
+            category = get_object_or_404(SubscriptionCategory, pk=pk)
+            serializer = SubscriptionCategoryCreateSerializer(category, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            category = serializer.save()
+            return Response({"message": "Kategoriya yangilandi", "data": SubscriptionCategoryReadSerializer(category).data})
+
         serializer = SubscriptionCategoryCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         category = serializer.save()
-
         return Response(
-            {
-                "message": "Kategoriya yaratildi",
-                "data": SubscriptionCategoryReadSerializer(category).data
-            },
+            {"message": "Kategoriya yaratildi", "data": SubscriptionCategoryReadSerializer(category).data},
             status=status.HTTP_201_CREATED
         )
 
@@ -167,15 +173,18 @@ class SubscriptionBenefitCRUDAPIView(APIView):
 
     # 📌 CREATE
     def post(self, request, pk=None):
+        if pk:
+            benefit = get_object_or_404(SubscriptionBenefit, pk=pk)
+            serializer = SubscriptionBenefitCreateSerializer(benefit, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            benefit = serializer.save()
+            return Response({"message": "Ustunlik yangilandi", "data": SubscriptionBenefitReadSerializer(benefit).data})
+
         serializer = SubscriptionBenefitCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         benefit = serializer.save()
-
         return Response(
-            {
-                "message": "Ustunlik yaratildi",
-                "data": SubscriptionBenefitReadSerializer(benefit).data
-            },
+            {"message": "Ustunlik yaratildi", "data": SubscriptionBenefitReadSerializer(benefit).data},
             status=status.HTTP_201_CREATED
         )
 
