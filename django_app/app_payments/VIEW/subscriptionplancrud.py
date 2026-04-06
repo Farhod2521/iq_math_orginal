@@ -34,7 +34,7 @@ class SubscriptionPlanCRUDAPIView(APIView):
         return Response(serializer.data)
 
     # 📌 CREATE
-    def post(self, request):
+    def post(self, request, pk=None):
         serializer = SubscriptionPlanCREATESerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         plan = serializer.save()
@@ -101,7 +101,7 @@ class SubscriptionCategoryCRUDAPIView(APIView):
         return Response(serializer.data)
 
     # 📌 CREATE
-    def post(self, request):
+    def post(self, request, pk=None):
         serializer = SubscriptionCategoryCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         category = serializer.save()
@@ -166,7 +166,7 @@ class SubscriptionBenefitCRUDAPIView(APIView):
         return Response(serializer.data)
 
     # 📌 CREATE
-    def post(self, request):
+    def post(self, request, pk=None):
         serializer = SubscriptionBenefitCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         benefit = serializer.save()
