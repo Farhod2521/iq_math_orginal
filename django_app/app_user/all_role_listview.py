@@ -67,8 +67,23 @@ class All_Role_ListView(APIView):
                 Q(student_profile__class_name__name_uz__icontains=subject_name) |
                 Q(student_profile__class_name__name_ru__icontains=subject_name)
             )
-        if lang_filter and role == 'student':
-            users = users.filter(student_profile__lang=lang_filter)
+        if lang_filter:
+            if role == 'student':
+                users = users.filter(student_profile__lang=lang_filter)
+            elif role == 'teacher':
+                users = users.filter(teacher_profile__lang=lang_filter)
+            elif role == 'parent':
+                users = users.filter(parent_profile__lang=lang_filter)
+            elif role == 'tutor':
+                users = users.filter(tutor_profile__lang=lang_filter)
+            else:
+                # role berilmagan — hammadan qidirish
+                users = users.filter(
+                    Q(student_profile__lang=lang_filter) |
+                    Q(teacher_profile__lang=lang_filter) |
+                    Q(parent_profile__lang=lang_filter) |
+                    Q(tutor_profile__lang=lang_filter)
+                )
 
         # --- HAS_DIAGNOST FILTER (faqat studentlar uchun) ---
         if has_diagnost_filter in ('true', 'false') and role == 'student':
@@ -286,6 +301,7 @@ class All_Role_ListView(APIView):
                 "document": teacher.document,
                 "status": teacher.status,
                 "is_verified_teacher": teacher.is_verified_teacher,
+                "lang": teacher.lang,
                 "registration_date": teacher_datetime.strftime('%d/%m/%Y') if teacher_datetime else None,
                 "registration_time": teacher_datetime.strftime('%H:%M:%S') if teacher_datetime else None
             }
@@ -319,6 +335,7 @@ class All_Role_ListView(APIView):
                 "districts": parent.districts,
                 "address": parent.address,
                 "status": parent.status,
+                "lang": parent.lang,
                 "registration_date": parent_datetime.strftime('%d/%m/%Y') if parent_datetime else None,
                 "registration_time": parent_datetime.strftime('%H:%M:%S') if parent_datetime else None
             }
@@ -347,6 +364,7 @@ class All_Role_ListView(APIView):
                 "districts": tutor.districts,
                 "address": tutor.address,
                 "status": tutor.status,
+                "lang": tutor.lang,
                 "registration_date": tutor_datetime.strftime('%d/%m/%Y') if tutor_datetime else None,
                 "registration_time": tutor_datetime.strftime('%H:%M:%S') if tutor_datetime else None
             }

@@ -395,10 +395,16 @@ class VerifySmsCodeSerializer(serializers.Serializer):
                             pass
 
             elif role == "parent":
-                Parent.objects.create(user=user, full_name=full_name, status=True)
+                parent_kwargs = {"user": user, "full_name": full_name, "status": True}
+                if lang:
+                    parent_kwargs["lang"] = lang
+                Parent.objects.create(**parent_kwargs)
 
             elif role == "tutor":
-                Tutor.objects.create(user=user, full_name=full_name, status=True)
+                tutor_kwargs = {"user": user, "full_name": full_name, "status": True}
+                if lang:
+                    tutor_kwargs["lang"] = lang
+                Tutor.objects.create(**tutor_kwargs)
 
             # Redis kalitini o'chirish
             delete_pending_registration(phone)

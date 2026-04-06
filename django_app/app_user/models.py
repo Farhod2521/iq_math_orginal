@@ -99,15 +99,16 @@ class Tutor(models.Model):
     region = models.CharField(max_length=200, blank=True, null=True)
     districts = models.CharField(max_length=200, blank=True, null=True)
     address = models.CharField(max_length=500, blank=True, null=True)
-    tutor_date = models.DateTimeField(auto_now=True, null=True, verbose_name="Ro‘yxatdan o‘tgan sana")
+    tutor_date = models.DateTimeField(auto_now=True, null=True, verbose_name="Ro’yxatdan o’tgan sana")
     status = models.BooleanField(default=False, verbose_name="Holat")
+    lang = models.CharField(max_length=10, verbose_name="Til", null=True, blank=True, default="uz")
 
     def __str__(self):
         return self.full_name
 
     class Meta:
-        verbose_name = "O‘qituvchi"
-        verbose_name_plural = "O‘qituvchilar"
+        verbose_name = "O’qituvchi"
+        verbose_name_plural = "O’qituvchilar"
 
 
 class Teacher(models.Model):
@@ -120,9 +121,10 @@ class Teacher(models.Model):
     document_type = models.CharField(max_length=50, verbose_name="Hujjat turi")
     document = models.CharField(max_length=20, verbose_name="Hujjat raqami")
     status = models.BooleanField(default=False, verbose_name="Holat")
-    is_verified_teacher = models.BooleanField(default=False, verbose_name="O‘qituvchi")
-    teacher_date = models.DateTimeField(auto_now=True, null=True, verbose_name="Ro‘yxatdan o‘tgan sana")
-    support  =  models.BooleanField(default=False)
+    is_verified_teacher = models.BooleanField(default=False, verbose_name="O’qituvchi")
+    teacher_date = models.DateTimeField(auto_now=True, null=True, verbose_name="Ro’yxatdan o’tgan sana")
+    support = models.BooleanField(default=False)
+    lang = models.CharField(max_length=10, verbose_name="Til", null=True, blank=True, default="uz")
     
 
     def __str__(self):
@@ -212,8 +214,9 @@ class Parent(models.Model):
     region = models.CharField(max_length=200, blank=True, null=True)
     districts = models.CharField(max_length=200, blank=True, null=True)
     address = models.CharField(max_length=500, blank=True, null=True)
-    parent_date = models.DateTimeField(auto_now=True, null=True, verbose_name="Ro‘yxatdan o‘tgan sana")
+    parent_date = models.DateTimeField(auto_now=True, null=True, verbose_name="Ro’yxatdan o’tgan sana")
     status = models.BooleanField(default=False, verbose_name="Holat")
+    lang = models.CharField(max_length=10, verbose_name="Til", null=True, blank=True, default="uz")
 
     def __str__(self):
         return self.full_name
