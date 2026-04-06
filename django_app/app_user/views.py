@@ -7,7 +7,7 @@ LoginSerializer, StudentProfileSerializer, TeacherRegisterSerializer, Class_Seri
 TeacherVerifySmsCodeSerializer, TeacherSerializer, StudentSerializer, ParentCreateSerializer, StudentSerializerParent,
 SendCodeSerializer, VerifyCodeSerializer, SessionListSerializer
 )
-from .models import Student, UserSMSAttempt, Teacher, Class, StudentLoginHistory, Parent, Tutor, ParentStudentRelation, TeacherLoginHistory, Device, UserSession
+from .models import Student, UserSMSAttempt, Teacher, Class, StudentLoginHistory, Parent, Tutor, ParentStudentRelation, TeacherLoginHistory, TutorLoginHistory, ParentLoginHistory, Device, UserSession
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.settings import api_settings
 from datetime import timedelta
@@ -1135,6 +1135,7 @@ class LoginAPIView(APIView):
             elif user.role == 'tutor':
                 try:
                     tutor = Tutor.objects.get(user=user)
+                    TutorLoginHistory.objects.create(tutor=tutor)
                     access_token['tutor_id'] = tutor.id
                     profile_data = {
                         "id": tutor.id,
@@ -1151,6 +1152,7 @@ class LoginAPIView(APIView):
             elif user.role == 'parent':
                 try:
                     parent = Parent.objects.get(user=user)
+                    ParentLoginHistory.objects.create(parent=parent)
                     access_token['parent_id'] = parent.id
                     # Farzandlar ro‘yxatini ham yuborish mumkin
                     # children = parent.students.values("id", "full_name")

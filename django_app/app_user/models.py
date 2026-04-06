@@ -327,10 +327,36 @@ class TeacherLoginHistory(models.Model):
         return f"{self.teacher.full_name} - {self.login_time.strftime('%Y-%m-%d %H:%M:%S')}"
     
 
-class StudentLoginHistory(models.Model): 
-    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='login_history') 
-    login_time = models.DateTimeField(auto_now_add=True) 
-    logout_time = models.DateTimeField(null=True, blank=True) 
-    # Yangi maydon 
-    def __str__(self): 
+class StudentLoginHistory(models.Model):
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='login_history')
+    login_time = models.DateTimeField(auto_now_add=True)
+    logout_time = models.DateTimeField(null=True, blank=True)
+    # Yangi maydon
+    def __str__(self):
         return f"{self.student.full_name} - {self.login_time.strftime('%Y-%m-%d %H:%M:%S')}"
+
+
+class TutorLoginHistory(models.Model):
+    tutor = models.ForeignKey(Tutor, on_delete=models.CASCADE, related_name='login_history')
+    login_time = models.DateTimeField(auto_now_add=True)
+    logout_time = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.tutor.full_name} - {self.login_time.strftime('%Y-%m-%d %H:%M:%S')}"
+
+    class Meta:
+        verbose_name = "Tutor login tarixi"
+        verbose_name_plural = "Tutor login tarixi"
+
+
+class ParentLoginHistory(models.Model):
+    parent = models.ForeignKey(Parent, on_delete=models.CASCADE, related_name='login_history')
+    login_time = models.DateTimeField(auto_now_add=True)
+    logout_time = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.parent.full_name} - {self.login_time.strftime('%Y-%m-%d %H:%M:%S')}"
+
+    class Meta:
+        verbose_name = "Ota-ona login tarixi"
+        verbose_name_plural = "Ota-ona login tarixi"

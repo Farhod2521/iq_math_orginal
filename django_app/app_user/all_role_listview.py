@@ -8,7 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 from openpyxl import Workbook
 import pytz
 from django.db.models import Q
-from .models import User, Student, Teacher, Parent, Tutor, StudentLoginHistory, ParentStudentRelation
+from .models import User, Student, Teacher, Parent, Tutor, StudentLoginHistory, TutorLoginHistory, ParentLoginHistory, ParentStudentRelation
 from django_app.app_payments.models import Payment
 from django.utils import timezone
 from datetime import datetime
@@ -327,8 +327,11 @@ class All_Role_ListView(APIView):
             parent = user.parent_profile
             parent_datetime = parent.parent_date.astimezone(timezone) if parent.parent_date else None
 
+            last_login_parent = ParentLoginHistory.objects.filter(parent=parent).order_by('-login_time').first()
+            last_login_parent_fmt = last_login_parent.login_time.astimezone(timezone).strftime('%d/%m/%Y %H:%M') if last_login_parent else None
+
             profile_data['json'] = {
-                "profile_id": parent.id,  # Parent profil id sini qaytaramiz
+                "profile_id": parent.id,
                 "full_name": parent.full_name,
                 "role": "Ota-ona",
                 "region": parent.region,
@@ -336,6 +339,7 @@ class All_Role_ListView(APIView):
                 "address": parent.address,
                 "status": parent.status,
                 "lang": parent.lang,
+                "last_login_time": last_login_parent_fmt,
                 "registration_date": parent_datetime.strftime('%d/%m/%Y') if parent_datetime else None,
                 "registration_time": parent_datetime.strftime('%H:%M:%S') if parent_datetime else None
             }
@@ -356,8 +360,11 @@ class All_Role_ListView(APIView):
             tutor = user.tutor_profile
             tutor_datetime = tutor.tutor_date.astimezone(timezone) if tutor.tutor_date else None
 
+            last_login_tutor = TutorLoginHistory.objects.filter(tutor=tutor).order_by('-login_time').first()
+            last_login_tutor_fmt = last_login_tutor.login_time.astimezone(timezone).strftime('%d/%m/%Y %H:%M') if last_login_tutor else None
+
             profile_data['json'] = {
-                "profile_id": tutor.id,  # Tutor profil id sini qaytaramiz
+                "profile_id": tutor.id,
                 "full_name": tutor.full_name,
                 "role": "O'qtuvchi",
                 "region": tutor.region,
@@ -365,6 +372,7 @@ class All_Role_ListView(APIView):
                 "address": tutor.address,
                 "status": tutor.status,
                 "lang": tutor.lang,
+                "last_login_time": last_login_tutor_fmt,
                 "registration_date": tutor_datetime.strftime('%d/%m/%Y') if tutor_datetime else None,
                 "registration_time": tutor_datetime.strftime('%H:%M:%S') if tutor_datetime else None
             }
