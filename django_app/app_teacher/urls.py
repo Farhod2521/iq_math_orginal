@@ -6,7 +6,7 @@ from .views import(
        ChoiceQuestionToXlsxImport, CompenQuestionToXlsxImport, UploadQuestionsAPIView, OpenAIQuestionListView, OpenAIProcessAPIView
 )
 from .View.unsolved import  TeacherUnsolvedQuestionReportListView, TeacherAnswerUnsolvedQuestionView
-from  .View.gruop_student import AddStudentsToGroupAPIView, GroupCreateAPIView, GroupListAPIView, StudentsWithoutGroupAPIView
+from  .View.gruop_student import AddStudentsToGroupAPIView, GroupCreateAPIView, GroupListAPIView, StudentsWithoutGroupAPIView, SuperAdminGroupCRUDAPIView
 from .View.reorderOrderIndex  import  ReorderTopicAPIView, ReorderChapterAPIView, ReorderSubjectAPIView
 from .View.independentView import  TeacherTopicHelpRequestListAPIView, TeacherTopicHelpRequestDeleteAPIView,TeacherTopicHelpRequestDetailAPIView, GetTelegramIDFromHelpRequestAPIView,TeacherTopicHelpRequestFromTelegramAPIView,TeacherCommitToHelpRequestAPIView, TeacherHelpRequestNotificationAPIView
 from .View.coupon import CreateTeacherCouponAPIView, TeacherCouponStudentsAPIView
@@ -46,6 +46,8 @@ urlpatterns = [
     path("my-groups/detail/<int:pk>/", AddStudentsToGroupAPIView.as_view(), name="group-list-create"),
     path("my-groups/<int:group_id>/add-students/", AddStudentsToGroupAPIView.as_view(), name="group-add-students"),
     path('students/without-group/new-students/', StudentsWithoutGroupAPIView.as_view(), name='group-new-students'),
+    path('superadmin/group/', SuperAdminGroupCRUDAPIView.as_view(), name='superadmin-group-list'),
+    path('superadmin/group/<int:pk>/', SuperAdminGroupCRUDAPIView.as_view(), name='superadmin-group-detail'),
 
 
     path('topics/reorder/', ReorderTopicAPIView.as_view(), name='topic-reorder'),

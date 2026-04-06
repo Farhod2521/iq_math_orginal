@@ -16,6 +16,13 @@ class IsTeacherOrSuperAdmin(BasePermission):
         return request.user.role in ['teacher', 'superadmin', 'admin']
 
 
+class IsSuperAdmin(BasePermission):
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+        return request.user.role in ['superadmin', 'admin']
+
+
 def _is_superadmin(user):
     return getattr(user, 'role', None) in ['superadmin', 'admin']
 
@@ -112,3 +119,90 @@ class StudentsWithoutGroupAPIView(APIView):
         students_without_group = Student.objects.filter(groups__isnull=True)
         serializer = StudentSerializer(students_without_group, many=True)
         return Response(serializer.data)
+
+
+class SuperAdminGroupCRUDAPIView(APIView):
+    """
+    Superadmin uchun guruh CRUD:
+
+    POST   /superadmin/group/           — guruh yaratish (name + teacher_id + student_ids)
+    GET    /superadmin/group/           — barcha guruhlar ro'yxati (?teacher_id=5 filter)
+    GET    /superadmin/group/<pk>/      — bitta guruh detali
+    PUT    /superadmin/group/<pk>/      — guruhni tahrirlash (name, teacher_id, student_ids)
+    DELETE /superadmin/group/<pk>/      — guruhni o'chirish
+    """
+    permission_classes = [IsSuperAdmin]
+
+    def get(self, request, pk=None):
+        if pk:
+            group = get_object_or_404(Group, pk=pk)
+            return Response(self._serialize(group))
+
+        qs = Group.objects.select_related('teacher').prefetch_related('students')
+        teacher_id = request.GET.get('teacher_id')
+        if teacher_id:
+            qs = qs.filter(teacher_id=teacher_id)
+
+        return Response([self._serialize(g) for g in qs])
+
+    def post(self, request):
+        name = request.data.get('name', '').strip()
+        teacher_id = request.data.get('teacher_id')
+        student_ids = request.data.get('student_ids', [])
+
+        if not name:
+            return Response({"detail": "name maydoni talab qilinadi"}, status=400)
+        if not teacher_id:
+            return Response({"detail": "teacher_id maydoni talab qilinadi"}, status=400)
+
+        teacher = get_object_or_404(Teacher, id=teacher_id)
+        group = Group.objects.create(name=name, teacher=teacher)
+
+        if student_ids:
+            students = Student.objects.filter(id__in=student_ids)
+            group.students.set(students)
+
+        return Response(self._serialize(group), status=201)
+
+    def put(self, request, pk=None):
+        if not pk:
+            return Response({"detail": "pk talab qilinadi"}, status=400)
+
+        group = get_object_or_404(Group, pk=pk)
+
+        name = request.data.get('name', '').strip()
+        teacher_id = request.data.get('teacher_id')
+        student_ids = request.data.get('student_ids')
+
+        if name:
+            group.name = name
+        if teacher_id:
+            group.teacher = get_object_or_404(Teacher, id=teacher_id)
+        group.save()
+
+        if student_ids is not None:
+            students = Student.objects.filter(id__in=student_ids)
+            group.students.set(students)
+
+        return Response(self._serialize(group))
+
+    def delete(self, request, pk=None):
+        if not pk:
+            return Response({"detail": "pk talab qilinadi"}, status=400)
+        group = get_object_or_404(Group, pk=pk)
+        group.delete()
+        return Response({"detail": "Guruh o'chirildi"}, status=204)
+
+    def _serialize(self, group):
+        return {
+            "id": group.id,
+            "name": group.name,
+            "teacher_id": group.teacher_id,
+            "teacher_name": group.teacher.full_name,
+            "students": [
+                {"id": s.id, "full_name": s.full_name, "identification": s.identification}
+                for s in group.students.all()
+            ],
+            "student_count": group.students.count(),
+            "created_at": group.created_at.strftime("%d/%m/%Y %H:%M"),
+        }
