@@ -193,6 +193,7 @@ class Message(models.Model):
         verbose_name="Xabar turi"
     )
     url = models.CharField(
+        max_length=500,
         null=True,
         blank=True,
         verbose_name="url"
@@ -305,10 +306,10 @@ class TypingIndicator(models.Model):
 
 
 class ConversationRating(models.Model):
-    conversation = models.OneToOneField(
+    conversation = models.ForeignKey(
         Conversation,
         on_delete=models.CASCADE,
-        related_name="rating",
+        related_name="ratings",
         verbose_name="Chat"
     )
 

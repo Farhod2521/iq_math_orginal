@@ -38,7 +38,12 @@ class ConversationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Conversation
-        fields = ["id", "chat_type", "title", "last_message", "last_message_at"]
+        fields = [
+            "id", "chat_type", "title",
+            "last_message", "last_message_at",
+            "is_closed", "closed_at",
+            "is_close_requested",
+        ]
 
 
 # --------------- MESSAGE SERIALIZER -----------------
@@ -195,6 +200,8 @@ class ConversationListSerializer(serializers.ModelSerializer):
             "chat_type",
             "last_message",
             "last_message_at",
+            "is_closed",
+            "is_close_requested",
             "other_user_name",
             "other_user_id",
             "unread_count",
