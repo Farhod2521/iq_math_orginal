@@ -127,19 +127,36 @@ class CreateDirectChatAPIView(APIView):
         else:
             return Response({"error": "Faqat student yoki teacher chat ochishi mumkin"}, status=403)
 
-        # direct chat bor-yo’qligini tekshiramiz (faqat ochiq chatlar)
+        # ikkala ishtirokchi o’rtasidagi chatni topamiz (ochiq yoki yopiq)
         conversation = Conversation.objects.filter(
             chat_type="direct",
-            is_closed=False,
             participants__user=user
         ).filter(
             participants__user=other_user
         ).first()
 
         if conversation:
+            # Yopilgan bo’lsa — qayta ochamiz, tarix saqlanadi
+            if conversation.is_closed:
+                conversation.is_closed = False
+                conversation.closed_at = None
+                conversation.closed_by = None
+                conversation.is_close_requested = False
+                conversation.close_requested_at = None
+                conversation.close_requested_by = None
+                conversation.save(update_fields=[
+                    "is_closed", "closed_at", "closed_by",
+                    "is_close_requested", "close_requested_at", "close_requested_by"
+                ])
+                Message.objects.create(
+                    conversation=conversation,
+                    sender=user,
+                    message_type="system",
+                    text="Chat qayta ochildi. Yangi savol yozishingiz mumkin."
+                )
             return Response(ConversationSerializer(conversation).data)
 
-        # yangi chat (yopiq bo’lsa ham yangi session ochiladi)
+        # yangi chat
         conversation = Conversation.objects.create(chat_type="direct")
 
         ConversationParticipant.objects.bulk_create([
@@ -180,7 +197,6 @@ class StudentSupportChatMessageAPIView(APIView):
 
         conversation = Conversation.objects.filter(
             chat_type="direct",
-            is_closed=False,
             participants__user=user
         ).filter(
             participants__user=other_user
@@ -192,6 +208,23 @@ class StudentSupportChatMessageAPIView(APIView):
                 ConversationParticipant(conversation=conversation, user=user),
                 ConversationParticipant(conversation=conversation, user=other_user)
             ])
+        elif conversation.is_closed:
+            conversation.is_closed = False
+            conversation.closed_at = None
+            conversation.closed_by = None
+            conversation.is_close_requested = False
+            conversation.close_requested_at = None
+            conversation.close_requested_by = None
+            conversation.save(update_fields=[
+                "is_closed", "closed_at", "closed_by",
+                "is_close_requested", "close_requested_at", "close_requested_by"
+            ])
+            Message.objects.create(
+                conversation=conversation,
+                sender=user,
+                message_type="system",
+                text="Chat qayta ochildi. Yangi savol yozishingiz mumkin."
+            )
 
         try:
             message = create_message(
@@ -247,29 +280,37 @@ class SendMessageAPIView(APIView):
         except:
             return Response({"error": "Chat topilmadi"}, status=404)
 
-        # Yopilgan chatga xabar yuborib bo'lmaydi
-        if conversation.is_closed:
-            return Response(
-                {"error": "Bu chat yopilgan. Yangi chat oching."},
-                status=400
-            )
-
         if not ConversationParticipant.objects.filter(
             conversation=conversation, user=user
         ).exists():
             return Response({"error": "Ruxsat yo'q"}, status=403)
 
-        # Student xabar yuborganda o'qituvchining yopish so'rovini bekor qilamiz
-        if conversation.is_close_requested and user.role == "student":
+        # Yopilgan chatga xabar yuborganda — qayta ochamiz
+        if conversation.is_closed:
+            conversation.is_closed = False
+            conversation.closed_at = None
+            conversation.closed_by = None
             conversation.is_close_requested = False
             conversation.close_requested_at = None
             conversation.close_requested_by = None
             conversation.save(update_fields=[
-                "is_close_requested",
-                "close_requested_at",
-                "close_requested_by"
+                "is_closed", "closed_at", "closed_by",
+                "is_close_requested", "close_requested_at", "close_requested_by"
             ])
-            # O'qituvchiga tizim xabari
+            Message.objects.create(
+                conversation=conversation,
+                sender=user,
+                message_type="system",
+                text="Chat qayta ochildi. Yangi savol yozishingiz mumkin."
+            )
+        # Yopish so'rovi bo'lsa va student yozsa — so'rovni bekor qilamiz
+        elif conversation.is_close_requested and user.role == "student":
+            conversation.is_close_requested = False
+            conversation.close_requested_at = None
+            conversation.close_requested_by = None
+            conversation.save(update_fields=[
+                "is_close_requested", "close_requested_at", "close_requested_by"
+            ])
             Message.objects.create(
                 conversation=conversation,
                 sender=user,
@@ -526,14 +567,7 @@ class ConfirmCloseAndRateAPIView(APIView):
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        # 5️⃣ Oldin baho berilganmi?
-        if hasattr(conversation, "rating"):
-            return Response(
-                {"detail": "Bu chat allaqachon baholangan"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # 6️⃣ Mentor topamiz
+        # 5️⃣ Mentor topamiz
         mentor_participant = ConversationParticipant.objects.filter(
             conversation=conversation,
             user__role__in=["teacher", "tutor"]
@@ -612,24 +646,19 @@ class TeacherClosedChatsStatsAPIView(APIView):
         start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         start_of_year = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
 
-        # Baza so‘rovlari
-        base_filter = Q(closed_by=user, is_closed=True)
-
+        # Statistika ConversationRating bo’yicha (har bir yopilgan session = 1 rating)
         def get_stats(start_date=None):
-            filt = base_filter
+            filt = Q(mentor=user)
             if start_date:
-                filt &= Q(closed_at__gte=start_date)
-            chats = Conversation.objects.filter(filt)
+                filt &= Q(created_at__gte=start_date)
 
-            count = chats.count()
-
-            avg_rating = ConversationRating.objects.filter(
-                conversation__in=chats
-            ).aggregate(avg=Avg('stars'))['avg']
+            ratings = ConversationRating.objects.filter(filt)
+            count = ratings.count()
+            avg_rating = ratings.aggregate(avg=Avg("stars"))["avg"]
 
             return {
                 "closed_chats_count": count,
-                "average_rating": round(avg_rating, 2) if avg_rating else None
+                "average_rating": round(avg_rating, 2) if avg_rating else None,
             }
 
         data = {
@@ -670,24 +699,17 @@ class SuperAdminTeachersClosedChatsStatsAPIView(APIView):
         )
 
         def get_stats(teacher_user, start_date=None):
-            filt = Q(
-                closed_by=teacher_user,
-                is_closed=True
-            )
+            filt = Q(mentor=teacher_user)
             if start_date:
-                filt &= Q(closed_at__gte=start_date)
+                filt &= Q(created_at__gte=start_date)
 
-            chats = Conversation.objects.filter(filt)
-
-            count = chats.count()
-
-            avg_rating = ConversationRating.objects.filter(
-                conversation__in=chats
-            ).aggregate(avg=Avg('stars'))['avg']
+            ratings = ConversationRating.objects.filter(filt)
+            count = ratings.count()
+            avg_rating = ratings.aggregate(avg=Avg("stars"))["avg"]
 
             return {
                 "closed_chats_count": count,
-                "average_rating": round(avg_rating, 2) if avg_rating else None
+                "average_rating": round(avg_rating, 2) if avg_rating else None,
             }
 
         data = []
