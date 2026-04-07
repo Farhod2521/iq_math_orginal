@@ -1087,11 +1087,18 @@ class LoginAPIView(APIView):
         if serializer.is_valid():
             user = serializer.validated_data["user"]
 
-            # Device yangilash
+            # Device va lang yangilash (User modeliga)
             device = request.data.get("device")
+            lang = request.data.get("lang")
+            update_fields = []
             if device:
                 user.device = device
-                user.save(update_fields=["device"])
+                update_fields.append("device")
+            if lang and user.role != "student":
+                user.lang = lang
+                update_fields.append("lang")
+            if update_fields:
+                user.save(update_fields=update_fields)
 
             # Tokenlarni yaratish
             refresh = RefreshToken.for_user(user)
@@ -1105,6 +1112,9 @@ class LoginAPIView(APIView):
                 try:
                     student = Student.objects.get(user=user)
                     StudentLoginHistory.objects.create(student=student)
+                    if lang:
+                        student.lang = lang
+                        student.save(update_fields=["lang"])
 
                     access_token['student_id'] = student.id
                     profile_data = {
