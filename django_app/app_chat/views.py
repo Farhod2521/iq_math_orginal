@@ -127,9 +127,10 @@ class CreateDirectChatAPIView(APIView):
         else:
             return Response({"error": "Faqat student yoki teacher chat ochishi mumkin"}, status=403)
 
-        # direct chat bor-yo‘qligini tekshiramiz
+        # direct chat bor-yo’qligini tekshiramiz (faqat ochiq chatlar)
         conversation = Conversation.objects.filter(
             chat_type="direct",
+            is_closed=False,
             participants__user=user
         ).filter(
             participants__user=other_user
@@ -138,7 +139,7 @@ class CreateDirectChatAPIView(APIView):
         if conversation:
             return Response(ConversationSerializer(conversation).data)
 
-        # yangi chat
+        # yangi chat (yopiq bo’lsa ham yangi session ochiladi)
         conversation = Conversation.objects.create(chat_type="direct")
 
         ConversationParticipant.objects.bulk_create([
@@ -179,6 +180,7 @@ class StudentSupportChatMessageAPIView(APIView):
 
         conversation = Conversation.objects.filter(
             chat_type="direct",
+            is_closed=False,
             participants__user=user
         ).filter(
             participants__user=other_user
@@ -245,10 +247,35 @@ class SendMessageAPIView(APIView):
         except:
             return Response({"error": "Chat topilmadi"}, status=404)
 
+        # Yopilgan chatga xabar yuborib bo'lmaydi
+        if conversation.is_closed:
+            return Response(
+                {"error": "Bu chat yopilgan. Yangi chat oching."},
+                status=400
+            )
+
         if not ConversationParticipant.objects.filter(
             conversation=conversation, user=user
         ).exists():
             return Response({"error": "Ruxsat yo'q"}, status=403)
+
+        # Student xabar yuborganda o'qituvchining yopish so'rovini bekor qilamiz
+        if conversation.is_close_requested and user.role == "student":
+            conversation.is_close_requested = False
+            conversation.close_requested_at = None
+            conversation.close_requested_by = None
+            conversation.save(update_fields=[
+                "is_close_requested",
+                "close_requested_at",
+                "close_requested_by"
+            ])
+            # O'qituvchiga tizim xabari
+            Message.objects.create(
+                conversation=conversation,
+                sender=user,
+                message_type="system",
+                text="Student yangi savol yozdi. Chat davom etmoqda."
+            )
 
         reply_to = None
         if reply_to_id:
@@ -268,7 +295,7 @@ class SendMessageAPIView(APIView):
         # last message update
         conversation.last_message = text or "📎 File"
         conversation.last_message_at = message.created_at
-        conversation.save()
+        conversation.save(update_fields=["last_message", "last_message_at"])
 
         # unread_count update (qarshi tarafga)
         for part in conversation.participants.exclude(user=user):
