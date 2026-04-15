@@ -84,24 +84,61 @@ class UploadedFileListAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, file_id=None):
+        # --- Detail ---
         if file_id:
             uploaded_file = get_object_or_404(UploadedFile, id=file_id)
             return Response({
                 "id": uploaded_file.id,
                 "file_url": request.build_absolute_uri(uploaded_file.file.url),
+                "file_size_mb": round(uploaded_file.file.size / 1024 / 1024, 2) if uploaded_file.file else None,
                 "uploaded_at": uploaded_file.uploaded_at,
             })
 
-        files = UploadedFile.objects.all().order_by('-uploaded_at')
+        # --- List + Filter + Pagination ---
+        qs = UploadedFile.objects.all().order_by("-uploaded_at")
+
+        # Sana bo'yicha filter: ?date_from=2024-01-01&date_to=2024-12-31
+        date_from = request.query_params.get("date_from")
+        date_to   = request.query_params.get("date_to")
+        # Aniq kun: ?date=2024-06-15
+        date_exact = request.query_params.get("date")
+
+        if date_exact:
+            qs = qs.filter(uploaded_at__date=date_exact)
+        else:
+            if date_from:
+                qs = qs.filter(uploaded_at__date__gte=date_from)
+            if date_to:
+                qs = qs.filter(uploaded_at__date__lte=date_to)
+
+        # Pagination: ?page=1&page_size=20 (default: 20)
+        try:
+            page      = max(1, int(request.query_params.get("page", 1)))
+            page_size = max(1, min(int(request.query_params.get("page_size", 20)), 100))
+        except (ValueError, TypeError):
+            page, page_size = 1, 20
+
+        total  = qs.count()
+        offset = (page - 1) * page_size
+        files  = qs[offset: offset + page_size]
+
         data = [
             {
                 "id": f.id,
                 "file_url": request.build_absolute_uri(f.file.url),
+                "file_size_mb": round(f.file.size / 1024 / 1024, 2) if f.file else None,
                 "uploaded_at": f.uploaded_at,
             }
             for f in files
         ]
-        return Response(data)
+
+        return Response({
+            "total":     total,
+            "page":      page,
+            "page_size": page_size,
+            "pages":     (total + page_size - 1) // page_size,
+            "results":   data,
+        })
 
 
 class ElonListAPIView(APIView):
