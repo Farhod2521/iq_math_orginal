@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from openpyxl import Workbook
+from openpyxl.styles import Alignment
 import pytz
 from django.db.models import Q
 from .models import User, Student, Teacher, Parent, Tutor, StudentLoginHistory, TutorLoginHistory, ParentLoginHistory, ParentStudentRelation
@@ -160,11 +161,17 @@ class All_Role_ListView(APIView):
             ws = wb.active
             ws.title = "Foydalanuvchilar ro'yxati"
             
+            center = Alignment(horizontal="center", vertical="center")
+
             headers = list(data_excel[0].keys()) if data_excel else []
             ws.append(headers)
-            
+            for cell in ws[1]:
+                cell.alignment = center
+
             for row in data_excel:
                 ws.append(list(row.values()))
+                for cell in ws[ws.max_row]:
+                    cell.alignment = center
                 
             response = HttpResponse(
                 content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
