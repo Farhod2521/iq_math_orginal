@@ -176,14 +176,24 @@ class All_Role_ListView(APIView):
             wb.save(response)
             return response
 
+        # --- ROLE COUNTS (global, filtrsiz) ---
+        role_counts = {
+            "student_count":    User.objects.filter(role="student").count(),
+            "teacher_count":    User.objects.filter(role="teacher").count(),
+            "parent_count":     User.objects.filter(role="parent").count(),
+            "tutor_count":      User.objects.filter(role="tutor").count(),
+            "superadmin_count": User.objects.filter(role="superadmin").count(),
+            "total_count":      User.objects.count(),
+        }
+
         # --- PAGINATION ---
         page = int(request.GET.get('page', 1))
         size = int(request.GET.get('size', 10))
-        
+
         paginator = Paginator(data_json, size)
         total_count = paginator.count
         total_pages = paginator.num_pages
-        
+
         try:
             current_page = paginator.page(page)
         except EmptyPage:
@@ -193,14 +203,16 @@ class All_Role_ListView(APIView):
                 "size": size,
                 "total": total_count,
                 "total_pages": total_pages,
+                **role_counts,
                 "results": []
             }, status=status.HTTP_404_NOT_FOUND)
-            
+
         return Response({
             "page": page,
             "size": size,
             "total": total_count,
             "total_pages": total_pages,
+            **role_counts,
             "results": current_page.object_list
         })
 
