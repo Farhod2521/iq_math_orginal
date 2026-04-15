@@ -137,20 +137,18 @@ class All_Role_ListView(APIView):
                 
                 # Excel data
                 data_excel.append({
-                    "ID": idx,
-                    "Profil ID": profile_data['excel'].get('profile_id', user.id),
-                    "Roli": self.get_role_display(user.role),
+                    "№": idx,
                     "F.I.Sh.": profile_data['excel'].get('full_name', ''),
+                    "Sinf": profile_data['excel'].get('class_num', ''),
+                    "Fan": profile_data['excel'].get('fan', ''),
                     "Telefon": user.phone,
-                    "Email": user.email or '',
-                    "Qurilma": user.device or '',
-                    "Viloyat": profile_data['excel'].get('region', ''),
-                    "Tuman": profile_data['excel'].get('districts', ''),
-                    "Manzil": profile_data['excel'].get('address', ''),
                     "Holati": profile_data['excel'].get('status_display', ''),
+                    "Qurilma": user.device or '',
+                    "Diagnostika topshirganligi": profile_data['excel'].get('has_diagnost_display', ''),
                     "Ro'yxatdan o'tgan sana": profile_data['excel'].get('registration_date', ''),
                     "Ro'yxatdan o'tgan vaqt": profile_data['excel'].get('registration_time', ''),
-                    **profile_data['excel'].get('extra_fields', {})
+                    "Oxirgi kirish": profile_data['excel'].get('last_login_time', ''),
+                    "Roli": self.get_role_display(user.role),
                 })
 
         # --- EXPORT TO EXCEL ---
@@ -247,7 +245,7 @@ class All_Role_ListView(APIView):
                 diff_days = (end_date.date() - today).days
                 remaining_days = diff_days if diff_days > 0 else 0
 
-                # 🔥 OBUNA FAOLMI YO‘QMI — ASOSIY QISM
+                # 🔥 OBUNA FAOLMI YO'QMI — ASOSIY QISM
                 now = datetime.now(pytz.timezone("Asia/Ashgabat"))
                 if subscription.start_date <= now <= subscription.end_date:
                     is_subscription_active = True
@@ -279,22 +277,17 @@ class All_Role_ListView(APIView):
                 "remaining_days": remaining_days,  # qolgan kunlar (int yoki None)
             }
 
+
             profile_data['excel'] = {
-                'profile_id': student.id,  # Excel uchun ham profile_id
+                'profile_id': student.id,
                 'full_name': student.full_name,
-                'region': student.region,
-                'districts': student.districts,
-                'address': student.address,
-                'status_display': 'Aktiv' if student.status else 'Noaktiv',
+                'class_num': student.class_name.classes.name if student.class_name else '',
+                'fan': student.class_name.name_uz if student.class_name else '',
+                'status_display': 'Aktiv' if is_subscription_active else 'Aktiv emas',
+                'has_diagnost_display': 'Topshirdi' if has_diagnost else 'Topshirmadi',
                 'registration_date': student_datetime.strftime('%d/%m/%Y') if student_datetime else '',
                 'registration_time': student_datetime.strftime('%H:%M:%S') if student_datetime else '',
-                'extra_fields': {
-                    'Tug‘ilgan kun': student.brithday,
-                    'Ta\'lim muassasasi': student.academy_or_school_name,
-                    'Sinf': student.class_name.classes.name if student.class_name else '',
-                    'Fan': student.class_name.name_uz if student.class_name else '',
-                    'Oxirgi kirish': last_login_formatted or ''
-                }
+                'last_login_time': last_login_formatted or '',
             }
 
         elif user.role == 'teacher' and hasattr(user, 'teacher_profile'):
@@ -319,20 +312,15 @@ class All_Role_ListView(APIView):
             }
 
             profile_data['excel'] = {
-                'profile_id': teacher.id,  # Excel uchun ham profile_id
+                'profile_id': teacher.id,
                 'full_name': teacher.full_name,
-                'region': teacher.region,
-                'districts': teacher.districts,
-                'address': teacher.address,
-                'status_display': 'Aktiv' if teacher.status else 'Noaktiv',
+                'class_num': '',
+                'fan': '',
+                'status_display': 'Aktiv' if teacher.status else 'Aktiv emas',
+                'has_diagnost_display': '',
                 'registration_date': teacher_datetime.strftime('%d/%m/%Y') if teacher_datetime else '',
                 'registration_time': teacher_datetime.strftime('%H:%M:%S') if teacher_datetime else '',
-                'extra_fields': {
-                    'Tasdiqlangan': 'Ha' if teacher.is_verified_teacher else 'Yo‘q',
-                    'Tug‘ilgan kun': teacher.brithday,
-                    'Hujjat turi': teacher.document_type,
-                    'Hujjat raqami': teacher.document
-                }
+                'last_login_time': '',
             }
 
         elif user.role == 'parent' and hasattr(user, 'parent_profile'):
@@ -357,15 +345,15 @@ class All_Role_ListView(APIView):
             }
 
             profile_data['excel'] = {
-                'profile_id': parent.id,  # Excel uchun ham profile_id
+                'profile_id': parent.id,
                 'full_name': parent.full_name,
-                'region': parent.region or '',
-                'districts': parent.districts or '',
-                'address': parent.address or '',
-                'status_display': 'Aktiv' if parent.status else 'Noaktiv',
+                'class_num': '',
+                'fan': '',
+                'status_display': 'Aktiv' if parent.status else 'Aktiv emas',
+                'has_diagnost_display': '',
                 'registration_date': parent_datetime.strftime('%d/%m/%Y') if parent_datetime else '',
                 'registration_time': parent_datetime.strftime('%H:%M:%S') if parent_datetime else '',
-                'extra_fields': {}
+                'last_login_time': last_login_parent_fmt or '',
             }
 
         elif user.role == 'tutor' and hasattr(user, 'tutor_profile'):
@@ -390,15 +378,15 @@ class All_Role_ListView(APIView):
             }
 
             profile_data['excel'] = {
-                'profile_id': tutor.id,  # Excel uchun ham profile_id
+                'profile_id': tutor.id,
                 'full_name': tutor.full_name,
-                'region': tutor.region or '',
-                'districts': tutor.districts or '',
-                'address': tutor.address or '',
-                'status_display': 'Aktiv' if tutor.status else 'Noaktiv',
+                'class_num': '',
+                'fan': '',
+                'status_display': 'Aktiv' if tutor.status else 'Aktiv emas',
+                'has_diagnost_display': '',
                 'registration_date': tutor_datetime.strftime('%d/%m/%Y') if tutor_datetime else '',
                 'registration_time': tutor_datetime.strftime('%H:%M:%S') if tutor_datetime else '',
-                'extra_fields': {}
+                'last_login_time': last_login_tutor_fmt or '',
             }
 
         else:
@@ -413,16 +401,15 @@ class All_Role_ListView(APIView):
             }
 
             profile_data['excel'] = {
-                'profile_id': user.id,  # Excel uchun ham user.id
+                'profile_id': user.id,
                 'full_name': user.get_full_name() or "Admin",
-                'region': '',
-                'districts': '',
-                'address': '',
+                'class_num': '',
+                'fan': '',
                 'status_display': 'Aktiv',
-                "role": "admin",
+                'has_diagnost_display': '',
                 'registration_date': user_datetime.strftime('%d/%m/%Y') if user_datetime else '',
                 'registration_time': user_datetime.strftime('%H:%M:%S') if user_datetime else '',
-                'extra_fields': {}
+                'last_login_time': '',
             }
 
         return profile_data
@@ -430,8 +417,8 @@ class All_Role_ListView(APIView):
     def get_role_display(self, role):
         """Rolni ko'rinishli qilib qaytarish"""
         role_displays = {
-            'student': 'O‘quvchi',
-            'teacher': 'O‘qituvchi',
+            'student': "O'quvchi",
+            'teacher': "O'qituvchi",
             'parent': 'Ota-ona',
             'tutor': 'Tarbiyachi',
             'admin': 'Administrator'
@@ -531,10 +518,10 @@ class DeleteStudentProfileAPIView(APIView):
     def delete(self, request):
         user = request.user
 
-        # Faqat student rolidagilar o‘chirishi mumkin
+        # Faqat student rolidagilar o'chirishi mumkin
         if user.role != "student":
             return Response(
-                {"detail": "Faqat talaba profilingizni o‘chira olasiz."},
+                {"detail": "Faqat talaba profilingizni o'chira olasiz."},
                 status=status.HTTP_403_FORBIDDEN
             )
 
@@ -551,22 +538,22 @@ class DeleteStudentProfileAPIView(APIView):
         password = request.data.get("password")
         if not password:
             return Response(
-                {"detail": "Profilni o‘chirish uchun parolni kiriting."},
+                {"detail": "Profilni o'chirish uchun parolni kiriting."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
         # Parolni tekshirish
         if not user.check_password(password):
             return Response(
-                {"detail": "Parol noto‘g‘ri kiritilgan."},
+                {"detail": "Parol noto'g'ri kiritilgan."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Haqiqiy o‘chirish (CASCADE → User bilan Student o‘chadi)
+        # Haqiqiy o'chirish (CASCADE → User bilan Student o'chadi)
         student.delete()
         user.delete()
 
         return Response(
-            {"detail": "Talaba profili va foydalanuvchi akkaunti muvaffaqiyatli o‘chirildi."},
+            {"detail": "Talaba profili va foydalanuvchi akkaunti muvaffaqiyatli o'chirildi."},
             status=status.HTTP_200_OK
         )
