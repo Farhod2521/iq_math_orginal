@@ -9,7 +9,7 @@ from openpyxl import Workbook
 from openpyxl.styles import Alignment
 import pytz
 from django.db.models import Q
-from .models import User, Student, Teacher, Parent, Tutor, StudentLoginHistory, TutorLoginHistory, ParentLoginHistory, ParentStudentRelation
+from .models import User, Student, Teacher, Parent, Tutor, StudentLoginHistory, TeacherLoginHistory, TutorLoginHistory, ParentLoginHistory, ParentStudentRelation
 from django_app.app_payments.models import Payment
 from django.utils import timezone
 from datetime import datetime
@@ -301,8 +301,11 @@ class All_Role_ListView(APIView):
             teacher = user.teacher_profile
             teacher_datetime = teacher.teacher_date.astimezone(timezone) if teacher.teacher_date else None
 
+            last_login_teacher = TeacherLoginHistory.objects.filter(teacher=teacher).order_by('-login_time').first()
+            last_login_teacher_fmt = last_login_teacher.login_time.astimezone(timezone).strftime('%d/%m/%Y %H:%M') if last_login_teacher else None
+
             profile_data['json'] = {
-                "profile_id": teacher.id,  # Teacher profil id sini qaytaramiz
+                "profile_id": teacher.id,
                 "full_name": teacher.full_name,
                 "role": "Mentor",
                 "region": teacher.region,
@@ -314,6 +317,8 @@ class All_Role_ListView(APIView):
                 "status": teacher.status,
                 "is_verified_teacher": teacher.is_verified_teacher,
                 "lang": teacher.lang,
+                "device": user.device,
+                "last_login_time": last_login_teacher_fmt,
                 "registration_date": teacher_datetime.strftime('%d/%m/%Y') if teacher_datetime else None,
                 "registration_time": teacher_datetime.strftime('%H:%M:%S') if teacher_datetime else None
             }
@@ -327,7 +332,7 @@ class All_Role_ListView(APIView):
                 'has_diagnost_display': '',
                 'registration_date': teacher_datetime.strftime('%d/%m/%Y') if teacher_datetime else '',
                 'registration_time': teacher_datetime.strftime('%H:%M:%S') if teacher_datetime else '',
-                'last_login_time': '',
+                'last_login_time': last_login_teacher_fmt or '',
             }
 
         elif user.role == 'parent' and hasattr(user, 'parent_profile'):
