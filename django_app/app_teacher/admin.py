@@ -4,7 +4,7 @@ from django.utils.safestring import mark_safe
 
 from .models import (
     Topic, Question,
-                      Chapter,  Choice, CompositeSubQuestion, UnsolvedQuestionReport, Group, GeneratedChoiceOpenAi, GeneratedSubQuestionOpenAi, GeneratedQuestionOpenAi
+                      Chapter,  Choice, CompositeSubQuestion, UnsolvedQuestionReport, Group, GeneratedChoiceOpenAi, GeneratedSubQuestionOpenAi, GeneratedQuestionOpenAi, TeacherRewardLog
                       )
 
 from django_app.app_user.models import  Subject, Subject_Category
@@ -206,3 +206,25 @@ class GroupAdmin(admin.ModelAdmin):
     search_fields = ('name', 'teacher__full_name')
     list_filter = ('teacher',)
     filter_horizontal = ('students',)
+
+
+@admin.register(TeacherRewardLog)
+class TeacherRewardLogAdmin(admin.ModelAdmin):
+    list_display = (
+        'teacher',
+        'student',
+        'reward_type',
+        'amount',
+        'reason',
+        'created_at',
+    )
+    list_filter = ('reward_type', 'created_at', 'teacher')
+    search_fields = (
+        'teacher__full_name',
+        'student__full_name',
+        'student__user__phone',
+        'reason',
+    )
+    readonly_fields = ('created_at',)
+    date_hierarchy = 'created_at'
+    ordering = ('-created_at',)
