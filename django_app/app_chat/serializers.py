@@ -55,7 +55,7 @@ class ConversationRatingSerializer(serializers.ModelSerializer):
         return get_user_display_name(obj.mentor)
 
 
-class ConversationMetaMixin:
+class ConversationMetaMixin(serializers.Serializer):
     close_requested_by_id = serializers.SerializerMethodField()
     close_requested_by_name = serializers.SerializerMethodField()
     rating = serializers.SerializerMethodField()
