@@ -4,10 +4,11 @@ from .views import (
     StudentSupportChatMessageAPIView,
     SendMessageAPIView,
     ReadMessageAPIView,
-    UniversalChatsAPIView,
+    UniversalChatsAPIView, LatestConversationAPIView,
     ConversationMessagesAPIView, TotalUnreadChatsAPIView, TeacherClosedChatsStatsAPIView,
     ConversationTransferAPIView, RequestCloseConversationAPIView, ConfirmCloseAndRateAPIView,
-    SuperAdminTeachersClosedChatsStatsAPIView
+    SuperAdminTeachersClosedChatsStatsAPIView,
+    TeacherStatsByIdAPIView,
 )
 
 urlpatterns = [
@@ -15,6 +16,7 @@ urlpatterns = [
     path("chat/student-support/send/", StudentSupportChatMessageAPIView.as_view()),
 
     path("chat/list/", UniversalChatsAPIView.as_view()),
+    path("chat/latest/", LatestConversationAPIView.as_view()),
 
     path("chat/<int:conversation_id>/messages/", ConversationMessagesAPIView.as_view()),
 
@@ -27,5 +29,5 @@ urlpatterns = [
     path("conversation/transfer/", ConversationTransferAPIView.as_view()),
     path("conversation/<int:conversation_id>/request-close/", RequestCloseConversationAPIView.as_view()),
     path("conversation/<int:conversation_id>/confirm-close/", ConfirmCloseAndRateAPIView.as_view()),
-
+    path("superadmin/teacher-stats/", TeacherStatsByIdAPIView.as_view(), name="teacher-stats-by-id"),
 ]

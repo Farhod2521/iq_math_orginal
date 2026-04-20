@@ -5,11 +5,11 @@ from .models import Conversation, ConversationParticipant, Message, MessageRecei
 from .serializers import (
     ConversationSerializer, MessageSerializer, ConversationListSerializer, 
     TeacherListSerializer, ConversationTransferSerializer,
-    ConfirmCloseAndRateSerializer
+    ConfirmCloseAndRateSerializer, ConversationRatingSerializer
     
     )
 from django_app.app_user.models import Student, Teacher  # sening user struktura
-from django.db.models import Count, Avg, Q
+from django.db.models import Count, Avg, Q, F, Prefetch, Sum
 from django.utils.timezone import now
 from rest_framework import status
 from django.utils import timezone
@@ -19,6 +19,89 @@ from .permissions import IsTeacher
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from .services import create_message
+
+
+def get_user_display_name(user):
+    if not user:
+        return None
+    if hasattr(user, "student_profile"):
+        return user.student_profile.full_name
+    if hasattr(user, "teacher_profile"):
+        return user.teacher_profile.full_name
+    if hasattr(user, "tutor_profile"):
+        return user.tutor_profile.full_name
+    return user.phone
+
+
+def get_chat_queryset():
+    latest_ratings = ConversationRating.objects.select_related(
+        "student",
+        "mentor",
+    ).order_by("-created_at")
+
+    return (
+        Conversation.objects
+        .select_related("close_requested_by")
+        .prefetch_related(
+            "participants__user",
+            Prefetch("ratings", queryset=latest_ratings),
+        )
+    )
+
+
+def get_chat_queryset_for_user(user):
+    return get_chat_queryset().filter(participants__user=user)
+
+
+def broadcast_chat_message(message, event=None, rating=None):
+    channel_layer = get_channel_layer()
+    if not channel_layer:
+        return
+
+    payload = {
+        "id": message.id,
+        "text": message.text,
+        "message_type": message.message_type,
+        "sender_id": message.sender_id,
+        "sender_name": get_user_display_name(message.sender),
+        "created_at": message.created_at.isoformat(),
+    }
+    if event:
+        payload["event"] = event
+    if rating:
+        payload["rating"] = ConversationRatingSerializer(rating).data
+
+    async_to_sync(channel_layer.group_send)(
+        f"chat_{message.conversation_id}",
+        {
+            "type": "chat.message",
+            "message": payload,
+        },
+    )
+
+
+def create_system_message(conversation, sender, text, event=None, rating=None):
+    message = Message.objects.create(
+        conversation=conversation,
+        sender=sender,
+        message_type="system",
+        text=text,
+    )
+
+    conversation.last_message = text
+    conversation.last_message_at = message.created_at
+    conversation.save(update_fields=["last_message", "last_message_at"])
+
+    ConversationParticipant.objects.filter(
+        conversation=conversation,
+    ).exclude(
+        user=sender,
+    ).update(unread_count=F("unread_count") + 1)
+
+    transaction.on_commit(
+        lambda: broadcast_chat_message(message, event=event, rating=rating)
+    )
+    return message
 
 
 
@@ -387,9 +470,7 @@ class UniversalChatsAPIView(APIView):
         user = request.user
 
         # student yoki teacher farqi yo‘q — ishtirok etgan chatlar
-        conversations = Conversation.objects.filter(
-            participants__user=user
-        ).order_by("-last_message_at")
+        conversations = get_chat_queryset_for_user(user).order_by("-last_message_at", "-created_at")
 
         serializer = ConversationListSerializer(
             conversations,
@@ -398,7 +479,28 @@ class UniversalChatsAPIView(APIView):
         )
 
         return Response(serializer.data, status=200)
-from django.db.models import Sum
+
+
+class LatestConversationAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        conversation = (
+            get_chat_queryset_for_user(request.user)
+            .order_by("-last_message_at", "-created_at")
+            .first()
+        )
+
+        if not conversation:
+            return Response({"detail": "Chat topilmadi"}, status=404)
+
+        serializer = ConversationListSerializer(
+            conversation,
+            context={"request": request}
+        )
+        return Response(serializer.data, status=200)
+
+
 class TotalUnreadChatsAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -425,7 +527,7 @@ class ConversationMessagesAPIView(APIView):
         user = request.user
 
         try:
-            conversation = Conversation.objects.get(id=conversation_id)
+            conversation = get_chat_queryset().get(id=conversation_id)
         except Conversation.DoesNotExist:
             return Response({"error": "Chat topilmadi"}, status=404)
 
@@ -463,6 +565,10 @@ class ConversationMessagesAPIView(APIView):
 
         return Response({
             "conversation_id": conversation.id,
+            "conversation": ConversationSerializer(
+                conversation,
+                context={"request": request}
+            ).data,
             "messages": serializer.data,
         }, status=200)
 
@@ -516,15 +622,23 @@ class RequestCloseConversationAPIView(APIView):
         ])
 
         # 📢 Studentga system xabar
-        Message.objects.create(
+        system_message = create_system_message(
             conversation=conversation,
             sender=user,
-            message_type="system",
-            text="O‘qituvchi chatni yopmoqchi. Boshqa savolingiz yo‘qmi?"
+            text="O'qituvchi chatni yopmoqchi. Boshqa savolingiz yo'qmi?",
+            event="close_requested",
         )
 
         return Response({
-            "detail": "Chat yopish so‘rovi studentga yuborildi"
+            "detail": "Chat yopish so'rovi studentga yuborildi",
+            "conversation": ConversationSerializer(
+                conversation,
+                context={"request": request}
+            ).data,
+            "message": MessageSerializer(
+                system_message,
+                context={"request": request}
+            ).data,
         })
 
 
@@ -591,10 +705,12 @@ class ConfirmCloseAndRateAPIView(APIView):
             conversation.is_closed = True
             conversation.closed_at = timezone.now()
             conversation.closed_by = conversation.close_requested_by
+            conversation.is_close_requested = False
             conversation.save(update_fields=[
                 "is_closed",
                 "closed_at",
-                "closed_by"
+                "closed_by",
+                "is_close_requested",
             ])
 
             # ⭐ Rating
@@ -607,21 +723,26 @@ class ConfirmCloseAndRateAPIView(APIView):
             )
 
             # 📢 System xabar
-            Message.objects.create(
+            system_message = create_system_message(
                 conversation=conversation,
                 sender=user,
-                message_type="system",
-                text="Student chatni yopishni tasdiqladi va baho berdi."
+                text="Student chatni yopishni tasdiqladi va baho berdi.",
+                event="closed_and_rated",
+                rating=rating,
             )
 
         return Response(
             {
                 "detail": "Chat yopildi va baho berildi",
-                "rating": {
-                    "stars": rating.stars,
-                    "comment": rating.comment,
-                    "mentor_id": mentor.id
-                }
+                "conversation": ConversationSerializer(
+                    conversation,
+                    context={"request": request}
+                ).data,
+                "message": MessageSerializer(
+                    system_message,
+                    context={"request": request}
+                ).data,
+                "rating": ConversationRatingSerializer(rating).data,
             },
             status=status.HTTP_201_CREATED
         )
@@ -727,3 +848,47 @@ class SuperAdminTeachersClosedChatsStatsAPIView(APIView):
             })
 
         return Response(data, status=200)
+
+
+class TeacherStatsByIdAPIView(APIView):
+    """
+    POST { "teacher_id": 5 }
+    → shu teacher qancha chatga javob bergan (ConversationRating bo'yicha)
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        teacher_id = request.data.get("teacher_id")
+        if not teacher_id:
+            return Response({"detail": "teacher_id yuborilmadi"}, status=400)
+
+        teacher = get_object_or_404(Teacher, id=teacher_id)
+        teacher_user = teacher.user
+
+        now = timezone.now()
+        start_of_day   = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        start_of_week  = start_of_day - timezone.timedelta(days=start_of_day.weekday())
+        start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        start_of_year  = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+
+        def get_stats(start_date=None):
+            filt = Q(mentor=teacher_user)
+            if start_date:
+                filt &= Q(created_at__gte=start_date)
+            ratings = ConversationRating.objects.filter(filt)
+            count = ratings.count()
+            avg_rating = ratings.aggregate(avg=Avg("stars"))["avg"]
+            return {
+                "closed_chats_count": count,
+                "average_rating": round(avg_rating, 2) if avg_rating else None,
+            }
+
+        return Response({
+            "teacher_id": teacher.id,
+            "full_name": teacher.full_name,
+            "total":  get_stats(),
+            "today":  get_stats(start_of_day),
+            "week":   get_stats(start_of_week),
+            "month":  get_stats(start_of_month),
+            "year":   get_stats(start_of_year),
+        }, status=200)

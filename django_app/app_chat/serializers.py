@@ -13,6 +13,77 @@ class ConfirmCloseAndRateSerializer(serializers.Serializer):
     stars = serializers.IntegerField(min_value=1, max_value=5)
     comment = serializers.CharField(required=False, allow_blank=True)
 
+
+def get_user_display_name(user):
+    if not user:
+        return None
+    if hasattr(user, "student_profile"):
+        return user.student_profile.full_name
+    if hasattr(user, "teacher_profile"):
+        return user.teacher_profile.full_name
+    if hasattr(user, "tutor_profile"):
+        return user.tutor_profile.full_name
+    return user.phone
+
+
+class ConversationRatingSerializer(serializers.ModelSerializer):
+    conversation_id = serializers.IntegerField(source="conversation.id", read_only=True)
+    student_id = serializers.IntegerField(source="student.id", read_only=True)
+    student_name = serializers.SerializerMethodField()
+    mentor_id = serializers.IntegerField(source="mentor.id", read_only=True)
+    mentor_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ConversationRating
+        fields = [
+            "id",
+            "conversation_id",
+            "student_id",
+            "student_name",
+            "mentor_id",
+            "mentor_name",
+            "stars",
+            "comment",
+            "created_at",
+        ]
+        read_only_fields = fields
+
+    def get_student_name(self, obj):
+        return get_user_display_name(obj.student)
+
+    def get_mentor_name(self, obj):
+        return get_user_display_name(obj.mentor)
+
+
+class ConversationMetaMixin:
+    close_requested_by_id = serializers.SerializerMethodField()
+    close_requested_by_name = serializers.SerializerMethodField()
+    rating = serializers.SerializerMethodField()
+
+    def get_close_requested_by_id(self, obj):
+        return obj.close_requested_by_id
+
+    def get_close_requested_by_name(self, obj):
+        return get_user_display_name(obj.close_requested_by)
+
+    def get_rating(self, obj):
+        prefetched_ratings = getattr(obj, "_prefetched_objects_cache", {}).get("ratings")
+        if prefetched_ratings is not None:
+            rating = prefetched_ratings[0] if prefetched_ratings else None
+            if not rating:
+                return None
+            return ConversationRatingSerializer(rating).data
+
+        rating = (
+            obj.ratings
+            .select_related("student", "mentor")
+            .order_by("-created_at")
+            .first()
+        )
+        if not rating:
+            return None
+        return ConversationRatingSerializer(rating).data
+
 class TeacherListSerializer(serializers.ModelSerializer):
 
 
@@ -32,7 +103,7 @@ class ConversationTransferSerializer(serializers.Serializer):
 
 
 # ---------------- CONVERSATION SERIALIZER ----------------
-class ConversationSerializer(serializers.ModelSerializer):
+class ConversationSerializer(ConversationMetaMixin, serializers.ModelSerializer):
     last_message = serializers.CharField(read_only=True)
     last_message_at = serializers.DateTimeField(read_only=True)
 
@@ -43,6 +114,10 @@ class ConversationSerializer(serializers.ModelSerializer):
             "last_message", "last_message_at",
             "is_closed", "closed_at",
             "is_close_requested",
+            "close_requested_at",
+            "close_requested_by_id",
+            "close_requested_by_name",
+            "rating",
         ]
 
 
@@ -188,7 +263,7 @@ class MessageSerializer(serializers.ModelSerializer):
 
 
 
-class ConversationListSerializer(serializers.ModelSerializer):
+class ConversationListSerializer(ConversationMetaMixin, serializers.ModelSerializer):
     other_user_name = serializers.SerializerMethodField()
     other_user_id = serializers.SerializerMethodField()
     unread_count = serializers.SerializerMethodField()
@@ -202,6 +277,10 @@ class ConversationListSerializer(serializers.ModelSerializer):
             "last_message_at",
             "is_closed",
             "is_close_requested",
+            "close_requested_at",
+            "close_requested_by_id",
+            "close_requested_by_name",
+            "rating",
             "other_user_name",
             "other_user_id",
             "unread_count",
