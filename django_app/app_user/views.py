@@ -5,7 +5,7 @@ from .serializers import (
 UniversalRegisterSerializer, VerifySmsCodeSerializer, 
 LoginSerializer, StudentProfileSerializer, TeacherRegisterSerializer, Class_Serializer,
 TeacherVerifySmsCodeSerializer, TeacherSerializer, StudentSerializer, ParentCreateSerializer, StudentSerializerParent,
-SendCodeSerializer, VerifyCodeSerializer, SessionListSerializer
+AddAccountSerializer, SessionListSerializer
 )
 from .models import Student, UserSMSAttempt, Teacher, Class, StudentLoginHistory, Parent, Tutor, ParentStudentRelation, TeacherLoginHistory, TutorLoginHistory, ParentLoginHistory, Device, UserSession
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -183,27 +183,12 @@ class RegisterAPIView(APIView):
 ##############################################################
 ###################     TEACHER     VERIFY SMS   #############
 ##############################################################
-class VerifyCodeAPIView(APIView):
+class AddAccountAPIView(APIView):
     def post(self, request):
-        serializer = VerifyCodeSerializer(data=request.data)
-
+        serializer = AddAccountSerializer(data=request.data)
         if serializer.is_valid():
             data = serializer.save()
             return Response(data, status=status.HTTP_200_OK)
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-class SendCodeAPIView(APIView):
-    def post(self, request):
-        serializer = SendCodeSerializer(data=request.data)
-
-        if serializer.is_valid():
-            serializer.save()
-            return Response(
-                {"message": "Sms kodi yuborildi"},
-                status=status.HTTP_200_OK
-            )
-
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 from rest_framework.permissions import IsAuthenticated
@@ -250,7 +235,7 @@ class UserSessionListAPIVIEW(APIView):
 
         if not current_session:
             return Response(
-                {"error": "Joriy sessiya topilmadi. Avval verify-code orqali ushbu qurilmada account qo'shing."},
+                {"error": "Joriy sessiya topilmadi. Avval add-account orqali ushbu qurilmada account qo'shing."},
                 status=status.HTTP_404_NOT_FOUND
             )
 

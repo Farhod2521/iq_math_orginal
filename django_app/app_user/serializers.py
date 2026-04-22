@@ -136,35 +136,16 @@ class TeacherRegisterSerializer(serializers.Serializer):
         send_sms(phone, sms_code)
 
         return user
-class SendCodeSerializer(serializers.Serializer):
+class AddAccountSerializer(serializers.Serializer):
     phone = serializers.CharField()
-
-    def create(self, validated_data):
-        phone = validated_data["phone"]
-        user, _ = User.objects.get_or_create(phone=phone)
-        sms_code = str(random.randint(10000, 99999))
-        user.sms_code = sms_code
-        send_sms(phone, sms_code)
-        user.save()
-
-        return user
-class VerifyCodeSerializer(serializers.Serializer):
-    phone = serializers.CharField()
-    code = serializers.CharField()
+    password = serializers.CharField()
     device_id = serializers.UUIDField()
 
     def validate(self, attrs):
-        phone = attrs["phone"]
-        code = attrs["code"]
-
-        try:
-            user = User.objects.get(phone=phone)
-        except User.DoesNotExist:
-            raise serializers.ValidationError("User topilmadi")
-
-        if user.sms_code != code:
-            raise serializers.ValidationError("Kod noto'g'ri")
-
+        from django.contrib.auth import authenticate
+        user = authenticate(phone=attrs["phone"], password=attrs["password"])
+        if not user:
+            raise serializers.ValidationError("Telefon raqam yoki parol noto'g'ri")
         attrs["user"] = user
         return attrs
 
@@ -175,18 +156,18 @@ class VerifyCodeSerializer(serializers.Serializer):
         device_id = validated_data["device_id"]
 
         access, refresh, expires_in = create_user_tokens(user)
-
         device, _ = Device.objects.get_or_create(id=device_id)
 
-        session = UserSession.objects.create(
+        session, created = UserSession.objects.get_or_create(
             user=user,
             device=device,
-            access_token=access,
-            refresh_token=refresh
+            defaults={"access_token": access, "refresh_token": refresh}
         )
-
-        user.sms_code = None
-        user.save()
+        if not created:
+            session.access_token = access
+            session.refresh_token = refresh
+            session.is_active = True
+            session.save()
 
         return {
             "access_token": access,
@@ -199,12 +180,16 @@ class VerifyCodeSerializer(serializers.Serializer):
 class SessionListSerializer(serializers.ModelSerializer):
     user_id = serializers.IntegerField(source="user.id")
     phone = serializers.CharField(source="user.phone")
+    full_name = serializers.SerializerMethodField()
     role = serializers.CharField(source="user.role")
     device_id = serializers.UUIDField(source="device.id")
 
     class Meta:
         model = UserSession
-        fields = ["id", "user_id", "phone", "role", "device_id", "created_at"]
+        fields = ["id", "user_id", "phone", "full_name", "role", "device_id", "created_at"]
+
+    def get_full_name(self, obj):
+        return obj.user.get_full_name() or obj.user.phone
 ##############################################################
 ###################     STUNDENT    REGISTER   ###############
 ##############################################################
