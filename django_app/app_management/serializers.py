@@ -16,9 +16,47 @@ class AndroidVersionSerializer(serializers.ModelSerializer):
         ]
 
 class SystemSettingsSerializer(serializers.ModelSerializer):
+    about = serializers.CharField(required=False, allow_blank=True, write_only=True)
+    about_uz = serializers.CharField(required=False, allow_blank=True)
+    about_ru = serializers.CharField(required=False, allow_blank=True)
+
     class Meta:
         model = SystemSettings
-        fields = '__all__'
+        fields = [
+            "id",
+            "logo",
+            "about",
+            "about_uz",
+            "about_ru",
+            "instagram_link",
+            "telegram_link",
+            "youtube_link",
+            "twitter_link",
+            "facebook_link",
+            "linkedin_link",
+            "shartnoma_uz",
+            "shartnoma_ru",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "updated_at"]
+
+    def validate(self, attrs):
+        if self.instance is None:
+            about = attrs.get("about")
+            about_uz = attrs.get("about_uz")
+            about_ru = attrs.get("about_ru")
+
+            if not any([about, about_uz, about_ru]):
+                raise serializers.ValidationError(
+                    {
+                        "about_uz": "Kamida about_uz yoki about_ru yuborilishi kerak.",
+                        "about_ru": "Kamida about_uz yoki about_ru yuborilishi kerak.",
+                    }
+                )
+
+            attrs["about"] = about or about_uz or about_ru
+
+        return attrs
 
 
 class FAQSerializer(serializers.ModelSerializer):

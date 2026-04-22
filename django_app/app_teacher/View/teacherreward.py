@@ -1,6 +1,8 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, permissions
+from rest_framework.permissions import BasePermission
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from datetime import timedelta
 
@@ -8,7 +10,22 @@ from django_app.app_user.models import  Teacher, Student
 from django_app.app_teacher.models import TeacherRewardLog
 from django_app.app_student.models import   StudentScore
 from  django_app.app_payments.models import Subscription
-from  django_app.app_teacher.serializers import TeacherRewardSerializer, TeacherRewardLogSerializer
+from  django_app.app_teacher.serializers import (
+    TeacherRewardSerializer,
+    TeacherRewardLogSerializer,
+    TeacherRewardLogDetailSerializer,
+)
+
+
+class IsSuperAdminOnly(BasePermission):
+    def has_permission(self, request, view):
+        return bool(
+            request.user
+            and request.user.is_authenticated
+            and getattr(request.user, "role", None) == "superadmin"
+        )
+
+
 class TeacherRewardAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -82,3 +99,28 @@ class TeacherRewardListAPIView(APIView):
         rewards = TeacherRewardLog.objects.filter(teacher=teacher).order_by('-created_at')
         serializer = TeacherRewardLogSerializer(rewards, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class TeacherRewardLogSuperAdminAPIView(APIView):
+    permission_classes = [IsSuperAdminOnly]
+
+    def get(self, request, pk=None):
+        if pk is None:
+            reward_logs = TeacherRewardLog.objects.select_related(
+                "teacher",
+                "student",
+            ).order_by("-created_at")
+            serializer = TeacherRewardLogDetailSerializer(reward_logs, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        reward_log = get_object_or_404(TeacherRewardLog, pk=pk)
+        serializer = TeacherRewardLogDetailSerializer(reward_log)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def delete(self, request, pk):
+        reward_log = get_object_or_404(TeacherRewardLog, pk=pk)
+        reward_log.delete()
+        return Response(
+            {"message": "Teacher reward log o'chirildi."},
+            status=status.HTTP_200_OK,
+        )

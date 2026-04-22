@@ -271,6 +271,29 @@ class TeacherRewardLogSerializer(serializers.ModelSerializer):
         ]
 
 
+class TeacherRewardLogDetailSerializer(serializers.ModelSerializer):
+    teacher_id = serializers.IntegerField(source='teacher.id', read_only=True)
+    teacher_name = serializers.CharField(source='teacher.full_name', read_only=True)
+    student_id = serializers.IntegerField(source='student.id', read_only=True)
+    student_name = serializers.CharField(source='student.full_name', read_only=True)
+    reward_type_display = serializers.CharField(source='get_reward_type_display', read_only=True)
+
+    class Meta:
+        model = TeacherRewardLog
+        fields = [
+            'id',
+            'teacher_id',
+            'teacher_name',
+            'student_id',
+            'student_name',
+            'reward_type',
+            'reward_type_display',
+            'amount',
+            'reason',
+            'created_at',
+        ]
+
+
 
 
 class StudentProductExchangeSerializer(serializers.ModelSerializer):
