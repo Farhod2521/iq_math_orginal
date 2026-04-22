@@ -6,7 +6,7 @@ from .views import (
     LogoutDeviceAPIView, RegisterAPIView, RegisterTeacherAPIView, TeacherVerifySmsCodeAPIView,
     ClassListView, TeacherLoginAPIView, TeacherProfileAPIView, UpdateStudentFieldAPIView, UserProfileAPIView,
       LogoutAPIView, TelegramIDCheckAPIView, ParentCreateAPIView, UpdateTelegramIDAPIView, AddChildRequestAPIView,
-      ConfirmChildAPIView, ParentChildrenListAPIView, TeacherTelegramIdListView, AddAccountAPIView,
+      ConfirmChildAPIView, ParentChildrenListAPIView, TeacherTelegramIdListView, AddAccountAPIView, RemoveAccountAPIView,
        UserSessionListAPIVIEW, SwitchAccountAPIView
 
 )
@@ -77,6 +77,7 @@ urlpatterns = [
     ########################   TELEGRAM STICH AKKOUNT   ###################################
     ########################################################################################
     path("user/auth/add-account/", AddAccountAPIView.as_view(), name="add-account"),
+    path("user/auth/remove-account/", RemoveAccountAPIView.as_view(), name="remove-account"),
     path("user/auth/sessions/", UserSessionListAPIVIEW.as_view(), name="session-list"),
     path("user/auth/switch-account/", SwitchAccountAPIView.as_view(), name="switch-account"),
 ]
