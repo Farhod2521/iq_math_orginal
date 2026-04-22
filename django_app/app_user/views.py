@@ -1274,6 +1274,36 @@ class LogoutAPIView(APIView):
 
 
 
+class RemoveAccountAPIView(APIView):
+    """
+    Telegramdagiday akkountni ro'yxatdan olib tashlash.
+    session_id berilmasa — joriy token bo'yicha o'zi chiqadi.
+    session_id berilsa — o'sha akkountni o'chiradi (boshqa akkountni ham chiqarish mumkin).
+    """
+
+    def post(self, request):
+        session_id = request.data.get("session_id")
+
+        if session_id:
+            try:
+                session = UserSession.objects.get(id=session_id, is_active=True)
+            except UserSession.DoesNotExist:
+                return Response({"error": "Sessiya topilmadi"}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            auth_header = request.headers.get("Authorization", "")
+            if not auth_header.startswith("Bearer "):
+                return Response({"error": "Token topilmadi"}, status=status.HTTP_401_UNAUTHORIZED)
+            access_token = auth_header.split(" ", 1)[1].strip()
+            session = UserSession.objects.filter(access_token=access_token, is_active=True).first()
+            if not session:
+                return Response({"error": "Faol sessiya topilmadi"}, status=status.HTTP_404_NOT_FOUND)
+
+        session.is_active = False
+        session.save()
+
+        return Response({"message": "Akkount ro'yxatdan olib tashlandi"}, status=status.HTTP_200_OK)
+
+
 class TelegramIDCheckAPIView(APIView):
     def post(self, request):
         telegram_id = request.data.get('telegram_id')
