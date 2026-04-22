@@ -11,7 +11,7 @@ from .View.reorderOrderIndex  import  ReorderTopicAPIView, ReorderChapterAPIView
 from .View.independentView import  TeacherTopicHelpRequestListAPIView, TeacherTopicHelpRequestDeleteAPIView,TeacherTopicHelpRequestDetailAPIView, GetTelegramIDFromHelpRequestAPIView,TeacherTopicHelpRequestFromTelegramAPIView,TeacherCommitToHelpRequestAPIView, TeacherHelpRequestNotificationAPIView
 from .View.coupon import CreateTeacherCouponAPIView, TeacherCouponStudentsAPIView
 from .View.login_as_student import LoginAsStudentAPIView, ChangeStudentPasswordAPIView
-from  .View.teacherreward import  TeacherRewardAPIView, TeacherRewardListAPIView
+from  .View.teacherreward import  TeacherRewardAPIView, TeacherRewardListAPIView, TeacherRewardLogSuperAdminAPIView
 from  .View.productexchange import TeacherUpdateProductExchangeStatusAPIView, TeacherProductExchangeListAPIView
 from .View.teacher_login_history import TeacherLoginHistoryListAPIView
 from .View.online_duration import TeacherOnlineDurationAPIView
@@ -73,6 +73,8 @@ urlpatterns = [
     ###########################################################################################################
     path('teacher/reward/', TeacherRewardAPIView.as_view(), name='teacher-reward'),
     path('teacher/reward/list/', TeacherRewardListAPIView.as_view(), name='teacher-reward-list'),
+    path('superadmin/teacher-reward-log/', TeacherRewardLogSuperAdminAPIView.as_view(), name='teacher-reward-log-superadmin-list'),
+    path('superadmin/teacher-reward-log/<int:pk>/', TeacherRewardLogSuperAdminAPIView.as_view(), name='teacher-reward-log-superadmin-detail-delete'),
     path('teacher/help-request/<int:pk>/telegram-id/', GetTelegramIDFromHelpRequestAPIView.as_view(), name='get-telegram-id'),
     path('teacher/help-request/<int:pk>/delete/', TeacherTopicHelpRequestDeleteAPIView.as_view(), name='teacher-help-request-delete'),
 

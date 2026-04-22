@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import ( SystemSettingsListView, FAQListView, ProductListView, FullStatisticsAPIView,
+from .views import ( FAQListView, ProductListView, FullStatisticsAPIView,
                     BannerListView, MotivationAPIView, ElonListAPIView, ElonDetailAPIView,
                     UploadSingleFileAPIView, DeleteFileAPIView, UploadedFileListAPIView,
                     MathematicianListAPIView, MathematicianDetailAPIView)
@@ -19,7 +19,6 @@ from .VIEW.conversion_rate_crud import ConversionRateCRUDAPIView
 from .VIEW.solution_status_crud import SolutionStatusCRUDAPIView
 from .VIEW.upload_setting_crud import UploadSettingCRUDAPIView
 urlpatterns = [
-    path('system-settings/', SystemSettingsListView.as_view(), name='system-settings-list'),
     path('banner/', BannerListView.as_view(), name='system-settings-list'),
     path('faqs/', FAQListView.as_view(), name='faq-list'),
     path('products/', ProductListView.as_view(), name='product-list'),
@@ -45,8 +44,7 @@ urlpatterns = [
     path("superadmin/elon/<int:pk>/", ElonCRUDAPIView.as_view()),
     path("superadmin/motivation/", MotivationCRUDAPIView.as_view()),          # GET (list) | POST (create)
     path("superadmin/motivation/<int:pk>/", MotivationCRUDAPIView.as_view()), # GET | PUT | DELETE
-    path("system-settings/", SystemSettingsCRUDAPIView.as_view()),          # GET list, POST create
-    path("system-settings/<int:pk>/", SystemSettingsCRUDAPIView.as_view()), # GET detail, PUT, DELETE
+    path("system-settings/", SystemSettingsCRUDAPIView.as_view(), name="system-settings-crud"),
 
     path("daily-coin-settings/", DailyCoinSettingsCRUDAPIView.as_view()),
     path("daily-coin-settings/<int:pk>/", DailyCoinSettingsCRUDAPIView.as_view()),

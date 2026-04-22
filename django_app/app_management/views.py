@@ -1,6 +1,6 @@
 from rest_framework.generics import ListAPIView, RetrieveAPIView
-from .models import SystemSettings, FAQ, Product, Banner, Motivation, Elon, UploadedFile, UploadSetting, Mathematician
-from .serializers import SystemSettingsSerializer, FAQSerializer, ProductSerializer, BannerSerializer, ElonSerializer, MathematicianListSerializer, MathematicianDetailSerializer
+from .models import FAQ, Product, Banner, Motivation, Elon, UploadedFile, UploadSetting, Mathematician
+from .serializers import FAQSerializer, ProductSerializer, BannerSerializer, ElonSerializer, MathematicianListSerializer, MathematicianDetailSerializer
 from django_app.app_user.models import User, Teacher, Student, Tutor, Parent
 from django_app.app_payments.models import Subscription, Payment, SubscriptionPlan
 from rest_framework.views import APIView
@@ -205,11 +205,6 @@ class MotivationAPIView(APIView):
         ]
 
         return Response({"motivations": data}, status=status.HTTP_200_OK)
-
-
-class SystemSettingsListView(ListAPIView):
-    queryset = SystemSettings.objects.all()
-    serializer_class = SystemSettingsSerializer
 
 
 class FAQListView(ListAPIView):
