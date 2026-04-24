@@ -558,14 +558,7 @@ class RequestCloseConversationAPIView(APIView):
                 status=403
             )
 
-        # Allaqachon so‘ralganmi?
-        if conversation.is_close_requested:
-            return Response(
-                {"detail": "Yopish so‘rovi allaqachon yuborilgan"},
-                status=400
-            )
-
-        # 🔹 Close request
+        # Oldingi so’rov bo’lsa ham yangi so’rov yuboriladi (ustiga yoziladi)
         conversation.is_close_requested = True
         conversation.close_requested_at = timezone.now()
         conversation.close_requested_by = user
@@ -579,7 +572,7 @@ class RequestCloseConversationAPIView(APIView):
         system_message = create_system_message(
             conversation=conversation,
             sender=user,
-            text="O'qituvchi chatni yopmoqchi. Boshqa savolingiz yo'qmi?",
+            text="O’qituvchi baho so’ramoqda. Boshqa savolingiz yo’qmi?",
             event="close_requested",
         )
 
