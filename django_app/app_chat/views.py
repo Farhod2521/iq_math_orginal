@@ -219,24 +219,6 @@ class CreateDirectChatAPIView(APIView):
         ).first()
 
         if conversation:
-            # Yopilgan bo’lsa — qayta ochamiz, tarix saqlanadi
-            if conversation.is_closed:
-                conversation.is_closed = False
-                conversation.closed_at = None
-                conversation.closed_by = None
-                conversation.is_close_requested = False
-                conversation.close_requested_at = None
-                conversation.close_requested_by = None
-                conversation.save(update_fields=[
-                    "is_closed", "closed_at", "closed_by",
-                    "is_close_requested", "close_requested_at", "close_requested_by"
-                ])
-                Message.objects.create(
-                    conversation=conversation,
-                    sender=user,
-                    message_type="system",
-                    text="Chat qayta ochildi. Yangi savol yozishingiz mumkin."
-                )
             return Response(ConversationSerializer(conversation).data)
 
         # yangi chat
@@ -291,15 +273,11 @@ class StudentSupportChatMessageAPIView(APIView):
                 ConversationParticipant(conversation=conversation, user=user),
                 ConversationParticipant(conversation=conversation, user=other_user)
             ])
-        elif conversation.is_closed:
-            conversation.is_closed = False
-            conversation.closed_at = None
-            conversation.closed_by = None
+        elif conversation.is_close_requested:
             conversation.is_close_requested = False
             conversation.close_requested_at = None
             conversation.close_requested_by = None
             conversation.save(update_fields=[
-                "is_closed", "closed_at", "closed_by",
                 "is_close_requested", "close_requested_at", "close_requested_by"
             ])
             Message.objects.create(
@@ -368,26 +346,8 @@ class SendMessageAPIView(APIView):
         ).exists():
             return Response({"error": "Ruxsat yo'q"}, status=403)
 
-        # Yopilgan chatga xabar yuborganda — qayta ochamiz
-        if conversation.is_closed:
-            conversation.is_closed = False
-            conversation.closed_at = None
-            conversation.closed_by = None
-            conversation.is_close_requested = False
-            conversation.close_requested_at = None
-            conversation.close_requested_by = None
-            conversation.save(update_fields=[
-                "is_closed", "closed_at", "closed_by",
-                "is_close_requested", "close_requested_at", "close_requested_by"
-            ])
-            Message.objects.create(
-                conversation=conversation,
-                sender=user,
-                message_type="system",
-                text="Chat qayta ochildi. Yangi savol yozishingiz mumkin."
-            )
         # Yopish so'rovi bo'lsa va student yozsa — so'rovni bekor qilamiz
-        elif conversation.is_close_requested and user.role == "student":
+        if conversation.is_close_requested and user.role == "student":
             conversation.is_close_requested = False
             conversation.close_requested_at = None
             conversation.close_requested_by = None
@@ -581,12 +541,6 @@ class RequestCloseConversationAPIView(APIView):
 
         conversation = get_object_or_404(Conversation, id=conversation_id)
 
-        if conversation.is_closed:
-            return Response(
-                {"detail": "Chat allaqachon yopilgan"},
-                status=400
-            )
-
         # Faqat teacher
         if user.role != "teacher":
             return Response(
@@ -657,21 +611,14 @@ class ConfirmCloseAndRateAPIView(APIView):
 
         conversation = get_object_or_404(Conversation, id=conversation_id)
 
-        # 2️⃣ Chat yopish so‘rovi bo‘lishi shart
+        # 2️⃣ Chat yopish so’rovi bo’lishi shart
         if not conversation.is_close_requested:
             return Response(
-                {"detail": "Chat yopish so‘rovi mavjud emas"},
+                {"detail": "O’qituvchi hali baho so’rovini yubormagan"},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # 3️⃣ Chat allaqachon yopilganmi?
-        if conversation.is_closed:
-            return Response(
-                {"detail": "Chat allaqachon yopilgan"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # 4️⃣ Student chat ishtirokchisimi?
+        # 3️⃣ Student chat ishtirokchisimi?
         if not ConversationParticipant.objects.filter(
             conversation=conversation,
             user=user
@@ -698,22 +645,18 @@ class ConfirmCloseAndRateAPIView(APIView):
         serializer = ConfirmCloseAndRateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        # 🔐 HAMMASI BITTA TRANZAKSIYADA
         with transaction.atomic():
-
-            # 🔒 Chatni yopamiz
-            conversation.is_closed = True
-            conversation.closed_at = timezone.now()
-            conversation.closed_by = conversation.close_requested_by
+            # Faqat so'rovni bekor qilamiz — chat YOPILMAYDI
             conversation.is_close_requested = False
+            conversation.close_requested_at = None
+            conversation.close_requested_by = None
             conversation.save(update_fields=[
-                "is_closed",
-                "closed_at",
-                "closed_by",
                 "is_close_requested",
+                "close_requested_at",
+                "close_requested_by",
             ])
 
-            # ⭐ Rating
+            # ⭐ Rating saqlanadi
             rating = ConversationRating.objects.create(
                 conversation=conversation,
                 student=user,
@@ -722,18 +665,18 @@ class ConfirmCloseAndRateAPIView(APIView):
                 comment=serializer.validated_data.get("comment", "")
             )
 
-            # 📢 System xabar
+            # 📢 Baxo chat ichida ko'rinadi, chat davom etadi
             system_message = create_system_message(
                 conversation=conversation,
                 sender=user,
-                text="Student chatni yopishni tasdiqladi va baho berdi.",
-                event="closed_and_rated",
+                text=f"Student baho berdi: {'⭐' * serializer.validated_data['stars']}. Chat davom etmoqda.",
+                event="rated",
                 rating=rating,
             )
 
         return Response(
             {
-                "detail": "Chat yopildi va baho berildi",
+                "detail": "Baho berildi. Chat davom etmoqda.",
                 "conversation": ConversationSerializer(
                     conversation,
                     context={"request": request}
