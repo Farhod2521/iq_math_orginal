@@ -530,6 +530,8 @@ class ConversationMessagesAPIView(APIView):
                 context={"request": request}
             ).data,
             "messages": serializer.data,
+            "teacher_close_request": conversation.is_close_requested,
+            "student_close_confirm": conversation.ratings.exists(),
         }, status=200)
 
 
