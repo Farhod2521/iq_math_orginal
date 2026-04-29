@@ -4,12 +4,13 @@
 
 
 from rest_framework import serializers
-from django_app.app_management.models import  Coupon_Tutor_Student
+from django.utils import timezone
+from django_app.app_management.models import Coupon_Tutor_Student
 
 class CouponCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Coupon_Tutor_Student
-        fields = ['id']  # Foydalanuvchi hech narsa yubormaydi
+        fields = ['id']
 
     def validate(self, attrs):
         request = self.context.get('request')
@@ -18,19 +19,24 @@ class CouponCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"error": "Foydalanuvchi aniqlanmadi"})
 
         user = request.user
+        now_time = timezone.now()
 
         # Student
         if user.role == 'student':
             student = user.student_profile
-            if Coupon_Tutor_Student.objects.filter(created_by_student=student).exists():
-                raise serializers.ValidationError({"error": "Siz allaqachon kupon yaratgansiz"})
+            qs = Coupon_Tutor_Student.objects.filter(created_by_student=student)
+            qs.filter(valid_until__lt=now_time, is_active=True).update(is_active=False)
+            if qs.filter(is_active=True).exists():
+                raise serializers.ValidationError({"error": "Sizning faol kuponingiz mavjud"})
             attrs['created_by_student'] = student
 
         # Tutor
         elif user.role == 'tutor':
             tutor = user.tutor_profile
-            if Coupon_Tutor_Student.objects.filter(created_by_tutor=tutor).exists():
-                raise serializers.ValidationError({"error": "Siz allaqachon kupon yaratgansiz"})
+            qs = Coupon_Tutor_Student.objects.filter(created_by_tutor=tutor)
+            qs.filter(valid_until__lt=now_time, is_active=True).update(is_active=False)
+            if qs.filter(is_active=True).exists():
+                raise serializers.ValidationError({"error": "Sizning faol kuponingiz mavjud"})
             attrs['created_by_tutor'] = tutor
 
         # Teacher
