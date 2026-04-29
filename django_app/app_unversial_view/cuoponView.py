@@ -31,7 +31,7 @@ class UniversalCouponAPIView(APIView):
 
         if role == 'student':
             qs = Coupon_Tutor_Student.objects.filter(created_by_student=user.student_profile)
-            qs.filter(valid_until__lt=now_time, is_active=True).update(is_active=False)
+            qs.filter(valid_until__lt=now_time).delete()
             coupon = qs.first()
 
             if not coupon:
@@ -49,7 +49,7 @@ class UniversalCouponAPIView(APIView):
 
         elif role == 'tutor':
             qs = Coupon_Tutor_Student.objects.filter(created_by_tutor=user.tutor_profile)
-            qs.filter(valid_until__lt=now_time, is_active=True).update(is_active=False)
+            qs.filter(valid_until__lt=now_time).delete()
             coupon = qs.first()
 
             if not coupon:
@@ -106,8 +106,8 @@ class UniversalCouponAPIView(APIView):
         # STUDENT / TUTOR → oldindan tekshiramiz
         if role == 'student':
             existing = Coupon_Tutor_Student.objects.filter(created_by_student=user.student_profile)
-            # Muddati o'tgan kuponlarni deactivate qilamiz
-            existing.filter(valid_until__lt=now_time, is_active=True).update(is_active=False)
+            # Muddati o'tgan kuponlarni bazadan o'chiramiz
+            existing.filter(valid_until__lt=now_time).delete()
             # Faol kuponi hali ham bormi?
             if existing.filter(is_active=True).exists():
                 return Response(
@@ -118,7 +118,7 @@ class UniversalCouponAPIView(APIView):
 
         elif role == 'tutor':
             existing = Coupon_Tutor_Student.objects.filter(created_by_tutor=user.tutor_profile)
-            existing.filter(valid_until__lt=now_time, is_active=True).update(is_active=False)
+            existing.filter(valid_until__lt=now_time).delete()
             if existing.filter(is_active=True).exists():
                 return Response(
                     {"message": "Sizning faol kuponingiz mavjud, muddati tugagandan keyin yangi yaratishingiz mumkin"},
