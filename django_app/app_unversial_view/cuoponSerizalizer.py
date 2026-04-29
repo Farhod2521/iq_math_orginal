@@ -25,7 +25,7 @@ class CouponCreateSerializer(serializers.ModelSerializer):
         if user.role == 'student':
             student = user.student_profile
             qs = Coupon_Tutor_Student.objects.filter(created_by_student=student)
-            qs.filter(valid_until__lt=now_time, is_active=True).update(is_active=False)
+            qs.filter(valid_until__lt=now_time).delete()
             if qs.filter(is_active=True).exists():
                 raise serializers.ValidationError({"error": "Sizning faol kuponingiz mavjud"})
             attrs['created_by_student'] = student
@@ -34,7 +34,7 @@ class CouponCreateSerializer(serializers.ModelSerializer):
         elif user.role == 'tutor':
             tutor = user.tutor_profile
             qs = Coupon_Tutor_Student.objects.filter(created_by_tutor=tutor)
-            qs.filter(valid_until__lt=now_time, is_active=True).update(is_active=False)
+            qs.filter(valid_until__lt=now_time).delete()
             if qs.filter(is_active=True).exists():
                 raise serializers.ValidationError({"error": "Sizning faol kuponingiz mavjud"})
             attrs['created_by_tutor'] = tutor
