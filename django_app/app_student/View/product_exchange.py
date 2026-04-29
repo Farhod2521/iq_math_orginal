@@ -114,15 +114,14 @@ class ProductExchangeListView(APIView):
                 if exchange.product.image
                 else None
             )
-
-        data.append({
-            'product_name': exchange.product.name,
-            'product_image': product_image_url,
-            'used_coin': exchange.used_coin,
-            'delivery_status': exchange.delivery_status,
-            'is_confirmed_by_student': exchange.is_confirmed_by_student,
-            'created_at': exchange.created_at.strftime('%Y-%m-%d %H:%M'),
-        })
+            data.append({
+                'product_name': exchange.product.name,
+                'product_image': product_image_url,
+                'used_coin': exchange.used_coin,
+                'delivery_status': exchange.delivery_status,
+                'is_confirmed_by_student': exchange.is_confirmed_by_student,
+                'created_at': exchange.created_at.strftime('%Y-%m-%d %H:%M'),
+            })
 
         return Response({
             'message_uz': 'Siz almashtirgan mahsulotlar ro‘yxati.',
