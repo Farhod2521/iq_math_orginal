@@ -27,11 +27,12 @@ class UniversalCouponAPIView(APIView):
     def get(self, request):
         user = request.user
         role = user.role
+        now_time = timezone.now()
 
         if role == 'student':
-            coupon = Coupon_Tutor_Student.objects.filter(
-                created_by_student=user.student_profile
-            ).first()
+            qs = Coupon_Tutor_Student.objects.filter(created_by_student=user.student_profile)
+            qs.filter(valid_until__lt=now_time, is_active=True).update(is_active=False)
+            coupon = qs.first()
 
             if not coupon:
                 return Response(
@@ -47,9 +48,9 @@ class UniversalCouponAPIView(APIView):
             }, status=status.HTTP_200_OK)
 
         elif role == 'tutor':
-            coupon = Coupon_Tutor_Student.objects.filter(
-                created_by_tutor=user.tutor_profile
-            ).first()
+            qs = Coupon_Tutor_Student.objects.filter(created_by_tutor=user.tutor_profile)
+            qs.filter(valid_until__lt=now_time, is_active=True).update(is_active=False)
+            coupon = qs.first()
 
             if not coupon:
                 return Response(
@@ -100,19 +101,27 @@ class UniversalCouponAPIView(APIView):
         valid_from = timezone.now()
         valid_until = valid_from + timedelta(days=settings.coupon_valid_days)
 
+        now_time = timezone.now()
+
         # STUDENT / TUTOR → oldindan tekshiramiz
         if role == 'student':
-            if Coupon_Tutor_Student.objects.filter(created_by_student=user.student_profile).exists():
+            existing = Coupon_Tutor_Student.objects.filter(created_by_student=user.student_profile)
+            # Muddati o'tgan kuponlarni deactivate qilamiz
+            existing.filter(valid_until__lt=now_time, is_active=True).update(is_active=False)
+            # Faol kuponi hali ham bormi?
+            if existing.filter(is_active=True).exists():
                 return Response(
-                    {"message": "Siz allaqachon kupon yaratgansiz"},
+                    {"message": "Sizning faol kuponingiz mavjud, muddati tugagandan keyin yangi yaratishingiz mumkin"},
                     status=status.HTTP_200_OK
                 )
             discount_percent = settings.coupon_discount_percent
 
         elif role == 'tutor':
-            if Coupon_Tutor_Student.objects.filter(created_by_tutor=user.tutor_profile).exists():
+            existing = Coupon_Tutor_Student.objects.filter(created_by_tutor=user.tutor_profile)
+            existing.filter(valid_until__lt=now_time, is_active=True).update(is_active=False)
+            if existing.filter(is_active=True).exists():
                 return Response(
-                    {"message": "Siz allaqachon kupon yaratgansiz"},
+                    {"message": "Sizning faol kuponingiz mavjud, muddati tugagandan keyin yangi yaratishingiz mumkin"},
                     status=status.HTTP_200_OK
                 )
             discount_percent = settings.coupon_discount_percent
