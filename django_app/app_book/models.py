@@ -52,6 +52,8 @@ class Book(models.Model):
         related_name='books',
         verbose_name="Teglar"
     )
+    file = models.FileField(upload_to='books/files/', null=True, blank=True, verbose_name="Fayl (PDF)")
+    cover_image = models.ImageField(upload_to='books/covers/', null=True, blank=True, verbose_name="Muqova rasmi")
     price = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Narxi")
     status = models.CharField(
         max_length=20,
