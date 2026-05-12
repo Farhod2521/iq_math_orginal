@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     "django_app.app_management",
     "django_app.app_tutor",
     "django_app.app_chat",
+    "django_app.app_book",
 ]
 
 MIDDLEWARE = [
