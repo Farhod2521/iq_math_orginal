@@ -31,6 +31,7 @@ urlpatterns = [
     path('api/v1/tutor/', include("django_app.app_tutor.urls")),
     path('api/v1/func_chat/', include("django_app.app_chat.urls")),
     path('api/v1/universal/', include("django_app.app_unversial_view.urls")),
+    path('api/v1/book/', include("django_app.app_book.urls")),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='swagger-docs'),
 ]
 
