@@ -295,9 +295,15 @@ class FullStatisticsAPIView(APIView):
 
         # 10. Har oy qancha yangi obuna
         monthly_subscriptions = payments_success.extra(
-            select={'month': "EXTRACT(MONTH FROM payment_date)"}
-        ).values('month').annotate(count=Count('id')).order_by('month')
-        monthly_data = [{'month': int(item['month']), 'count': item['count']} for item in monthly_subscriptions]
+            select={
+                'month': "EXTRACT(MONTH FROM payment_date)",
+                'year': "EXTRACT(YEAR FROM payment_date)",
+            }
+        ).values('month', 'year').annotate(count=Count('id')).order_by('year', 'month')
+        monthly_data = [
+            {'month': int(item['month']), 'count': item['count'], 'year': int(item['year'])}
+            for item in monthly_subscriptions
+        ]
 
         # 🔹 Qo‘shimcha statistika
         total_teachers = Teacher.objects.filter(status=True).count()
