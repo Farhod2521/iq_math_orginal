@@ -15,7 +15,7 @@ import uuid
 from rest_framework.permissions import IsAuthenticated
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
-from .serializers import PaymentSerializer, SubscriptionPlanSerializer, PaymentTeacherSerializer
+from .serializers import PaymentSerializer, SubscriptionPlanSerializer, PaymentTeacherSerializer, PaymentSuperAdminSerializer
 from django_app.app_student.models import  StudentCouponTransaction
 from django_app.app_tutor.models import TutorCouponTransaction
 from django_app.app_teacher.models import TeacherCouponTransaction
@@ -856,17 +856,36 @@ class PaymentSuperAdminAPIView(APIView):
     def get(self, request, pk=None):
         if pk is not None:
             try:
-                payment = Payment.objects.get(pk=pk)
+                payment = Payment.objects.select_related("student__user", "coupon").get(pk=pk)
             except Payment.DoesNotExist:
                 return Response(
                     {"detail": "Payment topilmadi."},
                     status=status.HTTP_404_NOT_FOUND
                 )
-            serializer = PaymentSerializer(payment)
+            serializer = PaymentSuperAdminSerializer(payment)
             return Response(serializer.data, status=status.HTTP_200_OK)
 
-        payments = Payment.objects.all().order_by("-created_at")
-        serializer = PaymentSerializer(payments, many=True)
+        payments = Payment.objects.select_related("student__user", "coupon").order_by("-created_at")
+
+        # Filterlar
+        status_filter = request.GET.get("status")
+        subscription_months = request.GET.get("subscription_months")
+        student_name = request.GET.get("student_name")
+        date_from = request.GET.get("date_from")
+        date_to = request.GET.get("date_to")
+
+        if status_filter:
+            payments = payments.filter(status=status_filter)
+        if subscription_months:
+            payments = payments.filter(subscription_months=subscription_months)
+        if student_name:
+            payments = payments.filter(student__full_name__icontains=student_name)
+        if date_from:
+            payments = payments.filter(created_at__date__gte=date_from)
+        if date_to:
+            payments = payments.filter(created_at__date__lte=date_to)
+
+        serializer = PaymentSuperAdminSerializer(payments, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def delete(self, request, pk):
