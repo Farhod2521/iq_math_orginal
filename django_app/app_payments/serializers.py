@@ -160,6 +160,43 @@ class PaymentTeacherSerializer(serializers.ModelSerializer):
         ]
 
 
+class PaymentSuperAdminSerializer(serializers.ModelSerializer):
+    student_name = serializers.CharField(source="student.full_name", read_only=True)
+    student_phone = serializers.CharField(source="student.user.phone", read_only=True)
+    student_id = serializers.IntegerField(source="student.id", read_only=True)
+    coupon_code = serializers.CharField(source="coupon.code", read_only=True)
+    plan_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Payment
+        fields = [
+            "id",
+            "student_id",
+            "student_name",
+            "student_phone",
+            "amount",
+            "original_amount",
+            "discount_percent",
+            "coupon_code",
+            "coupon_type",
+            "subscription_months",
+            "plan_name",
+            "status",
+            "payment_gateway",
+            "student_cashback_amount",
+            "teacher_cashback_amount",
+            "payment_date",
+            "created_at",
+            "receipt_url",
+        ]
+
+    def get_plan_name(self, obj):
+        plan = SubscriptionPlan.objects.filter(months=obj.subscription_months, is_active=True).first()
+        if plan:
+            return plan.get_months_display()
+        return f"{obj.subscription_months} oylik"
+
+
 class SubscriptionPlanCREATESerializer(serializers.ModelSerializer):
     class Meta:
         model = SubscriptionPlan
