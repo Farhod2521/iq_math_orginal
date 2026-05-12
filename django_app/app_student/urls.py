@@ -18,7 +18,7 @@ from .View.student_next_topic_mobile_app import  StudentNextTopicAPIView, Studen
 from .View.mobile_app import StudentRatingAPIView, WeeklyStudyStatsAPIView, StudentTopAPIView, SubjectProgressAPIView, SubjectCategoryDetailAPIView
 from .View.daily_Math_Pop_Up import  SubmitQuickMathAnswerAPIView, QuickMathQuestionAPIView
 from .View.som_transfer import SomTransferRequestAPIView, SomTransferConfirmAPIView, SomTransferHistoryAPIView, StudentByIdentificationAPIView
-from .View.score_log_api import StudentScoreLogAPIView
+from .View.score_log_api import StudentScoreLogAPIView, MyScoreLogAPIView
 
 urlpatterns = [
     path('subject/name-list/', SubjectNameListAPIView.as_view(), name='subject-name-list'),
@@ -98,4 +98,5 @@ urlpatterns = [
     ###############################################  SCORE LOG  ##################################################
     path("score-log/", StudentScoreLogAPIView.as_view(), name="score-log-list"),
     path("score-log/<int:pk>/", StudentScoreLogAPIView.as_view(), name="score-log-detail"),
+    path("my-score-log/", MyScoreLogAPIView.as_view(), name="my-score-log"),
 ]

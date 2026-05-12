@@ -76,3 +76,47 @@ class StudentScoreLogAPIView(APIView):
             "awarded_coin": log.awarded_coin,
             "awarded_at": log.awarded_at.strftime("%d/%m/%Y %H:%M"),
         }
+
+
+class MyScoreLogAPIView(APIView):
+    """
+    GET /student/my-score-log/                  → o'zining barcha loglari
+    GET /student/my-score-log/?award_type=coin  → faqat tanga loglari
+    GET /student/my-score-log/?award_type=score → faqat ball loglari
+    GET /student/my-score-log/?date_from=YYYY-MM-DD&date_to=YYYY-MM-DD
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        student = getattr(request.user, 'student_profile', None)
+        if not student:
+            return Response({"detail": "Faqat studentlar uchun."}, status=403)
+
+        qs = StudentScoreLog.objects.select_related(
+            'student_score__student__user', 'question'
+        ).filter(student_score__student=student)
+
+        award_type = request.GET.get('award_type')
+        if award_type in ('coin', 'score'):
+            qs = qs.filter(award_type=award_type)
+
+        date_from = request.GET.get('date_from')
+        date_to = request.GET.get('date_to')
+        if date_from:
+            qs = qs.filter(awarded_at__date__gte=date_from)
+        if date_to:
+            qs = qs.filter(awarded_at__date__lte=date_to)
+
+        qs = qs.order_by('-awarded_at')
+
+        data = [
+            {
+                "id": log.id,
+                "question_id": log.question.id,
+                "award_type": log.award_type,
+                "awarded_coin": log.awarded_coin,
+                "awarded_at": log.awarded_at.strftime("%d/%m/%Y %H:%M"),
+            }
+            for log in qs
+        ]
+        return Response({"count": len(data), "results": data})
