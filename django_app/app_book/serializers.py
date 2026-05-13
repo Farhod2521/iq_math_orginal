@@ -25,7 +25,8 @@ class BookReadSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'name', 'description', 'category', 'tags',
             'file', 'cover_image',
-            'price', 'status', 'date', 'created_at', 'updated_at'
+            'price', 'status', 'is_offline', 'quantity', 'date',
+            'created_at', 'updated_at'
         ]
 
 
@@ -39,5 +40,5 @@ class BookWriteSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'name', 'description', 'category', 'tags',
             'file', 'cover_image',
-            'price', 'status', 'date'
+            'price', 'status', 'is_offline', 'quantity', 'date'
         ]
