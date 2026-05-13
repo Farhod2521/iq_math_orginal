@@ -61,6 +61,14 @@ class Book(models.Model):
         default='active',
         verbose_name="Holat"
     )
+    is_offline = models.BooleanField(
+        null=True, blank=True, default=False,
+        verbose_name="Oflayn kitobmi (yetkazib berish mumkin)"
+    )
+    quantity = models.PositiveIntegerField(
+        null=True, blank=True,
+        verbose_name="Ombordagi soni"
+    )
     date = models.DateField(verbose_name="Sana")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
