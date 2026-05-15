@@ -155,7 +155,7 @@ class SuperAdminGroupCRUDAPIView(APIView):
         if not teacher_id:
             return Response({"detail": "teacher_id maydoni talab qilinadi"}, status=400)
 
-        teacher = get_object_or_404(Teacher, id=teacher_id)
+        teacher = get_object_or_404(Teacher, user__id=teacher_id)
         group = Group.objects.create(name=name, teacher=teacher)
 
         if student_ids:
@@ -177,7 +177,7 @@ class SuperAdminGroupCRUDAPIView(APIView):
         if name:
             group.name = name
         if teacher_id:
-            group.teacher = get_object_or_404(Teacher, id=teacher_id)
+            group.teacher = get_object_or_404(Teacher, user__id=teacher_id)
         group.save()
 
         if student_ids is not None:
