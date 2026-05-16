@@ -148,7 +148,7 @@ class SuperAdminGroupCRUDAPIView(APIView):
     def post(self, request):
         name = request.data.get('name', '').strip()
         teacher_id = request.data.get('teacher_id')
-        student_ids = request.data.get('student_ids', [])
+        student_ids = request.data.get('student_ids') or request.data.get('students', [])
 
         if not name:
             return Response({"detail": "name maydoni talab qilinadi"}, status=400)
@@ -172,7 +172,7 @@ class SuperAdminGroupCRUDAPIView(APIView):
 
         name = request.data.get('name', '').strip()
         teacher_id = request.data.get('teacher_id')
-        student_ids = request.data.get('student_ids')
+        student_ids = request.data.get('student_ids') if request.data.get('student_ids') is not None else request.data.get('students')
 
         if name:
             group.name = name
