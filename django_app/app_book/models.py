@@ -65,6 +65,8 @@ class Book(models.Model):
         null=True, blank=True, default=False,
         verbose_name="Oflayn kitobmi (yetkazib berish mumkin)"
     )
+    for_student = models.BooleanField(default=False, verbose_name="Student uchun")
+    for_teacher = models.BooleanField(default=False, verbose_name="O'qituvchi uchun")
     quantity = models.PositiveIntegerField(
         null=True, blank=True,
         verbose_name="Ombordagi soni"
