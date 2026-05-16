@@ -160,6 +160,8 @@ class BookCRUDAPIView(APIView):
         category_id = request.GET.get('category')
         status_filter = request.GET.get('status')
         tag_id = request.GET.get('tag')
+        for_student = request.GET.get('for_student')
+        for_teacher = request.GET.get('for_teacher')
 
         if category_id:
             qs = qs.filter(category__id=category_id)
@@ -167,6 +169,10 @@ class BookCRUDAPIView(APIView):
             qs = qs.filter(status=status_filter)
         if tag_id:
             qs = qs.filter(tags__id=tag_id)
+        if for_student is not None:
+            qs = qs.filter(for_student=for_student.lower() == 'true')
+        if for_teacher is not None:
+            qs = qs.filter(for_teacher=for_teacher.lower() == 'true')
 
         return Response(BookReadSerializer(qs, many=True).data)
 
