@@ -178,6 +178,7 @@ class AddAccountSerializer(serializers.Serializer):
             "phone": user.phone
         }
 class SessionListSerializer(serializers.ModelSerializer):
+    session_id = serializers.IntegerField(source="id")
     user_id = serializers.IntegerField(source="user.id")
     phone = serializers.CharField(source="user.phone")
     full_name = serializers.SerializerMethodField()
@@ -186,7 +187,7 @@ class SessionListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UserSession
-        fields = ["id", "user_id", "phone", "full_name", "role", "device_id", "created_at"]
+        fields = ["session_id", "user_id", "phone", "full_name", "role", "device_id", "created_at"]
 
     def get_full_name(self, obj):
         user = obj.user
