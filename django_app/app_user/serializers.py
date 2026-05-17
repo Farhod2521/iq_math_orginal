@@ -189,7 +189,19 @@ class SessionListSerializer(serializers.ModelSerializer):
         fields = ["id", "user_id", "phone", "full_name", "role", "device_id", "created_at"]
 
     def get_full_name(self, obj):
-        return obj.user.get_full_name() or obj.user.phone
+        user = obj.user
+        try:
+            if user.role == "student":
+                return user.student_profile.full_name
+            elif user.role == "teacher":
+                return user.teacher_profile.full_name
+            elif user.role == "parent":
+                return user.parent_profile.full_name
+            elif user.role == "tutor":
+                return user.tutor_profile.full_name
+        except Exception:
+            pass
+        return user.get_full_name() or user.phone
 ##############################################################
 ###################     STUNDENT    REGISTER   ###############
 ##############################################################
