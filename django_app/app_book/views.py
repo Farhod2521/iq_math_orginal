@@ -223,11 +223,14 @@ class BookListForUserAPIView(APIView):
 
     def _get_coin_rate(self):
         rate = ConversionRate.objects.first()
-        return rate.coin_to_money if rate and rate.coin_to_money else None
+        if not rate:
+            return None, None
+        return rate.coin_to_money, rate.coin_to_score
 
-    def _serialize(self, book, coin_to_money):
+    def _serialize(self, book, coin_to_money, coin_to_score):
         price_som  = float(book.price)
-        price_coin = round(price_som / float(coin_to_money), 2) if coin_to_money else None
+        price_coin  = round(price_som / float(coin_to_money), 2) if coin_to_money else None
+        price_score = round(price_coin * coin_to_score, 2) if (price_coin and coin_to_score) else None
 
         category = book.category
         tags = book.tags.all()
@@ -253,8 +256,9 @@ class BookListForUserAPIView(APIView):
             "cover_image": book.cover_image.url if book.cover_image else None,
             "file":        book.file.url        if book.file        else None,
 
-            "price_som":  price_som,
-            "price_coin": price_coin,
+            "price_som":   price_som,
+            "price_coin":  price_coin,
+            "price_score": price_score,
 
             "status":      book.status,
             "is_offline":  book.is_offline,
@@ -277,7 +281,7 @@ class BookListForUserAPIView(APIView):
         return qs
 
     def get(self, request, pk=None):
-        coin_to_money = self._get_coin_rate()
+        coin_to_money, coin_to_score = self._get_coin_rate()
 
         if pk:
             qs = self._base_qs(request)
@@ -285,7 +289,7 @@ class BookListForUserAPIView(APIView):
                 book = qs.get(pk=pk)
             except Book.DoesNotExist:
                 return Response({"detail": "Kitob topilmadi."}, status=404)
-            return Response(self._serialize(book, coin_to_money))
+            return Response(self._serialize(book, coin_to_money, coin_to_score))
 
         qs = self._base_qs(request)
 
@@ -301,5 +305,5 @@ class BookListForUserAPIView(APIView):
         if is_offline is not None:
             qs = qs.filter(is_offline=is_offline.lower() == 'true')
 
-        data = [self._serialize(b, coin_to_money) for b in qs]
+        data = [self._serialize(b, coin_to_money, coin_to_score) for b in qs]
         return Response({"count": len(data), "results": data})
