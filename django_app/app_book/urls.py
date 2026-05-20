@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import CategoryCRUDAPIView, TagCRUDAPIView, BookCRUDAPIView
+from .views import CategoryCRUDAPIView, TagCRUDAPIView, BookCRUDAPIView, BookListForUserAPIView
 
 urlpatterns = [
     # Categories
@@ -10,7 +10,11 @@ urlpatterns = [
     path('tags/', TagCRUDAPIView.as_view(), name='book-tag-list'),
     path('tags/<int:pk>/', TagCRUDAPIView.as_view(), name='book-tag-detail'),
 
-    # Books
+    # Books CRUD (superadmin)
     path('books/', BookCRUDAPIView.as_view(), name='book-list'),
     path('books/<int:pk>/', BookCRUDAPIView.as_view(), name='book-detail'),
+
+    # Foydalanuvchi uchun kitoblar (role asosida)
+    path('my-books/', BookListForUserAPIView.as_view(), name='book-my-list'),
+    path('my-books/<int:pk>/', BookListForUserAPIView.as_view(), name='book-my-detail'),
 ]

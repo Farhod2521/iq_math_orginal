@@ -5,6 +5,7 @@ from rest_framework.permissions import BasePermission, IsAuthenticated
 
 from .models import Category, Tag, Book
 from .serializers import CategorySerializer, TagSerializer, BookReadSerializer, BookWriteSerializer
+from django_app.app_management.models import ConversionRate
 
 
 class IsSuperAdmin(BasePermission):
@@ -201,3 +202,104 @@ class BookCRUDAPIView(APIView):
             return Response({"detail": "Kitob topilmadi."}, status=404)
         obj.delete()
         return Response({"detail": "Kitob o'chirildi."}, status=status.HTTP_204_NO_CONTENT)
+
+
+# ─────────────────────────────────────────────
+#  FOYDALANUVCHI UCHUN KITOBLAR (role asosida)
+# ─────────────────────────────────────────────
+class BookListForUserAPIView(APIView):
+    """
+    GET /book/my-books/
+    GET /book/my-books/<pk>/
+
+    Role asosida filtrlaydi:
+      - student → for_student=True kitoblar
+      - tutor   → for_teacher=True kitoblar
+      - superadmin/admin → barcha active kitoblar
+
+    Narx ham so'm, ham coin da qaytadi (ConversionRate dan hisoblanadi).
+    """
+    permission_classes = [IsAuthenticated]
+
+    def _get_coin_rate(self):
+        rate = ConversionRate.objects.first()
+        return rate.coin_to_money if rate and rate.coin_to_money else None
+
+    def _serialize(self, book, coin_to_money):
+        price_som  = float(book.price)
+        price_coin = round(price_som / float(coin_to_money), 2) if coin_to_money else None
+
+        category = book.category
+        tags = book.tags.all()
+
+        return {
+            "id":   book.id,
+            "name_uz": book.name_uz,
+            "name_ru": book.name_ru,
+            "description_uz": book.description_uz,
+            "description_ru": book.description_ru,
+
+            "category": {
+                "id":      category.id      if category else None,
+                "name_uz": category.name_uz if category else None,
+                "name_ru": category.name_ru if category else None,
+            } if category else None,
+
+            "tags": [
+                {"id": t.id, "name_uz": t.name_uz, "name_ru": t.name_ru}
+                for t in tags
+            ],
+
+            "cover_image": book.cover_image.url if book.cover_image else None,
+            "file":        book.file.url        if book.file        else None,
+
+            "price_som":  price_som,
+            "price_coin": price_coin,
+
+            "status":      book.status,
+            "is_offline":  book.is_offline,
+            "quantity":    book.quantity,
+            "for_student": book.for_student,
+            "for_teacher": book.for_teacher,
+            "date":        str(book.date),
+        }
+
+    def _base_qs(self, request):
+        role = getattr(request.user, 'role', None)
+        qs = Book.objects.select_related('category').prefetch_related('tags').filter(status='active')
+
+        if role == 'student':
+            qs = qs.filter(for_student=True)
+        elif role == 'tutor':
+            qs = qs.filter(for_teacher=True)
+        # superadmin/admin — barcha active kitoblar
+
+        return qs
+
+    def get(self, request, pk=None):
+        coin_to_money = self._get_coin_rate()
+
+        if pk:
+            qs = self._base_qs(request)
+            try:
+                book = qs.get(pk=pk)
+            except Book.DoesNotExist:
+                return Response({"detail": "Kitob topilmadi."}, status=404)
+            return Response(self._serialize(book, coin_to_money))
+
+        qs = self._base_qs(request)
+
+        # Qo'shimcha filterlar
+        category_id = request.GET.get('category')
+        tag_id      = request.GET.get('tag')
+        is_offline  = request.GET.get('is_offline')
+
+        if category_id:
+            qs = qs.filter(category__id=category_id)
+        if tag_id:
+            qs = qs.filter(tags__id=tag_id)
+        if is_offline is not None:
+            qs = qs.filter(is_offline=is_offline.lower() == 'true')
+
+        data = [self._serialize(b, coin_to_money) for b in qs]
+        return Response({"count": len(data), "results": data})
