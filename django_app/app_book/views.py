@@ -361,9 +361,12 @@ class BookPurchaseAPIView(APIView):
 
         book_id        = request.data.get('book_id')
         payment_method = request.data.get('payment_method')
+        quantity       = int(request.data.get('quantity', 1))
 
         if not book_id:
             return Response({"detail": "book_id talab qilinadi."}, status=400)
+        if quantity < 1:
+            return Response({"detail": "quantity kamida 1 bo'lishi kerak."}, status=400)
 
         # Tutor faqat som bilan to'lay oladi (balans tizimi yo'q)
         if role == 'tutor' and payment_method != 'som':
@@ -387,12 +390,16 @@ class BookPurchaseAPIView(APIView):
         coin_to_money = float(rate.coin_to_money)
         coin_to_score = int(rate.coin_to_score)
 
+        # Bitta dona narxi
         if payment_method == 'som':
-            paid_amount = price_som
+            unit_price = price_som
         elif payment_method == 'coin':
-            paid_amount = round(price_som / coin_to_money, 2)
+            unit_price = round(price_som / coin_to_money, 2)
         else:
-            paid_amount = round((price_som / coin_to_money) * coin_to_score, 2)
+            unit_price = round((price_som / coin_to_money) * coin_to_score, 2)
+
+        # Jami summa = bitta narx × miqdor
+        paid_amount = round(unit_price * quantity, 2)
 
         remaining = {}
 
@@ -424,6 +431,7 @@ class BookPurchaseAPIView(APIView):
             purchase = BookPurchase.objects.create(
                 user=request.user,
                 book=book,
+                quantity=quantity,
                 payment_method=payment_method,
                 paid_amount=paid_amount,
             )
@@ -433,8 +441,10 @@ class BookPurchaseAPIView(APIView):
             "purchase_id":     purchase.id,
             "book_name_uz":    book.name_uz,
             "book_name_ru":    book.name_ru,
-            "payment_method":  payment_method,
+            "quantity":        quantity,
+            "unit_price":      unit_price,
             "paid_amount":     paid_amount,
+            "payment_method":  payment_method,
             "purchased_at":    purchase.purchased_at.strftime("%d/%m/%Y %H:%M"),
             "remaining_balance": remaining,
             "file": book.file.url if book.file else None,
@@ -457,6 +467,7 @@ class BookPurchaseAPIView(APIView):
             "purchase_id":    p.id,
             "purchased_at":   p.purchased_at.strftime("%d/%m/%Y %H:%M"),
             "payment_method": p.payment_method,
+            "quantity":       p.quantity,
             "paid_amount":    float(p.paid_amount),
             "user": {
                 "id":        user.id,

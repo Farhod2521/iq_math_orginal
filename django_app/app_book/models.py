@@ -94,8 +94,9 @@ class BookPurchase(models.Model):
 
     user           = models.ForeignKey(User, on_delete=models.CASCADE, related_name='book_purchases', verbose_name="Foydalanuvchi")
     book           = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='purchases', verbose_name="Kitob")
+    quantity       = models.PositiveIntegerField(default=1, verbose_name="Soni")
     payment_method = models.CharField(max_length=10, choices=PAYMENT_METHOD_CHOICES, verbose_name="To'lov turi")
-    paid_amount    = models.DecimalField(max_digits=14, decimal_places=2, verbose_name="To'langan miqdor")
+    paid_amount    = models.DecimalField(max_digits=14, decimal_places=2, verbose_name="To'langan jami miqdor")
     purchased_at   = models.DateTimeField(auto_now_add=True, verbose_name="Sotib olingan vaqt")
 
     def __str__(self):
