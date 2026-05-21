@@ -2,10 +2,12 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import BasePermission, IsAuthenticated
+from django.db import transaction
 
-from .models import Category, Tag, Book
+from .models import Category, Tag, Book, BookPurchase
 from .serializers import CategorySerializer, TagSerializer, BookReadSerializer, BookWriteSerializer
 from django_app.app_management.models import ConversionRate
+from django_app.app_student.models import StudentScore
 
 
 class IsSuperAdmin(BasePermission):
@@ -307,3 +309,168 @@ class BookListForUserAPIView(APIView):
 
         data = [self._serialize(b, coin_to_money, coin_to_score) for b in qs]
         return Response({"count": len(data), "results": data})
+
+
+# ─────────────────────────────────────────────
+#  KITOB SOTIB OLISH
+# ─────────────────────────────────────────────
+class BookPurchaseAPIView(APIView):
+    """
+    POST /book/purchase/
+    Body: { "book_id": 1, "payment_method": "coin" }
+         payment_method: "som" | "coin" | "score"
+
+    GET  /book/purchase/   → o'zi sotib olgan kitoblar ro'yxati
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        role = getattr(request.user, 'role', None)
+
+        base_qs = BookPurchase.objects.select_related(
+            'book__category', 'user',
+        ).prefetch_related('book__tags').order_by('-purchased_at')
+
+        if role in ('superadmin', 'admin'):
+            qs = base_qs
+
+            role_filter = request.GET.get('role')
+            if role_filter:
+                qs = qs.filter(user__role=role_filter)
+
+            book_id = request.GET.get('book_id')
+            if book_id:
+                qs = qs.filter(book__id=book_id)
+
+            payment_method = request.GET.get('payment_method')
+            if payment_method:
+                qs = qs.filter(payment_method=payment_method)
+
+        elif role in ('student', 'tutor'):
+            qs = base_qs.filter(user=request.user)
+        else:
+            return Response({"detail": "Ruxsat yo'q."}, status=403)
+
+        data = [self._serialize_purchase(p) for p in qs]
+        return Response({"count": len(data), "results": data})
+
+    def post(self, request):
+        role = getattr(request.user, 'role', None)
+        if role not in ('student', 'tutor'):
+            return Response({"detail": "Faqat student yoki tutor uchun."}, status=403)
+
+        book_id        = request.data.get('book_id')
+        payment_method = request.data.get('payment_method')
+
+        if not book_id:
+            return Response({"detail": "book_id talab qilinadi."}, status=400)
+
+        # Tutor faqat som bilan to'lay oladi (balans tizimi yo'q)
+        if role == 'tutor' and payment_method != 'som':
+            return Response({"detail": "Tutor faqat so'm bilan to'lay oladi."}, status=400)
+        if payment_method not in ('som', 'coin', 'score'):
+            return Response({"detail": "payment_method: 'som', 'coin' yoki 'score' bo'lishi kerak."}, status=400)
+
+        try:
+            book = Book.objects.get(pk=book_id, status='active')
+        except Book.DoesNotExist:
+            return Response({"detail": "Kitob topilmadi."}, status=404)
+
+        if BookPurchase.objects.filter(user=request.user, book=book).exists():
+            return Response({"detail": "Siz bu kitobni allaqachon sotib olgansiz."}, status=400)
+
+        rate = ConversionRate.objects.first()
+        if not rate:
+            return Response({"detail": "Konversiya kursi topilmadi."}, status=500)
+
+        price_som     = float(book.price)
+        coin_to_money = float(rate.coin_to_money)
+        coin_to_score = int(rate.coin_to_score)
+
+        if payment_method == 'som':
+            paid_amount = price_som
+        elif payment_method == 'coin':
+            paid_amount = round(price_som / coin_to_money, 2)
+        else:
+            paid_amount = round((price_som / coin_to_money) * coin_to_score, 2)
+
+        remaining = {}
+
+        with transaction.atomic():
+            if role == 'student':
+                student = getattr(request.user, 'student_profile', None)
+                try:
+                    student_score = StudentScore.objects.get(student=student)
+                except StudentScore.DoesNotExist:
+                    return Response({"detail": "Student balansi topilmadi."}, status=400)
+
+                if payment_method == 'som' and student_score.som < paid_amount:
+                    return Response({"detail": f"So'm yetarli emas. Balans: {student_score.som}, kerak: {paid_amount}."}, status=400)
+                if payment_method == 'coin' and student_score.coin < paid_amount:
+                    return Response({"detail": f"Tanga yetarli emas. Balans: {student_score.coin}, kerak: {paid_amount}."}, status=400)
+                if payment_method == 'score' and student_score.score < paid_amount:
+                    return Response({"detail": f"Ball yetarli emas. Balans: {student_score.score}, kerak: {paid_amount}."}, status=400)
+
+                if payment_method == 'som':
+                    student_score.som -= int(paid_amount)
+                elif payment_method == 'coin':
+                    student_score.coin -= int(paid_amount)
+                else:
+                    student_score.score -= int(paid_amount)
+                student_score.save()
+                remaining = {"som": student_score.som, "coin": student_score.coin, "score": student_score.score}
+
+            # Tutor uchun balans ayirish tizimi yo'q — faqat xarid yoziladi
+            purchase = BookPurchase.objects.create(
+                user=request.user,
+                book=book,
+                payment_method=payment_method,
+                paid_amount=paid_amount,
+            )
+
+        return Response({
+            "detail":          "Kitob muvaffaqiyatli sotib olindi.",
+            "purchase_id":     purchase.id,
+            "book_name_uz":    book.name_uz,
+            "book_name_ru":    book.name_ru,
+            "payment_method":  payment_method,
+            "paid_amount":     paid_amount,
+            "purchased_at":    purchase.purchased_at.strftime("%d/%m/%Y %H:%M"),
+            "remaining_balance": remaining,
+            "file": book.file.url if book.file else None,
+        }, status=201)
+
+    def _serialize_purchase(self, p):
+        book = p.book
+        user = p.user
+        user_role = getattr(user, 'role', None)
+
+        full_name = None
+        if user_role == 'student':
+            profile = getattr(user, 'student_profile', None)
+            full_name = getattr(profile, 'full_name', None)
+        elif user_role in ('tutor', 'teacher'):
+            profile = getattr(user, 'teacher_profile', None)
+            full_name = getattr(profile, 'full_name', None)
+
+        return {
+            "purchase_id":    p.id,
+            "purchased_at":   p.purchased_at.strftime("%d/%m/%Y %H:%M"),
+            "payment_method": p.payment_method,
+            "paid_amount":    float(p.paid_amount),
+            "user": {
+                "id":        user.id,
+                "phone":     getattr(user, 'phone', None),
+                "role":      user_role,
+                "full_name": full_name,
+            },
+            "book": {
+                "id":          book.id,
+                "name_uz":     book.name_uz,
+                "name_ru":     book.name_ru,
+                "cover_image": book.cover_image.url if book.cover_image else None,
+                "file":        book.file.url        if book.file        else None,
+                "is_offline":  book.is_offline,
+                "status":      book.status,
+            },
+        }

@@ -1,4 +1,5 @@
 from django.db import models
+from django_app.app_user.models import User
 
 
 class Category(models.Model):
@@ -82,3 +83,26 @@ class Book(models.Model):
         verbose_name = "Kitob"
         verbose_name_plural = "Kitoblar"
         ordering = ['-created_at']
+
+
+class BookPurchase(models.Model):
+    PAYMENT_METHOD_CHOICES = [
+        ('som',   "So'm"),
+        ('coin',  "Tanga"),
+        ('score', "Ball"),
+    ]
+
+    user           = models.ForeignKey(User, on_delete=models.CASCADE, related_name='book_purchases', verbose_name="Foydalanuvchi")
+    book           = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='purchases', verbose_name="Kitob")
+    payment_method = models.CharField(max_length=10, choices=PAYMENT_METHOD_CHOICES, verbose_name="To'lov turi")
+    paid_amount    = models.DecimalField(max_digits=14, decimal_places=2, verbose_name="To'langan miqdor")
+    purchased_at   = models.DateTimeField(auto_now_add=True, verbose_name="Sotib olingan vaqt")
+
+    def __str__(self):
+        return f"{self.user.get_full_name() or self.user.phone} — {self.book.name} ({self.payment_method})"
+
+    class Meta:
+        verbose_name = "Kitob xaridi"
+        verbose_name_plural = "Kitob xaridlari"
+        unique_together = ('user', 'book')
+        ordering = ['-purchased_at']
