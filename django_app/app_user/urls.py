@@ -1,13 +1,13 @@
 from django.urls import path
 from .views import (
-      UniversalVerifySmsCodeAPIView, LoginAPIView, 
+      UniversalVerifySmsCodeAPIView, LoginAPIView,
      StudentProfileAPIView, StudentsListView, ForgotPasswordView, VerifySMSCodeView,
     ResetPasswordView, ResendSMSCodeView,
     LogoutDeviceAPIView, RegisterAPIView, RegisterTeacherAPIView, TeacherVerifySmsCodeAPIView,
     ClassListView, TeacherLoginAPIView, TeacherProfileAPIView, UpdateStudentFieldAPIView, UserProfileAPIView,
       LogoutAPIView, TelegramIDCheckAPIView, ParentCreateAPIView, UpdateTelegramIDAPIView, AddChildRequestAPIView,
       ConfirmChildAPIView, ParentChildrenListAPIView, TeacherTelegramIdListView, AddAccountAPIView, RemoveAccountAPIView,
-       UserSessionListAPIVIEW, SwitchAccountAPIView
+       UserSessionListAPIVIEW, SwitchAccountAPIView, UpdateFCMTokenAPIView
 
 )
 from .all_role_listview import All_Role_ListView, DeleteStudentProfileAPIView, ParentDetailAPIView
@@ -80,6 +80,9 @@ urlpatterns = [
     path("user/auth/remove-account/", RemoveAccountAPIView.as_view(), name="remove-account"),
     path("user/auth/sessions/", UserSessionListAPIVIEW.as_view(), name="session-list"),
     path("user/auth/switch-account/", SwitchAccountAPIView.as_view(), name="switch-account"),
+
+    # FCM Token
+    path("user/update-fcm-token/", UpdateFCMTokenAPIView.as_view(), name="update-fcm-token"),
 ]
 
 
