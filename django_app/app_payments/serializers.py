@@ -1,5 +1,38 @@
 from rest_framework import serializers
-from .models import Payment, SubscriptionPlan, SubscriptionBenefit
+from .models import Payment, Subscription, SubscriptionPlan, SubscriptionBenefit
+
+
+# ─── Subscription ────────────────────────────────────────────────────────────
+
+class SubscriptionReadSerializer(serializers.ModelSerializer):
+    student_id   = serializers.IntegerField(source="student.id", read_only=True)
+    student_name = serializers.CharField(source="student.full_name", read_only=True)
+    student_phone = serializers.CharField(source="student.user.phone", read_only=True)
+    is_active    = serializers.SerializerMethodField()
+
+    class Meta:
+        model  = Subscription
+        fields = [
+            "id",
+            "student_id",
+            "student_name",
+            "student_phone",
+            "start_date",
+            "end_date",
+            "next_payment_date",
+            "is_paid",
+            "is_active",
+        ]
+
+    def get_is_active(self, obj):
+        from django.utils import timezone
+        return obj.is_paid and obj.end_date >= timezone.now()
+
+
+class SubscriptionCreateUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model  = Subscription
+        fields = ["student", "end_date", "next_payment_date", "is_paid"]
 
 class PaymentSerializer(serializers.ModelSerializer):
     class Meta:
