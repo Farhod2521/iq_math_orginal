@@ -57,6 +57,7 @@ class User(AbstractUser):
     telegram_id = models.BigIntegerField(default=0)
     device =  models.CharField(max_length=50, verbose_name="web/mobile", blank=True, null=True)
     lang = models.CharField(max_length=10, verbose_name="Til", blank=True, null=True, default="uz")
+    fcm_token = models.TextField(blank=True, null=True, verbose_name="FCM Token")
     USERNAME_FIELD = 'phone'
     REQUIRED_FIELDS = []  
     objects = UserManager()  
