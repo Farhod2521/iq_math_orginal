@@ -7,6 +7,7 @@ from .views import (
 )
 from .VIEW.subscriptionplancrud import SubscriptionPlanCRUDAPIView, SubscriptionCategoryCRUDAPIView, SubscriptionBenefitCRUDAPIView
 from .VIEW.subscription_setting_crud import SubscriptionSettingCRUDAPIView
+from .VIEW.subscription_crud import SubscriptionCRUDAPIView, MySubscriptionAPIView
 urlpatterns = [
     path("payment-callback/", PaymentCallbackAPIView.as_view(), name="payment-callback"),
     path("initiate-payment/", InitiatePaymentAPIView.as_view(), name="initiate-payment"),
@@ -33,4 +34,11 @@ urlpatterns = [
 
     path("superadmin/subscription-setting/", SubscriptionSettingCRUDAPIView.as_view()),
     path("superadmin/subscription-setting/<int:pk>/", SubscriptionSettingCRUDAPIView.as_view()),
+
+    # Subscription CRUD (superadmin/admin)
+    path("superadmin/subscriptions/", SubscriptionCRUDAPIView.as_view()),
+    path("superadmin/subscriptions/<int:pk>/", SubscriptionCRUDAPIView.as_view()),
+
+    # Student o'z obunasini ko'radi
+    path("my-subscription/", MySubscriptionAPIView.as_view()),
 ]
