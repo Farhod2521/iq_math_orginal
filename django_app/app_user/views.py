@@ -1517,7 +1517,28 @@ class ParentChildrenListAPIView(APIView):
         serializer = StudentSerializerParent(students, many=True)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
-    
+
+
+# ─── FCM Token yangilash ───────────────────────────────────────────────────────
+class UpdateFCMTokenAPIView(APIView):
+    """
+    POST /api/user/update-fcm-token/
+    Headers: Authorization: Bearer <access_token>
+    Body: {"fcm_token": "dXXX..."}
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        fcm_token = request.data.get("fcm_token", "").strip()
+        if not fcm_token:
+            return Response(
+                {"error": "fcm_token bo'sh bo'lmasligi kerak"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        request.user.fcm_token = fcm_token
+        request.user.save(update_fields=["fcm_token"])
+        return Response({"message": "FCM token saqlandi"}, status=status.HTTP_200_OK)
+
 
 
 
