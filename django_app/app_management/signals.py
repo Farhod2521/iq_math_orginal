@@ -1,9 +1,39 @@
 # models.py yoki signals.py faylida
 import os
 from django.db import models
-from django.db.models.signals import pre_save, post_delete
+from django.db.models.signals import pre_save, post_save, post_delete
 from django.dispatch import receiver
-from .models import SystemSettings, Banner
+from .models import SystemSettings, Banner, Elon
+
+
+# --- Elon notification signal ---
+
+@receiver(pre_save, sender=Elon)
+def elon_track_notification_status(sender, instance, **kwargs):
+    """notification_status o'zgarganini kuzatish uchun oldingi qiymatni saqlaydi."""
+    if instance.pk:
+        try:
+            instance._prev_notification_status = Elon.objects.get(pk=instance.pk).notification_status
+        except Elon.DoesNotExist:
+            instance._prev_notification_status = False
+    else:
+        instance._prev_notification_status = False
+
+
+@receiver(post_save, sender=Elon)
+def elon_send_notification(sender, instance, created, **kwargs):
+    if not instance.notification_status:
+        return
+
+    prev = getattr(instance, '_prev_notification_status', False)
+    # Yangi yaratilganda yoki notification_status False->True bo'lganda yuboriladi
+    if created or not prev:
+        from django_app.app_user.notification_service import send_push_to_all_students
+        send_push_to_all_students(
+            title="Yangi e'lon!",
+            body=instance.title,
+            data={"type": "new_elon", "elon_id": str(instance.pk)},
+        )
 
 @receiver(pre_save, sender=SystemSettings)
 def auto_delete_system_file_on_change(sender, instance, **kwargs):
