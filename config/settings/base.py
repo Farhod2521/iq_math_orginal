@@ -148,7 +148,7 @@ AUTH_USER_MODEL = 'app_user.User'
 
 
 
-
+FIREBASE_CREDENTIALS_PATH = os.path.join(BASE_DIR, 'serviceAccountKey.json')
 
 CKEDITOR_UPLOAD_PATH = ""
 

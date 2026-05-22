@@ -32,4 +32,4 @@ media/
 # Byte-compiled and cache files
 *.swp
 *.swo
-.DS_Store
+.DS_Store"*.json" 
