@@ -47,7 +47,7 @@ def _student_data(student):
 
     try:
         sub = student.subscription
-        is_active = sub.is_paid and sub.end_date >= timezone.now()
+        is_active = sub.end_date >= timezone.now()
     except Subscription.DoesNotExist:
         is_active = False
 
@@ -120,7 +120,7 @@ def _parent_data(parent):
         score   = StudentScore.objects.filter(student=student).first()
         try:
             sub = student.subscription
-            is_active     = sub.is_paid and sub.end_date >= timezone.now()
+            is_active     = sub.end_date >= timezone.now()
             sub_end_date  = sub.end_date.strftime("%d/%m/%Y") if sub.end_date else None
             remaining     = max((sub.end_date.date() - timezone.now().date()).days, 0) if sub.end_date else 0
         except Subscription.DoesNotExist:

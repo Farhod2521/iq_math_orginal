@@ -26,7 +26,7 @@ class SubscriptionReadSerializer(serializers.ModelSerializer):
 
     def get_is_active(self, obj):
         from django.utils import timezone
-        return obj.is_paid and obj.end_date >= timezone.now()
+        return obj.end_date >= timezone.now()
 
 
 class SubscriptionCreateUpdateSerializer(serializers.ModelSerializer):
