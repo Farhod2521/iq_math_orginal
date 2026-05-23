@@ -78,6 +78,7 @@ class TeacherRewardAPIView(APIView):
                 )
                 if not created:
                     sub_obj.end_date += timedelta(days=amount)
+                    sub_obj.is_paid = True
                     sub_obj.save()
 
             return Response({'detail': 'Rag‘bat muvaffaqiyatli qo‘shildi'}, status=status.HTTP_201_CREATED)
