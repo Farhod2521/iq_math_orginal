@@ -62,7 +62,7 @@ class StudentStatisticsDetailAPIView(APIView):
         try:
             subscription = student.subscription
             now = timezone.now()
-            is_active = subscription.is_paid and subscription.end_date >= now
+            is_active = subscription.end_date >= now
         except Subscription.DoesNotExist:
             is_active = False
 
