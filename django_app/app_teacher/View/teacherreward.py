@@ -77,7 +77,9 @@ class TeacherRewardAPIView(APIView):
                     }
                 )
                 if not created:
-                    sub_obj.end_date += timedelta(days=amount)
+                    now = timezone.now()
+                    base = now if sub_obj.end_date < now else sub_obj.end_date
+                    sub_obj.end_date = base + timedelta(days=amount)
                     sub_obj.is_paid = True
                     sub_obj.save()
 
