@@ -55,6 +55,9 @@ class LoginSerializer(serializers.Serializer):
         if user is None:
             raise serializers.ValidationError("Telefon raqam yoki parol noto'g'ri.")
 
+        if user.is_blocked:
+            raise serializers.ValidationError("Siz admin tomonidan bloklangansiz.")
+
         # Login urinishlarini reset qilish
         reset_login_attempts(phone)
 

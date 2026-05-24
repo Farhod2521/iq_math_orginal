@@ -1540,6 +1540,52 @@ class UpdateFCMTokenAPIView(APIView):
         return Response({"message": "FCM token saqlandi"}, status=status.HTTP_200_OK)
 
 
+# ─── Superadmin: Foydalanuvchini bloklash/blokdan chiqarish ───────────────────
+class BlockUserAPIView(APIView):
+    """
+    POST /api/v1/auth/user/block/
+    Body: { "user_id": 5, "is_blocked": true }
+    Faqat superadmin foydalana oladi.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        if request.user.role != 'superadmin':
+            return Response(
+                {"error": "Faqat superadmin bu amalni bajarishi mumkin."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        user_id = request.data.get("user_id")
+        is_blocked = request.data.get("is_blocked")
+
+        if user_id is None or is_blocked is None:
+            return Response(
+                {"error": "user_id va is_blocked majburiy."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            target_user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response({"error": "Foydalanuvchi topilmadi."}, status=status.HTTP_404_NOT_FOUND)
+
+        if target_user.role in ('superadmin', 'admin'):
+            return Response(
+                {"error": "Admin va superadminni bloklash mumkin emas."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        target_user.is_blocked = bool(is_blocked)
+        target_user.save(update_fields=["is_blocked"])
+
+        action = "bloklandi" if target_user.is_blocked else "blokdan chiqarildi"
+        return Response(
+            {"message": f"Foydalanuvchi muvaffaqiyatli {action}.", "is_blocked": target_user.is_blocked},
+            status=status.HTTP_200_OK,
+        )
+
+
 
 
 

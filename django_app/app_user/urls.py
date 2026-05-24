@@ -7,7 +7,7 @@ from .views import (
     ClassListView, TeacherLoginAPIView, TeacherProfileAPIView, UpdateStudentFieldAPIView, UserProfileAPIView,
       LogoutAPIView, TelegramIDCheckAPIView, ParentCreateAPIView, UpdateTelegramIDAPIView, AddChildRequestAPIView,
       ConfirmChildAPIView, ParentChildrenListAPIView, TeacherTelegramIdListView, AddAccountAPIView, RemoveAccountAPIView,
-       UserSessionListAPIVIEW, SwitchAccountAPIView, UpdateFCMTokenAPIView
+       UserSessionListAPIVIEW, SwitchAccountAPIView, UpdateFCMTokenAPIView, BlockUserAPIView
 
 )
 from .all_role_listview import All_Role_ListView, DeleteStudentProfileAPIView, ParentDetailAPIView
@@ -83,6 +83,9 @@ urlpatterns = [
 
     # FCM Token
     path("user/update-fcm-token/", UpdateFCMTokenAPIView.as_view(), name="update-fcm-token"),
+
+    # Bloklash / blokdan chiqarish (faqat superadmin)
+    path("user/block/", BlockUserAPIView.as_view(), name="block-user"),
 ]
 
 
