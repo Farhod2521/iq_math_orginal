@@ -2,7 +2,7 @@ from django.db import models
 from django_app.app_user.models import  Subject
 from ckeditor.fields import RichTextField
 from django_app.app_management.models import Product, Coupon_Tutor_Student
-from django_app.app_user.models import Teacher, Student
+from django_app.app_user.models import Teacher, Student, User
 
 
 from ckeditor.fields import RichTextField
@@ -311,9 +311,51 @@ class TeacherCouponTransaction(models.Model):
         verbose_name="Kupon kodi"
     )
 
-    payment_amount = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="To'lov summasi")
+    payment_amount = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="To’lov summasi")
 
     used_at = models.DateTimeField(auto_now_add=True, verbose_name="Kupon ishlatilgan sana")
 
     def __str__(self):
-        return f"{self.student} → {self.coupon.code} ({self.payment_amount} so‘m)"
+        return f"{self.student} → {self.coupon.code} ({self.payment_amount} so’m)"
+
+
+class TeacherFineLog(models.Model):
+    """
+    Teacher yoki superadmin tomonidan studentga qo’yilgan jarima.
+    Ball yoki tanga ayiriladi.
+    """
+    FINE_TYPE_CHOICES = [
+        (‘score’, ‘Ball’),
+        (‘coin’,  ‘Tanga’),
+    ]
+
+    given_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name=’given_fines’,
+        verbose_name="Jarima qo’ygan (teacher/superadmin)"
+    )
+    student = models.ForeignKey(
+        Student,
+        on_delete=models.CASCADE,
+        related_name=’received_fines’,
+        verbose_name="Jarima olgan o’quvchi"
+    )
+    fine_type = models.CharField(
+        max_length=10,
+        choices=FINE_TYPE_CHOICES,
+        verbose_name="Jarima turi"
+    )
+    amount = models.PositiveIntegerField(verbose_name="Miqdori")
+    reason = models.TextField(verbose_name="Sababi")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Vaqti")
+
+    def __str__(self):
+        giver = self.given_by.phone if self.given_by else "—"
+        return f"{giver} → {self.student.full_name} | {self.get_fine_type_display()} -{self.amount}"
+
+    class Meta:
+        verbose_name = "Jarima"
+        verbose_name_plural = "Jarimalar"
+        ordering = [‘-created_at’]

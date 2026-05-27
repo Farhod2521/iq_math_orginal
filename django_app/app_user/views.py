@@ -1586,6 +1586,51 @@ class BlockUserAPIView(APIView):
         )
 
 
+# ─── Admin/Superadmin: foydalanuvchi parolini yangilash ──────────────────────
+class AdminResetUserPasswordAPIView(APIView):
+    """
+    POST /api/v1/auth/user/reset-password/
+    Faqat admin va superadmin foydalana oladi.
+    Body: { "user_id": 5, "new_password": "NewPass123" }
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        if request.user.role not in ('admin', 'superadmin'):
+            return Response(
+                {"error": "Faqat admin yoki superadmin bu amalni bajarishi mumkin."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        user_id      = request.data.get("user_id")
+        new_password = request.data.get("new_password", "").strip()
+
+        if not user_id:
+            return Response({"error": "user_id talab qilinadi."}, status=status.HTTP_400_BAD_REQUEST)
+        if not new_password:
+            return Response({"error": "new_password talab qilinadi."}, status=status.HTTP_400_BAD_REQUEST)
+        if len(new_password) < 6:
+            return Response({"error": "Parol kamida 6 ta belgidan iborat bo'lishi kerak."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            target_user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response({"error": "Foydalanuvchi topilmadi."}, status=status.HTTP_404_NOT_FOUND)
+
+        target_user.set_password(new_password)
+        target_user.save(update_fields=["password"])
+
+        return Response(
+            {
+                "message":  "Parol muvaffaqiyatli yangilandi.",
+                "user_id":  target_user.id,
+                "phone":    target_user.phone,
+                "role":     target_user.role,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
 
 
 
