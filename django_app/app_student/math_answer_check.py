@@ -25,7 +25,7 @@ def clean_latex(expr):
     expr = re.sub(r'\\left|\\right', '', expr)
     expr = re.sub(r'\\\(|\\\)|\\\[|\\\]', '', expr)
     expr = re.sub(r'\\frac\{([^}]+)\}\{([^}]+)\}', r'(\1)/(\2)', expr)
-    expr = re.sub(r'\\sqrt\{([^}]+)\}", r'sqrt(\1)", expr)
+    expr = re.sub(r'\\sqrt\{([^}]+)\}', r'sqrt(\1)', expr)
     expr = expr.replace(r'\le', '<=')
     expr = expr.replace(r'\ge', '>=')
     expr = expr.replace(r'\lt', '<')

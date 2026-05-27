@@ -224,7 +224,7 @@ class GroupSerializer(serializers.ModelSerializer):
         model = Group
         fields = ['id', 'name', 'teacher', 'students']
         extra_kwargs = {
-            'teacher': {'read_only": True},  # teacher POST'da kiritilmaydi"
+            'teacher': {'read_only': True},
             'students': {'required': False}
         }
 
