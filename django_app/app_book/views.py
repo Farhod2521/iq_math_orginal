@@ -625,7 +625,7 @@ class AdminOfflineOrderAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def _check_admin(self, user):
-        return getattr(user, 'role', None) in ('admin', 'superadmin')
+        return getattr(user, 'role', None) in ('admin', 'superadmin', 'teacher')
 
     def get(self, request, pk=None):
         if not self._check_admin(request.user):

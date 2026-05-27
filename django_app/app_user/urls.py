@@ -7,7 +7,8 @@ from .views import (
     ClassListView, TeacherLoginAPIView, TeacherProfileAPIView, UpdateStudentFieldAPIView, UserProfileAPIView,
       LogoutAPIView, TelegramIDCheckAPIView, ParentCreateAPIView, UpdateTelegramIDAPIView, AddChildRequestAPIView,
       ConfirmChildAPIView, ParentChildrenListAPIView, TeacherTelegramIdListView, AddAccountAPIView, RemoveAccountAPIView,
-       UserSessionListAPIVIEW, SwitchAccountAPIView, UpdateFCMTokenAPIView, BlockUserAPIView
+       UserSessionListAPIVIEW, SwitchAccountAPIView, UpdateFCMTokenAPIView, BlockUserAPIView,
+       AdminResetUserPasswordAPIView
 
 )
 from .all_role_listview import All_Role_ListView, DeleteStudentProfileAPIView, ParentDetailAPIView
@@ -86,6 +87,9 @@ urlpatterns = [
 
     # Bloklash / blokdan chiqarish (faqat superadmin)
     path("user/block/", BlockUserAPIView.as_view(), name="block-user"),
+
+    # Admin/Superadmin: foydalanuvchi parolini yangilash
+    path("user/reset-password/", AdminResetUserPasswordAPIView.as_view(), name="admin-reset-password"),
 ]
 
 
