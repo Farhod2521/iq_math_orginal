@@ -286,7 +286,7 @@ class TeacherTopicHelpRequestDeleteAPIView(APIView):
 
 class TeacherHelpRequestNotificationAPIView(APIView):
     """
-    Qo"ng'iroqcha uchun xabarlar soni, statistikasi va ularni "Ko'rildi' deb belgilash
+    Qo'ng'iroqcha uchun xabarlar soni, statistikasi va ularni Ko'rildi deb belgilash
     """
     permission_classes = [IsAuthenticated]
 
@@ -364,5 +364,5 @@ class TeacherHelpRequestNotificationAPIView(APIView):
 
         return Response({
             "marked_as_seen": updated_count,
-            "message": f"{updated_count} ta murojaat "Ko'rildi" holatiga o'tkazildi."
+            "message": f"{updated_count} ta murojaat Ko'rildi holatiga o'tkazildi."
         })

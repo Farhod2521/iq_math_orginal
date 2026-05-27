@@ -426,8 +426,8 @@ class SolutionStatus(models.Model):
 
     def __str__(self):
         return (
-            f"Fanlar: {'Yoqilgan' if self.subject_is_active else "O'chirilgan"} | "
-            f"Tavsiyalar: {'Yoqilgan' if self.recommendation_is_active else "O'chirilgan"}"
+            f"Fanlar: {'Yoqilgan' if self.subject_is_active else 'Ochirilgan'} | "
+            f"Tavsiyalar: {'Yoqilgan' if self.recommendation_is_active else 'Ochirilgan'}"
         )
 
 
