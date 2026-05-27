@@ -4,7 +4,7 @@ from rest_framework import status
 from rest_framework.permissions import BasePermission, IsAuthenticated
 from django.db import transaction
 
-from .models import Category, Tag, Book, BookPurchase
+from .models import Category, Tag, Book, BookPurchase, OfflineBookOrder
 from .serializers import CategorySerializer, TagSerializer, BookReadSerializer, BookWriteSerializer
 from django_app.app_management.models import ConversionRate
 from django_app.app_student.models import StudentScore
@@ -351,7 +351,8 @@ class BookPurchaseAPIView(APIView):
         else:
             return Response({"detail": "Ruxsat yo'q."}, status=403)
 
-        data = [self._serialize_purchase(p) for p in qs]
+        for_user = role in ('student', 'tutor')
+        data = [self._serialize_purchase(p, for_user=for_user) for p in qs]
         return Response({"count": len(data), "results": data})
 
     def post(self, request):
@@ -359,16 +360,16 @@ class BookPurchaseAPIView(APIView):
         if role not in ('student', 'tutor'):
             return Response({"detail": "Faqat student yoki tutor uchun."}, status=403)
 
-        book_id        = request.data.get('book_id')
-        payment_method = request.data.get('payment_method')
-        quantity       = int(request.data.get('quantity', 1))
+        book_id          = request.data.get('book_id')
+        payment_method   = request.data.get('payment_method')
+        quantity         = int(request.data.get('quantity', 1))
+        delivery_address = request.data.get('delivery_address', '').strip()
+        delivery_phone   = request.data.get('delivery_phone', '').strip()
 
         if not book_id:
             return Response({"detail": "book_id talab qilinadi."}, status=400)
         if quantity < 1:
             return Response({"detail": "quantity kamida 1 bo'lishi kerak."}, status=400)
-
-        # Tutor faqat som bilan to'lay oladi (balans tizimi yo'q)
         if role == 'tutor' and payment_method != 'som':
             return Response({"detail": "Tutor faqat so'm bilan to'lay oladi."}, status=400)
         if payment_method not in ('som', 'coin', 'score'):
@@ -378,6 +379,13 @@ class BookPurchaseAPIView(APIView):
             book = Book.objects.get(pk=book_id, status='active')
         except Book.DoesNotExist:
             return Response({"detail": "Kitob topilmadi."}, status=404)
+
+        # Oflayn kitob uchun manzil va telefon majburiy
+        if book.is_offline:
+            if not delivery_address:
+                return Response({"detail": "Oflayn kitob uchun delivery_address talab qilinadi."}, status=400)
+            if not delivery_phone:
+                return Response({"detail": "Oflayn kitob uchun delivery_phone talab qilinadi."}, status=400)
 
         if BookPurchase.objects.filter(user=request.user, book=book).exists():
             return Response({"detail": "Siz bu kitobni allaqachon sotib olgansiz."}, status=400)
@@ -390,7 +398,6 @@ class BookPurchaseAPIView(APIView):
         coin_to_money = float(rate.coin_to_money)
         coin_to_score = int(rate.coin_to_score)
 
-        # Bitta dona narxi
         if payment_method == 'som':
             unit_price = price_som
         elif payment_method == 'coin':
@@ -398,9 +405,7 @@ class BookPurchaseAPIView(APIView):
         else:
             unit_price = round((price_som / coin_to_money) * coin_to_score, 2)
 
-        # Jami summa = bitta narx × miqdor
         paid_amount = round(unit_price * quantity, 2)
-
         remaining = {}
 
         with transaction.atomic():
@@ -427,7 +432,6 @@ class BookPurchaseAPIView(APIView):
                 student_score.save()
                 remaining = {"som": student_score.som, "coin": student_score.coin, "score": student_score.score}
 
-            # Tutor uchun balans ayirish tizimi yo'q — faqat xarid yoziladi
             purchase = BookPurchase.objects.create(
                 user=request.user,
                 book=book,
@@ -436,21 +440,39 @@ class BookPurchaseAPIView(APIView):
                 paid_amount=paid_amount,
             )
 
-        return Response({
-            "detail":          "Kitob muvaffaqiyatli sotib olindi.",
-            "purchase_id":     purchase.id,
-            "book_name_uz":    book.name_uz,
-            "book_name_ru":    book.name_ru,
-            "quantity":        quantity,
-            "unit_price":      unit_price,
-            "paid_amount":     paid_amount,
-            "payment_method":  payment_method,
-            "purchased_at":    purchase.purchased_at.strftime("%d/%m/%Y %H:%M"),
-            "remaining_balance": remaining,
-            "file": book.file.url if book.file else None,
-        }, status=201)
+            # Oflayn kitob uchun buyurtma yozivi
+            if book.is_offline:
+                OfflineBookOrder.objects.create(
+                    purchase=purchase,
+                    delivery_address=delivery_address,
+                    phone=delivery_phone,
+                )
 
-    def _serialize_purchase(self, p):
+        response_data = {
+            "detail":            "Kitob muvaffaqiyatli sotib olindi.",
+            "purchase_id":       purchase.id,
+            "book_name_uz":      book.name_uz,
+            "book_name_ru":      book.name_ru,
+            "is_offline":        book.is_offline,
+            "quantity":          quantity,
+            "unit_price":        unit_price,
+            "paid_amount":       paid_amount,
+            "payment_method":    payment_method,
+            "purchased_at":      purchase.purchased_at.strftime("%d/%m/%Y %H:%M"),
+            "remaining_balance": remaining,
+        }
+
+        if book.is_offline:
+            response_data["delivery_status"] = "new"
+            response_data["delivery_address"] = delivery_address
+            response_data["delivery_phone"]   = delivery_phone
+        else:
+            # Online kitob — faylni yuklab olish havolasi
+            response_data["file"] = book.file.url if book.file else None
+
+        return Response(response_data, status=201)
+
+    def _serialize_purchase(self, p, for_user=False):
         book = p.book
         user = p.user
         user_role = getattr(user, 'role', None)
@@ -460,19 +482,242 @@ class BookPurchaseAPIView(APIView):
             profile = getattr(user, 'student_profile', None)
             full_name = getattr(profile, 'full_name', None)
         elif user_role in ('tutor', 'teacher'):
-            profile = getattr(user, 'teacher_profile', None)
+            profile = getattr(user, 'tutor_profile', None)
             full_name = getattr(profile, 'full_name', None)
 
-        return {
+        result = {
             "purchase_id":    p.id,
             "purchased_at":   p.purchased_at.strftime("%d/%m/%Y %H:%M"),
             "payment_method": p.payment_method,
             "quantity":       p.quantity,
             "paid_amount":    float(p.paid_amount),
-            "user": {
+            "book": {
+                "id":          book.id,
+                "name_uz":     book.name_uz,
+                "name_ru":     book.name_ru,
+                "cover_image": book.cover_image.url if book.cover_image else None,
+                "is_offline":  book.is_offline,
+            },
+        }
+
+        if not for_user:
+            result["user"] = {
                 "id":        user.id,
                 "phone":     getattr(user, 'phone', None),
                 "role":      user_role,
+                "full_name": full_name,
+            }
+
+        if book.is_offline:
+            try:
+                order = p.offline_order
+                result["offline_order"] = {
+                    "order_id":        order.id,
+                    "delivery_status": order.delivery_status,
+                    "delivery_status_display": order.get_delivery_status_display(),
+                    "delivery_address": order.delivery_address,
+                    "phone":           order.phone,
+                    "admin_note":      order.admin_note,
+                    "updated_at":      order.updated_at.strftime("%d/%m/%Y %H:%M"),
+                }
+            except OfflineBookOrder.DoesNotExist:
+                result["offline_order"] = None
+        else:
+            # Online kitob — yuklab olish havolasi
+            result["book"]["file"] = book.file.url if book.file else None
+
+        return result
+
+
+# ─────────────────────────────────────────────
+#  FOYDALANUVCHI SOTIB OLGAN KITOBLARI
+# ─────────────────────────────────────────────
+class MyPurchasedBooksAPIView(APIView):
+    """
+    GET /book/my-purchases/              → barcha sotib olingan kitoblar
+    GET /book/my-purchases/?type=online  → faqat online kitoblar (fayl bilan)
+    GET /book/my-purchases/?type=offline → faqat offline kitoblar (status bilan)
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        role = getattr(request.user, 'role', None)
+        if role not in ('student', 'tutor'):
+            return Response({"detail": "Ruxsat yo'q."}, status=403)
+
+        qs = BookPurchase.objects.select_related(
+            'book__category', 'user'
+        ).prefetch_related('book__tags').filter(
+            user=request.user
+        ).order_by('-purchased_at')
+
+        type_filter = request.GET.get('type', '').strip().lower()
+        if type_filter == 'online':
+            qs = qs.filter(book__is_offline=False)
+        elif type_filter == 'offline':
+            qs = qs.filter(book__is_offline=True)
+
+        online_list  = []
+        offline_list = []
+
+        for p in qs:
+            data = self._serialize(p)
+            if p.book.is_offline:
+                offline_list.append(data)
+            else:
+                online_list.append(data)
+
+        if type_filter == 'online':
+            return Response({"count": len(online_list), "results": online_list})
+        elif type_filter == 'offline':
+            return Response({"count": len(offline_list), "results": offline_list})
+
+        return Response({
+            "online_count":  len(online_list),
+            "offline_count": len(offline_list),
+            "online_books":  online_list,
+            "offline_books": offline_list,
+        })
+
+    def _serialize(self, p):
+        book = p.book
+        result = {
+            "purchase_id":    p.id,
+            "purchased_at":   p.purchased_at.strftime("%d/%m/%Y %H:%M"),
+            "payment_method": p.payment_method,
+            "quantity":       p.quantity,
+            "paid_amount":    float(p.paid_amount),
+            "book": {
+                "id":          book.id,
+                "name_uz":     book.name_uz,
+                "name_ru":     book.name_ru,
+                "cover_image": book.cover_image.url if book.cover_image else None,
+                "is_offline":  book.is_offline,
+            },
+        }
+        if book.is_offline:
+            try:
+                order = p.offline_order
+                result["delivery_status"]         = order.delivery_status
+                result["delivery_status_display"] = order.get_delivery_status_display()
+                result["delivery_address"]         = order.delivery_address
+                result["phone"]                    = order.phone
+                result["admin_note"]               = order.admin_note
+                result["updated_at"]               = order.updated_at.strftime("%d/%m/%Y %H:%M")
+            except OfflineBookOrder.DoesNotExist:
+                result["delivery_status"] = None
+        else:
+            result["book"]["file"] = book.file.url if book.file else None
+
+        return result
+
+
+# ─────────────────────────────────────────────
+#  ADMIN: OFFLINE BUYURTMALAR
+# ─────────────────────────────────────────────
+class AdminOfflineOrderAPIView(APIView):
+    """
+    GET /book/offline-orders/          → barcha offline buyurtmalar (admin/superadmin)
+    GET /book/offline-orders/<pk>/     → bitta buyurtma
+    PUT /book/offline-orders/<pk>/     → statusni yangilash
+        Body: { "delivery_status": "seen"|"preparing"|"delivering"|"delivered", "admin_note": "..." }
+    """
+    permission_classes = [IsAuthenticated]
+
+    def _check_admin(self, user):
+        return getattr(user, 'role', None) in ('admin', 'superadmin')
+
+    def get(self, request, pk=None):
+        if not self._check_admin(request.user):
+            return Response({"detail": "Faqat admin uchun."}, status=403)
+
+        if pk:
+            try:
+                order = OfflineBookOrder.objects.select_related(
+                    'purchase__book', 'purchase__user'
+                ).get(pk=pk)
+            except OfflineBookOrder.DoesNotExist:
+                return Response({"detail": "Buyurtma topilmadi."}, status=404)
+            return Response(self._serialize(order))
+
+        qs = OfflineBookOrder.objects.select_related(
+            'purchase__book', 'purchase__user'
+        ).order_by('-created_at')
+
+        status_filter = request.GET.get('status')
+        if status_filter:
+            qs = qs.filter(delivery_status=status_filter)
+
+        return Response({"count": qs.count(), "results": [self._serialize(o) for o in qs]})
+
+    def put(self, request, pk):
+        if not self._check_admin(request.user):
+            return Response({"detail": "Faqat admin uchun."}, status=403)
+
+        try:
+            order = OfflineBookOrder.objects.select_related(
+                'purchase__book', 'purchase__user'
+            ).get(pk=pk)
+        except OfflineBookOrder.DoesNotExist:
+            return Response({"detail": "Buyurtma topilmadi."}, status=404)
+
+        new_status = request.data.get('delivery_status')
+        admin_note = request.data.get('admin_note')
+
+        valid_statuses = [s[0] for s in OfflineBookOrder.STATUS_CHOICES]
+        if new_status and new_status not in valid_statuses:
+            return Response({
+                "detail": f"Noto'g'ri status. Mumkin bo'lganlar: {valid_statuses}"
+            }, status=400)
+
+        if new_status:
+            order.delivery_status = new_status
+        if admin_note is not None:
+            order.admin_note = admin_note
+        order.save()
+
+        return Response({
+            "detail":                  "Buyurtma holati yangilandi.",
+            "order_id":                order.id,
+            "delivery_status":         order.delivery_status,
+            "delivery_status_display": order.get_delivery_status_display(),
+            "admin_note":              order.admin_note,
+            "updated_at":              order.updated_at.strftime("%d/%m/%Y %H:%M"),
+        })
+
+    def _serialize(self, order):
+        p    = order.purchase
+        book = p.book
+        user = p.user
+
+        full_name = None
+        if user.role == 'student':
+            profile = getattr(user, 'student_profile', None)
+            full_name = getattr(profile, 'full_name', None)
+        elif user.role == 'tutor':
+            profile = getattr(user, 'tutor_profile', None)
+            full_name = getattr(profile, 'full_name', None)
+
+        return {
+            "order_id":                order.id,
+            "delivery_status":         order.delivery_status,
+            "delivery_status_display": order.get_delivery_status_display(),
+            "delivery_address":        order.delivery_address,
+            "phone":                   order.phone,
+            "admin_note":              order.admin_note,
+            "created_at":              order.created_at.strftime("%d/%m/%Y %H:%M"),
+            "updated_at":              order.updated_at.strftime("%d/%m/%Y %H:%M"),
+            "purchase": {
+                "purchase_id":    p.id,
+                "purchased_at":   p.purchased_at.strftime("%d/%m/%Y %H:%M"),
+                "payment_method": p.payment_method,
+                "quantity":       p.quantity,
+                "paid_amount":    float(p.paid_amount),
+            },
+            "user": {
+                "id":        user.id,
+                "phone":     user.phone,
+                "role":      user.role,
                 "full_name": full_name,
             },
             "book": {
@@ -480,8 +725,5 @@ class BookPurchaseAPIView(APIView):
                 "name_uz":     book.name_uz,
                 "name_ru":     book.name_ru,
                 "cover_image": book.cover_image.url if book.cover_image else None,
-                "file":        book.file.url        if book.file        else None,
-                "is_offline":  book.is_offline,
-                "status":      book.status,
             },
         }
