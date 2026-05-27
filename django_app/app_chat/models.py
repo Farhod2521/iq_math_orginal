@@ -1,4 +1,4 @@
-from django.db import models
+﻿from django.db import models
 from django.conf import settings
 from django_app.app_user.models import  Teacher
 User = settings.AUTH_USER_MODEL
@@ -30,7 +30,7 @@ class Conversation(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    # Chatlar ro‘yxatini tez chiqarish uchun
+    # Chatlar ro'yxatini tez chiqarish uchun
     last_message = models.TextField(blank=True, null=True)
     last_message_at = models.DateTimeField(blank=True, null=True)
     is_closed = models.BooleanField(
@@ -54,13 +54,13 @@ class Conversation(models.Model):
     )
     is_close_requested = models.BooleanField(
         default=False,
-        verbose_name="Chat yopish so‘ralganmi?"
+        verbose_name="Chat yopish so'ralganmi?"
     )
 
     close_requested_at = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name="Yopish so‘rovi vaqti"
+        verbose_name="Yopish so'rovi vaqti"
     )
 
     close_requested_by = models.ForeignKey(
@@ -69,7 +69,7 @@ class Conversation(models.Model):
         null=True,
         blank=True,
         related_name="close_requests",
-        verbose_name="Yopishni so‘ragan"
+        verbose_name="Yopishni so'ragan"
     )
 
     def __str__(self):
@@ -108,7 +108,7 @@ class ConversationAssignment(models.Model):
         max_length=255,
         null=True,
         blank=True,
-        verbose_name="Nega o‘tkazildi"
+        verbose_name="Nega o'tkazildi"
     )
 
     assigned_at = models.DateTimeField(auto_now_add=True)
@@ -143,11 +143,11 @@ class ConversationParticipant(models.Model):
     last_read_at = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name="Oxirgi ko‘rgan vaqt"
+        verbose_name="Oxirgi ko'rgan vaqt"
     )
     unread_count = models.PositiveIntegerField(
         default=0,
-        verbose_name="O‘qilmagan xabarlar soni"
+        verbose_name="O'qilmagan xabarlar soni"
     )
 
     joined_at = models.DateTimeField(auto_now_add=True)
@@ -222,7 +222,7 @@ class Message(models.Model):
     )
 
     is_edited = models.BooleanField(default=False, verbose_name="Tahrirlanganmi?")
-    is_deleted = models.BooleanField(default=False, verbose_name="O‘chirildimi?")
+    is_deleted = models.BooleanField(default=False, verbose_name="O'chirildimi?")
 
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -243,7 +243,7 @@ class Message(models.Model):
 class MessageReceipt(models.Model):
     STATUS_CHOICES = (
         ('delivered', 'Yetkazilgan'),
-        ('read', 'O‘qilgan'),
+        ('read', 'O'qilgan'),
     )
 
     message = models.ForeignKey(

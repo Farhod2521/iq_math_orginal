@@ -1,4 +1,4 @@
-from rest_framework.generics import ListAPIView, RetrieveAPIView
+﻿from rest_framework.generics import ListAPIView, RetrieveAPIView
 from .models import FAQ, Product, Banner, Motivation, Elon, UploadedFile, UploadSetting, Mathematician
 from .serializers import FAQSerializer, ProductSerializer, BannerSerializer, ElonSerializer, MathematicianListSerializer, MathematicianDetailSerializer
 from django_app.app_user.models import User, Teacher, Student, Tutor, Parent
@@ -145,15 +145,15 @@ class ElonListAPIView(APIView):
     def get(self, request):
         status_param = request.GET.get('status', None)
 
-        # 🔹 1) Agar status = notification_status bo‘lsa
+        # 🔹 1) Agar status = notification_status bo'lsa
         if status_param == "notification_status":
             elonlar = Elon.objects.filter(notification_status=True).order_by('-created_at')
 
-        # 🔹 2) Agar status = news_status bo‘lsa
+        # 🔹 2) Agar status = news_status bo'lsa
         elif status_param == "news_status":
             elonlar = Elon.objects.filter(news_status=True).order_by('-created_at')
 
-        # 🔹 3) Agar all yoki yo‘q bo‘lsa
+        # 🔹 3) Agar all yoki yo'q bo'lsa
         else:
             elonlar = Elon.objects.all().order_by('-created_at')
 
@@ -169,14 +169,14 @@ class ElonDetailAPIView(APIView):
 
 class MotivationAPIView(APIView):
     """
-    Har 3 soatda 2 ta motivatsion so‘zni chiqaruvchi API.
+    Har 3 soatda 2 ta motivatsion so'zni chiqaruvchi API.
     """
 
     def get(self, request, *args, **kwargs):
         motivations = Motivation.objects.filter(is_active=True).order_by("created_at")
 
         if not motivations.exists():
-            return Response({"detail": "Motivatsion so‘zlar topilmadi."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"detail": "Motivatsion so'zlar topilmadi."}, status=status.HTTP_404_NOT_FOUND)
 
         count = motivations.count()
 
@@ -258,7 +258,7 @@ class FullStatisticsAPIView(APIView):
         # 4. Faol obunachilar soni
         active_subscribers = payments_success.filter(subscription_months__gt=0).values('student').distinct().count()
 
-        # 5. Qaysi SubscriptionPlan eng ko‘p sotilgan
+        # 5. Qaysi SubscriptionPlan eng ko'p sotilgan
         plan_counts = payments_success.values('subscription_months').annotate(count=Count('id'))
         if plan_counts:
             most_sold_plan_months = max(plan_counts, key=lambda x: x['count'])['subscription_months']
@@ -289,7 +289,7 @@ class FullStatisticsAPIView(APIView):
             total=Sum('teacher_cashback_amount')
         )['total'] or 0
 
-        # 9. Qaysi kupon turi eng ko‘p ishlatilgan
+        # 9. Qaysi kupon turi eng ko'p ishlatilgan
         coupon_type_counts = payments_success.values('coupon_type').annotate(count=Count('id')).order_by('-count')
         top_coupon_type = coupon_type_counts[0]['coupon_type'] if coupon_type_counts else None
 
@@ -305,7 +305,7 @@ class FullStatisticsAPIView(APIView):
             for item in monthly_subscriptions
         ]
 
-        # 🔹 Qo‘shimcha statistika
+        # 🔹 Qo'shimcha statistika
         total_teachers = Teacher.objects.filter(status=True).count()
         total_students = Student.objects.filter(status=True).count()
         total_parents = Parent.objects.filter(status=True).count()
@@ -337,7 +337,7 @@ class FullStatisticsAPIView(APIView):
             "top_coupon_type": top_coupon_type,
             "monthly_subscriptions": monthly_data,
 
-            # 🔹 qo‘shimcha statistikalar
+            # 🔹 qo'shimcha statistikalar
             "total_teachers": total_teachers,
             "total_students": total_students,
             "total_parents": total_parents,

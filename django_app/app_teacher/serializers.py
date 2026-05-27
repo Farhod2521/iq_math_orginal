@@ -1,4 +1,4 @@
-from rest_framework import serializers
+﻿from rest_framework import serializers
 from .models import (
     Chapter, Topic, Question,Choice, CompositeSubQuestion, Group, TeacherRewardLog, 
     GeneratedQuestionOpenAi, GeneratedChoiceOpenAi, GeneratedSubQuestionOpenAi
@@ -9,7 +9,7 @@ from django_app.app_student.models import ProductExchange
 from django_app.app_management.models import  Product
 class SubjectSerializer(serializers.ModelSerializer):
     class_name = serializers.CharField(source="classes.name")  # Sinf nomini olish
-    teachers = serializers.StringRelatedField(many=True)  # O‘qituvchi ismlarini olish
+    teachers = serializers.StringRelatedField(many=True)  # O'qituvchi ismlarini olish
     chapter_count = serializers.SerializerMethodField()
     topic_count = serializers.SerializerMethodField()
     question_count = serializers.SerializerMethodField()

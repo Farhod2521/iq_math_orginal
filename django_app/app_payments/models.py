@@ -1,4 +1,4 @@
-from django.db import models
+﻿from django.db import models
 from django_app.app_user.models import Student
 from django_app.app_management.models import Coupon_Tutor_Student
 
@@ -18,12 +18,12 @@ class Subscription(models.Model):
     student = models.OneToOneField(Student, on_delete=models.CASCADE, related_name='subscription')
     start_date = models.DateTimeField(auto_now_add=True)
     end_date = models.DateTimeField()
-    next_payment_date = models.DateTimeField(null=True, blank=True, verbose_name="Keyingi to‘lov muddati")
+    next_payment_date = models.DateTimeField(null=True, blank=True, verbose_name="Keyingi to'lov muddati")
 
-    is_paid = models.BooleanField(default=False, verbose_name="To‘langanmi")
+    is_paid = models.BooleanField(default=False, verbose_name="To'langanmi")
 
     def __str__(self):
-        return f"{self.student.full_name} - {'To‘langan' if self.is_paid else 'Tekin'}"
+        return f"{self.student.full_name} - {'To'langan' if self.is_paid else 'Tekin'}"
 
     class Meta:
         verbose_name = "Obuna"

@@ -1,4 +1,4 @@
-from rest_framework.views import APIView
+﻿from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .models import Conversation, ConversationParticipant, Message, MessageReceipt, ConversationRating, ConversationAssignment
@@ -108,7 +108,7 @@ def create_system_message(conversation, sender, text, event=None, rating=None):
 class ConversationTransferAPIView(APIView):
     permission_classes = [IsAuthenticated, IsTeacher]
 
-    # 🔹 GET — o‘qituvchilar ro‘yxati
+    # 🔹 GET — o'qituvchilar ro'yxati
     def get(self, request):
         teachers = Teacher.objects.filter(
             status=True
@@ -117,7 +117,7 @@ class ConversationTransferAPIView(APIView):
         serializer = TeacherListSerializer(teachers, many=True)
         return Response(serializer.data)
 
-    # 🔹 POST — chatni boshqa o‘qituvchiga o‘tkazish
+    # 🔹 POST — chatni boshqa o'qituvchiga o'tkazish
     def post(self, request):
         serializer = ConversationTransferSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -141,7 +141,7 @@ class ConversationTransferAPIView(APIView):
                 user=old_teacher.user
             ).delete()
 
-        # ✅ yangi teacherni chatga qo‘shamiz
+        # ✅ yangi teacherni chatga qo'shamiz
         ConversationParticipant.objects.get_or_create(
             conversation=conversation,
             user=new_teacher.user
@@ -161,17 +161,17 @@ class ConversationTransferAPIView(APIView):
             conversation=conversation,
             sender=request.user,
             message_type="system",
-            text=f"Chat {new_teacher.full_name} ga o‘tkazildi"
+            text=f"Chat {new_teacher.full_name} ga o'tkazildi"
         )
 
         # 🕒 chat meta update
-        conversation.last_message = "Chat boshqa o‘qituvchiga o‘tkazildi"
+        conversation.last_message = "Chat boshqa o'qituvchiga o'tkazildi"
         conversation.last_message_at = timezone.now()
         conversation.save(update_fields=["last_message", "last_message_at"])
 
         return Response({
             "success": True,
-            "message": "Chat muvaffaqiyatli o‘tkazildi",
+            "message": "Chat muvaffaqiyatli o'tkazildi",
             "to_teacher": {
                 "id": new_teacher.id,
                 "full_name": new_teacher.full_name
@@ -210,7 +210,7 @@ class CreateDirectChatAPIView(APIView):
         else:
             return Response({"error": "Faqat student yoki teacher chat ochishi mumkin"}, status=403)
 
-        # ikkala ishtirokchi o’rtasidagi chatni topamiz (ochiq yoki yopiq)
+        # ikkala ishtirokchi o'rtasidagi chatni topamiz (ochiq yoki yopiq)
         conversation = Conversation.objects.filter(
             chat_type="direct",
             participants__user=user
@@ -244,7 +244,7 @@ class StudentSupportChatMessageAPIView(APIView):
             return Response({"error": "text yoki reply_to yuboring"}, status=400)
 
         if not hasattr(user, "student_profile"):
-            return Response({"error": "Faqat o‘quvchi chat yozishi mumkin"}, status=403)
+            return Response({"error": "Faqat o'quvchi chat yozishi mumkin"}, status=403)
 
         student = user.student_profile
 
@@ -256,7 +256,7 @@ class StudentSupportChatMessageAPIView(APIView):
             teacher = Teacher.objects.filter(support=True).first()
 
         if not teacher:
-            return Response({"error": "Mos o‘qituvchi topilmadi"}, status=400)
+            return Response({"error": "Mos o'qituvchi topilmadi"}, status=400)
 
         other_user = teacher.user
 
@@ -295,7 +295,7 @@ class StudentSupportChatMessageAPIView(APIView):
                 reply_to_id=reply_to_id,
             )
         except Exception:
-            return Response({"error": "Xabar yuborib bo‘lmadi"}, status=400)
+            return Response({"error": "Xabar yuborib bo'lmadi"}, status=400)
 
         channel_layer = get_channel_layer()
         if channel_layer:
@@ -429,7 +429,7 @@ class UniversalChatsAPIView(APIView):
     def get(self, request):
         user = request.user
 
-        # student yoki teacher farqi yo‘q — ishtirok etgan chatlar
+        # student yoki teacher farqi yo'q — ishtirok etgan chatlar
         conversations = get_chat_queryset_for_user(user).order_by("-last_message_at", "-created_at")
 
         serializer = ConversationListSerializer(
@@ -546,7 +546,7 @@ class RequestCloseConversationAPIView(APIView):
         # Faqat teacher
         if user.role != "teacher":
             return Response(
-                {"detail": "Faqat o‘qituvchi chatni yopishni so‘rashi mumkin"},
+                {"detail": "Faqat o'qituvchi chatni yopishni so'rashi mumkin"},
                 status=403
             )
 
@@ -560,7 +560,7 @@ class RequestCloseConversationAPIView(APIView):
                 status=403
             )
 
-        # Oldingi so’rov bo’lsa ham yangi so’rov yuboriladi (ustiga yoziladi)
+        # Oldingi so'rov bo'lsa ham yangi so'rov yuboriladi (ustiga yoziladi)
         conversation.is_close_requested = True
         conversation.close_requested_at = timezone.now()
         conversation.close_requested_by = user
@@ -574,7 +574,7 @@ class RequestCloseConversationAPIView(APIView):
         system_message = create_system_message(
             conversation=conversation,
             sender=user,
-            text="O’qituvchi baho so’ramoqda. Boshqa savolingiz yo’qmi?",
+            text="O'qituvchi baho so'ramoqda. Boshqa savolingiz yo'qmi?",
             event="close_requested",
         )
 
@@ -606,10 +606,10 @@ class ConfirmCloseAndRateAPIView(APIView):
 
         conversation = get_object_or_404(Conversation, id=conversation_id)
 
-        # 2️⃣ Chat yopish so’rovi bo’lishi shart
+        # 2️⃣ Chat yopish so'rovi bo'lishi shart
         if not conversation.is_close_requested:
             return Response(
-                {"detail": "O’qituvchi hali baho so’rovini yubormagan"},
+                {"detail": "O'qituvchi hali baho so'rovini yubormagan"},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -705,7 +705,7 @@ class TeacherClosedChatsStatsAPIView(APIView):
         start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         start_of_year = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
 
-        # Statistika ConversationRating bo’yicha (har bir yopilgan session = 1 rating)
+        # Statistika ConversationRating bo'yicha (har bir yopilgan session = 1 rating)
         def get_stats(start_date=None):
             filt = Q(mentor=user)
             if start_date:

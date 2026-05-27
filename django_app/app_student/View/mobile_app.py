@@ -1,4 +1,4 @@
-from rest_framework.views import APIView
+﻿from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django_app.app_student.models import StudentScore, TopicProgress
@@ -17,11 +17,11 @@ class StudentRatingAPIView(APIView):
 
         # Student profilini olamiz
         if not hasattr(user, "student_profile"):
-            return Response({"error": "Faqat talaba reytingni ko‘ra oladi"}, status=403)
+            return Response({"error": "Faqat talaba reytingni ko'ra oladi"}, status=403)
 
         student = user.student_profile
 
-        # StudentScore obj — bo‘lmasa yangi bo‘sh obyekt yaratamiz
+        # StudentScore obj — bo'lmasa yangi bo'sh obyekt yaratamiz
         my_score, _ = StudentScore.objects.get_or_create(
             student=student,
             defaults={"score": 0, "coin": 0, "som": 0}
@@ -41,7 +41,7 @@ class StudentRatingAPIView(APIView):
                 for sc in top
             ]
 
-        # --- Mening o‘rnim ---
+        # --- Mening o'rnim ---
         def my_rank(field):
             value = getattr(my_score, field)
             return all_scores.filter(**{f"{field}__gt": value}).count() + 1
@@ -255,14 +255,14 @@ class StudentTopAPIView(APIView):
         # -------- 1) Validatsiya --------
         if type_value not in ["score", "coin", "som"]:
             return Response(
-                {"error": "type faqat 'score', 'coin' yoki 'som' bo‘lishi kerak"},
+                {"error": "type faqat 'score', 'coin' yoki 'som' bo'lishi kerak"},
                 status=400
             )
 
         try:
             top_count = int(top_count)
         except:
-            return Response({"error": "top_count butun son bo‘lishi kerak"}, status=400)
+            return Response({"error": "top_count butun son bo'lishi kerak"}, status=400)
 
         # -------- 2) Dinamik tartiblash --------
         ordering_field = f"-{type_value}"   # masalan "-score"
@@ -298,7 +298,7 @@ class SubjectProgressAPIView(APIView):
     def get(self, request):
         user = request.user
 
-        # Faqat talaba bo‘lsin
+        # Faqat talaba bo'lsin
         if not hasattr(user, "student_profile"):
             return Response(
                 {"detail": "Faqat talaba uchun ma'lumot mavjud."},
@@ -311,20 +311,20 @@ class SubjectProgressAPIView(APIView):
         response_data = []
 
         for category in categories:
-            # Shu bo‘limga tegishli barcha fanlar
+            # Shu bo'limga tegishli barcha fanlar
             subjects = category.subjects.all()
             subject_count = subjects.count()
 
 
 
-            # Shu bo‘limdagi barcha boblar va mavzular
+            # Shu bo'limdagi barcha boblar va mavzular
             chapters = Chapter.objects.filter(subject__in=subjects)
             topics = Topic.objects.filter(chapter__in=chapters)
 
             total_chapter_count = chapters.count()
             total_topic_count = topics.count()
 
-            # Studentning shu bo‘limdagi 80%+ o‘zlashtirgan mavzulari
+            # Studentning shu bo'limdagi 80%+ o'zlashtirgan mavzulari
             mastered_topics_qs = TopicProgress.objects.filter(
                 user=student,
                 topic__in=topics,
@@ -373,7 +373,7 @@ class SubjectCategoryDetailAPIView(APIView):
             )
         except Subject_Category.DoesNotExist:
             return Response(
-                {"error": "Fan bo‘limi topilmadi"},
+                {"error": "Fan bo'limi topilmadi"},
                 status=status.HTTP_404_NOT_FOUND
             )
 

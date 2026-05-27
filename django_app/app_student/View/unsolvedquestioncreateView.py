@@ -1,4 +1,4 @@
-from rest_framework.views import APIView
+﻿from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django_app.app_teacher.models import  UnsolvedQuestionReport, Question
@@ -27,11 +27,11 @@ class UnsolvedQuestionCreateView(APIView):
         if UnsolvedQuestionReport.objects.filter(question=question, student=student).exists():
             return Response({"error": "Bu savol allaqachon yuborilgan"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Barcha o‘qituvchilarni olish - TO‘G‘RILANDI:
+        # Barcha o'qituvchilarni olish - TO'G'RILANDI:
         try:
             teachers = question.topic.chapter.subject.teachers.all()
         except AttributeError:
-            return Response({"error": "Savolga tegishli fan uchun o‘qituvchilar topilmadi"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Savolga tegishli fan uchun o'qituvchilar topilmadi"}, status=status.HTTP_400_BAD_REQUEST)
 
         report = UnsolvedQuestionReport.objects.create(
             question=question,

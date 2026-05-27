@@ -1,4 +1,4 @@
-import sympy as sp
+﻿import sympy as sp
 import re
 from sympy import randprime
 
@@ -11,7 +11,7 @@ def detect_variables(expr):
 
 def clean_latex(expr):
     """
-    Latex formatidagi stringni oddiy matematik ko‘rinishga keltiradi.
+    Latex formatidagi stringni oddiy matematik ko'rinishga keltiradi.
     Masalan:
         "\\(0,8\\)" -> "0,8"
         "\\(<\\)"   -> "<"
@@ -48,7 +48,7 @@ def is_number(s):
 
 def advanced_math_check(student_answer, correct_answer):
     """
-    Bu funksiya studentning javobi bilan to‘g‘ri javobni solishtiradi.
+    Bu funksiya studentning javobi bilan to'g'ri javobni solishtiradi.
     Vergul va nuqta bilan yozilgan sonlarni teng deb hisoblaydi.
     """
     student = insert_multiplication(clean_latex(student_answer))
@@ -91,7 +91,7 @@ def advanced_math_check(student_answer, correct_answer):
 
 def clean_student_answers_list(answers_list):
     """
-    Composite yoki boshqa joydan kelayotgan javoblar ro‘yxatini tozalab beradi.
+    Composite yoki boshqa joydan kelayotgan javoblar ro'yxatini tozalab beradi.
     Asl formatni saqlab qoladi (vergul saqlanadi).
     """
     return [clean_latex(ans) for ans in answers_list]

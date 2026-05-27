@@ -1,4 +1,4 @@
-from django.db import models
+﻿from django.db import models
 from django_app.app_user.models import  Subject
 from ckeditor.fields import RichTextField
 from django_app.app_management.models import Product, Coupon_Tutor_Student
@@ -13,7 +13,7 @@ class Chapter(models.Model):
         related_name="chapters", verbose_name="Tegishli fan",
         null=True
     )
-    order = models.PositiveIntegerField(default=0, verbose_name="Tartib raqami")  # ✅ Qo‘shildi
+    order = models.PositiveIntegerField(default=0, verbose_name="Tartib raqami")  # ✅ Qo'shildi
 
     def __str__(self):
         return self.name
@@ -67,14 +67,14 @@ class Question(models.Model):
         return f"{self.question_text[:30]}..."
     def clean(self):
         if self.question_type == 'text' and not self.correct_text_answer:
-            raise ValidationError("Matnli savollar uchun to‘g‘ri javob kiritilishi kerak.")
+            raise ValidationError("Matnli savollar uchun to'g'ri javob kiritilishi kerak.")
         if self.question_type in ['choice', 'image_choice'] and not self.pk:
             # Can't validate related objects until instance is saved
             return
         if self.question_type in ['choice', 'image_choice'] and not self.choices.exists():
-            raise ValidationError("Variantli savollar uchun hech bo‘lmasa bitta variant bo‘lishi kerak.")
+            raise ValidationError("Variantli savollar uchun hech bo'lmasa bitta variant bo'lishi kerak.")
         if self.question_type == 'composite' and not self.sub_questions.exists():
-            raise ValidationError("Bir nechta inputli savollar uchun kamida bitta kichik savol bo‘lishi kerak.")
+            raise ValidationError("Bir nechta inputli savollar uchun kamida bitta kichik savol bo'lishi kerak.")
     class Meta:
         verbose_name = "Savol"
         verbose_name_plural = "Savollar"
@@ -95,7 +95,7 @@ class Choice(models.Model):
     letter = models.CharField(max_length=1)  # A, B, C...
     text = RichTextField(blank=True, null=True)
     image_url = models.CharField(max_length=500, blank=True, null=True)
-    is_correct = models.BooleanField(default=False)  # To‘g‘ri variant
+    is_correct = models.BooleanField(default=False)  # To'g'ri variant
 
     def __str__(self):
         return f"{self.letter} - {self.text or self.image.url}"
@@ -109,7 +109,7 @@ class Choice(models.Model):
 
 class UnsolvedQuestionReport(models.Model):
     STATUS_CHOICES = [
-        ('pending', 'Ko‘rib chiqilmoqda'),
+        ('pending', "Ko'rib chiqilmoqda"),
         ('answered', 'Javob yozildi'),
     ]
 
@@ -119,7 +119,7 @@ class UnsolvedQuestionReport(models.Model):
     message = models.TextField(verbose_name="Izoh", blank=True, null=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     answered_by = models.ForeignKey(Teacher, on_delete=models.SET_NULL, null=True, blank=True, related_name="answered_reports")
-    answer = RichTextField(verbose_name="O‘qituvchi javobi", blank=True, null=True)
+    answer = RichTextField(verbose_name="O'qituvchi javobi", blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     answered_at = models.DateTimeField(null=True, blank=True)
     is_seen = models.BooleanField(default=False) 
@@ -154,8 +154,8 @@ class TeacherScore(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        verbose_name = "O‘qituvchi bali"
-        verbose_name_plural = "O‘qituvchilar ballari"
+        verbose_name = "O'qituvchi bali"
+        verbose_name_plural = "O'qituvchilar ballari"
         ordering = ['-score']
 
     def __str__(self):
@@ -176,8 +176,8 @@ class TeacherProductExchange(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        verbose_name = "O‘qituvchining mahsulot almashtiruvi"
-        verbose_name_plural = "O‘qituvchilarning mahsulot almashtiruvi"
+        verbose_name = "O'qituvchining mahsulot almashtiruvi"
+        verbose_name_plural = "O'qituvchilarning mahsulot almashtiruvi"
 
     def __str__(self):
         return f"{self.teacher.full_name} → {self.product.name} ({self.used_coin} tanga)"
@@ -186,15 +186,15 @@ class TeacherProductExchange(models.Model):
 
 class TeacherRewardLog(models.Model):
     REWARD_TYPES = [
-        ('score', 'Ball qo‘shildi'),
-        ('coin', 'Tanga qo‘shildi'),
-        ('subscription_day', 'Obuna kuni qo‘shildi'),
+        ('score', "Ball qo'shildi"),
+        ('coin', "Tanga qo'shildi"),
+        ('subscription_day', "Obuna kuni qo'shildi"),
     ]
 
-    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='given_rewards', verbose_name="O‘qituvchi")
-    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='received_rewards', verbose_name="O‘quvchi")
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='given_rewards', verbose_name="O'qituvchi")
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='received_rewards', verbose_name="O'quvchi")
     
-    reward_type = models.CharField(max_length=20, choices=REWARD_TYPES, verbose_name="Rag‘bat turi")
+    reward_type = models.CharField(max_length=20, choices=REWARD_TYPES, verbose_name="Rag'bat turi")
     amount = models.PositiveIntegerField(verbose_name="Qiymati (ball, tanga yoki kun)")
     reason = models.TextField(blank=True, null=True, verbose_name="Sababi (ixtiyoriy)")
     
@@ -204,8 +204,8 @@ class TeacherRewardLog(models.Model):
         return f"{self.teacher.full_name} → {self.student.full_name} ({self.get_reward_type_display()} - {self.amount})"
 
     class Meta:
-        verbose_name = "Rag‘bat yozuvi"
-        verbose_name_plural = "Rag‘bat yozuvlari"
+        verbose_name = "Rag'bat yozuvi"
+        verbose_name_plural = "Rag'bat yozuvlari"
         ordering = ['-created_at']
 
 
@@ -311,19 +311,15 @@ class TeacherCouponTransaction(models.Model):
         verbose_name="Kupon kodi"
     )
 
-    payment_amount = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="To’lov summasi")
+    payment_amount = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="To'lov summasi")
 
     used_at = models.DateTimeField(auto_now_add=True, verbose_name="Kupon ishlatilgan sana")
 
     def __str__(self):
-        return f"{self.student} → {self.coupon.code} ({self.payment_amount} so’m)"
+        return f"{self.student} → {self.coupon.code} ({self.payment_amount} so'm)"
 
 
 class TeacherFineLog(models.Model):
-    """
-    Teacher yoki superadmin tomonidan studentga qo’yilgan jarima.
-    Ball yoki tanga ayiriladi.
-    """
     FINE_TYPE_CHOICES = [
         ('score', 'Ball'),
         ('coin',  'Tanga'),
@@ -333,14 +329,14 @@ class TeacherFineLog(models.Model):
         User,
         on_delete=models.SET_NULL,
         null=True,
-        related_name=’given_fines’,
-        verbose_name="Jarima qo’ygan (teacher/superadmin)"
+        related_name='given_fines',
+        verbose_name="Jarima qo'ygan"
     )
     student = models.ForeignKey(
         Student,
         on_delete=models.CASCADE,
-        related_name=’received_fines’,
-        verbose_name="Jarima olgan o’quvchi"
+        related_name='received_fines',
+        verbose_name="Jarima olgan o'quvchi"
     )
     fine_type = models.CharField(
         max_length=10,
@@ -352,10 +348,10 @@ class TeacherFineLog(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Vaqti")
 
     def __str__(self):
-        giver = self.given_by.phone if self.given_by else "—"
-        return f"{giver} → {self.student.full_name} | {self.get_fine_type_display()} -{self.amount}"
+        giver = self.given_by.phone if self.given_by else "-"
+        return f"{giver} - {self.student.full_name} | {self.get_fine_type_display()} -{self.amount}"
 
     class Meta:
         verbose_name = "Jarima"
         verbose_name_plural = "Jarimalar"
-        ordering = [‘-created_at’]
+        ordering = ['-created_at']

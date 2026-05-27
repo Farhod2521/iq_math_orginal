@@ -1,4 +1,4 @@
-from rest_framework.views import APIView
+﻿from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import permissions, status
 from django_app.app_student.models import ProductExchange
@@ -15,7 +15,7 @@ class TeacherProductExchangeListAPIView(APIView):
         # ❗ Faqat Teacher kirishi mumkin
         teacher = getattr(request.user, "teacher_profile", None)
         if not teacher:
-            return Response({"error": "Faqat o‘qituvchi kira oladi"}, status=403)
+            return Response({"error": "Faqat o'qituvchi kira oladi"}, status=403)
 
         queryset = ProductExchange.objects.all().order_by("-created_at")
 
@@ -35,15 +35,15 @@ class TeacherProductExchangeListAPIView(APIView):
 
 
     def post(self, request):
-        """📌 oldindan kelgan ID larni ko‘rildi deb belgilash"""
+        """📌 oldindan kelgan ID larni ko'rildi deb belgilash"""
         teacher = getattr(request.user, "teacher_profile", None)
         if not teacher:
-            return Response({"error": "Faqat o‘qituvchi kira oladi"}, status=403)
+            return Response({"error": "Faqat o'qituvchi kira oladi"}, status=403)
 
         ids = request.data.get("ids", [])
 
         if not isinstance(ids, list):
-            return Response({"error": "ids ro‘yxat bo‘lishi kerak"}, status=400)
+            return Response({"error": "ids ro'yxat bo'lishi kerak"}, status=400)
 
         updated = ProductExchange.objects.filter(
             id__in=ids,
@@ -51,7 +51,7 @@ class TeacherProductExchangeListAPIView(APIView):
         ).update(delivery_status="viewed")
 
         return Response({
-            "message": f"{updated} ta buyurtma ko‘rildi deb belgilandi"
+            "message": f"{updated} ta buyurtma ko'rildi deb belgilandi"
         })
 
 
@@ -63,7 +63,7 @@ class TeacherUpdateProductExchangeStatusAPIView(APIView):
         # ❗ faqat Teacher
         teacher = getattr(request.user, "teacher_profile", None)
         if not teacher:
-            return Response({"error": "Faqat o‘qituvchi kira oladi"}, status=403)
+            return Response({"error": "Faqat o'qituvchi kira oladi"}, status=403)
 
         exchange = get_object_or_404(ProductExchange, id=pk)
 
@@ -73,7 +73,7 @@ class TeacherUpdateProductExchangeStatusAPIView(APIView):
 
         if new_status not in allowed_status:
             return Response(
-                {"error": f"Status faqat {allowed_status} bo‘lishi mumkin"},
+                {"error": f"Status faqat {allowed_status} bo'lishi mumkin"},
                 status=400
             )
 
@@ -81,7 +81,7 @@ class TeacherUpdateProductExchangeStatusAPIView(APIView):
         exchange.save()
 
         return Response({
-            "message": "Status o‘zgartirildi",
+            "message": "Status o'zgartirildi",
             "id": exchange.id,
             "delivery_status": new_status
         })

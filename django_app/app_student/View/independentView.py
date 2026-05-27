@@ -1,4 +1,4 @@
-from rest_framework.generics import CreateAPIView, ListAPIView, UpdateAPIView
+﻿from rest_framework.generics import CreateAPIView, ListAPIView, UpdateAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
@@ -41,7 +41,7 @@ class TopicHelpRequestCreateView(CreateAPIView):
         # ❗ FAQAT STUDENT
         if not hasattr(user, "student_profile"):
             return Response(
-                {"error": "Faqat o‘quvchi murojaat yubora oladi"},
+                {"error": "Faqat o'quvchi murojaat yubora oladi"},
                 status=403
             )
 
@@ -53,8 +53,8 @@ class TopicHelpRequestCreateView(CreateAPIView):
         # ================================
 
         if student.groups.exists():
-            # 1️⃣ STUDENT GROUPDA BOR → O‘SHA GROUP TEACHERI
-            group = student.groups.first()   # agar bir nechta bo‘lsa, birinchisi
+            # 1️⃣ STUDENT GROUPDA BOR → O'SHA GROUP TEACHERI
+            group = student.groups.first()   # agar bir nechta bo'lsa, birinchisi
             teachers = Teacher.objects.filter(id=group.teacher_id)
 
         else:
@@ -63,7 +63,7 @@ class TopicHelpRequestCreateView(CreateAPIView):
 
         if not teachers.exists():
             return Response(
-                {"error": "Mos o‘qituvchi topilmadi"},
+                {"error": "Mos o'qituvchi topilmadi"},
                 status=400
             )
 
@@ -89,7 +89,7 @@ class TopicHelpRequestCreateView(CreateAPIView):
                 ])
 
             text_message = (
-                f"📝 O‘quvchi sizga yangi mavzu bo‘yicha yordam so‘radi.\n"
+                f"📝 O'quvchi sizga yangi mavzu bo'yicha yordam so'radi.\n"
                 f"Murojaat ID: {instance.id}\n"
                 f"Mavzu(lar): {', '.join([t.name_uz for t in instance.topics.all()])}\n"
             )
@@ -138,7 +138,7 @@ class AssignTeacherAPIView(APIView):
         try:
             help_request = TopicHelpRequestIndependent.objects.get(id=help_request_id)
 
-            # Agar allaqachon biriktirilgan bo‘lsa
+            # Agar allaqachon biriktirilgan bo'lsa
             if help_request.teacher:
                 return Response({
                     "success": False,
@@ -166,7 +166,7 @@ class AssignTeacherAPIView(APIView):
         except Teacher.DoesNotExist:
             return Response({
                 "success": False,
-                "message": "O‘qituvchi topilmadi."
+                "message": "O'qituvchi topilmadi."
             }, status=status.HTTP_404_NOT_FOUND)
 
 class GetTelegramIdFromTopicHelpAPIView(APIView):

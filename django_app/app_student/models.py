@@ -1,4 +1,4 @@
-from django.db import models
+﻿from django.db import models
 from django_app.app_user.models import Student, Teacher
 from django_app.app_teacher.models import Topic, Question, Chapter
 from django_app.app_management.models import Product, Coupon_Tutor_Student, Referral_Tutor_Student
@@ -26,8 +26,8 @@ class ChapterProgress(models.Model):
 
     class Meta:
         unique_together = ('user', 'chapter')
-        verbose_name = "Bob bo‘yicha yutuq"
-        verbose_name_plural = "Boblar bo‘yicha yutuqlar"
+        verbose_name = "Bob bo'yicha yutuq"
+        verbose_name_plural = "Boblar bo'yicha yutuqlar"
 
     def __str__(self):
         return f"{self.user} - {self.chapter.name} - {self.progress_percentage}%"
@@ -43,8 +43,8 @@ class TopicProgress(models.Model):
         return f"{self.user} - {self.topic.name} - {self.score}%"
 
     class Meta:
-        verbose_name = "Mavzu bo‘yicha yutuq"
-        verbose_name_plural = "Mavzular bo‘yicha yutuqlar"
+        verbose_name = "Mavzu bo'yicha yutuq"
+        verbose_name_plural = "Mavzular bo'yicha yutuqlar"
         ordering = ['-completed_at']
 
 
@@ -85,8 +85,8 @@ class ConversionHistory(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
     conversion_type = models.CharField(max_length=20, choices=CONVERT_TYPE_CHOICES)
     amount_from = models.PositiveIntegerField()  # konvertatsiya qilingan miqdor (masalan: 30 ball)
-    amount_to = models.PositiveIntegerField()    # natijada olingan miqdor (masalan: 2 tanga yoki 100 so‘m)
-    som_after = models.PositiveIntegerField(default=0, verbose_name="So‘m balans (konvertatsiyadan keyin)")
+    amount_to = models.PositiveIntegerField()    # natijada olingan miqdor (masalan: 2 tanga yoki 100 so'm)
+    som_after = models.PositiveIntegerField(default=0, verbose_name="So'm balans (konvertatsiyadan keyin)")
     comment = models.TextField(blank=True, null=True, verbose_name="Izoh")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='approved')
     created_at = models.DateTimeField(default=timezone.now)
@@ -154,11 +154,11 @@ class StudentDailyCoinLog(models.Model):
 class ProductExchange(models.Model):
     DELIVERY_STATUS = (
         ('new', 'Yangi kelgan xabar'),
-        ('viewed', 'Ko‘rildi'),
+        ('viewed', 'Ko'rildi'),
         ('preparing', 'Tayyorlanmoqda'),
         ('delivering', 'Yetkazilmoqda'),
         ('delivered', 'Yetkazib berildi'),
-        ('confirmed', 'O‘quvchi tasdiqladi'),
+        ('confirmed', 'O'quvchi tasdiqladi'),
     )
 
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='product_exchanges')
@@ -219,8 +219,8 @@ class SomTransferLog(models.Model):
 class TopicHelpRequestIndependent(models.Model):
     STATUS_CHOICES = [
         ('sent', "Yuborilgan"),
-        ('seen', "Ko‘rildi"),
-        ('reviewing', "Ko‘rib chiqilmoqda"),
+        ('seen', "Ko'rildi"),
+        ('reviewing', "Ko'rib chiqilmoqda"),
         ('answered', "Javob berildi"),
         ('closed', "Yopildi / Yakunlandi"),
         ('rejected', "Rad etildi"),
@@ -236,12 +236,12 @@ class TopicHelpRequestIndependent(models.Model):
     teacher = models.ForeignKey(
         Teacher,
         on_delete=models.PROTECT,
-        verbose_name="Tekshiruvchi o‘qituvchi",
+        verbose_name="Tekshiruvchi o'qituvchi",
         null=True,
         blank=True
     )
 
-    commit = models.TextField(null=True, blank=True, verbose_name="O‘qituvchi izohi")
+    commit = models.TextField(null=True, blank=True, verbose_name="O'qituvchi izohi")
     reviewed_at = models.DateTimeField(null=True, blank=True, verbose_name="Tekshirilgan vaqt")
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -251,7 +251,7 @@ class TopicHelpRequestIndependent(models.Model):
         default='sent',
         verbose_name="Savol holati"
     )
-    is_seen = models.BooleanField(default=False, verbose_name="Ko‘rildi")
+    is_seen = models.BooleanField(default=False, verbose_name="Ko'rildi")
 
     def __str__(self):
         return f"{self.student} - {self.subject}"
@@ -292,7 +292,7 @@ class StudentCouponTransaction(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='used_student', verbose_name="Kuponni ishlatgan student")
     by_student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='coupon_transactions_student', verbose_name="Kupon egasi (Tutor)")
     coupon = models.ForeignKey(Coupon_Tutor_Student, on_delete=models.CASCADE, related_name='student_transactions', verbose_name="Kupon kodi")
-    payment_amount = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="To‘lov summasi")
+    payment_amount = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="To'lov summasi")
     cashback_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Studentga berilgan keshbek")
     used_at = models.DateTimeField(auto_now_add=True, verbose_name="Kupon ishlatilgan sana")
 
@@ -301,7 +301,7 @@ class StudentCouponTransaction(models.Model):
         verbose_name_plural = "Tutor kupon tranzaksiyalari"
 
     def __str__(self):
-        return f"{self.student} → {self.coupon.code} ({self.payment_amount} so‘m)"
+        return f"{self.student} → {self.coupon.code} ({self.payment_amount} so'm)"
     
 class StudentReferralTransaction(models.Model):
     student = models.ForeignKey(
@@ -319,7 +319,7 @@ class StudentReferralTransaction(models.Model):
     payment_amount = models.DecimalField(
         max_digits=12,
         decimal_places=2,
-        verbose_name="To‘lov summasi"
+        verbose_name="To'lov summasi"
     )
     bonus_amount = models.DecimalField(
         max_digits=12,
@@ -337,4 +337,4 @@ class StudentReferralTransaction(models.Model):
         verbose_name_plural = "Student referal tranzaksiyalari"
 
     def __str__(self):
-        return f"{self.student} → {self.referral.code} ({self.payment_amount} so‘m)"
+        return f"{self.student} → {self.referral.code} ({self.payment_amount} so'm)"

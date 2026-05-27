@@ -1,4 +1,4 @@
-from rest_framework.views import APIView
+﻿from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
@@ -19,7 +19,7 @@ class StudentDiagnostSubjectsAPIView(APIView):
         diagnost_list = Diagnost_Student.objects.filter(student=student).select_related('subject')
 
         for d in diagnost_list:
-            # Har bir subject bo‘yicha oxirgi diagnostika yozuvini olish
+            # Har bir subject bo'yicha oxirgi diagnostika yozuvini olish
             latest_diagnost = Diagnost_Student.objects.filter(
                 student=student,
                 subject=d.subject
@@ -75,12 +75,12 @@ class SubjectChaptersAPIView(APIView):
         except Subject.DoesNotExist:
             return Response({"message": "Fan topilmadi"}, status=404)
 
-        # Eng so‘nggi diagnostika (agar ko‘pi bo‘lsa)
+        # Eng so'nggi diagnostika (agar ko'pi bo'lsa)
         diagnost = Diagnost_Student.objects.filter(student=student, subject=subject).order_by('-id').first()
         if not diagnost:
-            return Response({"message": "Ushbu fan bo‘yicha diagnostika topilmadi"}, status=404)
+            return Response({"message": "Ushbu fan bo'yicha diagnostika topilmadi"}, status=404)
 
-        # ✅ Faqat xato bo‘lgan boblar
+        # ✅ Faqat xato bo'lgan boblar
         chapters = diagnost.chapters.all()
         data = [
             {"id": ch.id, "name_uz": ch.name_uz, "name_ru": ch.name_ru}
@@ -104,12 +104,12 @@ class ChapterTopicsAPIView(APIView):
         # Ushbu bob qaysi fanga tegishli
         subject = chapter.subject
 
-        # Eng so‘nggi diagnostikani topamiz
+        # Eng so'nggi diagnostikani topamiz
         diagnost = Diagnost_Student.objects.filter(student=student, subject=subject).order_by('-id').first()
         if not diagnost:
             return Response({"message": "Diagnostika topilmadi"}, status=404)
 
-        # ✅ Faqat shu bobga tegishli va noto‘g‘ri ishlangan topiclar
+        # ✅ Faqat shu bobga tegishli va noto'g'ri ishlangan topiclar
         topics = diagnost.topic.filter(chapter=chapter)
 
         data = [
@@ -263,7 +263,7 @@ class StudentDiagnosticHistoryAPIView(APIView):
             topic_counter = {}
 
             for diag in all_diagnosts:
-                # 🔹 Ball tarixini yig‘ish
+                # 🔹 Ball tarixini yig'ish
                 if diag.result:
                     try:
                         score = diag.result.get("result", [{}])[0].get("score")
@@ -279,7 +279,7 @@ class StudentDiagnosticHistoryAPIView(APIView):
                 for topic in diag.topic.all():
                     topic_counter[topic.id] = topic_counter.get(topic.id, 0) + 1
 
-            # 🔹 3 martadan ko‘p takrorlangan mavzular
+            # 🔹 3 martadan ko'p takrorlangan mavzular
             repeated_topics = [
                 {
                     "id": t.id,
@@ -303,7 +303,7 @@ class StudentDiagnosticHistoryAPIView(APIView):
                 "repeated_topics": repeated_topics
             }
 
-        # Faqat diagnostika o‘tkazilgan fanlar
+        # Faqat diagnostika o'tkazilgan fanlar
         subjects = Subject.objects.filter(id__in=diagnost_dict.keys()).select_related('classes')
 
         data = []

@@ -1,4 +1,4 @@
-from rest_framework.views import APIView
+﻿from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django_app.app_student.models import  TopicHelpRequestIndependent
@@ -143,7 +143,7 @@ class TeacherCommitToHelpRequestAPIView(APIView):
         try:
             teacher = request.user.teacher_profile
         except AttributeError:
-            return Response({"error": "Siz o‘qituvchi emassiz"}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"error": "Siz o'qituvchi emassiz"}, status=status.HTTP_403_FORBIDDEN)
 
         help_request_id = request.data.get("help_request_id")
         commit = request.data.get("commit")
@@ -158,11 +158,11 @@ class TeacherCommitToHelpRequestAPIView(APIView):
             help_request = TopicHelpRequestIndependent.objects.get(id=help_request_id)
         except TopicHelpRequestIndependent.DoesNotExist:
             return Response(
-                {"error": "Ushbu so‘rov mavjud emas"},
+                {"error": "Ushbu so'rov mavjud emas"},
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        # Commit va o‘qituvchini yozamiz
+        # Commit va o'qituvchini yozamiz
         help_request.teacher = teacher
         help_request.commit = commit
         help_request.reviewed_at = timezone.now()
@@ -200,7 +200,7 @@ class TeacherTopicHelpRequestFromTelegramAPIView(APIView):
 
         user = get_object_or_404(User, telegram_id=telegram_id, role='teacher')
 
-        # Faqat status='sent' bo'lgan va hali o‘qituvchi biriktirilmagan (kutmoqda holati)
+        # Faqat status='sent' bo'lgan va hali o'qituvchi biriktirilmagan (kutmoqda holati)
         help_requests = TopicHelpRequestIndependent.objects.filter(
             status='sent',
             teacher__isnull=True
@@ -255,7 +255,7 @@ class GetTelegramIDFromHelpRequestAPIView(APIView):
         try:
             help_request = TopicHelpRequestIndependent.objects.select_related('student__user').get(pk=pk)
         except TopicHelpRequestIndependent.DoesNotExist:
-            return Response({'detail': 'Bunday IDga ega so‘rov topilmadi.'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'detail': 'Bunday IDga ega so'rov topilmadi.'}, status=status.HTTP_404_NOT_FOUND)
         
         telegram_id = help_request.student.user.telegram_id
         return Response({'telegram_id': telegram_id})
@@ -266,10 +266,10 @@ class TeacherTopicHelpRequestDeleteAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def delete(self, request, pk):
-        # Login bo‘lgan userga tegishli teacher obyektini olamiz
+        # Login bo'lgan userga tegishli teacher obyektini olamiz
         teacher = get_object_or_404(Teacher, user=request.user)
 
-        # Faqat shu o‘qituvchiga biriktirilgan murojaatni topamiz
+        # Faqat shu o'qituvchiga biriktirilgan murojaatni topamiz
         help_request = get_object_or_404(
             TopicHelpRequestIndependent,
             pk=pk,
@@ -279,14 +279,14 @@ class TeacherTopicHelpRequestDeleteAPIView(APIView):
         help_request.delete()
 
         return Response(
-            {"detail": "Murojaat muvaffaqiyatli o‘chirildi."},
+            {"detail": "Murojaat muvaffaqiyatli o'chirildi."},
             status=status.HTTP_204_NO_CONTENT
         )
     
 
 class TeacherHelpRequestNotificationAPIView(APIView):
     """
-    Qo‘ng‘iroqcha uchun xabarlar soni, statistikasi va ularni 'Ko‘rildi' deb belgilash
+    Qo'ng'iroqcha uchun xabarlar soni, statistikasi va ularni 'Ko'rildi' deb belgilash
     """
     permission_classes = [IsAuthenticated]
 
@@ -294,7 +294,7 @@ class TeacherHelpRequestNotificationAPIView(APIView):
         teacher = getattr(request.user, 'teacher_profile', None)
         if not teacher:
             return Response(
-                {"detail": "Foydalanuvchi o‘qituvchi emas."},
+                {"detail": "Foydalanuvchi o'qituvchi emas."},
                 status=status.HTTP_403_FORBIDDEN
             )
 
@@ -337,7 +337,7 @@ class TeacherHelpRequestNotificationAPIView(APIView):
         teacher = getattr(request.user, 'teacher_profile', None)
         if not teacher:
             return Response(
-                {"detail": "Foydalanuvchi o‘qituvchi emas."},
+                {"detail": "Foydalanuvchi o'qituvchi emas."},
                 status=status.HTTP_403_FORBIDDEN
             )
 
@@ -351,7 +351,7 @@ class TeacherHelpRequestNotificationAPIView(APIView):
         if ids:
             qs = qs.filter(id__in=ids)
         else:
-            qs = qs[:10]  # agar ids berilmagan bo‘lsa, faqat 10 ta yozuvni olamiz
+            qs = qs[:10]  # agar ids berilmagan bo'lsa, faqat 10 ta yozuvni olamiz
 
         updated_count = qs.count()
         now = timezone.now()
@@ -364,5 +364,5 @@ class TeacherHelpRequestNotificationAPIView(APIView):
 
         return Response({
             "marked_as_seen": updated_count,
-            "message": f"{updated_count} ta murojaat 'Ko‘rildi' holatiga o‘tkazildi."
+            "message": f"{updated_count} ta murojaat 'Ko'rildi' holatiga o'tkazildi."
         })

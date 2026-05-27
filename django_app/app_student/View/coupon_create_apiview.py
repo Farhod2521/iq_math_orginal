@@ -1,4 +1,4 @@
-from rest_framework.views import APIView
+﻿from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, permissions
 from rest_framework.exceptions import PermissionDenied
@@ -24,7 +24,7 @@ class StudentCouponAPIView(APIView):
         """🔹 Foydalanuvchining mavjud kuponini qaytaradi"""
         student = getattr(request.user, 'student_profile', None)
         if student is None:
-            raise PermissionDenied("Foydalanuvchi o‘quvchi emas")
+            raise PermissionDenied("Foydalanuvchi o'quvchi emas")
 
         coupon = Coupon_Tutor_Student.objects.filter(created_by_student=student).first()
         if not coupon:
@@ -36,10 +36,10 @@ class StudentCouponAPIView(APIView):
         }, status=status.HTTP_200_OK)
 
     def post(self, request):
-        """🔹 Student uchun yangi kupon yaratadi (agar allaqachon bo‘lmasa)"""
+        """🔹 Student uchun yangi kupon yaratadi (agar allaqachon bo'lmasa)"""
         student = getattr(request.user, 'student_profile', None)
         if student is None:
-            raise PermissionDenied("Foydalanuvchi o‘quvchi emas")
+            raise PermissionDenied("Foydalanuvchi o'quvchi emas")
 
         try:
             settings = ReferralAndCouponSettings.objects.latest('updated_at')
@@ -49,7 +49,7 @@ class StudentCouponAPIView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # 🔸 Agar student allaqachon kupon yaratgan bo‘lsa — shuni qaytaramiz
+        # 🔸 Agar student allaqachon kupon yaratgan bo'lsa — shuni qaytaramiz
         existing_coupon = Coupon_Tutor_Student.objects.filter(created_by_student=student).first()
         if existing_coupon:
             return Response({
@@ -57,7 +57,7 @@ class StudentCouponAPIView(APIView):
                 "coupon": CouponSerializer(existing_coupon).data
             }, status=status.HTTP_200_OK)
 
-        # 🔸 Yangi kupon ma’lumotlari
+        # 🔸 Yangi kupon ma'lumotlari
         valid_from = timezone.now()
         valid_until = valid_from + timedelta(days=settings.coupon_valid_days)
         coupon_code = self._generate_unique_coupon_code()

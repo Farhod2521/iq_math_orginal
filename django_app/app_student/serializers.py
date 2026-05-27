@@ -1,4 +1,4 @@
-from rest_framework import serializers
+﻿from rest_framework import serializers
 from django_app.app_teacher.models import Chapter, Choice, CompositeSubQuestion, Question, Topic
 from modeltranslation.utils import get_translation_fields
 
@@ -95,7 +95,7 @@ class ChapterSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         user = request.user
 
-        # 👨‍🏫 Agar foydalanuvchi o'qituvchi yoki admin bo‘lsa, progress 100%
+        # 👨‍🏫 Agar foydalanuvchi o'qituvchi yoki admin bo'lsa, progress 100%
         if user.role in ['teacher', 'admin']:
             return 100.0
 
@@ -117,7 +117,7 @@ class ChapterSerializer(serializers.ModelSerializer):
         if not progresses.exists():
             return 0.0
 
-        # 🔹 O‘rtacha score hisoblanadi
+        # 🔹 O'rtacha score hisoblanadi
         total_score = sum(p.score for p in progresses)
         avg_score = total_score / total_topics
 
@@ -135,7 +135,7 @@ class Chapter_STUDENT_ID_Serializer(serializers.ModelSerializer):
     def get_progress(self, chapter):
         student = self.context.get("student")
 
-        # 👨‍🏫 Agar teacher/admin bo‘lsa progress 100%
+        # 👨‍🏫 Agar teacher/admin bo'lsa progress 100%
         if student.user.role in ['teacher', 'admin']:
             return 100.0
 
@@ -184,7 +184,7 @@ class Topic_STUDENT_ID_Serializer(serializers.ModelSerializer):
     # ================================
     def get_score(self, obj):
         if self.context.get("is_staff"):
-            return None  # Admin/Teacher -> score ko‘rsatilmaydi
+            return None  # Admin/Teacher -> score ko'rsatilmaydi
 
         student = self.context.get("student")
 
@@ -318,7 +318,7 @@ class TopicSerializer(serializers.ModelSerializer):
         user = request.user
 
         if user.role in ['teacher', 'admin']:
-            return None  # 👨‍🏫 Admin va teacher uchun score ko‘rsatilmaydi
+            return None  # 👨‍🏫 Admin va teacher uchun score ko'rsatilmaydi
 
         try:
             student = Student.objects.get(user=user)
@@ -339,7 +339,7 @@ class TopicSerializer(serializers.ModelSerializer):
         except Student.DoesNotExist:
             return True
 
-        # 1. Agar bu mavzu allaqachon ishlangan bo‘lsa → ochiq
+        # 1. Agar bu mavzu allaqachon ishlangan bo'lsa → ochiq
         if TopicProgress.objects.filter(user=student, topic=obj).exists():
             return False
 
@@ -352,7 +352,7 @@ class TopicSerializer(serializers.ModelSerializer):
         except ValueError:
             return True
 
-        # ✅ 3. Agar bu chapter ichidagi BIRINCHI mavzu bo‘lsa → har doim ochiq bo‘lsin
+        # ✅ 3. Agar bu chapter ichidagi BIRINCHI mavzu bo'lsa → har doim ochiq bo'lsin
         if current_index == 0:
             return False  # ❗ istisno: chapter ichida birinchi mavzu doim ochiq
 
@@ -377,7 +377,7 @@ class TopicSerializer(serializers.ModelSerializer):
         except Student.DoesNotExist:
             return False
 
-        # 1️⃣ Agar mavzu allaqachon ishlangan bo‘lsa → ochiq
+        # 1️⃣ Agar mavzu allaqachon ishlangan bo'lsa → ochiq
         if TopicProgress.objects.filter(user=student, topic=obj).exists():
             return True
 
@@ -395,14 +395,14 @@ class TopicSerializer(serializers.ModelSerializer):
         except ValueError:
             return False
 
-        # Agar birinchi mavzu bo‘lmasa → oldingi mavzuni tekshirish
+        # Agar birinchi mavzu bo'lmasa → oldingi mavzuni tekshirish
         if current_index > 0:
             prev_topic = chapter_topics[current_index - 1]
             prev_progress = TopicProgress.objects.filter(user=student, topic=prev_topic).first()
             if prev_progress and prev_progress.score >= 80:
                 return True
 
-        # 4️⃣ Agar bu bobdagi birinchi mavzu bo‘lsa → oldingi bobning oxirgi mavzusi tekshiriladi
+        # 4️⃣ Agar bu bobdagi birinchi mavzu bo'lsa → oldingi bobning oxirgi mavzusi tekshiriladi
         if current_index == 0:
             prev_chapter = Chapter.objects.filter(
                 subject=obj.chapter.subject,
@@ -540,7 +540,7 @@ class TopicHelpRequestIndependentSerializer(serializers.ModelSerializer):
         chapter = Chapter.objects.get(id=info['chapter']['id'])
         topic = Topic.objects.get(id=info['topic']['id'])
 
-        # 🧠 SYSTEM JAVOBLARNI QO‘SHISH + SAVOL TURINI QO‘SHISH
+        # 🧠 SYSTEM JAVOBLARNI QO'SHISH + SAVOL TURINI QO'SHISH
         for q in questions:
             question_id = q.get("question_id")
             try:
@@ -627,7 +627,7 @@ class TopicHelpRequestIndependentDetailSerializer(serializers.ModelSerializer):
     chapter_name_uz = serializers.SerializerMethodField()
     topic_name_uz = serializers.SerializerMethodField()
     result = serializers.JSONField(source='result_json', read_only=True)
-    url = serializers.SerializerMethodField()  # 🔹 qo‘shildi
+    url = serializers.SerializerMethodField()  # 🔹 qo'shildi
 
     class Meta:
         model = TopicHelpRequestIndependent
@@ -636,8 +636,8 @@ class TopicHelpRequestIndependentDetailSerializer(serializers.ModelSerializer):
             'chapter_name_uz',
             'topic_name_uz',
             'result',
-            'status',  # 🔹 Qo‘shildi
-            'url',     # 🔹 Qo‘shildi
+            'status',  # 🔹 Qo'shildi
+            'url',     # 🔹 Qo'shildi
         ]
 
     def get_subject_name_uz(self, obj):
@@ -693,9 +693,9 @@ class StudentCouponCreateSerializer(serializers.ModelSerializer):
 
         student = getattr(request.user, 'student_profile', None)
         if student is None:
-            raise serializers.ValidationError({"error": "Foydalanuvchi o‘quvchi emas"})
+            raise serializers.ValidationError({"error": "Foydalanuvchi o'quvchi emas"})
 
-        # Har bir o‘quvchiga faqat bitta kupon
+        # Har bir o'quvchiga faqat bitta kupon
         if Coupon_Tutor_Student.objects.filter(created_by_student=student).exists():
             raise serializers.ValidationError({"error": "Siz allaqachon kupon yaratgansiz"})
 

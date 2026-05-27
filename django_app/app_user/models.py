@@ -1,4 +1,4 @@
-from django.db import models
+﻿from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from datetime import timedelta
 from django.utils.timezone import now
@@ -31,15 +31,15 @@ class UserManager(BaseUserManager):
         extra_fields.setdefault('is_superuser', True)
 
         if extra_fields.get('is_staff') is not True:
-            raise ValueError('Superuser uchun `is_staff=True` bo‘lishi kerak.')
+            raise ValueError('Superuser uchun `is_staff=True` bo'lishi kerak.')
         if extra_fields.get('is_superuser') is not True:
-            raise ValueError('Superuser uchun `is_superuser=True` bo‘lishi kerak.')
+            raise ValueError('Superuser uchun `is_superuser=True` bo'lishi kerak.')
 
         return self.create_user(phone, password, **extra_fields)
 
 
 class User(AbstractUser):
-    username = None  # username maydonini o‘chirish
+    username = None  # username maydonini o'chirish
     phone = models.CharField(max_length=15, unique=True, verbose_name="Telefon raqam")
     role = models.CharField(
         max_length=10,
@@ -98,11 +98,11 @@ class UserSession(models.Model):
 class Tutor(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='tutor_profile', verbose_name="Foydalanuvchi")
     identification = models.CharField(max_length=20, unique=True, default=generate_tutor_identification)
-    full_name = models.CharField(max_length=200, verbose_name="To‘liq ism")
+    full_name = models.CharField(max_length=200, verbose_name="To'liq ism")
     region = models.CharField(max_length=200, blank=True, null=True)
     districts = models.CharField(max_length=200, blank=True, null=True)
     address = models.CharField(max_length=500, blank=True, null=True)
-    tutor_date = models.DateTimeField(auto_now=True, null=True, verbose_name="Ro’yxatdan o’tgan sana")
+    tutor_date = models.DateTimeField(auto_now=True, null=True, verbose_name="Ro'yxatdan o'tgan sana")
     status = models.BooleanField(default=False, verbose_name="Holat")
     lang = models.CharField(max_length=10, verbose_name="Til", null=True, blank=True, default="uz")
 
@@ -110,22 +110,22 @@ class Tutor(models.Model):
         return self.full_name
 
     class Meta:
-        verbose_name = "O’qituvchi"
-        verbose_name_plural = "O’qituvchilar"
+        verbose_name = "O'qituvchi"
+        verbose_name_plural = "O'qituvchilar"
 
 
 class Teacher(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='teacher_profile', verbose_name="Foydalanuvchi") 
-    full_name = models.CharField(max_length=200, verbose_name="To‘liq ism")
+    full_name = models.CharField(max_length=200, verbose_name="To'liq ism")
     region = models.CharField(max_length=200, verbose_name="Viloyat")
     districts = models.CharField(max_length=200, verbose_name="Tuman")
     address = models.CharField(max_length=500, verbose_name="Manzil")
-    brithday = models.CharField(max_length=20, verbose_name="Tug‘ilgan kun")
+    brithday = models.CharField(max_length=20, verbose_name="Tug'ilgan kun")
     document_type = models.CharField(max_length=50, verbose_name="Hujjat turi")
     document = models.CharField(max_length=20, verbose_name="Hujjat raqami")
     status = models.BooleanField(default=False, verbose_name="Holat")
-    is_verified_teacher = models.BooleanField(default=False, verbose_name="O’qituvchi")
-    teacher_date = models.DateTimeField(auto_now=True, null=True, verbose_name="Ro’yxatdan o’tgan sana")
+    is_verified_teacher = models.BooleanField(default=False, verbose_name="O'qituvchi")
+    teacher_date = models.DateTimeField(auto_now=True, null=True, verbose_name="Ro'yxatdan o'tgan sana")
     support = models.BooleanField(default=False)
     lang = models.CharField(max_length=10, verbose_name="Til", null=True, blank=True, default="uz")
     
@@ -161,11 +161,11 @@ class Subject(models.Model):
     name = models.CharField(max_length=200, verbose_name="Fan nomi")
     image_uz = models.ImageField(upload_to="FILES/SubjectUZ", blank=True, null=True)
     image_ru = models.ImageField(upload_to="FILES/SubjectRU", blank=True, null=True)
-    teachers = models.ManyToManyField(Teacher, related_name="subjects", verbose_name="O‘qituvchilar")
+    teachers = models.ManyToManyField(Teacher, related_name="subjects", verbose_name="O'qituvchilar")
     classes = models.ForeignKey(Class, on_delete=models.SET_NULL, related_name="subjects", verbose_name="Sinf", null=True)
     category = models.ForeignKey(Subject_Category, on_delete=models.SET_NULL, related_name="subjects", verbose_name="Fan bo'limi", null=True)
     order = models.PositiveIntegerField(default=0, verbose_name="Tartib raqami")  # ✅ Tartib
-    active = models.BooleanField(default=True, verbose_name="Faol fanmi?")  # ✅ Yangi qo‘shilgan
+    active = models.BooleanField(default=True, verbose_name="Faol fanmi?")  # ✅ Yangi qo'shilgan
 
     def __str__(self):
         return f"{self.name} - {self.classes.name}"
@@ -183,27 +183,27 @@ def generate_daily_user_id():
 class Student(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='student_profile', verbose_name="Foydalanuvchi")
     identification  = models.CharField(max_length=20, unique=True, default=generate_daily_user_id)
-    full_name = models.CharField(max_length=200, verbose_name="To‘liq ism")
+    full_name = models.CharField(max_length=200, verbose_name="To'liq ism")
     region = models.CharField(max_length=200, verbose_name="Viloyat")
     districts = models.CharField(max_length=200, verbose_name="Tuman")
     address = models.CharField(max_length=500, verbose_name="Manzil")
-    brithday = models.CharField(max_length=20, verbose_name="Tug‘ilgan kun")
+    brithday = models.CharField(max_length=20, verbose_name="Tug'ilgan kun")
     academy_or_school = models.CharField(max_length=200, verbose_name="Akademiya yoki maktab")
     academy_or_school_name = models.CharField(max_length=500, verbose_name="Muassasa nomi")
     class_name = models.ForeignKey(Subject, on_delete=models.SET_NULL, null=True)
     document_type = models.CharField(max_length=50, verbose_name="Hujjat turi")
     document = models.CharField(max_length=20, verbose_name="Hujjat raqami")
-    type_of_education = models.CharField(max_length=200, verbose_name="Ta’lim turi")
+    type_of_education = models.CharField(max_length=200, verbose_name="Ta'lim turi")
     status = models.BooleanField(default=False, verbose_name="Holat")
     lang =  models.CharField(max_length=10, verbose_name="Til", null=True, blank=True, default="uz")
-    student_date = models.DateTimeField(auto_now=True, null=True, verbose_name="Ro‘yxatdan o‘tgan sana")
+    student_date = models.DateTimeField(auto_now=True, null=True, verbose_name="Ro'yxatdan o'tgan sana")
     
     def __str__(self):
         return self.full_name
 
     class Meta:
-        verbose_name = "O‘quvchi"
-        verbose_name_plural = "O‘quvchilar"
+        verbose_name = "O'quvchi"
+        verbose_name_plural = "O'quvchilar"
 
 def generate_parent_identification():
     today = now().strftime("%y%m%d")
@@ -212,12 +212,12 @@ def generate_parent_identification():
     return f"P{today}{random_part:03d}{count_today:03d}" 
 class Parent(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='parent_profile', verbose_name="Foydalanuvchi")
-    full_name = models.CharField(max_length=200, verbose_name="To‘liq ism")
+    full_name = models.CharField(max_length=200, verbose_name="To'liq ism")
     identification = models.CharField(max_length=20, unique=True, default=generate_parent_identification)
     region = models.CharField(max_length=200, blank=True, null=True)
     districts = models.CharField(max_length=200, blank=True, null=True)
     address = models.CharField(max_length=500, blank=True, null=True)
-    parent_date = models.DateTimeField(auto_now=True, null=True, verbose_name="Ro’yxatdan o’tgan sana")
+    parent_date = models.DateTimeField(auto_now=True, null=True, verbose_name="Ro'yxatdan o'tgan sana")
     status = models.BooleanField(default=False, verbose_name="Holat")
     lang = models.CharField(max_length=10, verbose_name="Til", null=True, blank=True, default="uz")
 
@@ -241,8 +241,8 @@ class ParentStudentRelation(models.Model):
         return f"{self.parent.full_name} ↔ {self.student.full_name} ({status})"
 
     class Meta:
-        verbose_name = "Ota-ona va farzand bog‘lanishi"
-        verbose_name_plural = "Ota-ona va farzand bog‘lanishlari"
+        verbose_name = "Ota-ona va farzand bog'lanishi"
+        verbose_name_plural = "Ota-ona va farzand bog'lanishlari"
         unique_together = ('parent', 'student')
 
 class UserSMSAttempt(models.Model):
@@ -254,7 +254,7 @@ class UserSMSAttempt(models.Model):
     def can_send_sms(user):
         """
         Ushbu metod foydalanuvchi yana SMS kod olishi mumkinligini tekshiradi.
-        Agar SMS olish uchun kutish vaqti bo‘lsa, qolgan kutish vaqtini qaytaradi.
+        Agar SMS olish uchun kutish vaqti bo'lsa, qolgan kutish vaqtini qaytaradi.
         """
         attempts = UserSMSAttempt.objects.filter(user=user).order_by('created_at')
 
@@ -271,7 +271,7 @@ class UserSMSAttempt(models.Model):
         else:
             wait_time = (2 ** (attempt_count - 3)) * 60  # Har safar 2 baravar ortadi
 
-        # Agar kutish vaqti o‘tmagan bo‘lsa
+        # Agar kutish vaqti o'tmagan bo'lsa
         if now() - last_attempt.created_at < timedelta(seconds=wait_time):
             remaining_time = timedelta(seconds=wait_time) - (now() - last_attempt.created_at)
             return False, remaining_time
@@ -281,8 +281,8 @@ class UserSMSAttempt(models.Model):
     @staticmethod
     def register_attempt(user, wrong=False):
         """
-        Foydalanuvchiga SMS yuborishdan oldin ushbu metod orqali urinishni ro‘yxatga olish.
-        wrong=True bo‘lsa, urinish noto‘g‘ri kiritilgan hisoblanadi.
+        Foydalanuvchiga SMS yuborishdan oldin ushbu metod orqali urinishni ro'yxatga olish.
+        wrong=True bo'lsa, urinish noto'g'ri kiritilgan hisoblanadi.
         """
         attempt = UserSMSAttempt.objects.create(user=user)
         if wrong:

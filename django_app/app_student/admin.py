@@ -1,4 +1,4 @@
-from django.contrib import admin
+﻿from django.contrib import admin
 from .models import Diagnost_Student, TopicProgress, StudentScore, StudentScoreLog, ChapterProgress, ProductExchange, TopicHelpRequestIndependent, StudentDailyCoinLog
 from modeltranslation.admin import TranslationAdmin
 
@@ -15,7 +15,7 @@ admin.site.register(ProductExchange)
 class ChapterProgressAdmin(admin.ModelAdmin):
     list_display = ('user', 'chapter', 'progress_percentage', 'updated_at')
     list_filter = ('chapter', 'updated_at')
-    search_fields = ('user__full_name', 'chapter__name')  # Student modelda full_name bo‘lsa
+    search_fields = ('user__full_name', 'chapter__name')  # Student modelda full_name bo'lsa
     ordering = ('-updated_at',)
 
 
@@ -25,8 +25,8 @@ class TopicProgressAdmin(admin.ModelAdmin):
     list_filter = ('is_unlocked', 'completed_at')
     search_fields = ('user__user__username', 'topic__name')
     ordering = ('-completed_at',)
-    verbose_name = "Mavzu bo‘yicha yutuq"
-    verbose_name_plural = "Mavzular bo‘yicha yutuqlar"
+    verbose_name = "Mavzu bo'yicha yutuq"
+    verbose_name_plural = "Mavzular bo'yicha yutuqlar"
 
 
 @admin.register(StudentScore)

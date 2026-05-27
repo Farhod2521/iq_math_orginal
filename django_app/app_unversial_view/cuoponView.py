@@ -1,4 +1,4 @@
-from rest_framework.views import APIView
+﻿from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import permissions, status
 from rest_framework.exceptions import PermissionDenied
@@ -84,7 +84,7 @@ class UniversalCouponAPIView(APIView):
             }, status=status.HTTP_200_OK)
 
         else:
-            raise PermissionDenied("Role uchun ruxsat yo‘q!")
+            raise PermissionDenied("Role uchun ruxsat yo'q!")
     # --- POST: Yangi kupon yaratish ---
     def post(self, request):
         user = request.user
@@ -134,7 +134,7 @@ class UniversalCouponAPIView(APIView):
             )
 
         else:
-            raise PermissionDenied("Role uchun ruxsat yo‘q!")
+            raise PermissionDenied("Role uchun ruxsat yo'q!")
 
         coupon_code = self._generate_unique_coupon_code()
 
@@ -157,7 +157,7 @@ class UniversalCouponAPIView(APIView):
             "coupon": CouponSerializer(coupon).data
         }, status=status.HTTP_201_CREATED)
 
-    # --- DELETE: Kuponni ID orqali o‘chirish ---
+    # --- DELETE: Kuponni ID orqali o'chirish ---
     def delete(self, request, pk=None):
         user = request.user
         role = user.role
@@ -176,7 +176,7 @@ class UniversalCouponAPIView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        # 🔐 Security check — kim o‘chiryapti?
+        # 🔐 Security check — kim o'chiryapti?
         if role == "student" and coupon.created_by_student != user.student_profile:
             raise PermissionDenied("Bu kupon sizga tegishli emas!")
 
@@ -189,7 +189,7 @@ class UniversalCouponAPIView(APIView):
         coupon.delete()
 
         return Response(
-            {"message": "Kupon muvaffaqiyatli o‘chirildi"},
+            {"message": "Kupon muvaffaqiyatli o'chirildi"},
             status=status.HTTP_200_OK
         )
 
@@ -200,7 +200,7 @@ class UniversalCouponTransactionAPIView(APIView):
 
     def get(self, request):
         user = request.user
-        role = user.role.lower()  # ✔️ TO‘G‘RI
+        role = user.role.lower()  # ✔️ TO'G'RI
 
         result = []
 

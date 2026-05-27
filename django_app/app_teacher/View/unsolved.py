@@ -1,4 +1,4 @@
-from rest_framework.views import APIView
+﻿from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
@@ -11,7 +11,7 @@ class TeacherUnsolvedQuestionReportListView(APIView):
         try:
             teacher = request.user.teacher_profile  
         except AttributeError:
-            return Response({"error": "Siz o‘qituvchi emassiz"}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"error": "Siz o'qituvchi emassiz"}, status=status.HTTP_403_FORBIDDEN)
         reports = UnsolvedQuestionReport.objects.filter(teachers=teacher).order_by('-created_at').distinct()
 
         data = []
@@ -38,7 +38,7 @@ class TeacherAnswerUnsolvedQuestionView(APIView):
         try:
             teacher = request.user.teacher_profile
         except AttributeError:
-            return Response({"error": "Siz o‘qituvchi emassiz"}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"error": "Siz o'qituvchi emassiz"}, status=status.HTTP_403_FORBIDDEN)
 
         report_id = request.data.get("report_id")
         answer = request.data.get("answer")
@@ -65,7 +65,7 @@ class TeacherNotificationsAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        """O‘qituvchi uchun javobsiz va ko‘rilmagan misollar sonini qaytaradi"""
+        """O'qituvchi uchun javobsiz va ko'rilmagan misollar sonini qaytaradi"""
         teacher = request.user.teacher_profile  # foydalanuvchi Teacher modeliga ulangan deb faraz qilamiz
         unread_count = UnsolvedQuestionReport.objects.filter(
             teachers=teacher,
@@ -75,7 +75,7 @@ class TeacherNotificationsAPIView(APIView):
         return Response({"unread_count": unread_count})
 
     def post(self, request):
-        """Barcha 'pending' misollarni 'ko‘rildi' deb belgilaydi"""
+        """Barcha 'pending' misollarni 'ko'rildi' deb belgilaydi"""
         teacher = request.user.teacher_profile
         updated = UnsolvedQuestionReport.objects.filter(
             teachers=teacher,

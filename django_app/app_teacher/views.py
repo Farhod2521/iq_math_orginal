@@ -1,4 +1,4 @@
-from rest_framework.views import APIView
+﻿from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
@@ -25,8 +25,8 @@ class TeacherSubjectsAPIView(APIView):
     permission_classes = [IsAuthenticated]  # Faqat tizimga kirgan foydalanuvchilar
 
     def get(self, request):
-        teacher = request.user.teacher_profile  # Tizimga kirgan o‘qituvchini olish
-        subjects = Subject.objects.filter(teachers=teacher).order_by("order")  # O‘qituvchiga bog‘langan fanlar
+        teacher = request.user.teacher_profile  # Tizimga kirgan o'qituvchini olish
+        subjects = Subject.objects.filter(teachers=teacher).order_by("order")  # O'qituvchiga bog'langan fanlar
         serializer = SubjectSerializer(subjects, many=True)
         return Response(serializer.data)
 
@@ -51,7 +51,7 @@ class TeacherSubjectsAPIView(APIView):
             return Response({"error": "Bu fan sizga tegishli emas yoki mavjud emas."}, status=status.HTTP_404_NOT_FOUND)
 
         subject.delete()
-        return Response({"message": "Fan o‘chirildi."}, status=status.HTTP_204_NO_CONTENT)
+        return Response({"message": "Fan o'chirildi."}, status=status.HTTP_204_NO_CONTENT)
     
 class MyChapterAddCreateView(APIView):
     permission_classes = [IsAuthenticated]
@@ -88,11 +88,11 @@ class MyTopicAddCreateView(APIView):
         try:
             chapter = Chapter.objects.get(id=chapter_id, subject__teachers=teacher)
         except Chapter.DoesNotExist:
-            return Response({"error": "Siz bu bo‘limga mavzu qo‘sha olmaysiz!"}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"error": "Siz bu bo'limga mavzu qo'sha olmaysiz!"}, status=status.HTTP_403_FORBIDDEN)
 
         serializer = MyTopicAddSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(chapter=chapter)  # kerakli bo‘lsa `chapter`ni o‘zing kirit
+            serializer.save(chapter=chapter)  # kerakli bo'lsa `chapter`ni o'zing kirit
             return Response({"message": "Topic yaratildi!", "data": serializer.data}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -112,7 +112,7 @@ class MyQuestionListView(APIView):
     
 
 class MyChapterListView(APIView):
-    """Tizimga kirgan o‘qituvchining barcha bo‘limlarini olish"""
+    """Tizimga kirgan o'qituvchining barcha bo'limlarini olish"""
     permission_classes = [IsAuthenticated]
 
     def get(self, request, id):
@@ -183,7 +183,7 @@ class QuestionAddCreateView(APIView):
 
                         for idx, choice_data in enumerate(choices_data):
 
-                            # Agar letter bo‘lmasa → A,B,C qo‘yamiz
+                            # Agar letter bo'lmasa → A,B,C qo'yamiz
                             if 'letter' not in choice_data or not choice_data['letter']:
                                 choice_data['letter'] = chr(65 + idx)
 
@@ -231,7 +231,7 @@ class QuestionDeleteView(APIView):
     def delete(self, request, pk):
         question = get_object_or_404(Question, pk=pk)
         question.delete()
-        return Response({"message": "Savol muvaffaqiyatli o‘chirildi."}, status=status.HTTP_204_NO_CONTENT)
+        return Response({"message": "Savol muvaffaqiyatli o'chirildi."}, status=status.HTTP_204_NO_CONTENT)
 
 ################################  QUESTION BY TEACHER UPDATE ##################################################
 
@@ -268,7 +268,7 @@ class QuestionUpdateView(APIView):
                                     choice.image = image_file
                                     choice.save()
                             else:
-                                raise ValueError(f"Variantdagi ma'lumotlar noto‘g‘ri: {choice_serializer.errors}")
+                                raise ValueError(f"Variantdagi ma'lumotlar noto'g'ri: {choice_serializer.errors}")
 
                     # Composite savollarini yangilash
                     elif question.question_type == 'composite':
@@ -284,7 +284,7 @@ class QuestionUpdateView(APIView):
                             if sub_serializer.is_valid():
                                 sub_serializer.save()
                             else:
-                                raise ValueError(f"Kichik savoldagi ma'lumotlar noto‘g‘ri: {sub_serializer.errors}")
+                                raise ValueError(f"Kichik savoldagi ma'lumotlar noto'g'ri: {sub_serializer.errors}")
 
                 return Response(QuestionSerializer(question, context={'request': request}).data, status=status.HTTP_200_OK)
             except Exception as e:
@@ -406,7 +406,7 @@ class CompenQuestionToXlsxImport(APIView):
 
 #             question = Question.objects.create(
 #                 topic=topic,
-#                 question_type='text',  # Agar boshqa type bo‘lsa, excelga qo‘shib o‘zgartirish mumkin
+#                 question_type='text',  # Agar boshqa type bo'lsa, excelga qo'shib o'zgartirish mumkin
 #                 level=row.get('level') or 1,
 #                 question_text_uz=row.get('question_text_uz', ''),
 #                 question_text_ru=row.get('question_text_ru', ''),
@@ -623,7 +623,7 @@ client = OpenAI(
 #                 ]
 #             )
 #         except Exception as e:
-#             return Response({'error': f'AI bilan bog‘lanishda xatolik: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+#             return Response({'error': f'AI bilan bog'lanishda xatolik: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 #         result_content = completion.choices[0].message.content
 
@@ -657,7 +657,7 @@ def clean_html_and_extract_images(html, question_id):
             filename = f"question_{question_id}_img{i+1}"
             image_url = save_base64_image(base64_data, ext, filename)
             image_urls.append(f"[Rasm {i+1}]: {image_url}")
-            img.replace_with(f"[Rasm {i+1}]")  # HTML dan o‘rniga matn qo‘yiladi
+            img.replace_with(f"[Rasm {i+1}]")  # HTML dan o'rniga matn qo'yiladi
 
     clean_text = soup.get_text(separator=" ", strip=True)
     return clean_text, image_urls
@@ -683,7 +683,7 @@ class OpenAIProcessAPIView(APIView):
         elif lang == 'ru':
             html = question.question_text_ru
         else:
-            return Response({'error': 'Til noto‘g‘ri ko‘rsatilgan (faqat uz yoki ru)'}, status=400)
+            return Response({'error': 'Til noto'g'ri ko'rsatilgan (faqat uz yoki ru)'}, status=400)
 
         soup = BeautifulSoup(html, "html.parser")
         question_text = soup.get_text()
@@ -697,7 +697,7 @@ class OpenAIProcessAPIView(APIView):
             full_url = src if src.startswith("http") else request.build_absolute_uri(src)
             image_urls.append(full_url)
 
-        # To‘g‘ri javobni aniqlash
+        # To'g'ri javobni aniqlash
         correct_answer = ""
         if question_type == 'text':
             correct_answer = re.sub(r'<[^>]+>', '', question.correct_text_answer_uz if lang == 'uz' else question.correct_text_answer_ru or "")
@@ -712,15 +712,15 @@ class OpenAIProcessAPIView(APIView):
                 f"{sq.text1 or ''} => {sq.correct_answer} {sq.text2 or ''}" for sq in sub_questions
             )
         else:
-            return Response({'error': 'Noma’lum savol turi'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Noma'lum savol turi'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Tilga qarab prompt yaratish
         if lang == 'uz':
             prompt_text = (
                 f"Savol: {question_text}\n\n"
-                f"Iltimos, yuqoridagi savolni tushunarli tarzda yechib bering, ishlanish yo‘li bilan. "
-                f"Menda quyidagi to‘g‘ri javob mavjud — sizning yechimingiz ham aynan shunga to‘g‘ri kelishi kerak.\n\n"
-                f"To‘g‘ri javob: {correct_answer}"
+                f"Iltimos, yuqoridagi savolni tushunarli tarzda yechib bering, ishlanish yo'li bilan. "
+                f"Menda quyidagi to'g'ri javob mavjud — sizning yechimingiz ham aynan shunga to'g'ri kelishi kerak.\n\n"
+                f"To'g'ri javob: {correct_answer}"
             )
         elif lang == 'ru':
             prompt_text = (
@@ -757,7 +757,7 @@ class OpenAIProcessAPIView(APIView):
                 }]
             )
         except Exception as e:
-            return Response({'error': f'AI bilan bog‘lanishda xatolik: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({'error': f'AI bilan bog'lanishda xatolik: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         result_content = completion.choices[0].message.content
 

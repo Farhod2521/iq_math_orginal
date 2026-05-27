@@ -1,4 +1,4 @@
-from django.db import models
+﻿from django.db import models
 from ckeditor.fields import RichTextField
 # Create your models here.
 from django.db import models
@@ -37,7 +37,7 @@ class UploadSetting(models.Model):
 
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name="So‘nggi yangilangan vaqti"
+        verbose_name="So'nggi yangilangan vaqti"
     )
 
     class Meta:
@@ -122,7 +122,7 @@ class Motivation(models.Model):
         verbose_name="Sarlavha"
     )
     content = RichTextField(
-        verbose_name="Matn (motivatsion so‘zlar)"
+        verbose_name="Matn (motivatsion so'zlar)"
     )
     is_active = models.BooleanField(
         default=True,
@@ -181,7 +181,7 @@ class FAQ(models.Model):
     url =  models.CharField(max_length=1000, null=True, blank=True, verbose_name="Youtube video link")
     class Meta:
         verbose_name = "TSS"  # "Tez-tez so'raladigan savollar"
-        verbose_name_plural = "Tez-tez so‘raladigan savollar"
+        verbose_name_plural = "Tez-tez so'raladigan savollar"
         ordering = ["id"]
 
     def __str__(self):
@@ -192,11 +192,11 @@ class FAQ(models.Model):
 class ReferralAndCouponSettings(models.Model):
     teacher_referral_bonus_points = models.PositiveIntegerField(
         default=0,
-        verbose_name="O‘qituvchi uchun referal foizi"
+        verbose_name="O'qituvchi uchun referal foizi"
     )
     student_referral_bonus_points = models.PositiveIntegerField(
         default=0,
-        verbose_name="O‘quvchi uchun referal foizi"
+        verbose_name="O'quvchi uchun referal foizi"
     )
     coupon_discount_percent = models.PositiveIntegerField(
         default=0,
@@ -289,7 +289,7 @@ class ConversionRate(models.Model):
         verbose_name_plural = "Konversiya kurslari"
 
     def __str__(self):
-        return f"1 coin = {self.coin_to_score} ball = {self.coin_to_money} so‘m"
+        return f"1 coin = {self.coin_to_score} ball = {self.coin_to_money} so'm"
 
 
 class Coupon(models.Model):
@@ -413,11 +413,11 @@ class CouponUsage_Tutor_Student(models.Model):
 class SolutionStatus(models.Model):
     subject_is_active = models.BooleanField(
         default=False,
-        verbose_name="Fanlar bo‘yicha yechim tugmasi yoqilganmi?"
+        verbose_name="Fanlar bo'yicha yechim tugmasi yoqilganmi?"
     )
     recommendation_is_active = models.BooleanField(
         default=False,
-        verbose_name="Tavsiyalar bo‘yicha yechim tugmasi yoqilganmi?"
+        verbose_name="Tavsiyalar bo'yicha yechim tugmasi yoqilganmi?"
     )
 
     class Meta:
@@ -426,8 +426,8 @@ class SolutionStatus(models.Model):
 
     def __str__(self):
         return (
-            f"Fanlar: {'Yoqilgan' if self.subject_is_active else 'O‘chirilgan'} | "
-            f"Tavsiyalar: {'Yoqilgan' if self.recommendation_is_active else 'O‘chirilgan'}"
+            f"Fanlar: {'Yoqilgan' if self.subject_is_active else 'O'chirilgan'} | "
+            f"Tavsiyalar: {'Yoqilgan' if self.recommendation_is_active else 'O'chirilgan'}"
         )
 
 
@@ -440,16 +440,16 @@ class Mathematician(models.Model):
         verbose_name="Olim FIO"
     )
 
-    # Subtitle — qaysi fanlarga hissa qo‘shgan
+    # Subtitle — qaysi fanlarga hissa qo'shgan
     subtitle = models.CharField(
         max_length=500,
-        verbose_name="Fanlarga qo‘shgan hissasi"
+        verbose_name="Fanlarga qo'shgan hissasi"
     )
 
-    # Text — tug‘ilgan va vafot etgan yillari
+    # Text — tug'ilgan va vafot etgan yillari
     life_years = models.CharField(
         max_length=100,
-        verbose_name="Tug‘ilgan va vafot etgan yillari"
+        verbose_name="Tug'ilgan va vafot etgan yillari"
     )
 
     # Rasm
@@ -458,7 +458,7 @@ class Mathematician(models.Model):
         verbose_name="Rasm"
     )
 
-    # Opisaniya — batafsil ma’lumot
+    # Opisaniya — batafsil ma'lumot
     description = RichTextField(
         verbose_name="Batafsil ma'lumot"
     )

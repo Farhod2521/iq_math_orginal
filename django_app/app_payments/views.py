@@ -1,4 +1,4 @@
-# views.py
+﻿# views.py
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -456,14 +456,14 @@ class PaymentCallbackAPIView(APIView):
 #                 else:
 #                     return Response({"error": "Kupon muddati tugagan"}, status=status.HTTP_400_BAD_REQUEST)
 #             except SystemCoupon.DoesNotExist:
-#                 return Response({"error": "Kupon topilmadi yoki faolligi yo‘q"}, status=status.HTTP_400_BAD_REQUEST)
+#                 return Response({"error": "Kupon topilmadi yoki faolligi yo'q"}, status=status.HTTP_400_BAD_REQUEST)
 
-#         # Chegirmadan so‘ng hisoblash
+#         # Chegirmadan so'ng hisoblash
 #         discounted_amount = float(amount)
 #         if discount_percent > 0:
 #             discounted_amount = discounted_amount * (1 - discount_percent / 100)
 
-#         # Token olish va to‘lov yaratish jarayoni...
+#         # Token olish va to'lov yaratish jarayoni...
 
 #         try:
 #             token = get_multicard_token()
@@ -503,10 +503,10 @@ class PaymentCallbackAPIView(APIView):
 #                 json=data
 #             )
 #         except requests.exceptions.RequestException as e:
-#             return Response({"error": "Multicard bilan bog‘lanishda xatolik", "details": str(e)}, status=500)
+#             return Response({"error": "Multicard bilan bog'lanishda xatolik", "details": str(e)}, status=500)
 
 #         if response.status_code != 200:
-#             return Response({"error": "To‘lov yaratilishda xatolik", "details": response.text}, status=500)
+#             return Response({"error": "To'lov yaratilishda xatolik", "details": response.text}, status=500)
 
 #         Payment.objects.create(
 #             student=student,
@@ -521,7 +521,7 @@ class PaymentCallbackAPIView(APIView):
 
 
 # class PaymentCallbackAPIView(APIView):
-#     authentication_classes = []  # Multicard tashqi server bo‘lganligi uchun
+#     authentication_classes = []  # Multicard tashqi server bo'lganligi uchun
 #     permission_classes = []
 
 #     def generate_sign(self, store_id, invoice_id, amount, secret):
@@ -569,19 +569,19 @@ class PaymentCallbackAPIView(APIView):
 #         now = timezone.now()
 
 #         if created:
-#             # Agar yangi bo‘lsa, hozirgi vaqtdan boshlab 1 oy qo‘shiladi
+#             # Agar yangi bo'lsa, hozirgi vaqtdan boshlab 1 oy qo'shiladi
 #             subscription.start_date = now
 #             subscription.end_date = now + relativedelta(months=1)
 #         else:
-#             # Agar mavjud bo‘lsa, end_date tekshiriladi
+#             # Agar mavjud bo'lsa, end_date tekshiriladi
 #             if subscription.end_date > now:
-#                 # Obuna muddati hali tugamagan bo‘lsa, end_date ga 1 oy qo‘shiladi
+#                 # Obuna muddati hali tugamagan bo'lsa, end_date ga 1 oy qo'shiladi
 #                 subscription.end_date += relativedelta(months=1)
 #             else:
-#                 # Obuna muddati tugagan bo‘lsa, hozirgi vaqtdan boshlab 1 oy belgilanadi
+#                 # Obuna muddati tugagan bo'lsa, hozirgi vaqtdan boshlab 1 oy belgilanadi
 #                 subscription.end_date = now + relativedelta(months=1)
 
-#         # next_payment_date yangi end_date ga 1 oy qo‘shib belgilanadi
+#         # next_payment_date yangi end_date ga 1 oy qo'shib belgilanadi
 #         subscription.next_payment_date = subscription.end_date + relativedelta(months=1)
 #         subscription.is_paid = True
 #         subscription.save()
@@ -618,14 +618,14 @@ class SubscriptionTrialDaysAPIView(APIView):
         else:
             remaining_days = 0
 
-        # 💳 To‘lov holati
+        # 💳 To'lov holati
         is_paid = subscription.is_paid and remaining_days > 0
 
         # 💰 Eng arzon aktiv reja narxini olish (fallback)
         plan = SubscriptionPlan.objects.filter(is_active=True).order_by('price_per_month').first()
         payment_amount = float(plan.total_price()) if plan else 1000
 
-        # 🔎 Oxirgi muvaffaqiyatli to‘lovni topamiz
+        # 🔎 Oxirgi muvaffaqiyatli to'lovni topamiz
         last_payment = (
             Payment.objects
             .filter(student=request.user.student_profile, status="success")
@@ -635,7 +635,7 @@ class SubscriptionTrialDaysAPIView(APIView):
 
         current_plan_info = None
         if last_payment:
-            # To‘lovdan obuna muddatiga qarab tarifni aniqlaymiz
+            # To'lovdan obuna muddatiga qarab tarifni aniqlaymiz
             plan = SubscriptionPlan.objects.filter(
                 months=last_payment.subscription_months
             ).first()
@@ -658,7 +658,7 @@ class SubscriptionTrialDaysAPIView(APIView):
                 "end_date": subscription.end_date.strftime("%d/%m/%Y"),
                 "payment_amount": payment_amount,
                 "is_paid": is_paid,
-                "current_plan": current_plan_info,  # 🆕 tarif haqida ma’lumot
+                "current_plan": current_plan_info,  # 🆕 tarif haqida ma'lumot
             },
             status=status.HTTP_200_OK
         )
@@ -678,7 +678,7 @@ class MyPaymentsAPIView(APIView):
 class CheckCouponAPIView(APIView):
     """
     Kupon kodini tekshiradi, 1 oylik chegirmani hisoblaydi
-    va agar kupon allaqachon ishlatilgan bo‘lsa — bloklaydi.
+    va agar kupon allaqachon ishlatilgan bo'lsa — bloklaydi.
     """
     permission_classes = [IsAuthenticated]
 
@@ -713,10 +713,10 @@ class CheckCouponAPIView(APIView):
         if not student:
             return Response({"error": "Foydalanuvchi student emas"}, status=403)
 
-        # ⛔ Student o‘z kuponini ishlata olmasin
+        # ⛔ Student o'z kuponini ishlata olmasin
         if coupon.created_by_student and coupon.created_by_student.id == student.id:
             return Response(
-                {"active": False, "message": "Siz o‘zingiz yaratgan kuponni ishlata olmaysiz"},
+                {"active": False, "message": "Siz o'zingiz yaratgan kuponni ishlata olmaysiz"},
                 status=status.HTTP_403_FORBIDDEN
             )
 
@@ -802,11 +802,11 @@ class PaymentTeacherListAPIView(APIView):
         # faqat teacher kirsin
         if not hasattr(user, 'teacher_profile'):
             return Response(
-                {"detail": "Sizda bu sahifaga kirish huquqi yo‘q (faqat o‘qituvchilar uchun)."},
+                {"detail": "Sizda bu sahifaga kirish huquqi yo'q (faqat o'qituvchilar uchun)."},
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        # barcha to‘lovlarni olish (so‘nggi to‘lovlar yuqorida)
+        # barcha to'lovlarni olish (so'nggi to'lovlar yuqorida)
         payments = Payment.objects.select_related("student", "coupon").order_by("-created_at")
 
         # filtrlash parametrlari (ixtiyoriy)
@@ -820,7 +820,7 @@ class PaymentTeacherListAPIView(APIView):
 
         serializer = PaymentTeacherSerializer(payments, many=True)
 
-        # Jadval ko‘rinishida JSON qaytarish
+        # Jadval ko'rinishida JSON qaytarish
         table_data = {
             "columns": [
                 "ID",

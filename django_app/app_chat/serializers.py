@@ -1,4 +1,4 @@
-from rest_framework import serializers
+﻿from rest_framework import serializers
 from .models import Conversation, ConversationParticipant, Message, MessageReceipt, ConversationRating
 from django.contrib.auth import get_user_model
 from django_app.app_student.models import TopicHelpRequestIndependent
@@ -130,7 +130,7 @@ class MessageSerializer(serializers.ModelSerializer):
     reply_to_text = serializers.SerializerMethodField()
     reply_to_sender = serializers.SerializerMethodField()
 
-    # 🔥 YANGI QO‘SHIMCHA
+    # 🔥 YANGI QO'SHIMCHA
     independent_data = serializers.SerializerMethodField()
 
     class Meta:
@@ -214,7 +214,7 @@ class MessageSerializer(serializers.ModelSerializer):
 
         result_json = independent_obj.result_json or {}
 
-        # 🔥 MUHIM FIX (dict yoki list bo‘lishidan qat’i nazar)
+        # 🔥 MUHIM FIX (dict yoki list bo'lishidan qat'i nazar)
         if isinstance(result_json, dict):
             result_list = result_json.get("result", [])
         elif isinstance(result_json, list):

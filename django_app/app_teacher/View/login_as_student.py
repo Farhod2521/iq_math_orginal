@@ -1,4 +1,4 @@
-from rest_framework.permissions import IsAuthenticated
+﻿from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
@@ -26,7 +26,7 @@ class LoginAsStudentAPIView(APIView):
             access_token.set_exp(lifetime=timedelta(hours=13))
             expires_in = timedelta(hours=13).total_seconds()
 
-            # Token ichiga qo‘shimcha payload
+            # Token ichiga qo'shimcha payload
             access_token['student_id'] = student.id
             access_token['impersonated_by'] = teacher.id
 
@@ -66,9 +66,9 @@ class ChangeStudentPasswordAPIView(APIView):
             student_user.set_password(new_password)
             student_user.save()
 
-            # Email mavjud bo‘lsa yuboramiz
+            # Email mavjud bo'lsa yuboramiz
             if student_user.email:
-                subject = "Parolingiz o‘zgartirildi"
+                subject = "Parolingiz o'zgartirildi"
                 from_email = None  # `DEFAULT_FROM_EMAIL` ishlatiladi
                 to_email = student_user.email
                 html_content = render_to_string(
@@ -84,7 +84,7 @@ class ChangeStudentPasswordAPIView(APIView):
                 email.attach_alternative(html_content, "text/html")
                 email.send()
 
-            return Response({"detail": "Parol o‘zgartirildi. (Email yuborildi)"}, status=status.HTTP_200_OK)
+            return Response({"detail": "Parol o'zgartirildi. (Email yuborildi)"}, status=status.HTTP_200_OK)
 
         except Student.DoesNotExist:
-            return Response({"detail": "O‘quvchi topilmadi."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"detail": "O'quvchi topilmadi."}, status=status.HTTP_404_NOT_FOUND)

@@ -1,4 +1,4 @@
-from rest_framework.views import APIView
+﻿from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import BasePermission
@@ -47,7 +47,7 @@ class MotivationCRUDAPIView(APIView):
             status=status.HTTP_201_CREATED
         )
 
-    # ✅ UPDATE (to‘liq yoki qisman)
+    # ✅ UPDATE (to'liq yoki qisman)
     def put(self, request, pk):
         try:
             motivation = Motivation.objects.get(pk=pk)
@@ -78,6 +78,6 @@ class MotivationCRUDAPIView(APIView):
 
         motivation.delete()
         return Response(
-            {"message": "Motivatsion matn o‘chirildi"},
+            {"message": "Motivatsion matn o'chirildi"},
             status=status.HTTP_204_NO_CONTENT
         )
