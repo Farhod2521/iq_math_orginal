@@ -95,7 +95,7 @@ class Choice(models.Model):
     letter = models.CharField(max_length=1)  # A, B, C...
     text = RichTextField(blank=True, null=True)
     image_url = models.CharField(max_length=500, blank=True, null=True)
-    is_correct = models.BooleanField(default=False)  # To'g'ri variant
+    is_correct = models.BooleanField(default=False)  # To"g'ri variant"
 
     def __str__(self):
         return f"{self.letter} - {self.text or self.image.url}"

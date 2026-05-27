@@ -206,7 +206,7 @@ class FAQAdmin(admin.ModelAdmin):
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
         form.base_fields.pop('question', None)
-        form.base_fields.pop('answer', None)  # optional: agar 'answer' ham kerak bo'lmasa
+        form.base_fields.pop('answer', None)  # optional: agar 'answer" ham kerak bo'lmasa"
         return form
 
 @admin.register(ReferralAndCouponSettings)

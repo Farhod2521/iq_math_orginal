@@ -204,7 +204,7 @@ class UniversalUpdateView(APIView):
     
     def prepare_profile_data(self, role, data):
         """
-        Role bo'yicha profil ma'lumotlarini tayyorlash
+        Role bo"yicha profil ma'lumotlarini tayyorlash"
         """
         profile_fields_map = {
             'tutor': ['full_name', 'region', 'districts', 'address'],

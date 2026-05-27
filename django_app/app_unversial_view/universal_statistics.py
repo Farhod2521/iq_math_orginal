@@ -244,6 +244,6 @@ class UniversalStatisticsAPIView(APIView):
             return Response(_tutor_data(tutor))
 
         return Response(
-            {"error": "role noto'g'ri. 'student', 'parent' yoki 'tutor' bo'lishi kerak."},
+            {"error": "role noto"g'ri. "student', 'parent' yoki 'tutor' bo'lishi kerak."},
             status=status.HTTP_400_BAD_REQUEST,
         )

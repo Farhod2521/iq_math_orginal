@@ -8,7 +8,7 @@ from django_app.app_user.models import Teacher, TeacherLoginHistory
 class TeacherOnlineDurationAPIView(APIView):
     """
     URL: /teacher/online-duration/<int:teacher_id>/
-    teacher_id berilsa — shu o'qituvchining online vaqti ko'rsatiladi.
+    teacher_id berilsa — shu o"qituvchining online vaqti ko'rsatiladi."
     """
     permission_classes = [IsAuthenticated]
 

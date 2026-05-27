@@ -34,7 +34,7 @@ class TeacherRewardAPIView(APIView):
         try:
             teacher = request.user.teacher_profile
         except Teacher.DoesNotExist:
-            return Response({'detail': 'Siz o'qituvchi emassiz yoki profil topilmadi.'}, status=status.HTTP_403_FORBIDDEN)
+            return Response({'detail': "Siz o'qituvchi emassiz yoki profil topilmadi."}, status=status.HTTP_403_FORBIDDEN)
 
         serializer = TeacherRewardSerializer(data=request.data)
         if serializer.is_valid():
@@ -46,7 +46,7 @@ class TeacherRewardAPIView(APIView):
             try:
                 student = Student.objects.get(id=student_id)
             except Student.DoesNotExist:
-                return Response({'detail': 'O'quvchi topilmadi'}, status=status.HTTP_404_NOT_FOUND)
+                return Response({'detail': "O'quvchi topilmadi"}, status=status.HTTP_404_NOT_FOUND)
 
             # Log yozamiz
             TeacherRewardLog.objects.create(
@@ -83,7 +83,7 @@ class TeacherRewardAPIView(APIView):
                     sub_obj.is_paid = True
                     sub_obj.save()
 
-            return Response({'detail': 'Rag'bat muvaffaqiyatli qo'shildi'}, status=status.HTTP_201_CREATED)
+            return Response({'detail': "Rag'bat muvaffaqiyatli qo'shildi"}, status=status.HTTP_201_CREATED)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
@@ -97,7 +97,7 @@ class TeacherRewardListAPIView(APIView):
         try:
             teacher = request.user.teacher_profile
         except:
-            return Response({'detail': 'Siz o'qituvchi emassiz.'}, status=status.HTTP_403_FORBIDDEN)
+            return Response({'detail': "Siz o'qituvchi emassiz."}, status=status.HTTP_403_FORBIDDEN)
 
         rewards = TeacherRewardLog.objects.filter(teacher=teacher).order_by('-created_at')
         serializer = TeacherRewardLogSerializer(rewards, many=True)

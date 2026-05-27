@@ -320,7 +320,7 @@ class BookPurchaseAPIView(APIView):
     Body: { "book_id": 1, "payment_method": "coin" }
          payment_method: "som" | "coin" | "score"
 
-    GET  /book/purchase/   → o'zi sotib olgan kitoblar ro'yxati
+    GET  /book/purchase/   → o"zi sotib olgan kitoblar ro'yxati"
     """
     permission_classes = [IsAuthenticated]
 

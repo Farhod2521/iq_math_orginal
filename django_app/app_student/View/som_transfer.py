@@ -31,7 +31,7 @@ class StudentByIdentificationAPIView(APIView):
 
 class SomTransferRequestAPIView(APIView):
     """
-    1-qadam: So'm o'tkazish so'rovi.
+    1-qadam: So"m o'tkazish so'rovi."
     Qabul qiluvchi identification raqami va summani yuboring.
     Yuboruvchining telefoniga 5 xonali OTP keladi.
 
@@ -120,7 +120,7 @@ class SomTransferRequestAPIView(APIView):
 
 class SomTransferConfirmAPIView(APIView):
     """
-    2-qadam: OTP kodni tasdiqlash va so'mni o'tkazish.
+    2-qadam: OTP kodni tasdiqlash va so"mni o'tkazish."
 
     POST /student/som-transfer/confirm/
     {
@@ -201,7 +201,7 @@ class SomTransferConfirmAPIView(APIView):
 
 class SomTransferHistoryAPIView(APIView):
     """
-    Studentning so'm o'tkazish tarixi (yuborgan va qabul qilgan).
+    Studentning so"m o'tkazish tarixi (yuborgan va qabul qilgan)."
 
     GET /student/som-transfer/history/
     """

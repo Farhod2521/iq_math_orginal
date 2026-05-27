@@ -41,7 +41,7 @@ def send_sms_resend(phone, sms_code):
         },
         "body": {
             "message_id_in": str(uuid.uuid4()),  # Unikal message_id_in
-            "CdPN": phone,  # Telefon raqamini to'g'rilang
+            "CdPN": phone,  # Telefon raqamini to"g'rilang"
             "text": f"IQMATH.UZ Saytidagi parolni qayta tiklash uchun. Diqqat! kodni hech kimga aytmang. "
                     f"Dlya vosstanovleniya parolya na sayte IQMATH.UZ. Vnimanie! Ne soobshayte kod nikomu.Kod: {sms_code}"
         }

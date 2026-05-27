@@ -296,7 +296,7 @@ class TutorWithdrawalCreateAPIView(APIView):
 
 class TutorWithdrawalListAPIView(APIView):
     """
-    Tizimga kirgan o'qituvchining barcha yechib olish so'rovlari ro'yxati
+    Tizimga kirgan o"qituvchining barcha yechib olish so'rovlari ro'yxati"
     """
     permission_classes = [permissions.IsAuthenticated]
 
@@ -315,7 +315,7 @@ class TutorWithdrawalListAPIView(APIView):
 
 class TutorDetailAPIView(APIView):
     """
-    Tutor ID orqali to'liq ma'lumot + kupon orqali ulangan o'quvchilar
+    Tutor ID orqali to"liq ma'lumot + kupon orqali ulangan o'quvchilar"
     GET /api/v1/tutor/tutor/<id>/detail/
     """
     permission_classes = [permissions.IsAuthenticated]

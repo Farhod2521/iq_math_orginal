@@ -444,7 +444,7 @@ class All_Role_ListView(APIView):
 
 class ParentDetailAPIView(APIView):
     """
-    Ota-ona ID orqali to'liq ma'lumot + biriktirilgan farzandlar ro'yxati
+    Ota-ona ID orqali to"liq ma'lumot + biriktirilgan farzandlar ro'yxati"
     GET /api/v1/auth/parent/<id>/detail/
     """
     permission_classes = [IsAuthenticated]

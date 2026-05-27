@@ -112,9 +112,9 @@ class SubjectCategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Subject)
 class SubjectAdmin(TranslationAdmin):
-    list_display = ('name_uz', 'name_ru', 'classes', 'category', 'order', 'active')  # ✅ active qo'shildi
-    list_editable = ('order', 'active')  # ✅ admin ro'yxat ichida tahrirlash mumkin
-    list_filter = ('category', 'classes', 'active')  # ✅ faollik bo'yicha ham filtrlash
+    list_display = ('name_uz', 'name_ru', 'classes', 'category', 'order', 'active")  # ✅ active qo'shildi"
+    list_editable = ('order', 'active")  # ✅ admin ro'yxat ichida tahrirlash mumkin"
+    list_filter = ('category', 'classes', 'active")  # ✅ faollik bo'yicha ham filtrlash"
     search_fields = ('name_uz', 'name_ru')
     raw_id_fields = ('teachers',)
     
@@ -127,7 +127,7 @@ class ChapterAdmin(TranslationAdmin):
 
 class QuestionInline(admin.TabularInline):  
     model = Question
-    extra = 1  # 1 dona bo'sh forma qo'shiladi
+    extra = 1  # 1 dona bo"sh forma qo'shiladi"
     fields = ('question_text', 'level')
 
 
