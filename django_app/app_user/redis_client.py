@@ -1,5 +1,5 @@
 """
-Ro'yxatdan o'tish jarayoni uchun Redis yordamchi moduli.
+Ro"yxatdan o'tish jarayoni uchun Redis yordamchi moduli."
 Celery (db=0) va channels (db=1) ga ta'sir qilmaslik uchun db=2 ishlatiladi.
 """
 import json
@@ -26,7 +26,7 @@ def _key(phone: str) -> str:
 
 def save_pending_registration(phone: str, data: dict) -> None:
     """
-    Ro'yxatdan o'tish ma'lumotlarini Redisga saqlaydi.
+    Ro"yxatdan o'tish ma'lumotlarini Redisga saqlaydi."
     TTL: REGISTRATION_REDIS_TTL (default 600 soniya = 10 daqiqa).
     """
     ttl = getattr(settings, "REGISTRATION_REDIS_TTL", 600)

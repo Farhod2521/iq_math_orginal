@@ -46,7 +46,7 @@ class CouponCreateSerializer(serializers.ModelSerializer):
 class ReferralCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Referral_Tutor_Student
-        fields = ['id']  # foydalanuvchi 'code' yubormaydi, avtomatik generatsiya bo'ladi
+        fields = ['id']  # foydalanuvchi 'code" yubormaydi, avtomatik generatsiya bo'ladi"
 
     def validate(self, attrs):
         request = self.context.get('request')

@@ -23,7 +23,7 @@ class Subscription(models.Model):
     is_paid = models.BooleanField(default=False, verbose_name="To'langanmi")
 
     def __str__(self):
-        return f"{self.student.full_name} - {'To'langan' if self.is_paid else 'Tekin'}"
+        return f"{self.student.full_name} - {"To'langan" if self.is_paid else 'Tekin'}"
 
     class Meta:
         verbose_name = "Obuna"

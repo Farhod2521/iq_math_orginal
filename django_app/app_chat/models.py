@@ -243,7 +243,7 @@ class Message(models.Model):
 class MessageReceipt(models.Model):
     STATUS_CHOICES = (
         ('delivered', 'Yetkazilgan'),
-        ('read', 'O'qilgan'),
+        ('read', "O'qilgan"),
     )
 
     message = models.ForeignKey(

@@ -71,7 +71,7 @@ class CreateTeacherCouponAPIView(APIView):
 
 class TeacherCouponStudentsAPIView(APIView):
     """
-    O'qituvchining promokodini ishlatgan o'quvchilar ro'yxati
+    O"qituvchining promokodini ishlatgan o'quvchilar ro'yxati"
     GET /api/v1/func_teacher/teacher/coupon-students/
     """
     permission_classes = [IsAuthenticated]

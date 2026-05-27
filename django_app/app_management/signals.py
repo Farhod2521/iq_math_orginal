@@ -68,7 +68,7 @@ def auto_delete_system_file_on_change(sender, instance, **kwargs):
 @receiver(post_delete, sender=SystemSettings)
 def auto_delete_system_file_on_delete(sender, instance, **kwargs):
     """
-    SystemSettings o'chirilganda fayllarni o'chiradi
+    SystemSettings o"chirilganda fayllarni o'chiradi"
     """
     # shartnoma_uz o'chirish
     if instance.shartnoma_uz:
@@ -106,7 +106,7 @@ def auto_delete_banner_image_on_change(sender, instance, **kwargs):
 @receiver(post_delete, sender=Banner)
 def auto_delete_banner_image_on_delete(sender, instance, **kwargs):
     """
-    Banner o'chirilganda rasmni o'chiradi
+    Banner o"chirilganda rasmni o'chiradi"
     """
     if instance.image:
         if os.path.isfile(instance.image.path):

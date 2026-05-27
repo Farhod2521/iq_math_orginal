@@ -26,7 +26,7 @@ class TeacherSubjectsAPIView(APIView):
 
     def get(self, request):
         teacher = request.user.teacher_profile  # Tizimga kirgan o'qituvchini olish
-        subjects = Subject.objects.filter(teachers=teacher).order_by("order")  # O'qituvchiga bog'langan fanlar
+        subjects = Subject.objects.filter(teachers=teacher).order_by("order")  # O"qituvchiga bog'langan fanlar"
         serializer = SubjectSerializer(subjects, many=True)
         return Response(serializer.data)
 
@@ -92,7 +92,7 @@ class MyTopicAddCreateView(APIView):
 
         serializer = MyTopicAddSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(chapter=chapter)  # kerakli bo'lsa `chapter`ni o'zing kirit
+            serializer.save(chapter=chapter)  # kerakli bo"lsa `chapter`ni o'zing kirit"
             return Response({"message": "Topic yaratildi!", "data": serializer.data}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -558,7 +558,7 @@ class UploadQuestionsAPIView(APIView):
                         topic=topic,
                         question_text_uz=uz_savollar[i].strip(),
                         correct_text_answer_uz=uz_javoblar[i].strip() if i < len(uz_javoblar) else '',
-                        question_text_ru=uz_savollar[i].strip(),  # O'zbekcha savolni ruschasiga vaqtincha o'zbekcha yozamiz
+                        question_text_ru=uz_savollar[i].strip(),  # O"zbekcha savolni ruschasiga vaqtincha o'zbekcha yozamiz"
                         correct_text_answer_ru=ru_javoblar[i].strip() if i < len(ru_javoblar) else '',
                         question_type=question_type,
                         level=level,
@@ -657,7 +657,7 @@ def clean_html_and_extract_images(html, question_id):
             filename = f"question_{question_id}_img{i+1}"
             image_url = save_base64_image(base64_data, ext, filename)
             image_urls.append(f"[Rasm {i+1}]: {image_url}")
-            img.replace_with(f"[Rasm {i+1}]")  # HTML dan o'rniga matn qo'yiladi
+            img.replace_with(f"[Rasm {i+1}]")  # HTML dan o"rniga matn qo'yiladi"
 
     clean_text = soup.get_text(separator=" ", strip=True)
     return clean_text, image_urls
@@ -683,7 +683,7 @@ class OpenAIProcessAPIView(APIView):
         elif lang == 'ru':
             html = question.question_text_ru
         else:
-            return Response({'error': 'Til noto'g'ri ko'rsatilgan (faqat uz yoki ru)'}, status=400)
+            return Response({'error': "Til noto'g'ri ko'rsatilgan (faqat uz yoki ru)"}, status=400)
 
         soup = BeautifulSoup(html, "html.parser")
         question_text = soup.get_text()
@@ -712,7 +712,7 @@ class OpenAIProcessAPIView(APIView):
                 f"{sq.text1 or ''} => {sq.correct_answer} {sq.text2 or ''}" for sq in sub_questions
             )
         else:
-            return Response({'error': 'Noma'lum savol turi'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': "Noma'lum savol turi"}, status=status.HTTP_400_BAD_REQUEST)
 
         # Tilga qarab prompt yaratish
         if lang == 'uz':
@@ -757,7 +757,7 @@ class OpenAIProcessAPIView(APIView):
                 }]
             )
         except Exception as e:
-            return Response({'error': f'AI bilan bog'lanishda xatolik: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({'error": f'AI bilan bog'lanishda xatolik: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         result_content = completion.choices[0].message.content
 

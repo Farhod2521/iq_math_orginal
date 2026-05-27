@@ -299,7 +299,7 @@ class MyReferralsAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        student = request.user.student_profile  # Agar sizda `user -> student` bog'lanishi bo'lsa
+        student = request.user.student_profile  # Agar sizda `user -> student` bog"lanishi bo'lsa"
         referrals = StudentReferral.objects.filter(referrer=student)
         serializer = ReferredStudentSerializer(referrals, many=True)
         return Response(serializer.data)

@@ -433,7 +433,7 @@ class ForgotPasswordView(APIView):
         can_send, remaining_time = UserSMSAttempt.can_send_sms(user)
         
         if not can_send:
-            remaining_time_str = str(remaining_time).split(".")[0]  # Qolgan vaqtni faqat to'liq soat, daqiqa va sekundlarda ko'rsatish
+            remaining_time_str = str(remaining_time).split(".")[0]  # Qolgan vaqtni faqat to"liq soat, daqiqa va sekundlarda ko'rsatish"
             return Response({
                 "error": f"Siz hozirda SMS kodini olish imkoniyatiga ega emassiz. Keyinroq urinib ko'ring.",
                 "retry_after": remaining_time_str
@@ -550,7 +550,7 @@ class ResendSMSCodeView(APIView):
         can_send, remaining_time = UserSMSAttempt.can_send_sms(user)
 
         if not can_send:
-            remaining_time_str = str(remaining_time).split(".")[0]  # Qolgan vaqtni faqat to'liq soat, daqiqa va sekundlarda ko'rsatish
+            remaining_time_str = str(remaining_time).split(".")[0]  # Qolgan vaqtni faqat to"liq soat, daqiqa va sekundlarda ko'rsatish"
             return Response({
                 "error": f"Siz hozirda SMS kodini olish imkoniyatiga ega emassiz. Keyinroq urinib ko'ring.",
                 "retry_after": remaining_time_str
@@ -1277,8 +1277,8 @@ class LogoutAPIView(APIView):
 class RemoveAccountAPIView(APIView):
     """
     Telegramdagiday akkountni ro'yxatdan olib tashlash.
-    session_id berilmasa — joriy token bo'yicha o'zi chiqadi.
-    session_id berilsa — o'sha akkountni o'chiradi (boshqa akkountni ham chiqarish mumkin).
+    session_id berilmasa — joriy token bo"yicha o'zi chiqadi."
+    session_id berilsa — o"sha akkountni o'chiradi (boshqa akkountni ham chiqarish mumkin)."
     """
 
     def post(self, request):
@@ -1361,7 +1361,7 @@ class UpdateTelegramIDAPIView(APIView):
         "phone": 998911234567,
         "telegram_id": 454465465
     }
-    phone bo'lsa telegram_id yangilanadi va foydalanuvchi role'iga qarab data qaytariladi
+    phone bo"lsa telegram_id yangilanadi va foydalanuvchi role'iga qarab data qaytariladi"
     """
 
     def post(self, request):
@@ -1498,7 +1498,7 @@ class ConfirmChildAPIView(APIView):
 
 class ParentChildrenListAPIView(APIView):
     """
-    Ota-ona qo'shgan va tasdiqlangan farzandlar ro'yxati
+    Ota-ona qo"shgan va tasdiqlangan farzandlar ro'yxati"
     """
     permission_classes = [IsAuthenticated]
 

@@ -200,7 +200,7 @@ class UniversalCouponTransactionAPIView(APIView):
 
     def get(self, request):
         user = request.user
-        role = user.role.lower()  # ✔️ TO'G'RI
+        role = user.role.lower()  # ✔️ TO"G'RI"
 
         result = []
 

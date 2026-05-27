@@ -25,7 +25,7 @@ def clean_latex(expr):
     expr = re.sub(r'\\left|\\right', '', expr)
     expr = re.sub(r'\\\(|\\\)|\\\[|\\\]', '', expr)
     expr = re.sub(r'\\frac\{([^}]+)\}\{([^}]+)\}', r'(\1)/(\2)', expr)
-    expr = re.sub(r'\\sqrt\{([^}]+)\}', r'sqrt(\1)', expr)
+    expr = re.sub(r'\\sqrt\{([^}]+)\}", r'sqrt(\1)", expr)
     expr = expr.replace(r'\le', '<=')
     expr = expr.replace(r'\ge', '>=')
     expr = expr.replace(r'\lt', '<')
@@ -48,7 +48,7 @@ def is_number(s):
 
 def advanced_math_check(student_answer, correct_answer):
     """
-    Bu funksiya studentning javobi bilan to'g'ri javobni solishtiradi.
+    Bu funksiya studentning javobi bilan to"g'ri javobni solishtiradi."
     Vergul va nuqta bilan yozilgan sonlarni teng deb hisoblaydi.
     """
     student = insert_multiplication(clean_latex(student_answer))
@@ -99,7 +99,7 @@ def clean_student_answers_list(answers_list):
 # 🔹 YANGI FUNKSIYA: Javoblarni solishtirish uchun maxsus funksiya
 def compare_answers(student_answer, correct_answer):
     """
-    Student va to'g'ri javoblarni solishtiradi
+    Student va to"g'ri javoblarni solishtiradi"
     """
     # 1. Avval clean_latex orqali tozalab olamiz
     student_clean = clean_latex(str(student_answer))

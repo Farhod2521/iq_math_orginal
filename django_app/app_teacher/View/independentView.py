@@ -255,7 +255,7 @@ class GetTelegramIDFromHelpRequestAPIView(APIView):
         try:
             help_request = TopicHelpRequestIndependent.objects.select_related('student__user').get(pk=pk)
         except TopicHelpRequestIndependent.DoesNotExist:
-            return Response({'detail': 'Bunday IDga ega so'rov topilmadi.'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'detail': "Bunday IDga ega so'rov topilmadi."}, status=status.HTTP_404_NOT_FOUND)
         
         telegram_id = help_request.student.user.telegram_id
         return Response({'telegram_id': telegram_id})
@@ -286,7 +286,7 @@ class TeacherTopicHelpRequestDeleteAPIView(APIView):
 
 class TeacherHelpRequestNotificationAPIView(APIView):
     """
-    Qo'ng'iroqcha uchun xabarlar soni, statistikasi va ularni 'Ko'rildi' deb belgilash
+    Qo"ng'iroqcha uchun xabarlar soni, statistikasi va ularni "Ko'rildi' deb belgilash
     """
     permission_classes = [IsAuthenticated]
 
@@ -364,5 +364,5 @@ class TeacherHelpRequestNotificationAPIView(APIView):
 
         return Response({
             "marked_as_seen": updated_count,
-            "message": f"{updated_count} ta murojaat 'Ko'rildi' holatiga o'tkazildi."
+            "message": f"{updated_count} ta murojaat "Ko'rildi" holatiga o'tkazildi."
         })

@@ -282,7 +282,7 @@ class UserSMSAttempt(models.Model):
     def register_attempt(user, wrong=False):
         """
         Foydalanuvchiga SMS yuborishdan oldin ushbu metod orqali urinishni ro'yxatga olish.
-        wrong=True bo'lsa, urinish noto'g'ri kiritilgan hisoblanadi.
+        wrong=True bo"lsa, urinish noto'g'ri kiritilgan hisoblanadi."
         """
         attempt = UserSMSAttempt.objects.create(user=user)
         if wrong:

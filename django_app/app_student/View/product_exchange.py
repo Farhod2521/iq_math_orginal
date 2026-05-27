@@ -124,7 +124,7 @@ class ProductExchangeListView(APIView):
             })
 
         return Response({
-            'message_uz': 'Siz almashtirgan mahsulotlar ro'yxati.',
+            'message_uz': "Siz almashtirgan mahsulotlar ro'yxati.",
             'message_ru': 'Список обменянных вами товаров.',
             'exchanges': data
         })

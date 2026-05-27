@@ -54,8 +54,8 @@ class TeacherFineAPIView(APIView):
         Body: { "student_id": 5, "fine_type": "score", "amount": 50, "reason": "AI dan ko'chirdi" }
 
     GET /api/v1/teacher/fine/
-        - teacher    → o'zi qo'ygan jarimalar
-        - superadmin → barcha jarimalar (kim qo'ydi, kimga qo'ydi)
+        - teacher    → o"zi qo'ygan jarimalar"
+        - superadmin → barcha jarimalar (kim qo"ydi, kimga qo'ydi)"
         - student    → o'zi olgan jarimalar
     """
     permission_classes = [IsAuthenticated]

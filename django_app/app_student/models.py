@@ -129,8 +129,8 @@ class StudentScoreLog(models.Model):
 
 class StudentDailyCoinLog(models.Model):
     """
-    Har bir o'quvchi uchun kunlik yig'ilgan tanga soni.
-    Admin panelda kun bo'yicha ko'rish va cheklash uchun ishlatiladi.
+    Har bir o"quvchi uchun kunlik yig'ilgan tanga soni."
+    Admin panelda kun bo"yicha ko'rish va cheklash uchun ishlatiladi."
     """
     student = models.ForeignKey(
         Student,
@@ -154,11 +154,11 @@ class StudentDailyCoinLog(models.Model):
 class ProductExchange(models.Model):
     DELIVERY_STATUS = (
         ('new', 'Yangi kelgan xabar'),
-        ('viewed', 'Ko'rildi'),
+        ('viewed', "Ko'rildi"),
         ('preparing', 'Tayyorlanmoqda'),
         ('delivering', 'Yetkazilmoqda'),
         ('delivered', 'Yetkazib berildi'),
-        ('confirmed', 'O'quvchi tasdiqladi'),
+        ('confirmed', "O'quvchi tasdiqladi"),
     )
 
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='product_exchanges')
@@ -191,9 +191,9 @@ class ProductExchange(models.Model):
 
 class SomTransferLog(models.Model):
     """
-    Student ↔ Student so'm o'tkazish logi.
+    Student ↔ Student so"m o'tkazish logi."
     - is_confirmed=False  →  OTP kutilmoqda (pending)
-    - is_confirmed=True   →  Tasdiqlangan, so'm o'tkazilgan
+    - is_confirmed=True   →  Tasdiqlangan, so"m o'tkazilgan"
     - is_expired=True     →  Muddati o'tgan yoki bekor qilingan
     """
     sender   = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='sent_transfers',    verbose_name="Yuboruvchi")
@@ -260,7 +260,7 @@ class TopicHelpRequestIndependent(models.Model):
 
 class StudentReferral(models.Model):
     referrer = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='referred_students')  # Taklif qilgan
-    referred = models.OneToOneField(Student, on_delete=models.CASCADE, related_name='referred_by')     # Yangi ro'yxatdan o'tgan
+    referred = models.OneToOneField(Student, on_delete=models.CASCADE, related_name='referred_by")     # Yangi ro'yxatdan o'tgan"
     referred_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
