@@ -260,7 +260,7 @@ class TopicHelpRequestIndependent(models.Model):
 
 class StudentReferral(models.Model):
     referrer = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='referred_students')  # Taklif qilgan
-    referred = models.OneToOneField(Student, on_delete=models.CASCADE, related_name='referred_by")     # Yangi ro'yxatdan o'tgan"
+    referred = models.OneToOneField(Student, on_delete=models.CASCADE, related_name='referred_by')     # Yangi ro'yxatdan o'tgan
     referred_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
