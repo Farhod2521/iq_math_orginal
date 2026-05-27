@@ -325,8 +325,8 @@ class TeacherFineLog(models.Model):
     Ball yoki tanga ayiriladi.
     """
     FINE_TYPE_CHOICES = [
-        (‘score’, ‘Ball’),
-        (‘coin’,  ‘Tanga’),
+        ('score', 'Ball'),
+        ('coin',  'Tanga'),
     ]
 
     given_by = models.ForeignKey(
