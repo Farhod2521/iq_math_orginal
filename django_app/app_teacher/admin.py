@@ -1,4 +1,4 @@
-from django.contrib import admin
+﻿from django.contrib import admin
 from modeltranslation.admin import TranslationAdmin, TranslationTabularInline
 from django.utils.safestring import mark_safe
 
@@ -62,7 +62,7 @@ class GeneratedQuestionOpenAiAdmin(admin.ModelAdmin):
     short_generated_text_ru.short_description = "Savol (RU)"
 
 
-# 🔹 Alohida model sifatida ham ko‘rish uchun (variantlar)
+# 🔹 Alohida model sifatida ham ko'rish uchun (variantlar)
 @admin.register(GeneratedChoiceOpenAi)
 class GeneratedChoiceOpenAiAdmin(admin.ModelAdmin):
     list_display = ("generated_question", "letter", "short_text_uz", "short_text_ru", "is_correct")
@@ -112,9 +112,9 @@ class SubjectCategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Subject)
 class SubjectAdmin(TranslationAdmin):
-    list_display = ('name_uz', 'name_ru', 'classes', 'category', 'order', 'active')  # ✅ active qo‘shildi
-    list_editable = ('order', 'active')  # ✅ admin ro‘yxat ichida tahrirlash mumkin
-    list_filter = ('category', 'classes', 'active')  # ✅ faollik bo‘yicha ham filtrlash
+    list_display = ('name_uz', 'name_ru', 'classes', 'category', 'order', 'active')  # ✅ active qo'shildi
+    list_editable = ('order', 'active')  # ✅ admin ro'yxat ichida tahrirlash mumkin
+    list_filter = ('category', 'classes', 'active')  # ✅ faollik bo'yicha ham filtrlash
     search_fields = ('name_uz', 'name_ru')
     raw_id_fields = ('teachers',)
     
@@ -127,7 +127,7 @@ class ChapterAdmin(TranslationAdmin):
 
 class QuestionInline(admin.TabularInline):  
     model = Question
-    extra = 1  # 1 dona bo‘sh forma qo‘shiladi
+    extra = 1  # 1 dona bo'sh forma qo'shiladi
     fields = ('question_text', 'level')
 
 
@@ -136,7 +136,7 @@ class TopicAdmin(TranslationAdmin):
     list_display = ('name_uz','name_ru', 'chapter')
     list_filter = ('chapter',)
     search_fields = ('name_uz','name_ru',)
-    inlines = [QuestionInline]  # `Question` qo‘shishni osonlashtiradi
+    inlines = [QuestionInline]  # `Question` qo'shishni osonlashtiradi
 
 
 class ChoiceInline(TranslationTabularInline):

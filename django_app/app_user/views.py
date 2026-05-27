@@ -1,4 +1,4 @@
-from rest_framework.views import APIView
+﻿from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from .serializers import (
@@ -50,7 +50,7 @@ class TeacherTelegramIdListView(APIView):
             Teacher.objects.values_list('user__telegram_id', flat=True)
         )
 
-        # 0 bo‘lganlarni chiqarib tashlash (xohlovga qarab)
+        # 0 bo'lganlarni chiqarib tashlash (xohlovga qarab)
         telegram_ids = [int(tg_id) for tg_id in telegram_ids if tg_id]
 
         return Response({"telegram_ids": telegram_ids})
@@ -382,7 +382,7 @@ class UniversalVerifySmsCodeAPIView(APIView):
             access_token.set_exp(lifetime=timedelta(hours=13))
             access_token["role"] = user.role
 
-            # profile_data ichidagi ma’lumotlarni token ichiga yozish
+            # profile_data ichidagi ma'lumotlarni token ichiga yozish
             for key, value in profile_data.items():
                 access_token[key] = value
 
@@ -420,10 +420,10 @@ class ForgotPasswordView(APIView):
         
         user = None
         if phone:
-            # Agar telefon raqami bo‘lsa, uni tekshiramiz
+            # Agar telefon raqami bo'lsa, uni tekshiramiz
             user = User.objects.filter(phone=phone).first()
         elif email:
-            # Agar email bo‘lsa, uni tekshiramiz
+            # Agar email bo'lsa, uni tekshiramiz
             user = User.objects.filter(email=email).first()
 
         if not user:
@@ -433,7 +433,7 @@ class ForgotPasswordView(APIView):
         can_send, remaining_time = UserSMSAttempt.can_send_sms(user)
         
         if not can_send:
-            remaining_time_str = str(remaining_time).split(".")[0]  # Qolgan vaqtni faqat to‘liq soat, daqiqa va sekundlarda ko‘rsatish
+            remaining_time_str = str(remaining_time).split(".")[0]  # Qolgan vaqtni faqat to'liq soat, daqiqa va sekundlarda ko'rsatish
             return Response({
                 "error": f"Siz hozirda SMS kodini olish imkoniyatiga ega emassiz. Keyinroq urinib ko'ring.",
                 "retry_after": remaining_time_str
@@ -550,7 +550,7 @@ class ResendSMSCodeView(APIView):
         can_send, remaining_time = UserSMSAttempt.can_send_sms(user)
 
         if not can_send:
-            remaining_time_str = str(remaining_time).split(".")[0]  # Qolgan vaqtni faqat to‘liq soat, daqiqa va sekundlarda ko‘rsatish
+            remaining_time_str = str(remaining_time).split(".")[0]  # Qolgan vaqtni faqat to'liq soat, daqiqa va sekundlarda ko'rsatish
             return Response({
                 "error": f"Siz hozirda SMS kodini olish imkoniyatiga ega emassiz. Keyinroq urinib ko'ring.",
                 "retry_after": remaining_time_str
@@ -624,7 +624,7 @@ class UserProfileAPIView(APIView):
                 diff_days = (end_date.date() - today).days
                 remaining_days = diff_days if diff_days > 0 else 0
 
-                # 🔥 OBUNA FAOLMI YO‘QMI — ASOSIY QISM
+                # 🔥 OBUNA FAOLMI YO'QMI — ASOSIY QISM
                 now = datetime.now(pytz.timezone("Asia/Ashgabat"))
                 if subscription.start_date <= now <= subscription.end_date:
                     is_subscription_active = True
@@ -743,7 +743,7 @@ class StudentProfileAPIView(APIView):
                 diff_days = (end_date.date() - today).days
                 remaining_days = diff_days if diff_days > 0 else 0
 
-                # 🔥 OBUNA FAOLMI YO‘QMI — ASOSIY QISM
+                # 🔥 OBUNA FAOLMI YO'QMI — ASOSIY QISM
                 now = datetime.now(pytz.timezone("Asia/Ashgabat"))
                 if subscription.start_date <= now <= subscription.end_date:
                     is_subscription_active = True
@@ -907,7 +907,7 @@ class UpdateStudentFieldAPIView(APIView):
         except Student.DoesNotExist:
             return Response({"error": "Student not found"}, status=404)
 
-        # Telefon, email, class_name ni o‘zgartirish mumkin emas
+        # Telefon, email, class_name ni o'zgartirish mumkin emas
         protected_fields = ['phone', 'email', 'class_name']
 
         for field, value in request.data.items():
@@ -998,14 +998,14 @@ class StudentsListView(APIView):
                 "last_login_time": last_login_formatted
             })
 
-            # Excel data — ID o‘rniga raqamlangan tartib
+            # Excel data — ID o'rniga raqamlangan tartib
             data_excel.append({
                 "ID": idx,
                 "F.I.Sh.": student.full_name,
                 "Telefon": student.user.phone,
                 "Sinf": student.class_name.classes.name if student.class_name else None,
-                "Ro‘yxatga olingan sana": student_date,
-                "Ro‘yxatga olingan vaqt": student_time,
+                "Ro'yxatga olingan sana": student_date,
+                "Ro'yxatga olingan vaqt": student_time,
                 "Oxirgi tizimga kirgan vaqt": last_login_formatted
             })
 
@@ -1155,7 +1155,7 @@ class LoginAPIView(APIView):
                     parent = Parent.objects.get(user=user)
                     ParentLoginHistory.objects.create(parent=parent)
                     access_token['parent_id'] = parent.id
-                    # Farzandlar ro‘yxatini ham yuborish mumkin
+                    # Farzandlar ro'yxatini ham yuborish mumkin
                     # children = parent.students.values("id", "full_name")
                     profile_data = {
                         "id": parent.id,
@@ -1210,7 +1210,7 @@ class LoginAPIView(APIView):
         return ip
 
     def get_device_info(self, request):
-        """Foydalanuvchining qurilmasi haqida ma’lumot olish"""
+        """Foydalanuvchining qurilmasi haqida ma'lumot olish"""
         user_agent_string = request.META.get("HTTP_USER_AGENT", "")
         user_agent = user_agents.parse(user_agent_string)
 
@@ -1238,12 +1238,12 @@ class LogoutDeviceAPIView(APIView):
         try:
             user_session = UserSession.objects.get(session_key=session_key)
 
-            # Django sessiyasini o‘chirish
+            # Django sessiyasini o'chirish
             if user_session.session_key:
                 from django.contrib.sessions.models import Session
                 Session.objects.filter(session_key=user_session.session_key).delete()
 
-            # UserSession jadvalidan ushbu qurilmani o‘chirish
+            # UserSession jadvalidan ushbu qurilmani o'chirish
             user_session.delete()
 
             return Response({"detail": "Qurilma tizimdan chiqarildi."}, status=status.HTTP_200_OK)
@@ -1269,7 +1269,7 @@ class LogoutAPIView(APIView):
         except Student.DoesNotExist:
             pass  # Teacher uchun yozmaslik mumkin
 
-        # Tokenni blacklist qilish yoki frontend tokenni o‘chirish logikasi shu yerda bo‘lishi mumkin
+        # Tokenni blacklist qilish yoki frontend tokenni o'chirish logikasi shu yerda bo'lishi mumkin
         return Response({"detail": "Chiqqan vaqtingiz yozildi."}, status=200)
 
 
@@ -1322,7 +1322,7 @@ class TelegramIDCheckAPIView(APIView):
                 serializer = TeacherSerializer(teacher)
                 return Response({"role": "teacher", "data": serializer.data})
             except Teacher.DoesNotExist:
-                return Response({"detail": "O‘qituvchi profili topilmadi."}, status=status.HTTP_404_NOT_FOUND)
+                return Response({"detail": "O'qituvchi profili topilmadi."}, status=status.HTTP_404_NOT_FOUND)
 
         elif user.role == 'student':
             try:
@@ -1330,7 +1330,7 @@ class TelegramIDCheckAPIView(APIView):
                 serializer = StudentSerializer(student)
                 return Response({"role": "student", "data": serializer.data})
             except Student.DoesNotExist:
-                return Response({"detail": "O‘quvchi profili topilmadi."}, status=status.HTTP_404_NOT_FOUND)
+                return Response({"detail": "O'quvchi profili topilmadi."}, status=status.HTTP_404_NOT_FOUND)
 
         return Response({"detail": "Bunday rol aniqlanmadi."}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -1339,9 +1339,9 @@ class ParentCreateAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
-        # Faqat teacher yoki admin qo‘shishi mumkin
+        # Faqat teacher yoki admin qo'shishi mumkin
         if request.user.role not in ['teacher', 'admin']:
-            return Response({"detail": "Sizda huquq yo‘q"}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"detail": "Sizda huquq yo'q"}, status=status.HTTP_403_FORBIDDEN)
 
         serializer = ParentCreateSerializer(data=request.data)
         if serializer.is_valid():
@@ -1413,14 +1413,14 @@ class UpdateTelegramIDAPIView(APIView):
 
 class AddChildRequestAPIView(APIView):
     """
-    Ota-ona farzand qo‘shishni boshlaydi (SMS yuboriladi)
+    Ota-ona farzand qo'shishni boshlaydi (SMS yuboriladi)
     """
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
         parent_user = request.user
         if parent_user.role != "parent":
-            return Response({"detail": "Faqat ota-onalar farzand qo‘sha oladi"}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"detail": "Faqat ota-onalar farzand qo'sha oladi"}, status=status.HTTP_403_FORBIDDEN)
 
         phone = request.data.get("phone")
         if not phone:
@@ -1476,14 +1476,14 @@ class ConfirmChildAPIView(APIView):
             return Response({"detail": "Student topilmadi"}, status=status.HTTP_404_NOT_FOUND)
 
         if student_user.sms_code != code:
-            return Response({"detail": "Kod noto‘g‘ri"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "Kod noto'g'ri"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Kod to‘g‘ri bo‘lsa → tasdiqlaymiz
+        # Kod to'g'ri bo'lsa → tasdiqlaymiz
         student_user.sms_code = None
         student_user.save()
 
         student = student_user.student_profile
-        # Parent bilan bog‘langan relationni topamiz
+        # Parent bilan bog'langan relationni topamiz
         relations = ParentStudentRelation.objects.filter(student=student, is_confirmed=False)
         if not relations.exists():
             return Response({"detail": "Tasdiqlashga kutayotgan ota-ona topilmadi"}, status=status.HTTP_404_NOT_FOUND)
@@ -1493,12 +1493,12 @@ class ConfirmChildAPIView(APIView):
             relation.is_confirmed = True
             relation.save()
 
-        return Response({"detail": "Farzand ota-onaga muvaffaqiyatli qo‘shildi"}, status=status.HTTP_200_OK)
+        return Response({"detail": "Farzand ota-onaga muvaffaqiyatli qo'shildi"}, status=status.HTTP_200_OK)
     
 
 class ParentChildrenListAPIView(APIView):
     """
-    Ota-ona qo‘shgan va tasdiqlangan farzandlar ro‘yxati
+    Ota-ona qo'shgan va tasdiqlangan farzandlar ro'yxati
     """
     permission_classes = [IsAuthenticated]
 

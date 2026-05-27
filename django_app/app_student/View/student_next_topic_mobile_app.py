@@ -1,4 +1,4 @@
-from rest_framework.views import APIView
+﻿from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.utils import timezone
@@ -19,11 +19,11 @@ class StudentNextTopicAPIView(APIView):
 
         # 🔒 Faqat student kirishi mumkin
         if not hasattr(user, 'student_profile'):
-            return Response({"detail": "Faqat o‘quvchilar uchun."}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"detail": "Faqat o'quvchilar uchun."}, status=status.HTTP_403_FORBIDDEN)
 
         student = user.student_profile
 
-        # 🧮 1️⃣ Talabaning ishlagan barcha mavzulari (completed_at bo‘yicha eng oxirgisi birinchi bo'ladi)
+        # 🧮 1️⃣ Talabaning ishlagan barcha mavzulari (completed_at bo'yicha eng oxirgisi birinchi bo'ladi)
         progresses = TopicProgress.objects.filter(user=student).select_related(
             "topic", "topic__chapter", "topic__chapter__subject"
         ).order_by('-completed_at', '-id')
@@ -34,13 +34,13 @@ class StudentNextTopicAPIView(APIView):
             last_topic = last_progress.topic
             subject = last_topic.chapter.subject  # 👈 Eng oxirgi ishlangan fan
 
-            # 🔍 Shu fan bo‘yicha keyingi mavzuni topamiz
+            # 🔍 Shu fan bo'yicha keyingi mavzuni topamiz
             chapter_topics = list(Topic.objects.filter(chapter=last_topic.chapter).order_by('order'))
 
             try:
                 current_index = chapter_topics.index(last_topic)
 
-                # Agar bu chapterdagi oxirgi mavzu bo‘lsa → keyingi chapterga o‘tamiz
+                # Agar bu chapterdagi oxirgi mavzu bo'lsa → keyingi chapterga o'tamiz
                 if current_index == len(chapter_topics) - 1:
                     next_chapter = Chapter.objects.filter(
                         subject=subject,
@@ -70,7 +70,7 @@ class StudentNextTopicAPIView(APIView):
                     "reminder_ru": f"По предмету {subject.name_ru} необходимо выполнить тему «{next_topic.name_ru}»!"
                 }, status=status.HTTP_200_OK)
 
-        # 2️⃣ Agar hech qaysi mavzu ishlanmagan bo‘lsa — ro‘yxatdan o‘tgan fani bo‘yicha birinchi mavzuni ko‘rsatamiz
+        # 2️⃣ Agar hech qaysi mavzu ishlanmagan bo'lsa — ro'yxatdan o'tgan fani bo'yicha birinchi mavzuni ko'rsatamiz
         if student.class_name:
             subject = student.class_name
             first_chapter = Chapter.objects.filter(subject=subject).order_by('order').first()
@@ -90,7 +90,7 @@ class StudentNextTopicAPIView(APIView):
                         "reminder_ru": f"По предмету {subject.name_ru} начните тему «{first_topic.name_ru}»!"
                     }, status=status.HTTP_200_OK)
 
-        # 3️⃣ Aks holda hech narsa yo‘q
+        # 3️⃣ Aks holda hech narsa yo'q
         return Response({"detail": "Hozircha hech qanday mavzu mavjud emas."}, status=status.HTTP_204_NO_CONTENT)
 
 
@@ -104,7 +104,7 @@ class StudentLastProgressAPIView(APIView):
         # ✅ Faqat student kirishi mumkin
         if not hasattr(user, 'student_profile'):
             return Response(
-                {"detail": "Faqat o‘quvchilar uchun."},
+                {"detail": "Faqat o'quvchilar uchun."},
                 status=status.HTTP_403_FORBIDDEN
             )
 
@@ -122,7 +122,7 @@ class StudentLastProgressAPIView(APIView):
             .order_by('-completed_at')[:5]
         )
 
-        # 🆕 Agar hali hech narsa ishlanmagan bo‘lsa — bo‘sh list
+        # 🆕 Agar hali hech narsa ishlanmagan bo'lsa — bo'sh list
         if not progresses.exists():
             return Response([], status=status.HTTP_200_OK)
 

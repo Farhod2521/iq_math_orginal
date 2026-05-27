@@ -1,4 +1,4 @@
-from django.contrib import admin
+﻿from django.contrib import admin
 from .models import (
     Motivation, SystemSettings, FAQ, Product, ReferralAndCouponSettings,
     Banner, Coupon_Tutor_Student, ConversionRate, SolutionStatus,
@@ -78,8 +78,8 @@ class MotivationAdmin(TranslationAdmin):
     )
 
     class Meta:
-        verbose_name = "Motivatsion so‘z"
-        verbose_name_plural = "Motivatsion so‘zlar"
+        verbose_name = "Motivatsion so'z"
+        verbose_name_plural = "Motivatsion so'zlar"
 
 
 
@@ -206,7 +206,7 @@ class FAQAdmin(admin.ModelAdmin):
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
         form.base_fields.pop('question', None)
-        form.base_fields.pop('answer', None)  # optional: agar 'answer' ham kerak bo‘lmasa
+        form.base_fields.pop('answer', None)  # optional: agar 'answer' ham kerak bo'lmasa
         return form
 
 @admin.register(ReferralAndCouponSettings)
@@ -309,7 +309,7 @@ class UploadSettingAdmin(admin.ModelAdmin):
                 "max_size_mb",
             )
         }),
-        ("Texnik ma’lumotlar", {
+        ("Texnik ma'lumotlar", {
             "fields": (
                 "max_size_bytes_display",
                 "updated_at",

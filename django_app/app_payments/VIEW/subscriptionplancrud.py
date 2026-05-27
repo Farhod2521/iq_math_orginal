@@ -1,4 +1,4 @@
-from rest_framework.views import APIView
+﻿from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import BasePermission
@@ -72,7 +72,7 @@ class SubscriptionPlanCRUDAPIView(APIView):
         plan = get_object_or_404(SubscriptionPlan, pk=pk)
         plan.delete()
         return Response(
-            {"message": "Tarif reja o‘chirildi"},
+            {"message": "Tarif reja o'chirildi"},
             status=status.HTTP_204_NO_CONTENT
         )
 
@@ -141,7 +141,7 @@ class SubscriptionCategoryCRUDAPIView(APIView):
         category = get_object_or_404(SubscriptionCategory, pk=pk)
         category.delete()
         return Response(
-            {"message": "Kategoriya o‘chirildi"},
+            {"message": "Kategoriya o'chirildi"},
             status=status.HTTP_204_NO_CONTENT
         )
 
@@ -209,7 +209,7 @@ class SubscriptionBenefitCRUDAPIView(APIView):
         benefit = get_object_or_404(SubscriptionBenefit, pk=pk)
         benefit.delete()
         return Response(
-            {"message": "Ustunlik o‘chirildi"},
+            {"message": "Ustunlik o'chirildi"},
             status=status.HTTP_204_NO_CONTENT
         )
 

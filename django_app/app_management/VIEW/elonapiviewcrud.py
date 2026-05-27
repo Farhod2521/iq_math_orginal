@@ -1,4 +1,4 @@
-from rest_framework.views import APIView
+﻿from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import BasePermission
@@ -29,7 +29,7 @@ class ElonCRUDAPIView(APIView):
             serializer = ElonSerializer(elon)
             return Response(serializer.data)
 
-        # 📌 Agar pk bo‘lmasa — hammasini list qiladi
+        # 📌 Agar pk bo'lmasa — hammasini list qiladi
         elons = Elon.objects.all().order_by("-created_at")
         serializer = ElonSerializer(elons, many=True)
         return Response(serializer.data)
@@ -48,7 +48,7 @@ class ElonCRUDAPIView(APIView):
             status=status.HTTP_201_CREATED
         )
 
-    # ✅ UPDATE (TO‘LIQ yoki QISMAN)
+    # ✅ UPDATE (TO'LIQ yoki QISMAN)
     def put(self, request, pk):
         try:
             elon = Elon.objects.get(pk=pk)
@@ -74,4 +74,4 @@ class ElonCRUDAPIView(APIView):
             return Response({"error": "E'lon topilmadi"}, status=404)
 
         elon.delete()
-        return Response({"message": "E'lon o‘chirildi"}, status=204)
+        return Response({"message": "E'lon o'chirildi"}, status=204)

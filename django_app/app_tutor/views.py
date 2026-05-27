@@ -1,4 +1,4 @@
-from rest_framework.views import APIView
+﻿from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import viewsets, permissions, status
 from django.utils import timezone
@@ -23,7 +23,7 @@ class TutorCouponViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         tutor = getattr(self.request.user, 'tutor_profile', None)
         if tutor is None:
-            raise PermissionDenied("Foydalanuvchi o‘qituvchi emas")
+            raise PermissionDenied("Foydalanuvchi o'qituvchi emas")
         return Coupon_Tutor_Student.objects.filter(created_by_tutor=tutor)
 
     def _generate_unique_coupon_code(self, length=6):
@@ -43,9 +43,9 @@ class TutorCouponViewSet(viewsets.ModelViewSet):
 
         tutor = getattr(request.user, 'tutor_profile', None)
         if tutor is None:
-            raise PermissionDenied("Foydalanuvchi o‘qituvchi emas")
+            raise PermissionDenied("Foydalanuvchi o'qituvchi emas")
 
-        # 🔹 Agar tutor allaqachon kupon yaratgan bo‘lsa — shuni qaytaramiz
+        # 🔹 Agar tutor allaqachon kupon yaratgan bo'lsa — shuni qaytaramiz
         existing_coupon = Coupon_Tutor_Student.objects.filter(created_by_tutor=tutor).first()
         if existing_coupon:
             return Response({
@@ -81,7 +81,7 @@ class TutorReferralViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         tutor = getattr(self.request.user, 'tutor_profile', None)
         if tutor is None:
-            raise PermissionDenied("Foydalanuvchi o‘qituvchi emas")
+            raise PermissionDenied("Foydalanuvchi o'qituvchi emas")
         return Referral_Tutor_Student.objects.filter(created_by_tutor=tutor)
 
     def _generate_unique_referral_code(self, length=6):
@@ -101,9 +101,9 @@ class TutorReferralViewSet(viewsets.ModelViewSet):
 
         tutor = getattr(request.user, 'tutor_profile', None)
         if tutor is None:
-            raise PermissionDenied("Foydalanuvchi o‘qituvchi emas")
+            raise PermissionDenied("Foydalanuvchi o'qituvchi emas")
 
-        # 🔹 Agar tutor allaqachon referal yaratgan bo‘lsa — shuni qaytaramiz
+        # 🔹 Agar tutor allaqachon referal yaratgan bo'lsa — shuni qaytaramiz
         existing_referral = Referral_Tutor_Student.objects.filter(created_by_tutor=tutor).first()
         if existing_referral:
             return Response({
@@ -139,7 +139,7 @@ class TutorCouponTransactionListAPIView(APIView):
     def get(self, request, *args, **kwargs):
         tutor = getattr(request.user, 'tutor_profile', None)
         if tutor is None:
-            return Response({"error": "Foydalanuvchi O‘qituvchi emas"}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"error": "Foydalanuvchi O'qituvchi emas"}, status=status.HTTP_403_FORBIDDEN)
 
         transactions = TutorCouponTransaction.objects.filter(tutor=tutor).select_related('student', 'coupon')
         serializer = TutorCouponTransactionSerializer(transactions, many=True)
@@ -152,9 +152,9 @@ class TutorReferralTransactionListAPIView(APIView):
     def get(self, request, *args, **kwargs):
         tutor = getattr(request.user, 'tutor_profile', None)
         if tutor is None:
-            return Response({"error": "Foydalanuvchi o‘qituvchi emas"}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"error": "Foydalanuvchi o'qituvchi emas"}, status=status.HTTP_403_FORBIDDEN)
 
-        # ✅ To‘g‘rilangan select_related
+        # ✅ To'g'rilangan select_related
         transactions = TutorReferralTransaction.objects.filter(
             tutor=tutor
         ).select_related('student', 'tutor')
@@ -171,7 +171,7 @@ class TutorEarningsAPIView(APIView):
     def get(self, request):
         tutor = getattr(request.user, 'tutor_profile', None)
         if tutor is None:
-            return Response({"error": "Foydalanuvchi o‘qituvchi emas"}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"error": "Foydalanuvchi o'qituvchi emas"}, status=status.HTTP_403_FORBIDDEN)
 
         # 1️⃣ Referal daromadlari
         referral_income = TutorReferralTransaction.objects.filter(tutor=tutor).aggregate(
@@ -218,7 +218,7 @@ class TutorWithdrawalCreateAPIView(APIView):
     def post(self, request):
         tutor = getattr(request.user, 'tutor_profile', None)
         if tutor is None:
-            return Response({"error": "Foydalanuvchi o‘qituvchi emas"}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"error": "Foydalanuvchi o'qituvchi emas"}, status=status.HTTP_403_FORBIDDEN)
 
         amount = request.data.get('amount')
         if not amount:
@@ -227,7 +227,7 @@ class TutorWithdrawalCreateAPIView(APIView):
         try:
             amount = float(amount)
         except ValueError:
-            return Response({"error": "Noto‘g‘ri summa formatida yuborildi"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Noto'g'ri summa formatida yuborildi"}, status=status.HTTP_400_BAD_REQUEST)
 
         # === 🔥 LIMIT SETTINGS — DEFAULT & CUSTOM ===
         settings = WithdrawalLimitSettings.objects.first()
@@ -236,21 +236,21 @@ class TutorWithdrawalCreateAPIView(APIView):
             min_limit = float(settings.min_amount)
             max_limit = float(settings.max_amount)
         else:
-            # 🔥 Model yo‘q bo‘lsa — default limitlar
+            # 🔥 Model yo'q bo'lsa — default limitlar
             min_limit = 1000
             max_limit = 100000
 
         # === Minimal tekshiruv ===
         if amount < min_limit:
             return Response(
-                {"error": f"Minimal yechib olish miqdori {min_limit} so‘m"},
+                {"error": f"Minimal yechib olish miqdori {min_limit} so'm"},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
         # === Maksimal tekshiruv ===
         if amount > max_limit:
             return Response(
-                {"error": f"Maksimal yechib olish miqdori {max_limit} so‘m"},
+                {"error": f"Maksimal yechib olish miqdori {max_limit} so'm"},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -276,11 +276,11 @@ class TutorWithdrawalCreateAPIView(APIView):
         # === Balans yetarlimi? ===
         if amount > balance:
             return Response(
-                {"error": "Balansda yetarli mablag‘ mavjud emas"},
+                {"error": "Balansda yetarli mablag' mavjud emas"},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # === Yechib olish so‘rovini yaratish ===
+        # === Yechib olish so'rovini yaratish ===
         withdrawal = TutorWithdrawal.objects.create(
             tutor=tutor,
             amount=amount,
@@ -288,7 +288,7 @@ class TutorWithdrawalCreateAPIView(APIView):
         )
 
         return Response({
-            "message": "Yechib olish so‘rovi yuborildi",
+            "message": "Yechib olish so'rovi yuborildi",
             "withdrawal_id": withdrawal.id
         }, status=status.HTTP_201_CREATED)
 
@@ -296,7 +296,7 @@ class TutorWithdrawalCreateAPIView(APIView):
 
 class TutorWithdrawalListAPIView(APIView):
     """
-    Tizimga kirgan o‘qituvchining barcha yechib olish so‘rovlari ro‘yxati
+    Tizimga kirgan o'qituvchining barcha yechib olish so'rovlari ro'yxati
     """
     permission_classes = [permissions.IsAuthenticated]
 
@@ -304,7 +304,7 @@ class TutorWithdrawalListAPIView(APIView):
         tutor = getattr(request.user, "tutor_profile", None)
         if not tutor:
             return Response(
-                {"detail": "Foydalanuvchi o‘qituvchi emas."},
+                {"detail": "Foydalanuvchi o'qituvchi emas."},
                 status=status.HTTP_403_FORBIDDEN
             )
 

@@ -1,4 +1,4 @@
-from rest_framework import serializers
+﻿from rest_framework import serializers
 from django_app.app_management.models import  Coupon_Tutor_Student, Referral_Tutor_Student
 from .models import TutorReferralTransaction, TutorCouponTransaction, TutorWithdrawal
 
@@ -30,9 +30,9 @@ class CouponCreateSerializer(serializers.ModelSerializer):
 
         tutor = getattr(request.user, 'tutor_profile', None)
         if tutor is None:
-            raise serializers.ValidationError({"error": "Foydalanuvchi o‘qituvchi emas"})
+            raise serializers.ValidationError({"error": "Foydalanuvchi o'qituvchi emas"})
 
-        # Har bir o‘qituvchiga faqat bitta kupon
+        # Har bir o'qituvchiga faqat bitta kupon
         if Coupon_Tutor_Student.objects.filter(created_by_tutor=tutor).exists():
             raise serializers.ValidationError({"error": "Siz allaqachon kupon yaratgansiz"})
 
@@ -46,7 +46,7 @@ class CouponCreateSerializer(serializers.ModelSerializer):
 class ReferralCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Referral_Tutor_Student
-        fields = ['id']  # foydalanuvchi 'code' yubormaydi, avtomatik generatsiya bo‘ladi
+        fields = ['id']  # foydalanuvchi 'code' yubormaydi, avtomatik generatsiya bo'ladi
 
     def validate(self, attrs):
         request = self.context.get('request')
@@ -56,7 +56,7 @@ class ReferralCreateSerializer(serializers.ModelSerializer):
 
         tutor = getattr(request.user, 'tutor_profile', None)
         if tutor is None:
-            raise serializers.ValidationError({"error": "Foydalanuvchi o‘qituvchi emas"})
+            raise serializers.ValidationError({"error": "Foydalanuvchi o'qituvchi emas"})
 
         # faqat bitta referal linkga ruxsat
         if Referral_Tutor_Student.objects.filter(created_by_tutor=tutor).exists():

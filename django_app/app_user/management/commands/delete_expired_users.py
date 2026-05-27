@@ -1,4 +1,4 @@
-from django.core.management.base import BaseCommand
+﻿from django.core.management.base import BaseCommand
 from django.utils import timezone
 from datetime import timedelta
 
@@ -40,7 +40,7 @@ class Command(BaseCommand):
             deleted_users += 1
 
         # -----------------------------------------------
-        # 4️⃣ PAYMENT — 10+ daqiqa pending bo‘lib qolganlar
+        # 4️⃣ PAYMENT — 10+ daqiqa pending bo'lib qolganlar
         # -----------------------------------------------
         failed_payments = expire_pending_payments()
 

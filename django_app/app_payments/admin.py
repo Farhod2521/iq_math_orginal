@@ -1,4 +1,4 @@
-from django.contrib import admin
+﻿from django.contrib import admin
 from .models import SubscriptionSetting, Subscription, Payment, SubscriptionPlan, SubscriptionCategory, SubscriptionBenefit
 from modeltranslation.admin import TranslationAdmin
 
@@ -83,7 +83,7 @@ class SubscriptionPlanAdmin(TranslationAdmin):
             )
         }),
         ("Kurs ustunliklari", {
-            "fields": ("benefits",)  # checkbox ko‘rinishida chiqadi
+            "fields": ("benefits",)  # checkbox ko'rinishida chiqadi
         }),
         ("Vaqt maʼlumotlari", {
             "fields": ("created_at", "updated_at")
@@ -137,7 +137,7 @@ class SubscriptionCategoryAdmin(TranslationAdmin):
                 "is_active",
             )
         }),
-        ("Vaqt ma’lumotlari", {
+        ("Vaqt ma'lumotlari", {
             "fields": (
                 "created_at",
             )

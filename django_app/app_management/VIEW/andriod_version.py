@@ -1,4 +1,4 @@
-from rest_framework.views import APIView
+﻿from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django_app.app_management.models import  AndroidVersion
@@ -6,7 +6,7 @@ from django_app.app_management.serializers import AndroidVersionSerializer
 
 class AndroidVersionAPIView(APIView):
     """
-    BAZADA FAQAT BITTA YOZUV BO‘LADI
+    BAZADA FAQAT BITTA YOZUV BO'LADI
     """
 
     def get_object(self):

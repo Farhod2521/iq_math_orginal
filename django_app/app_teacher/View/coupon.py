@@ -1,4 +1,4 @@
-from rest_framework.views import APIView
+﻿from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
@@ -20,7 +20,7 @@ class CreateTeacherCouponAPIView(APIView):
             teacher = user.teacher_profile
         except Teacher.DoesNotExist:
             return Response({
-                "error_uz": "O‘qituvchi profili mavjud emas.",
+                "error_uz": "O'qituvchi profili mavjud emas.",
                 "error_ru": "Профиль преподавателя не найден."
             }, status=status.HTTP_400_BAD_REQUEST)
 

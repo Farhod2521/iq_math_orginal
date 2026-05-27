@@ -1,4 +1,4 @@
-from rest_framework.views import APIView
+﻿from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, permissions
 from django_app.app_student.models import StudentScore, ConversionHistory
@@ -6,7 +6,7 @@ from django_app.app_student.models import StudentScore, ConversionHistory
 
 class ConvertView(APIView):
     """
-    Ball → Tanga → So‘m konvertatsiya tizimi
+    Ball → Tanga → So'm konvertatsiya tizimi
     """
     permission_classes = [permissions.IsAuthenticated]
 
@@ -25,12 +25,12 @@ class ConvertView(APIView):
             amount = int(amount)
             if amount <= 0:
                 return Response(
-                    {"error": "Miqdor musbat son bo‘lishi kerak."},
+                    {"error": "Miqdor musbat son bo'lishi kerak."},
                     status=status.HTTP_400_BAD_REQUEST
                 )
         except ValueError:
             return Response(
-                {"error": "Miqdor butun son bo‘lishi kerak."},
+                {"error": "Miqdor butun son bo'lishi kerak."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -46,11 +46,11 @@ class ConvertView(APIView):
             required_score = amount * 15
             if student_score.score < required_score:
                 return Response(
-                    {"error": f"Sizda yetarli ball yo‘q. Kamida {required_score} ball kerak."},
+                    {"error": f"Sizda yetarli ball yo'q. Kamida {required_score} ball kerak."},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            # balanslarni o‘zgartirish
+            # balanslarni o'zgartirish
             student_score.score -= required_score
             student_score.coin += amount
             student_score.save()
@@ -73,11 +73,11 @@ class ConvertView(APIView):
             }, status=status.HTTP_200_OK)
 
         elif convert_type == "SCORE_TO_SOM":
-            # Har 15 ball = 100 so‘m
+            # Har 15 ball = 100 so'm
             required_score = amount
             if student_score.score < required_score:
                 return Response(
-                    {"error": f"Sizda {required_score} ball yo‘q."},
+                    {"error": f"Sizda {required_score} ball yo'q."},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
@@ -104,16 +104,16 @@ class ConvertView(APIView):
             )
 
             return Response({
-                "message": f"{used_score} ball {som} so‘mga almashtirildi.",
+                "message": f"{used_score} ball {som} so'mga almashtirildi.",
                 "score": student_score.score,
                 "som": student_score.som
             }, status=status.HTTP_200_OK)
 
         elif convert_type == "COIN_TO_SOM":
-            # 1 tanga = 100 so‘m
+            # 1 tanga = 100 so'm
             if student_score.coin < amount:
                 return Response(
-                    {"error": f"Sizda {amount} tanga yo‘q."},
+                    {"error": f"Sizda {amount} tanga yo'q."},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
@@ -132,13 +132,13 @@ class ConvertView(APIView):
             )
 
             return Response({
-                "message": f"{amount} tanga {som} so‘mga almashtirildi.",
+                "message": f"{amount} tanga {som} so'mga almashtirildi.",
                 "coin": student_score.coin,
                 "som": student_score.som
             }, status=status.HTTP_200_OK)
 
         else:
             return Response(
-                {"error": "Konvertatsiya turi noto‘g‘ri."},
+                {"error": "Konvertatsiya turi noto'g'ri."},
                 status=status.HTTP_400_BAD_REQUEST
             )
