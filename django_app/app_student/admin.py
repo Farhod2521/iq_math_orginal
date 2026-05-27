@@ -15,7 +15,7 @@ admin.site.register(ProductExchange)
 class ChapterProgressAdmin(admin.ModelAdmin):
     list_display = ('user', 'chapter', 'progress_percentage', 'updated_at')
     list_filter = ('chapter', 'updated_at')
-    search_fields = ('user__full_name', 'chapter__name")  # Student modelda full_name bo'lsa"
+    search_fields = ('user__full_name', 'chapter__name')  # Student modelda full_name bo'lsa"
     ordering = ('-updated_at',)
 
 

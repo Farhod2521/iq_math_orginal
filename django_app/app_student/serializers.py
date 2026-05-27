@@ -636,8 +636,8 @@ class TopicHelpRequestIndependentDetailSerializer(serializers.ModelSerializer):
             'chapter_name_uz',
             'topic_name_uz',
             'result',
-            'status",  # 🔹 Qo'shildi"
-            'url",     # 🔹 Qo'shildi"
+            'status',
+            'url',
         ]
 
     def get_subject_name_uz(self, obj):

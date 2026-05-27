@@ -757,7 +757,7 @@ class OpenAIProcessAPIView(APIView):
                 }]
             )
         except Exception as e:
-            return Response({'error": f'AI bilan bog'lanishda xatolik: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({"error": f"AI bilan bog'lanishda xatolik: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         result_content = completion.choices[0].message.content
 
