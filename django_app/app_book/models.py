@@ -107,3 +107,36 @@ class BookPurchase(models.Model):
         verbose_name_plural = "Kitob xaridlari"
         unique_together = ('user', 'book')
         ordering = ['-purchased_at']
+
+
+class OfflineBookOrder(models.Model):
+    """Oflayn kitob buyurtmasi — yetkazib berish holati shu yerda saqlanadi."""
+    STATUS_CHOICES = [
+        ('new',        "Yangi buyurtma"),
+        ('seen',       "Admin ko'rdi"),
+        ('preparing',  "Tayyorlanmoqda"),
+        ('delivering', "Yetkazilmoqda"),
+        ('delivered',  "Yetkazib berildi"),
+    ]
+
+    purchase         = models.OneToOneField(
+        BookPurchase, on_delete=models.CASCADE,
+        related_name='offline_order', verbose_name="Xarid"
+    )
+    delivery_status  = models.CharField(
+        max_length=20, choices=STATUS_CHOICES,
+        default='new', verbose_name="Yetkazib berish holati"
+    )
+    delivery_address = models.TextField(verbose_name="Yetkazib berish manzili")
+    phone            = models.CharField(max_length=20, verbose_name="Telefon raqam")
+    admin_note       = models.TextField(blank=True, null=True, verbose_name="Admin izohi")
+    created_at       = models.DateTimeField(auto_now_add=True)
+    updated_at       = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.purchase.user.phone} — {self.purchase.book.name} [{self.delivery_status}]"
+
+    class Meta:
+        verbose_name = "Oflayn kitob buyurtmasi"
+        verbose_name_plural = "Oflayn kitob buyurtmalari"
+        ordering = ['-created_at']

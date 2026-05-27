@@ -1,5 +1,9 @@
 from django.urls import path
-from .views import CategoryCRUDAPIView, TagCRUDAPIView, BookCRUDAPIView, BookListForUserAPIView, BookPurchaseAPIView
+from .views import (
+    CategoryCRUDAPIView, TagCRUDAPIView, BookCRUDAPIView,
+    BookListForUserAPIView, BookPurchaseAPIView,
+    MyPurchasedBooksAPIView, AdminOfflineOrderAPIView,
+)
 
 urlpatterns = [
     # Categories
@@ -18,6 +22,13 @@ urlpatterns = [
     path('my-books/', BookListForUserAPIView.as_view(), name='book-my-list'),
     path('my-books/<int:pk>/', BookListForUserAPIView.as_view(), name='book-my-detail'),
 
-    # Sotib olish va xaridlar tarixi
+    # Sotib olish va xaridlar tarixi (admin + user)
     path('purchase/', BookPurchaseAPIView.as_view(), name='book-purchase'),
+
+    # Foydalanuvchi o'zi sotib olgan kitoblar (online/offline ajratilgan)
+    path('my-purchases/', MyPurchasedBooksAPIView.as_view(), name='book-my-purchases'),
+
+    # Admin: offline buyurtmalarni boshqarish
+    path('offline-orders/', AdminOfflineOrderAPIView.as_view(), name='book-offline-orders'),
+    path('offline-orders/<int:pk>/', AdminOfflineOrderAPIView.as_view(), name='book-offline-order-detail'),
 ]
