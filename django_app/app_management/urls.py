@@ -18,6 +18,7 @@ from .VIEW.product_supermentor_crud import ProductCRUDAPIView
 from .VIEW.conversion_rate_crud import ConversionRateCRUDAPIView
 from .VIEW.solution_status_crud import SolutionStatusCRUDAPIView
 from .VIEW.upload_setting_crud import UploadSettingCRUDAPIView
+from .VIEW.logentry_crud import LogEntryCRUDAPIView
 urlpatterns = [
     path('banner/', BannerListView.as_view(), name='system-settings-list'),
     path('faqs/', FAQListView.as_view(), name='faq-list'),
@@ -76,4 +77,7 @@ urlpatterns = [
 
     path("superadmin/upload-setting/", UploadSettingCRUDAPIView.as_view()),
     path("superadmin/upload-setting/<int:pk>/", UploadSettingCRUDAPIView.as_view()),
+
+    path("superadmin/log-entries/", LogEntryCRUDAPIView.as_view()),
+    path("superadmin/log-entries/<int:pk>/", LogEntryCRUDAPIView.as_view()),
 ]

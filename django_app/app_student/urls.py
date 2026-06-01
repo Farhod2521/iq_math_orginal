@@ -19,6 +19,7 @@ from .View.mobile_app import StudentRatingAPIView, WeeklyStudyStatsAPIView, Stud
 from .View.daily_Math_Pop_Up import  SubmitQuickMathAnswerAPIView, QuickMathQuestionAPIView
 from .View.som_transfer import SomTransferRequestAPIView, SomTransferConfirmAPIView, SomTransferHistoryAPIView, StudentByIdentificationAPIView
 from .View.score_log_api import StudentScoreLogAPIView, MyScoreLogAPIView
+from .View.superadmin_diagnost_crud import SuperAdminDiagnostCRUDAPIView
 
 urlpatterns = [
     path('subject/name-list/', SubjectNameListAPIView.as_view(), name='subject-name-list'),
@@ -99,4 +100,8 @@ urlpatterns = [
     path("score-log/", StudentScoreLogAPIView.as_view(), name="score-log-list"),
     path("score-log/<int:pk>/", StudentScoreLogAPIView.as_view(), name="score-log-detail"),
     path("my-score-log/", MyScoreLogAPIView.as_view(), name="my-score-log"),
+
+    ###############################################  SUPERADMIN DIAGNOST  ##################################################
+    path("superadmin/diagnost/", SuperAdminDiagnostCRUDAPIView.as_view(), name="superadmin-diagnost-list"),
+    path("superadmin/diagnost/<int:pk>/", SuperAdminDiagnostCRUDAPIView.as_view(), name="superadmin-diagnost-detail"),
 ]
