@@ -11,7 +11,7 @@ from .views import (
        AdminResetUserPasswordAPIView
 
 )
-from .all_role_listview import All_Role_ListView, DeleteStudentProfileAPIView, ParentDetailAPIView
+from .all_role_listview import All_Role_ListView, DeleteStudentProfileAPIView, ParentDetailAPIView, SuperAdminDeleteUserAPIView
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
@@ -84,6 +84,9 @@ urlpatterns = [
 
     # FCM Token
     path("user/update-fcm-token/", UpdateFCMTokenAPIView.as_view(), name="update-fcm-token"),
+
+    # SuperAdmin — user o'chirish
+    path("superadmin/delete-user/<int:user_id>/", SuperAdminDeleteUserAPIView.as_view(), name="superadmin-delete-user"),
 
     # Bloklash / blokdan chiqarish (faqat superadmin)
     path("user/block/", BlockUserAPIView.as_view(), name="block-user"),

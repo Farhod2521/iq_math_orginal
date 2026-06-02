@@ -569,3 +569,53 @@ class DeleteStudentProfileAPIView(APIView):
             {"detail": "Talaba profili va foydalanuvchi akkaunti muvaffaqiyatli o'chirildi."},
             status=status.HTTP_200_OK
         )
+
+
+class SuperAdminDeleteUserAPIView(APIView):
+    """
+    DELETE /api/v1/auth/superadmin/delete-user/<user_id>/
+    Superadmin yoki admin istalgan userni user_id orqali o'chiradi.
+    User o'chirilsa, CASCADE tufayli Student/Teacher/Tutor profili ham o'chadi.
+    """
+
+    class IsSuperAdminOrAdmin(IsAuthenticated.__class__):
+        def has_permission(self, request, _view):
+            return (
+                request.user
+                and request.user.is_authenticated
+                and getattr(request.user, "role", None) in ("superadmin", "admin")
+            )
+
+    permission_classes = [IsSuperAdminOrAdmin]
+
+    def delete(self, request, user_id):
+        # O'zini o'chirmaslik
+        if request.user.id == user_id:
+            return Response(
+                {"error": "O'z akkountingizni bu endpoint orqali o'chira olmaysiz."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            user = User.objects.get(pk=user_id)
+        except User.DoesNotExist:
+            return Response(
+                {"error": f"ID={user_id} bo'lgan foydalanuvchi topilmadi."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Superadmin faqat admin o'chira olmaydi — himoya
+        if user.role in ("superadmin",) and request.user.role != "superadmin":
+            return Response(
+                {"error": "Superadmin foydalanuvchini faqat superadmin o'chira oladi."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        role = user.role
+        phone = user.phone
+        user.delete()  # CASCADE → profil ham o'chadi
+
+        return Response(
+            {"success": f"{role} ({phone}) foydalanuvchisi to'liq o'chirildi."},
+            status=status.HTTP_200_OK,
+        )
