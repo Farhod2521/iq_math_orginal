@@ -4,6 +4,7 @@ TutorCouponTransactionListAPIView, TutorReferralTransactionListAPIView,
 TutorCouponViewSet, TutorReferralViewSet, TutorEarningsAPIView, TutorWithdrawalCreateAPIView,
 TutorWithdrawalListAPIView, TutorDetailAPIView
 )
+from .withdrawal_settings_crud import WithdrawalLimitSettingsCRUDAPIView
 
 
 from rest_framework.routers import DefaultRouter
@@ -20,4 +21,8 @@ urlpatterns = [
     path('tutor/payments/', TutorEarningsAPIView.as_view(), name='tutor-earnings'),
     path('tutor/withdraw/', TutorWithdrawalCreateAPIView.as_view(), name='tutor-withdraw'),
     path('tutor/withdrawals/list/', TutorWithdrawalListAPIView.as_view(), name='tutor-withdrawal-list'),
+
+    # SuperAdmin — WithdrawalLimitSettings CRUD
+    path('superadmin/withdrawal-settings/', WithdrawalLimitSettingsCRUDAPIView.as_view(), name='withdrawal-settings-list'),
+    path('superadmin/withdrawal-settings/<int:pk>/', WithdrawalLimitSettingsCRUDAPIView.as_view(), name='withdrawal-settings-detail'),
 ]+ router.urls
