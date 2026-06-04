@@ -5,6 +5,7 @@ from rest_framework.permissions import BasePermission
 from django.shortcuts import get_object_or_404
 
 from django_app.app_student.models import Diagnost_Student
+from django_app.app_student.paginations import StandardResultsSetPagination
 
 
 class IsSuperAdminOrAdmin(BasePermission):
@@ -18,15 +19,17 @@ class IsSuperAdminOrAdmin(BasePermission):
 def _serialize_diagnost(d):
     return {
         "id": d.id,
-        "student_id": d.student.id,
-        "student_name": d.student.full_name,
-        "subject_id": d.subject.id if d.subject else None,
+        "student_id": d.student_id,
+        "student_name": d.student.full_name if d.student else None,
+        "subject_id": d.subject_id,
         "subject_name_uz": d.subject.name_uz if d.subject else None,
         "subject_name_ru": d.subject.name_ru if d.subject else None,
         "level": d.level,
         "result": d.result,
-        "chapters": list(d.chapters.values_list("id", flat=True)),
-        "topics": list(d.topic.values_list("id", flat=True)),
+        # prefetch_related keshidan o'qiymiz — .values_list() yangi query yuborib
+        # N+1 muammosini keltirib chiqaradi, shuning uchun .all() ishlatamiz
+        "chapters": [c.id for c in d.chapters.all()],
+        "topics": [t.id for t in d.topic.all()],
         "create_date": (
             d.create_date.strftime("%d/%m/%Y %H:%M") if d.create_date else None
         ),
@@ -79,8 +82,11 @@ class SuperAdminDiagnostCRUDAPIView(APIView):
         if search:
             qs = qs.filter(student__full_name__icontains=search)
 
-        results = [_serialize_diagnost(d) for d in qs]
-        return Response({"count": len(results), "results": results})
+        # Pagination: ?page=1&page_size=10
+        paginator = StandardResultsSetPagination()
+        page = paginator.paginate_queryset(qs, request, view=self)
+        results = [_serialize_diagnost(d) for d in page]
+        return paginator.get_paginated_response(results)
 
     # ── DELETE ────────────────────────────────────────
     def delete(self, request, pk):
