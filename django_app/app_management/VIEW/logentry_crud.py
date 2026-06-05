@@ -74,15 +74,39 @@ class LogEntryCRUDAPIView(APIView):
         if content_type:
             qs = qs.filter(content_type__model__icontains=content_type)
 
-        # Limit: ?limit=50 (default 100)
+        # Pagination: ?page=1&limit=10
         try:
-            limit = int(request.query_params.get("limit", 100))
+            page = max(1, int(request.query_params.get("page", 1)))
         except ValueError:
-            limit = 100
-        qs = qs[:limit]
+            page = 1
+        try:
+            limit = max(1, int(request.query_params.get("limit", 10)))
+        except ValueError:
+            limit = 10
 
-        results = [_serialize(log) for log in qs]
-        return Response({"count": len(results), "results": results})
+        total_count = qs.count()          # filter dan keyin, limit dan oldin
+        offset = (page - 1) * limit
+        page_qs = qs[offset: offset + limit]
+
+        # next / previous URL larini qurish
+        def build_url(p):
+            params = request.query_params.copy()
+            params["page"] = p
+            params["limit"] = limit
+            return request.build_absolute_uri(
+                "?" + "&".join(f"{k}={v}" for k, v in params.items())
+            )
+
+        next_url = build_url(page + 1) if offset + limit < total_count else None
+        prev_url = build_url(page - 1) if page > 1 else None
+
+        results = [_serialize(log) for log in page_qs]
+        return Response({
+            "count": total_count,
+            "next": next_url,
+            "previous": prev_url,
+            "results": results,
+        })
 
     # ── CREATE ────────────────────────────────────────
     def post(self, request, pk=None):
