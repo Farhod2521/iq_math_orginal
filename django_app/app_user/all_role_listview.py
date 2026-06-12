@@ -578,7 +578,7 @@ class SuperAdminDeleteUserAPIView(APIView):
     User o'chirilsa, CASCADE tufayli Student/Teacher/Tutor profili ham o'chadi.
     """
 
-    class IsSuperAdminOrAdmin(IsAuthenticated.__class__):
+    class IsSuperAdminOrAdmin(IsAuthenticated):
         def has_permission(self, request, _view):
             return (
                 request.user
