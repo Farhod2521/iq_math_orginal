@@ -1,5 +1,5 @@
 ﻿from django.contrib import admin
-from .models import Diagnost_Student, TopicProgress, StudentScore, StudentScoreLog, ChapterProgress, ProductExchange, TopicHelpRequestIndependent, StudentDailyCoinLog
+from .models import Diagnost_Student, TopicProgress, StudentScore, StudentScoreLog, ChapterProgress, ProductExchange, TopicHelpRequestIndependent, StudentDailyCoinLog, ConversionHistory
 from modeltranslation.admin import TranslationAdmin
 
 admin.site.register(Diagnost_Student)
@@ -75,6 +75,15 @@ class StudentDailyCoinLogAdmin(admin.ModelAdmin):
 
 
 
+
+
+@admin.register(ConversionHistory)
+class ConversionHistoryAdmin(admin.ModelAdmin):
+    list_display = ('student', 'conversion_type', 'amount_from', 'amount_to', 'som_after', 'status', 'created_at')
+    list_filter = ('conversion_type', 'status', 'created_at')
+    search_fields = ('student__user__username', 'student__user__phone')
+    ordering = ('-created_at',)
+    readonly_fields = ('created_at',)
 
 
 @admin.register(TopicHelpRequestIndependent)
