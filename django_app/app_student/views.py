@@ -504,6 +504,29 @@ class CheckAnswersAPIView(APIView):
         with transaction.atomic():
             return self._handle(request, serializer)
 
+    def _is_topic_accessible(self, student, topic):
+        if TopicProgress.objects.filter(user=student, topic=topic).exists():
+            return True
+
+        chapter_topic_ids = list(
+            Topic.objects.filter(chapter=topic.chapter).order_by('order').values_list('id', flat=True)
+        )
+
+        try:
+            current_index = chapter_topic_ids.index(topic.id)
+        except ValueError:
+            return False
+
+        if current_index == 0:
+            return True
+
+        prev_topic_id = chapter_topic_ids[current_index - 1]
+        try:
+            prev_progress = TopicProgress.objects.get(user=student, topic_id=prev_topic_id)
+            return prev_progress.score >= 80
+        except TopicProgress.DoesNotExist:
+            return False
+
     def _handle(self, request, serializer):
         # Admin yoki Teacher bo'lsa student sifatida log yozilmaydi
         is_staff_user = request.user.role in ['teacher', 'admin']
@@ -521,6 +544,21 @@ class CheckAnswersAPIView(APIView):
                 )
             except Student.DoesNotExist:
                 return Response({"message": "Student topilmadi"}, status=404)
+
+            # Topic lock tekshiruvi
+            all_answers = (
+                serializer.validated_data.get('text_answers', []) +
+                serializer.validated_data.get('choice_answers', []) +
+                serializer.validated_data.get('composite_answers', [])
+            )
+            if all_answers:
+                first_question_id = all_answers[0].get('question_id')
+                first_question = Question.objects.filter(id=first_question_id).select_related('topic__chapter').first()
+                if first_question and not self._is_topic_accessible(student_instance, first_question.topic):
+                    return Response(
+                        {"message": "Bu mavzu hali ochilmagan. Oldingi mavzuni 80% dan yuqori ball bilan yakunlang."},
+                        status=403
+                    )
 
         correct_answers = 0
         total_answers = 0
