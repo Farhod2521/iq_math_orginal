@@ -168,32 +168,39 @@ class SubjectListWithMasteryAPIView(APIView):
         for subject in subjects:
             all_topic_count = 0
             mastered_topic_count = 0
+            attempted_topic_count = 0
 
             for chapter in subject.chapters.all():
                 for topic in chapter.topics.all():
                     all_topic_count += 1
                     progress = TopicProgress.objects.filter(user=student, topic=topic).first()
-                    if progress and progress.score >= 80:
-                        mastered_topic_count += 1
+                    if progress:
+                        attempted_topic_count += 1
+                        if progress.score >= 80:
+                            mastered_topic_count += 1
 
             if all_topic_count == 0:
                 continue
 
-            mastery_percent = round((mastered_topic_count / all_topic_count) * 100, 1)
+            # Hech bo'lmasa bitta topic ishlangan bo'lsa ko'rsatamiz
+            if attempted_topic_count == 0:
+                continue
 
-            # 🔒 Faqat mastery > 0 bo'lsa, ro'yxatga qo'shamiz
-            if mastery_percent > 0:
-                result.append({
-                    "id": subject.id,
-                    "name_uz": subject.name,  # Agar Translation ishlatilsa: subject.name_uz
-                    "name_ru": subject.name,  # Agar Translation ishlatilsa: subject.name_ru
-                    "class_name": subject.classes.name if subject.classes else "",
-                    "class_uz": f"{subject.classes.name}-sinf {subject.name_uz}" if subject.classes else subject.name_uz,
-                    "class_ru": f"{subject.classes.name}-класс {subject.name_ru}" if subject.classes else subject.name_ru,
-                    "image_uz": subject.image_uz.url if subject.image_uz else None,
-                    "image_ru": subject.image_ru.url if subject.image_ru else None,
-                    "mastery_percent": mastery_percent
-                })
+            mastery_percent = round((mastered_topic_count / all_topic_count) * 100, 1)
+            progress_percent = round((attempted_topic_count / all_topic_count) * 100, 1)
+
+            result.append({
+                "id": subject.id,
+                "name_uz": subject.name_uz,
+                "name_ru": subject.name_ru,
+                "class_name": subject.classes.name if subject.classes else "",
+                "class_uz": f"{subject.classes.name}-sinf {subject.name_uz}" if subject.classes else subject.name_uz,
+                "class_ru": f"{subject.classes.name}-класс {subject.name_ru}" if subject.classes else subject.name_ru,
+                "image_uz": subject.image_uz.url if subject.image_uz else None,
+                "image_ru": subject.image_ru.url if subject.image_ru else None,
+                "mastery_percent": mastery_percent,
+                "progress_percent": progress_percent,
+            })
 
         return Response(result)
 
