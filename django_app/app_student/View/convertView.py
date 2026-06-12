@@ -1,20 +1,21 @@
-﻿from rest_framework.views import APIView
+from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, permissions
 from django_app.app_student.models import StudentScore, ConversionHistory
+from django_app.app_management.models import ConversionRate
 
 
 class ConvertView(APIView):
     """
     Ball → Tanga → So'm konvertatsiya tizimi
+    Kurs: ConversionRate modelidan o'qiladi (hardcoded emas)
     """
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
         convert_type = request.data.get("type")
-        amount = request.data.get("amount")  # foydalanuvchi kiritgan miqdor (int)
+        amount = request.data.get("amount")
 
-        # 🔹 1. Kiritilgan ma'lumotlarni tekshiramiz
         if not convert_type or amount is None:
             return Response(
                 {"error": "type va amount kiritilishi shart."},
@@ -34,28 +35,35 @@ class ConvertView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # 🔹 2. Talabani topamiz
+        # Kursni bazadan o'qiymiz
+        rate = ConversionRate.objects.last()
+        if not rate:
+            return Response(
+                {"error": "Konversiya kursi sozlanmagan. Admin bilan bog'laning."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE
+            )
+
         try:
             student_score = StudentScore.objects.get(student__user=request.user)
         except StudentScore.DoesNotExist:
             return Response({"error": "Talaba topilmadi."}, status=status.HTTP_404_NOT_FOUND)
 
-        # 🔹 3. Konvertatsiya logikasi
+        # coin_to_score: 1 tangaga necha ball kerak
+        # coin_to_money: 1 tanga necha so'mga teng
+
         if convert_type == "SCORE_TO_COIN":
-            # 15 ball = 1 tanga
-            required_score = amount * 15
+            # amount = nechta tanga olmoqchi
+            required_score = amount * rate.coin_to_score
             if student_score.score < required_score:
                 return Response(
-                    {"error": f"Sizda yetarli ball yo'q. Kamida {required_score} ball kerak."},
+                    {"error": f"Yetarli ball yo'q. {amount} tanga uchun {required_score} ball kerak, sizda {student_score.score} ball bor."},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            # balanslarni o'zgartirish
             student_score.score -= required_score
             student_score.coin += amount
             student_score.save()
 
-            # tarixga yozish
             ConversionHistory.objects.create(
                 student=student_score.student,
                 conversion_type="SCORE_TO_COIN",
@@ -66,30 +74,31 @@ class ConvertView(APIView):
             )
 
             return Response({
-                "message": f"{required_score} ball {amount} tangaga almashtirildi.",
+                "message": f"{required_score} ball → {amount} tanga",
                 "score": student_score.score,
                 "coin": student_score.coin,
                 "som": student_score.som
             }, status=status.HTTP_200_OK)
 
         elif convert_type == "SCORE_TO_SOM":
-            # Har 15 ball = 100 so'm
-            required_score = amount
-            if student_score.score < required_score:
+            # amount = nechta ball sarflamoqchi
+            if student_score.score < amount:
                 return Response(
-                    {"error": f"Sizda {required_score} ball yo'q."},
+                    {"error": f"Yetarli ball yo'q. Sizda {student_score.score} ball bor."},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            # konvertatsiya hisoblash
-            som = (required_score // 15) * 100
-            if som == 0:
+            # Faqat to'liq tangaga aylantiriluvchi ballni hisoblaymiz
+            coins = amount // rate.coin_to_score
+            if coins == 0:
                 return Response(
-                    {"error": "Konvertatsiya uchun kamida 15 ball kerak."},
+                    {"error": f"Kamida {rate.coin_to_score} ball kerak."},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            used_score = (required_score // 15) * 15
+            used_score = coins * rate.coin_to_score
+            som = int(coins * rate.coin_to_money)
+
             student_score.score -= used_score
             student_score.som += som
             student_score.save()
@@ -104,20 +113,20 @@ class ConvertView(APIView):
             )
 
             return Response({
-                "message": f"{used_score} ball {som} so'mga almashtirildi.",
+                "message": f"{used_score} ball → {som} so'm",
                 "score": student_score.score,
                 "som": student_score.som
             }, status=status.HTTP_200_OK)
 
         elif convert_type == "COIN_TO_SOM":
-            # 1 tanga = 100 so'm
+            # amount = nechta tanga sarflamoqchi
             if student_score.coin < amount:
                 return Response(
-                    {"error": f"Sizda {amount} tanga yo'q."},
+                    {"error": f"Yetarli tanga yo'q. Sizda {student_score.coin} tanga bor."},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            som = amount * 100
+            som = int(amount * rate.coin_to_money)
             student_score.coin -= amount
             student_score.som += som
             student_score.save()
@@ -132,13 +141,13 @@ class ConvertView(APIView):
             )
 
             return Response({
-                "message": f"{amount} tanga {som} so'mga almashtirildi.",
+                "message": f"{amount} tanga → {som} so'm",
                 "coin": student_score.coin,
                 "som": student_score.som
             }, status=status.HTTP_200_OK)
 
         else:
             return Response(
-                {"error": "Konvertatsiya turi noto'g'ri."},
+                {"error": "Konvertatsiya turi noto'g'ri. SCORE_TO_COIN | SCORE_TO_SOM | COIN_TO_SOM"},
                 status=status.HTTP_400_BAD_REQUEST
             )
