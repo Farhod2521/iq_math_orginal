@@ -20,6 +20,7 @@ from .View.daily_Math_Pop_Up import  SubmitQuickMathAnswerAPIView, QuickMathQues
 from .View.som_transfer import SomTransferRequestAPIView, SomTransferConfirmAPIView, SomTransferHistoryAPIView, StudentByIdentificationAPIView
 from .View.score_log_api import StudentScoreLogAPIView, MyScoreLogAPIView
 from .View.superadmin_diagnost_crud import SuperAdminDiagnostCRUDAPIView
+from .View.conversion_history_crud import ConversionHistoryCRUDAPIView
 
 urlpatterns = [
     path('subject/name-list/', SubjectNameListAPIView.as_view(), name='subject-name-list'),
@@ -104,4 +105,8 @@ urlpatterns = [
     ###############################################  SUPERADMIN DIAGNOST  ##################################################
     path("superadmin/diagnost/", SuperAdminDiagnostCRUDAPIView.as_view(), name="superadmin-diagnost-list"),
     path("superadmin/diagnost/<int:pk>/", SuperAdminDiagnostCRUDAPIView.as_view(), name="superadmin-diagnost-detail"),
+
+    ###############################################  CONVERSION HISTORY  ##################################################
+    path("conversion-history/", ConversionHistoryCRUDAPIView.as_view(), name="conversion-history-list"),
+    path("conversion-history/<int:pk>/", ConversionHistoryCRUDAPIView.as_view(), name="conversion-history-detail"),
 ]
