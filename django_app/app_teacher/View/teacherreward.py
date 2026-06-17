@@ -108,17 +108,61 @@ class TeacherRewardLogSuperAdminAPIView(APIView):
     permission_classes = [IsSuperAdminOnly]
 
     def get(self, request, pk=None):
-        if pk is None:
-            reward_logs = TeacherRewardLog.objects.select_related(
-                "teacher",
-                "student",
-            ).order_by("-created_at")
-            serializer = TeacherRewardLogDetailSerializer(reward_logs, many=True)
+        if pk is not None:
+            reward_log = get_object_or_404(TeacherRewardLog, pk=pk)
+            serializer = TeacherRewardLogDetailSerializer(reward_log)
             return Response(serializer.data, status=status.HTTP_200_OK)
 
-        reward_log = get_object_or_404(TeacherRewardLog, pk=pk)
-        serializer = TeacherRewardLogDetailSerializer(reward_log)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        qs = TeacherRewardLog.objects.select_related("teacher__user", "student__user").order_by("-created_at")
+
+        # --- FILTER ---
+        teacher_id = request.query_params.get("teacher_id")
+        student_id = request.query_params.get("student_id")
+        reward_type = request.query_params.get("reward_type")
+        date_from   = request.query_params.get("date_from")   # YYYY-MM-DD
+        date_to     = request.query_params.get("date_to")     # YYYY-MM-DD
+
+        if teacher_id:
+            qs = qs.filter(teacher__id=teacher_id)
+        if student_id:
+            qs = qs.filter(student__id=student_id)
+        if reward_type:
+            qs = qs.filter(reward_type=reward_type)
+        if date_from:
+            qs = qs.filter(created_at__date__gte=date_from)
+        if date_to:
+            qs = qs.filter(created_at__date__lte=date_to)
+
+        # --- SEARCH ---
+        # ?search=Ali  →  teacher yoki student ismi yoki telefoni bo'yicha
+        search = request.query_params.get("search", "").strip()
+        if search:
+            from django.db.models import Q
+            qs = qs.filter(
+                Q(teacher__full_name__icontains=search) |
+                Q(teacher__user__phone__icontains=search) |
+                Q(student__full_name__icontains=search) |
+                Q(student__user__phone__icontains=search)
+            )
+
+        # --- PAGINATION ---
+        try:
+            page      = max(1, int(request.query_params.get("page", 1)))
+            page_size = min(200, max(1, int(request.query_params.get("page_size", 20))))
+        except ValueError:
+            page, page_size = 1, 20
+
+        total  = qs.count()
+        offset = (page - 1) * page_size
+        qs     = qs[offset: offset + page_size]
+
+        serializer = TeacherRewardLogDetailSerializer(qs, many=True)
+        return Response({
+            "count":     total,
+            "page":      page,
+            "page_size": page_size,
+            "results":   serializer.data,
+        }, status=status.HTTP_200_OK)
 
     def delete(self, request, pk):
         reward_log = get_object_or_404(TeacherRewardLog, pk=pk)
