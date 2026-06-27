@@ -13,6 +13,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='message',
             name='url',
-            field=models.CharField(blank=True, null=True, verbose_name='url'),
+            field=models.CharField(max_length=500, blank=True, null=True, verbose_name='url'),
         ),
     ]
