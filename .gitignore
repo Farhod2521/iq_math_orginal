@@ -32,3 +32,4 @@ media/
 *.swp
 *.swo
 .DS_Store"*.json" 
+serviceAccountKey.json
