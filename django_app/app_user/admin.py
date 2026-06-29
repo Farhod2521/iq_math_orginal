@@ -47,7 +47,7 @@ class TutorAdmin(admin.ModelAdmin):
 class UserAdmin(admin.ModelAdmin):
     list_display = ('phone', 'role', 'profile_status', 'sms_confirmed', 'date_joined')
     list_filter = ('role',)
-    search_fields = ('phone',)
+    search_fields = ('^phone',)
     ordering = ('-date_joined',)
 
     def profile_status(self, obj):
