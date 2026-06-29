@@ -369,3 +369,8 @@ class MathematicianDetailAPIView(RetrieveAPIView):
 
     def get_queryset(self):
         return Mathematician.objects.filter(is_active=True)
+
+
+class PingAPIView(APIView):
+    def get(self, request):
+        return Response({"status": "ok", "message": "Server ishlayapti"})

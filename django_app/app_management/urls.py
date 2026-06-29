@@ -2,7 +2,7 @@ from django.urls import path
 from .views import ( FAQListView, ProductListView, FullStatisticsAPIView,
                     BannerListView, MotivationAPIView, ElonListAPIView, ElonDetailAPIView,
                     UploadSingleFileAPIView, DeleteFileAPIView, UploadedFileListAPIView,
-                    MathematicianListAPIView, MathematicianDetailAPIView)
+                    MathematicianListAPIView, MathematicianDetailAPIView, PingAPIView)
 from .VIEW.elonapiviewcrud import ElonCRUDAPIView
 from .VIEW.motivationapiviewcrud import  MotivationCRUDAPIView
 from .VIEW.systemsettingsapiviewcrud import  SystemSettingsCRUDAPIView
@@ -80,4 +80,6 @@ urlpatterns = [
 
     path("superadmin/log-entries/", LogEntryCRUDAPIView.as_view()),
     path("superadmin/log-entries/<int:pk>/", LogEntryCRUDAPIView.as_view()),
+
+    path("ping/", PingAPIView.as_view()),
 ]
