@@ -14,10 +14,15 @@ from django_app.app_payments.models import Payment
 from django.utils import timezone
 from datetime import datetime
 import pytz
-from django_app.app_student.models import Diagnost_Student
+from django_app.app_student.models import Diagnost_Student, TopicProgress
+
+
 def escape_uri_path(path):
     """Fayl nomini URLga moslashtirish"""
     return quote(path)
+
+
+
 class All_Role_ListView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -119,11 +124,19 @@ class All_Role_ListView(APIView):
                 Q(role='tutor', tutor_profile__status=True)
             )
 
+        # Bugun mavzu bajargan studentlar — 1 ta query, loopda ishlatiladi
+        today = timezone.localdate()
+        completed_today_ids = set(
+            TopicProgress.objects
+            .filter(completed_at__date=today)
+            .values_list('user_id', flat=True)
+        )
+
         data_json = []
         data_excel = []
-        
+
         for idx, user in enumerate(users, start=1):
-            profile_data = self.get_profile_data(user, ashgabat_tz)
+            profile_data = self.get_profile_data(user, ashgabat_tz, completed_today_ids)
             if profile_data:
                 # JSON data - profile_id ni qo'shamiz
                 data_json.append({
@@ -221,7 +234,7 @@ class All_Role_ListView(APIView):
             "results": current_page.object_list
         })
 
-    def get_profile_data(self, user, timezone):
+    def get_profile_data(self, user, timezone, completed_today_ids=None):
         """Foydalanuvchi roliga qarab profil ma'lumotlarini olish"""
         profile_data = {
             'json': {},
@@ -281,7 +294,8 @@ class All_Role_ListView(APIView):
                 "has_diagnost": has_diagnost,
                 "last_payment_amount": last_payment_amount,
                  "subscription_end_date": end_date.strftime('%d/%m/%Y') if end_date else None,
-                "remaining_days": remaining_days,  # qolgan kunlar (int yoki None)
+                "remaining_days": remaining_days,
+                "completed_today": student.id in (completed_today_ids or set()),
             }
 
 
