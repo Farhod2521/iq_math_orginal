@@ -129,36 +129,40 @@ def _draw_certificate(student_name, score_rank, coin_rank, score_val, coin_val, 
     c.drawCentredString(W/2, body_y - 14*mm, line3)
 
     # ── Statistika kartochkalari ───────────────────────────────────────────
-    card_y   = body_y - 40*mm
-    card_w   = 60 * mm
-    card_h   = 32 * mm
-    gap      = 8 * mm
+    card_h   = 42 * mm
+    card_w   = 65 * mm
+    card_y   = body_y - 46*mm
+    gap      = 10 * mm
     total_w  = 2 * card_w + gap
     start_x  = (W - total_w) / 2
 
     def draw_stat_card(cx, label, value, rank):
+        # Fon
         c.setFillColor(BLUE_LIGHT)
-        c.roundRect(cx, card_y, card_w, card_h, 5, fill=1, stroke=0)
+        c.roundRect(cx, card_y, card_w, card_h, 6, fill=1, stroke=0)
         c.setStrokeColor(BLUE)
-        c.setLineWidth(1)
-        c.roundRect(cx, card_y, card_w, card_h, 5, fill=0, stroke=1)
+        c.setLineWidth(1.2)
+        c.roundRect(cx, card_y, card_w, card_h, 6, fill=0, stroke=1)
 
-        # Label
+        # Yuqori label tasma
         c.setFillColor(BLUE)
-        c.setFont("Helvetica-Bold", 10)
-        c.drawCentredString(cx + card_w/2, card_y + card_h - 9*mm, label)
+        c.roundRect(cx, card_y + card_h - 12*mm, card_w, 12*mm, 6, fill=1, stroke=0)
+        c.rect(cx, card_y + card_h - 12*mm, card_w, 6*mm, fill=1, stroke=0)
+        c.setFillColor(WHITE)
+        c.setFont("Helvetica-Bold", 11)
+        c.drawCentredString(cx + card_w/2, card_y + card_h - 8*mm, label)
 
-        # Qiymat
+        # Qiymat (o'rtada)
         c.setFillColor(DARK)
-        c.setFont("Helvetica-Bold", 18)
-        c.drawCentredString(cx + card_w/2, card_y + card_h/2 - 2*mm, f"{value:,}")
+        c.setFont("Helvetica-Bold", 22)
+        c.drawCentredString(cx + card_w/2, card_y + card_h/2 - 3*mm, f"{value:,}")
 
-        # O'rin
+        # O'rin (pastda)
         c.setFillColor(GOLD)
-        c.setFont("Helvetica-Bold", 9)
-        c.drawCentredString(cx + card_w/2, card_y + 4*mm, f"#{rank}-o'rin")
+        c.setFont("Helvetica-Bold", 10)
+        c.drawCentredString(cx + card_w/2, card_y + 5*mm, f"#{rank}-o'rin")
 
-    draw_stat_card(start_x,              "BALL",  score_val, score_rank)
+    draw_stat_card(start_x,               "BALL",  score_val, score_rank)
     draw_stat_card(start_x + card_w + gap, "TANGA", coin_val,  coin_rank)
 
     # ── Pastki qism: sana + footer tasma ──────────────────────────────────
@@ -195,7 +199,7 @@ def _draw_certificate(student_name, score_rank, coin_rank, score_val, coin_val, 
 class CertificateDownloadAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
+    def post(self, request):
         # ── 1. CertificateSettings ─────────────────────────────────────────
         settings_obj = CertificateSettings.objects.filter(is_active=True).first()
         if not settings_obj:
@@ -206,7 +210,7 @@ class CertificateDownloadAPIView(APIView):
         top_count = settings_obj.top_count
 
         # ── 2. Student ─────────────────────────────────────────────────────
-        student_id = request.query_params.get("student_id")
+        student_id = request.data.get("student_id")
         if student_id:
             try:
                 student = Student.objects.select_related("user").get(id=student_id)
@@ -215,7 +219,7 @@ class CertificateDownloadAPIView(APIView):
         else:
             if not hasattr(request.user, "student_profile"):
                 return Response(
-                    {"error": "student_id parametrini yuboring yoki student sifatida kiring."},
+                    {"error": "student_id yuborilmadi yoki student sifatida kiring."},
                     status=status.HTTP_400_BAD_REQUEST
                 )
             student = request.user.student_profile
