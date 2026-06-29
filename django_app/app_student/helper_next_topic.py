@@ -51,6 +51,11 @@ def _build_response(topic, subject):
         "topic_id": topic.id,
         "subject_name_uz": subject.name_uz,
         "subject_name_ru": subject.name_ru,
+        "chapter_name_uz": topic.chapter.name_uz,
+        "chapter_name_ru": topic.chapter.name_ru,
         "topic_name_uz": topic.name_uz,
         "topic_name_ru": topic.name_ru,
+        "score": 0,
+        "reminder_uz": f"{subject.name_uz} fanidan '{topic.name_uz}' mavzusini bajarish kerak!",
+        "reminder_ru": f"По предмету {subject.name_ru} необходимо выполнить тему «{topic.name_ru}»!",
     }
