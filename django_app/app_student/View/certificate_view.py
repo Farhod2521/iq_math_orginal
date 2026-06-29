@@ -118,20 +118,24 @@ def _draw_certificate(student_name, score_rank, coin_rank, score_val, coin_val, 
     c.line(margin + 20*mm, name_y - 4*mm, W - margin - 20*mm, name_y - 4*mm)
 
     # ── Asosiy matn ────────────────────────────────────────────────────────
-    body_y = name_y - 22*mm
+    # line spacing: 9mm, 3 qator = 18mm band
+    body_y = name_y - 20*mm
     c.setFillColor(GRAY)
-    c.setFont("Helvetica", 11)
+    c.setFont("Helvetica", 13)
     line1 = "IQ Math matematika ta'lim platformasida"
     line2 = f"TOP {top_count} eng yaxshi o'quvchilar qatoriga kirganligingiz"
     line3 = "munosabati bilan taqdirlanadi."
-    c.drawCentredString(W/2, body_y,        line1)
-    c.drawCentredString(W/2, body_y - 7*mm, line2)
-    c.drawCentredString(W/2, body_y - 14*mm, line3)
+    c.drawCentredString(W/2, body_y,         line1)
+    c.drawCentredString(W/2, body_y - 9*mm,  line2)
+    c.drawCentredString(W/2, body_y - 18*mm, line3)
+    # matn bloki pastki qirrasi: body_y - 18mm
 
     # ── Statistika kartochkalari ───────────────────────────────────────────
-    card_h   = 42 * mm
-    card_w   = 65 * mm
-    card_y   = body_y - 46*mm
+    # Karta yuqori qirrasi: body_y - 18mm - 14mm (bo'sh joy) = body_y - 32mm
+    card_h   = 30 * mm
+    card_w   = 55 * mm
+    # card_y = karta pastki qirrasi = (body_y - 32mm) - card_h
+    card_y   = body_y - 32*mm - card_h   # = body_y - 62mm
     gap      = 10 * mm
     total_w  = 2 * card_w + gap
     start_x  = (W - total_w) / 2
@@ -144,23 +148,24 @@ def _draw_certificate(student_name, score_rank, coin_rank, score_val, coin_val, 
         c.setLineWidth(1.2)
         c.roundRect(cx, card_y, card_w, card_h, 6, fill=0, stroke=1)
 
-        # Yuqori label tasma
+        # Yuqori label tasma (10mm balandlik)
+        label_h = 10 * mm
         c.setFillColor(BLUE)
-        c.roundRect(cx, card_y + card_h - 12*mm, card_w, 12*mm, 6, fill=1, stroke=0)
-        c.rect(cx, card_y + card_h - 12*mm, card_w, 6*mm, fill=1, stroke=0)
+        c.roundRect(cx, card_y + card_h - label_h, card_w, label_h, 6, fill=1, stroke=0)
+        c.rect(cx, card_y + card_h - label_h, card_w, label_h / 2, fill=1, stroke=0)
         c.setFillColor(WHITE)
-        c.setFont("Helvetica-Bold", 11)
-        c.drawCentredString(cx + card_w/2, card_y + card_h - 8*mm, label)
+        c.setFont("Helvetica-Bold", 10)
+        c.drawCentredString(cx + card_w/2, card_y + card_h - 7*mm, label)
 
         # Qiymat (o'rtada)
         c.setFillColor(DARK)
-        c.setFont("Helvetica-Bold", 22)
-        c.drawCentredString(cx + card_w/2, card_y + card_h/2 - 3*mm, f"{value:,}")
+        c.setFont("Helvetica-Bold", 20)
+        c.drawCentredString(cx + card_w/2, card_y + card_h/2 - 4*mm, f"{value:,}")
 
         # O'rin (pastda)
         c.setFillColor(GOLD)
-        c.setFont("Helvetica-Bold", 10)
-        c.drawCentredString(cx + card_w/2, card_y + 5*mm, f"#{rank}-o'rin")
+        c.setFont("Helvetica-Bold", 9)
+        c.drawCentredString(cx + card_w/2, card_y + 4*mm, f"#{rank}-o'rin")
 
     draw_stat_card(start_x,               "BALL",  score_val, score_rank)
     draw_stat_card(start_x + card_w + gap, "TANGA", coin_val,  coin_rank)
