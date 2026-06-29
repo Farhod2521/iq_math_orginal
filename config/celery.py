@@ -16,4 +16,9 @@ app.conf.beat_schedule = {
         "task": "django_app.app_payments.tasks.expire_pending_payments_task",
         "schedule": crontab(minute="*"),
     },
+    "send-daily-topic-notifications": {
+        "task": "send_daily_topic_notifications",
+        # Har kuni soat 08:00 Toshkent vaqti (UTC+5 = 03:00 UTC)
+        "schedule": crontab(hour=3, minute=0),
+    },
 }
