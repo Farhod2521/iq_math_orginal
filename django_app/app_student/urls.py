@@ -21,6 +21,7 @@ from .View.som_transfer import SomTransferRequestAPIView, SomTransferConfirmAPIV
 from .View.score_log_api import StudentScoreLogAPIView, MyScoreLogAPIView
 from .View.superadmin_diagnost_crud import SuperAdminDiagnostCRUDAPIView
 from .View.conversion_history_crud import ConversionHistoryCRUDAPIView
+from .View.certificate_view import CertificateDownloadAPIView
 
 urlpatterns = [
     path('subject/name-list/', SubjectNameListAPIView.as_view(), name='subject-name-list'),
@@ -109,4 +110,7 @@ urlpatterns = [
     ###############################################  CONVERSION HISTORY  ##################################################
     path("conversion-history/", ConversionHistoryCRUDAPIView.as_view(), name="conversion-history-list"),
     path("conversion-history/<int:pk>/", ConversionHistoryCRUDAPIView.as_view(), name="conversion-history-detail"),
+
+    ###############################################  CERTIFICATE  ##################################################
+    path("certificate/download/", CertificateDownloadAPIView.as_view(), name="certificate-download"),
 ]

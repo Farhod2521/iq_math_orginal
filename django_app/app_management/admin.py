@@ -3,7 +3,7 @@ from .models import (
     Motivation, SystemSettings, FAQ, Product, ReferralAndCouponSettings,
     Banner, Coupon_Tutor_Student, ConversionRate, SolutionStatus,
     Elon, Category, Tag, UploadedFile, UploadSetting, Mathematician,
-    DailyCoinSettings,
+    DailyCoinSettings, CertificateSettings,
 )
 from modeltranslation.admin import TranslationAdmin
 from django.utils.html import format_html
@@ -324,3 +324,9 @@ class UploadSettingAdmin(admin.ModelAdmin):
     def max_size_bytes_display(self, obj):
         return f"{obj.max_size_bytes} bayt"
     max_size_bytes_display.short_description = "Maksimal hajm (baytlarda)"
+
+
+@admin.register(CertificateSettings)
+class CertificateSettingsAdmin(admin.ModelAdmin):
+    list_display = ("top_count", "is_active", "updated_at")
+    list_editable = ("is_active",)

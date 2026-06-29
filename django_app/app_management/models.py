@@ -480,3 +480,22 @@ class Mathematician(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class CertificateSettings(models.Model):
+    top_count = models.PositiveIntegerField(
+        default=100,
+        verbose_name="Top nechtaga sertifikat beriladi"
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name="Faolmi"
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Sertifikat sozlamasi"
+        verbose_name_plural = "Sertifikat sozlamalari"
+
+    def __str__(self):
+        return f"Top {self.top_count} sertifikat"
