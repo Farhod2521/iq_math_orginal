@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django_app.app_student.models import StudentScore, TopicProgress
 from django_app.app_teacher.models import Topic, Chapter
-from django_app.app_user.models import  Subject_Category
+from django_app.app_user.models import Subject_Category, Student
 from datetime import datetime, timedelta, date
 from django.utils import timezone
 from django_app.app_student.serializers import SubjectCategoryDetailSerializer
@@ -83,15 +83,20 @@ class WeeklyStudyStatsAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        user = request.user
-
-        if not hasattr(user, "student_profile"):
-            return Response(
-                {"error": "Faqat talaba uchun statistikalar mavjud"},
-                status=403
-            )
-
-        student = user.student_profile
+        student_id = request.query_params.get("student_id")
+        if student_id:
+            try:
+                student = Student.objects.get(id=student_id)
+            except Student.DoesNotExist:
+                return Response({"error": "Student topilmadi."}, status=404)
+        else:
+            user = request.user
+            if not hasattr(user, "student_profile"):
+                return Response(
+                    {"error": "Faqat talaba uchun statistikalar mavjud"},
+                    status=403
+                )
+            student = user.student_profile
         tz = pytz.timezone("Asia/Tashkent")
         now = timezone.now().astimezone(tz)
         today = now.date()
