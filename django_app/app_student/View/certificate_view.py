@@ -7,198 +7,90 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 
-from reportlab.lib.pagesizes import A4
-from reportlab.lib import colors
-from reportlab.lib.units import mm
 from reportlab.pdfgen import canvas
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib.colors import HexColor
+from reportlab.pdfbase.pdfmetrics import stringWidth
+from pypdf import PdfReader, PdfWriter
 
 from django_app.app_user.models import User, Student
 from django_app.app_student.models import StudentScore
 from django_app.app_management.models import CertificateSettings
 
 # ── Ranglar ────────────────────────────────────────────────────────────────
-BLUE        = HexColor("#5B6DD5")
-BLUE_LIGHT  = HexColor("#EEF0FB")
-BLUE_DARK   = HexColor("#3A4BAD")
-GOLD        = HexColor("#F5A623")
-WHITE       = colors.white
-GRAY        = HexColor("#6B7280")
-DARK        = HexColor("#1F2937")
+BLUE_DARK = HexColor("#1F2A6B")
+DARK      = HexColor("#1F2937")
 
-LOGO_PATH = os.path.join(settings.BASE_DIR, "Media", "iqmath_logo.png")
+# ── Tayyor shablon (fon) ─────────────────────────────────────────────────
+TEMPLATE_PATH = os.path.join(settings.BASE_DIR, "Media", "certificate", "certificate_template.pdf")
+
+# Shablondagi statik matnlarning (pdfplumber bilan o'lchangan) koordinatalari.
+# Shablon o'zgarsa, shu koordinatalarni qayta o'lchash kerak bo'ladi.
+NAME_LINE_X_RANGE = (184.2, 658.0)   # ism yoziladigan bo'sh chiziq
+TOP_DASH_END_X    = 652             # "TOP-" so'zi tugagan joy, raqam shu yerdan boshlanadi
+BALL_ICON_X_RANGE = (398.4, 460.1)  # "BALL" belgisi joylashgan x oralig'i
+TANGA_ICON_X_RANGE = (652.3, 737.3)  # "TANGA" belgisi joylashgan x oralig'i
 
 
-def _draw_certificate(student_name, score_rank, coin_rank, score_val, coin_val, top_count):
-    """A4 portrait sertifikat PDF yaratadi, bytes qaytaradi."""
+def _fit_font_size(text, font_name, max_size, max_width):
+    """Matn berilgan kenglikka sig'maguncha shrift hajmini kichraytiradi."""
+    size = max_size
+    while size > 10 and stringWidth(text, font_name, size) > max_width:
+        size -= 1
+    return size
+
+
+def _build_overlay(W, H, student_name, top_count, score_val, coin_val):
+    """Shablon ustiga yoziladigan matnlarni o'z ichiga olgan shaffof PDF qatlam yaratadi."""
     buf = io.BytesIO()
-    W, H = A4   # 595 x 842 pt
+    c = canvas.Canvas(buf, pagesize=(W, H))
 
-    c = canvas.Canvas(buf, pagesize=A4)
+    # ── Student ismi — bo'sh chiziq ustida (NAME_LINE_X_RANGE) ─────────────
+    name_font = "Helvetica-Bold"
+    max_name_width = (NAME_LINE_X_RANGE[1] - NAME_LINE_X_RANGE[0]) - 20
+    name_size = _fit_font_size(student_name, name_font, 24, max_name_width)
+    c.setFillColor(BLUE_DARK)
+    c.setFont(name_font, name_size)
+    name_y = H - 282
+    c.drawCentredString(sum(NAME_LINE_X_RANGE) / 2, name_y, student_name)
 
-    # ── Fon ────────────────────────────────────────────────────────────────
-    c.setFillColor(WHITE)
-    c.rect(0, 0, W, H, fill=1, stroke=0)
-
-    # ── Tashqi border ──────────────────────────────────────────────────────
-    margin = 14 * mm
-    c.setStrokeColor(BLUE)
-    c.setLineWidth(3)
-    c.roundRect(margin, margin, W - 2*margin, H - 2*margin, 8, fill=0, stroke=1)
-
-    # ── Ichki border ───────────────────────────────────────────────────────
-    inner = margin + 4
-    c.setStrokeColor(BLUE_LIGHT)
-    c.setLineWidth(1)
-    c.roundRect(inner, inner, W - 2*inner, H - 2*inner, 6, fill=0, stroke=1)
-
-    # ── Yuqori ko'k tasmа ──────────────────────────────────────────────────
-    band_h = 52 * mm
-    c.setFillColor(BLUE)
-    c.roundRect(margin, H - margin - band_h, W - 2*margin, band_h, 8, fill=1, stroke=0)
-    # pastki qismini to'g'ri qilamiz
-    c.rect(margin, H - margin - band_h, W - 2*margin, band_h / 2, fill=1, stroke=0)
-
-    # ── Logo ───────────────────────────────────────────────────────────────
-    logo_size = 20 * mm
-    logo_x = margin + 8 * mm
-    logo_y = H - margin - band_h + (band_h - logo_size) / 2
-    if os.path.exists(LOGO_PATH):
-        c.drawImage(LOGO_PATH, logo_x, logo_y, width=logo_size, height=logo_size,
-                    mask="auto", preserveAspectRatio=True)
-
-    # ── IQ MATH matni (header) ─────────────────────────────────────────────
-    c.setFillColor(WHITE)
-    c.setFont("Helvetica-Bold", 26)
-    c.drawString(logo_x + logo_size + 6*mm, H - margin - band_h/2 + 3*mm, "IQ MATH")
-    c.setFont("Helvetica", 10)
-    c.drawString(logo_x + logo_size + 6*mm, H - margin - band_h/2 - 5*mm,
-                 "Matematika ta'lim platformasi")
-
-    # ── "TOP N" badge (o'ng tomonda) ───────────────────────────────────────
-    badge_x = W - margin - 38*mm
-    badge_y = H - margin - band_h + (band_h - 18*mm)/2
-    c.setFillColor(GOLD)
-    c.roundRect(badge_x, badge_y, 30*mm, 18*mm, 4, fill=1, stroke=0)
-    c.setFillColor(WHITE)
-    c.setFont("Helvetica-Bold", 11)
-    c.drawCentredString(badge_x + 15*mm, badge_y + 11*mm, f"TOP {top_count}")
-    c.setFont("Helvetica", 8)
-    c.drawCentredString(badge_x + 15*mm, badge_y + 4*mm, "O'quvchi")
-
-    # ── "SERTIFIKAT" sarlavha ──────────────────────────────────────────────
-    title_y = H - margin - band_h - 28*mm
-    c.setFillColor(BLUE)
-    c.setFont("Helvetica-Bold", 36)
-    c.drawCentredString(W/2, title_y, "SERTIFIKAT")
-
-    # sarlavha ostidagi chiziq
-    line_w = 80 * mm
-    c.setStrokeColor(GOLD)
-    c.setLineWidth(2)
-    c.line(W/2 - line_w/2, title_y - 4*mm, W/2 + line_w/2, title_y - 4*mm)
-
-    # ── Taqdim etiladi matni ───────────────────────────────────────────────
-    text_y = title_y - 18*mm
-    c.setFillColor(GRAY)
-    c.setFont("Helvetica", 12)
-    c.drawCentredString(W/2, text_y, "Ushbu sertifikat taqdim etiladi")
-
-    # ── Student ismi ───────────────────────────────────────────────────────
-    name_y = text_y - 18*mm
+    # ── "TOP-" so'zidan keyingi raqam ───────────────────────────────────────
     c.setFillColor(DARK)
-    c.setFont("Helvetica-Bold", 28)
-    c.drawCentredString(W/2, name_y, student_name)
+    c.setFont("Helvetica-Bold", 19)
+    c.drawString(TOP_DASH_END_X, H - 323, f"{top_count}")
 
-    # ism ostidagi chiziq
-    c.setStrokeColor(BLUE_LIGHT)
-    c.setLineWidth(1)
-    c.line(margin + 20*mm, name_y - 4*mm, W - margin - 20*mm, name_y - 4*mm)
-
-    # ── Asosiy matn ────────────────────────────────────────────────────────
-    # line spacing: 9mm, 3 qator = 18mm band
-    body_y = name_y - 20*mm
-    c.setFillColor(GRAY)
-    c.setFont("Helvetica", 13)
-    line1 = "IQ Math matematika ta'lim platformasida"
-    line2 = f"TOP {top_count} eng yaxshi o'quvchilar qatoriga kirganligingiz"
-    line3 = "munosabati bilan taqdirlanadi."
-    c.drawCentredString(W/2, body_y,         line1)
-    c.drawCentredString(W/2, body_y - 9*mm,  line2)
-    c.drawCentredString(W/2, body_y - 18*mm, line3)
-    # matn bloki pastki qirrasi: body_y - 18mm
-
-    # ── Statistika kartochkalari ───────────────────────────────────────────
-    # Karta yuqori qirrasi: body_y - 18mm - 14mm (bo'sh joy) = body_y - 32mm
-    card_h   = 30 * mm
-    card_w   = 55 * mm
-    # card_y = karta pastki qirrasi = (body_y - 32mm) - card_h
-    card_y   = body_y - 32*mm - card_h   # = body_y - 62mm
-    gap      = 10 * mm
-    total_w  = 2 * card_w + gap
-    start_x  = (W - total_w) / 2
-
-    def draw_stat_card(cx, label, value, rank):
-        # Fon
-        c.setFillColor(BLUE_LIGHT)
-        c.roundRect(cx, card_y, card_w, card_h, 6, fill=1, stroke=0)
-        c.setStrokeColor(BLUE)
-        c.setLineWidth(1.2)
-        c.roundRect(cx, card_y, card_w, card_h, 6, fill=0, stroke=1)
-
-        # Yuqori label tasma (10mm balandlik)
-        label_h = 10 * mm
-        c.setFillColor(BLUE)
-        c.roundRect(cx, card_y + card_h - label_h, card_w, label_h, 6, fill=1, stroke=0)
-        c.rect(cx, card_y + card_h - label_h, card_w, label_h / 2, fill=1, stroke=0)
-        c.setFillColor(WHITE)
-        c.setFont("Helvetica-Bold", 10)
-        c.drawCentredString(cx + card_w/2, card_y + card_h - 7*mm, label)
-
-        # Qiymat (o'rtada)
-        c.setFillColor(DARK)
-        c.setFont("Helvetica-Bold", 20)
-        c.drawCentredString(cx + card_w/2, card_y + card_h/2 - 4*mm, f"{value:,}")
-
-        # O'rin (pastda)
-        c.setFillColor(GOLD)
-        c.setFont("Helvetica-Bold", 9)
-        c.drawCentredString(cx + card_w/2, card_y + 4*mm, f"#{rank}-o'rin")
-
-    draw_stat_card(start_x,               "BALL",  score_val, score_rank)
-    draw_stat_card(start_x + card_w + gap, "TANGA", coin_val,  coin_rank)
-
-    # ── Pastki qism: sana + footer tasma ──────────────────────────────────
-    from datetime import date
-    today_str = date.today().strftime("%d.%m.%Y")
-
-    footer_h = 18 * mm
-    c.setFillColor(BLUE_LIGHT)
-    c.rect(margin, margin, W - 2*margin, footer_h, fill=1, stroke=0)
-
-    c.setFillColor(GRAY)
-    c.setFont("Helvetica", 9)
-    c.drawString(margin + 8*mm, margin + 7*mm, f"Sana: {today_str}")
-    c.drawCentredString(W/2, margin + 7*mm, "iqmath.uz")
-    c.drawRightString(W - margin - 8*mm, margin + 7*mm, "© IQ Math 2026")
-
-    # ── Corner dekorlar ────────────────────────────────────────────────────
-    star_size = 6 * mm
-    for (sx, sy) in [
-        (margin + 5*mm,     H - margin - 5*mm - star_size),
-        (W - margin - 5*mm - star_size, H - margin - 5*mm - star_size),
-    ]:
-        c.setFillColor(GOLD)
-        c.circle(sx + star_size/2, sy + star_size/2, star_size/2, fill=1, stroke=0)
-        c.setFillColor(WHITE)
-        c.setFont("Helvetica-Bold", 8)
-        c.drawCentredString(sx + star_size/2, sy + star_size/2 - 3, "★")
+    # ── BALL va TANGA qiymatlari ────────────────────────────────────────────
+    c.setFillColor(BLUE_DARK)
+    c.setFont("Helvetica-Bold", 18)
+    c.drawCentredString(sum(BALL_ICON_X_RANGE) / 2, H - 485, f"{score_val:,}")
+    c.drawCentredString(sum(TANGA_ICON_X_RANGE) / 2, H - 485, f"{coin_val:,}")
 
     c.save()
     buf.seek(0)
-    return buf.read()
+    return buf
+
+
+def _draw_certificate(student_name, score_rank, coin_rank, score_val, coin_val, top_count):
+    """Tayyor shablon (Media/certificate/certificate_template.pdf) ustiga
+    student ma'lumotlarini yozib, yakuniy sertifikat PDF bytes qaytaradi."""
+    if not os.path.exists(TEMPLATE_PATH):
+        raise FileNotFoundError(f"Sertifikat shabloni topilmadi: {TEMPLATE_PATH}")
+
+    reader = PdfReader(TEMPLATE_PATH)
+    page = reader.pages[0]
+    W = float(page.mediabox.width)
+    H = float(page.mediabox.height)
+
+    overlay_buf = _build_overlay(W, H, student_name, top_count, score_val, coin_val)
+    overlay_page = PdfReader(overlay_buf).pages[0]
+    page.merge_page(overlay_page)
+
+    writer = PdfWriter()
+    writer.add_page(page)
+
+    out_buf = io.BytesIO()
+    writer.write(out_buf)
+    out_buf.seek(0)
+    return out_buf.read()
 
 
 class CertificateDownloadAPIView(APIView):
