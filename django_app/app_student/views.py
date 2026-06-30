@@ -610,7 +610,7 @@ class CheckAnswersAPIView(APIView):
             if student_answer is None or correct_answer is None:
                 continue
 
-            is_correct = advanced_math_check(strip_tags(student_answer).strip(), strip_tags(correct_answer).strip())
+            is_correct = advanced_math_check(student_answer.strip(), correct_answer.strip())
             total_answers += 1
             process_question(question, is_correct)
 

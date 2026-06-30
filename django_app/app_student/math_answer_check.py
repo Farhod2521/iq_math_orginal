@@ -1,6 +1,21 @@
 ﻿import sympy as sp
 import re
 from sympy import randprime
+from django.utils.html import strip_tags
+
+def html_to_math_text(s):
+    """
+    CKEditor (RichTextField) orqali kiritilgan HTML matnni matematik
+    belgilarga aylantiradi: "8<sup>7</sup>" -> "8^(7)", "x<sub>1</sub>" -> "x_(1)".
+    Bu konvertatsiya strip_tags() dan OLDIN bajarilishi shart — aks holda
+    daraja/indeks belgisi yo'qolib, "8<sup>7</sup>" oddiy "87" ga aylanib qoladi.
+    """
+    if not s:
+        return s
+    s = s.replace('&nbsp;', ' ').replace('\xa0', ' ')
+    s = re.sub(r'<sup[^>]*>(.*?)</sup>', r'^(\1)', s, flags=re.IGNORECASE | re.DOTALL)
+    s = re.sub(r'<sub[^>]*>(.*?)</sub>', r'_(\1)', s, flags=re.IGNORECASE | re.DOTALL)
+    return strip_tags(s)
 
 def detect_variables(expr):
     try:
@@ -51,6 +66,9 @@ def advanced_math_check(student_answer, correct_answer):
     Bu funksiya studentning javobi bilan to"g'ri javobni solishtiradi."
     Vergul va nuqta bilan yozilgan sonlarni teng deb hisoblaydi.
     """
+    student_answer = html_to_math_text(student_answer)
+    correct_answer = html_to_math_text(correct_answer)
+
     student = insert_multiplication(clean_latex(student_answer))
     correct = insert_multiplication(clean_latex(correct_answer))
 
