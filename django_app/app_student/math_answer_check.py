@@ -46,6 +46,9 @@ def clean_latex(expr):
     expr = expr.replace(r'\lt', '<')
     expr = expr.replace(r'\gt', '>')
     expr = expr.replace('\\', '')
+    # Klaviaturadagi "×" (ko'paytirish belgisi, U+00D7) ni "*" ga aylantiramiz.
+    # Bu o'zgaruvchi sifatidagi "x" harfidan farqli belgi, shuning uchun xavfsiz.
+    expr = expr.replace('×', '*')
     expr = expr.replace(' ', '')
     return expr
 
