@@ -61,8 +61,8 @@ def _build_overlay(W, H, student_name, top_count, score_val, coin_val):
     # ── BALL va TANGA qiymatlari ────────────────────────────────────────────
     c.setFillColor(BLUE_DARK)
     c.setFont("Helvetica-Bold", 18)
-    c.drawCentredString(sum(BALL_ICON_X_RANGE) / 2, H - 485, f"{score_val:,}")
-    c.drawCentredString(sum(TANGA_ICON_X_RANGE) / 2, H - 485, f"{coin_val:,}")
+    c.drawCentredString(sum(BALL_ICON_X_RANGE) / 2, H - 485, f"{score_val:,}".replace(",", " "))
+    c.drawCentredString(sum(TANGA_ICON_X_RANGE) / 2, H - 485, f"{coin_val:,}".replace(",", " "))
 
     c.save()
     buf.seek(0)
