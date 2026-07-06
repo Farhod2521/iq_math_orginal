@@ -105,9 +105,11 @@ def advanced_math_check(student_answer, correct_answer):
         return True
 
     except:
-        # String solishtirishda ham vergul/nuqta farqini hisobga olamiz
-        student_clean = student_answer.replace(',', '.').strip().lower()
-        correct_clean = correct_answer.replace(',', '.').strip().lower()
+        # `student`/`correct` ishlatiladi (clean_latex'dan o'tgan, probelsiz) -
+        # `student_answer`/`correct_answer`da probel saqlanib qolgani uchun
+        # "1, 2, 3" va "1,2,3" kabi ro'yxat javoblari noto'g'ri deb chiqib qolardi.
+        student_clean = student.replace(',', '.').strip().lower()
+        correct_clean = correct.replace(',', '.').strip().lower()
         return student_clean == correct_clean
 
 def clean_student_answers_list(answers_list):
