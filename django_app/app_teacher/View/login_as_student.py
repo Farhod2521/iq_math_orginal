@@ -23,8 +23,8 @@ class LoginAsStudentAPIView(APIView):
             # Token yaratish
             refresh = RefreshToken.for_user(student_user)
             access_token = refresh.access_token
-            access_token.set_exp(lifetime=timedelta(hours=13))
-            expires_in = timedelta(hours=13).total_seconds()
+            access_token.set_exp(lifetime=timedelta(minutes=30))
+            expires_in = timedelta(minutes=30).total_seconds()
 
             # Token ichiga qo'shimcha payload
             access_token['student_id'] = student.id

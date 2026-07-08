@@ -89,9 +89,9 @@ class TeacherLoginAPIView(APIView):
                 return Response({"detail": "Teacher profile not found."}, status=status.HTTP_404_NOT_FOUND)
             refresh = RefreshToken.for_user(user)
             access_token = refresh.access_token
-            access_token.set_exp(lifetime=timedelta(hours=13))
+            access_token.set_exp(lifetime=timedelta(minutes=30))
             access_token['teacher_id'] = teacher.id
-            expires_in = timedelta(hours=13).total_seconds()
+            expires_in = timedelta(minutes=30).total_seconds()
 
             # Foydalanuvchining sessiya ma'lumotlarini qaytarish
             teacher_data = {
@@ -312,9 +312,9 @@ class TeacherVerifySmsCodeAPIView(APIView):
 
             refresh = RefreshToken.for_user(user)
             access_token = refresh.access_token
-            access_token.set_exp(lifetime=timedelta(hours=13))
+            access_token.set_exp(lifetime=timedelta(minutes=30))
             access_token['teacher_id'] = teacher.id
-            expires_in = timedelta(hours=13).total_seconds()
+            expires_in = timedelta(minutes=30).total_seconds()
 
       
 
@@ -379,14 +379,14 @@ class UniversalVerifySmsCodeAPIView(APIView):
             # 🔑 Token yaratish
             refresh = RefreshToken.for_user(user)
             access_token = refresh.access_token
-            access_token.set_exp(lifetime=timedelta(hours=13))
+            access_token.set_exp(lifetime=timedelta(minutes=30))
             access_token["role"] = user.role
 
             # profile_data ichidagi ma'lumotlarni token ichiga yozish
             for key, value in profile_data.items():
                 access_token[key] = value
 
-            expires_in = timedelta(hours=13).total_seconds()
+            expires_in = timedelta(minutes=30).total_seconds()
 
             return Response({
                 "message": "Telefon raqam va SMS kod tasdiqlandi.",
@@ -1088,8 +1088,8 @@ class LoginAPIView(APIView):
             # Tokenlarni yaratish
             refresh = RefreshToken.for_user(user)
             access_token = refresh.access_token
-            access_token.set_exp(lifetime=timedelta(hours=13))
-            expires_in = timedelta(hours=13).total_seconds()
+            access_token.set_exp(lifetime=timedelta(minutes=30))
+            expires_in = timedelta(minutes=30).total_seconds()
 
             profile_data = {}
 
