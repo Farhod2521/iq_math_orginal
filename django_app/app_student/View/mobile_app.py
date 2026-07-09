@@ -9,6 +9,7 @@ from django.utils import timezone
 from django_app.app_student.serializers import SubjectCategoryDetailSerializer
 from django.db.models import Count
 from rest_framework import status
+from django_app.app_student.paginations import StandardResultsSetPagination
 class StudentRatingAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -252,8 +253,18 @@ class WeeklyStudyStatsAPIView(APIView):
 
 
 class StudyStatsByDateRangeAPIView(APIView):
-    
+    """
+    Boshqa loyihadagi API'lar bilan bir xil pagination pattern
+    (StandardResultsSetPagination: ?page=&page_size=, javobda
+    count/next/previous/results) ishlatiladi - masalan
+    StudentLoginHistoryListAPIView, StudentScoreLogAPIView kabi.
+    Katta oraliq (masalan bir oy) so'ralganda barcha kunlar bir yo'la
+    emas, sahifalab qaytariladi - shu sahifadagi kunlar uchungina DB'dan
+    so'rov qilinadi (tez va yengil).
+    """
+
     permission_classes = [IsAuthenticated]
+    pagination_class = StandardResultsSetPagination
 
     def _parse_date(self, value):
         for fmt in ("%d.%m.%Y", "%d/%m/%Y", "%Y-%m-%d"):
@@ -301,38 +312,45 @@ class StudyStatsByDateRangeAPIView(APIView):
         tz = pytz.timezone("Asia/Tashkent")
         today = timezone.now().astimezone(tz).date()
 
-       
-        week_stats = {}
-        week_details = {}
+        # Butun oraliqdagi sanalar ro'yxati - bu bosqichda DB'ga so'rov yo'q,
+        # shuning uchun bir oy yoki undan uzun oraliq ham arzon.
+        all_dates = []
         cursor = date_from
         while cursor <= date_to:
-            day_key = cursor.strftime("%Y-%m-%d")
-            week_stats[day_key] = False
-            week_details[day_key] = []
+            all_dates.append(cursor)
             cursor += timedelta(days=1)
+
+        paginator = self.pagination_class()
+        page_dates = paginator.paginate_queryset(all_dates, request)
+
+        # Faqat shu sahifadagi kunlar oralig'ida DB'dan so'rov qilinadi -
+        # butun oy emas, shu bilan tez va yengil bo'ladi.
+        page_start = page_dates[0]
+        page_end = page_dates[-1]
 
         progresses = (
             TopicProgress.objects
             .select_related("topic__chapter__subject__classes")
             .filter(
                 user=student,
-                completed_at__date__gte=date_from,
-                completed_at__date__lte=date_to
+                completed_at__date__gte=page_start,
+                completed_at__date__lte=page_end
             )
         )
 
+        details_by_date = {d.strftime("%Y-%m-%d"): [] for d in page_dates}
         for prog in progresses:
             completed_local = prog.completed_at.astimezone(tz)
             day_key = completed_local.strftime("%Y-%m-%d")
-
-            week_stats[day_key] = True
+            if day_key not in details_by_date:
+                continue
 
             topic = prog.topic
             chapter = topic.chapter
             subject = chapter.subject
             class_name = subject.classes.name
 
-            week_details[day_key].append({
+            details_by_date[day_key].append({
                 "subject": {
                     "class_name_uz": f"{class_name}-sinf",
                     "class_name_ru": f"{class_name}-класс",
@@ -350,9 +368,16 @@ class StudyStatsByDateRangeAPIView(APIView):
                 "score": prog.score
             })
 
-        for day, status_val in week_stats.items():
-            if not status_val:
-                week_details[day] = "siz mavzu ishlamagansiz"
+        results = []
+        for d in page_dates:
+            day_key = d.strftime("%Y-%m-%d")
+            items = details_by_date[day_key]
+            results.append({
+                "date": day_key,
+                "weekday": WEEK_DAY_MAP[d.weekday()],
+                "completed": bool(items),
+                "details": items if items else "siz mavzu ishlamagansiz"
+            })
 
         week_info = {
             "week_start": date_from.strftime("%Y-%m-%d"),
@@ -363,11 +388,9 @@ class StudyStatsByDateRangeAPIView(APIView):
             "week_number": self.get_week_number(date_from),
         }
 
-        return Response({
-            "week_info": week_info,
-            "week_stats": week_stats,
-            "details": week_details
-        })
+        response = paginator.get_paginated_response(results)
+        response.data["week_info"] = week_info
+        return response
 
     def get_week_number(self, date_obj):
         first_day = date(date_obj.year, date_obj.month, 1)
