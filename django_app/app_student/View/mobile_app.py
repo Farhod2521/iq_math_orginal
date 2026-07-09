@@ -250,6 +250,133 @@ class WeeklyStudyStatsAPIView(APIView):
         return week_number
 
 
+
+class StudyStatsByDateRangeAPIView(APIView):
+    
+    permission_classes = [IsAuthenticated]
+
+    def _parse_date(self, value):
+        for fmt in ("%d.%m.%Y", "%d/%m/%Y", "%Y-%m-%d"):
+            try:
+                return datetime.strptime(value, fmt).date()
+            except ValueError:
+                continue
+        return None
+
+    def get(self, request):
+        student_id = request.query_params.get("student_id")
+        if student_id:
+            try:
+                student = Student.objects.get(id=student_id)
+            except Student.DoesNotExist:
+                return Response({"error": "Student topilmadi."}, status=404)
+        else:
+            user = request.user
+            if not hasattr(user, "student_profile"):
+                return Response(
+                    {"error": "Faqat talaba uchun statistikalar mavjud"},
+                    status=403
+                )
+            student = user.student_profile
+
+        date_from_param = request.query_params.get("date_from")
+        date_to_param = request.query_params.get("date_to")
+        if not date_from_param or not date_to_param:
+            return Response(
+                {"error": "date_from va date_to majburiy (masalan: 01.07.2026)."},
+                status=400
+            )
+
+        date_from = self._parse_date(date_from_param)
+        date_to = self._parse_date(date_to_param)
+        if not date_from or not date_to:
+            return Response(
+                {"error": "Sana formati noto'g'ri. Kutilgan format: DD.MM.YYYY"},
+                status=400
+            )
+
+        if date_from > date_to:
+            date_from, date_to = date_to, date_from
+
+        tz = pytz.timezone("Asia/Tashkent")
+        today = timezone.now().astimezone(tz).date()
+
+       
+        week_stats = {}
+        week_details = {}
+        cursor = date_from
+        while cursor <= date_to:
+            day_key = cursor.strftime("%Y-%m-%d")
+            week_stats[day_key] = False
+            week_details[day_key] = []
+            cursor += timedelta(days=1)
+
+        progresses = (
+            TopicProgress.objects
+            .select_related("topic__chapter__subject__classes")
+            .filter(
+                user=student,
+                completed_at__date__gte=date_from,
+                completed_at__date__lte=date_to
+            )
+        )
+
+        for prog in progresses:
+            completed_local = prog.completed_at.astimezone(tz)
+            day_key = completed_local.strftime("%Y-%m-%d")
+
+            week_stats[day_key] = True
+
+            topic = prog.topic
+            chapter = topic.chapter
+            subject = chapter.subject
+            class_name = subject.classes.name
+
+            week_details[day_key].append({
+                "subject": {
+                    "class_name_uz": f"{class_name}-sinf",
+                    "class_name_ru": f"{class_name}-класс",
+                    "name_uz": subject.name_uz,
+                    "name_ru": subject.name_ru,
+                },
+                "chapter": {
+                    "name_uz": chapter.name_uz,
+                    "name_ru": chapter.name_ru,
+                },
+                "topic": {
+                    "name_uz": topic.name_uz,
+                    "name_ru": topic.name_ru,
+                },
+                "score": prog.score
+            })
+
+        for day, status_val in week_stats.items():
+            if not status_val:
+                week_details[day] = "siz mavzu ishlamagansiz"
+
+        week_info = {
+            "week_start": date_from.strftime("%Y-%m-%d"),
+            "week_end": date_to.strftime("%Y-%m-%d"),
+            "current_week": (date_from <= today <= date_to),
+            "year": date_from.year,
+            "month": date_from.month,
+            "week_number": self.get_week_number(date_from),
+        }
+
+        return Response({
+            "week_info": week_info,
+            "week_stats": week_stats,
+            "details": week_details
+        })
+
+    def get_week_number(self, date_obj):
+        first_day = date(date_obj.year, date_obj.month, 1)
+        first_monday = first_day - timedelta(days=first_day.weekday())
+        return ((date_obj - first_monday).days // 7) + 1
+
+
+
+
 class StudentTopAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
