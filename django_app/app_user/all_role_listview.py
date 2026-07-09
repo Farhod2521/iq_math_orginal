@@ -9,9 +9,10 @@ from openpyxl import Workbook
 from openpyxl.styles import Alignment
 import pytz
 from django.db.models import Q
-from .models import User, Student, Teacher, Parent, Tutor, StudentLoginHistory, TeacherLoginHistory, TutorLoginHistory, ParentLoginHistory, ParentStudentRelation
+from .models import User, Student, Teacher, Parent, Tutor, Subject, StudentLoginHistory, TeacherLoginHistory, TutorLoginHistory, ParentLoginHistory, ParentStudentRelation
 from django_app.app_payments.models import Payment
 from django.utils import timezone
+from django.db import transaction
 from datetime import datetime
 import pytz
 from django_app.app_student.models import Diagnost_Student, TopicProgress
@@ -631,5 +632,119 @@ class SuperAdminDeleteUserAPIView(APIView):
 
         return Response(
             {"success": f"{role} ({phone}) foydalanuvchisi to'liq o'chirildi."},
+            status=status.HTTP_200_OK,
+        )
+
+
+class SuperAdminChangeUserRoleAPIView(APIView):
+    
+
+    ALLOWED_ROLES = ("student", "teacher", "parent", "tutor")
+
+    PROFILE_MODEL_MAP = {
+        "student": Student,
+        "teacher": Teacher,
+        "parent": Parent,
+        "tutor": Tutor,
+    }
+
+    PROFILE_RELATED_NAME_MAP = {
+        "student": "student_profile",
+        "teacher": "teacher_profile",
+        "parent": "parent_profile",
+        "tutor": "tutor_profile",
+    }
+
+    class IsSuperAdminOnly(IsAuthenticated):
+        def has_permission(self, request, _view):
+            return (
+                request.user
+                and request.user.is_authenticated
+                and getattr(request.user, "role", None) == "superadmin"
+            )
+
+    permission_classes = [IsSuperAdminOnly]
+
+    def post(self, request, user_id):
+        new_role = request.data.get("new_role")
+        if new_role not in self.ALLOWED_ROLES:
+            return Response(
+                {"error": f"new_role quyidagilardan biri bo'lishi kerak: {', '.join(self.ALLOWED_ROLES)}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            user = User.objects.get(pk=user_id)
+        except User.DoesNotExist:
+            return Response(
+                {"error": f"ID={user_id} bo'lgan foydalanuvchi topilmadi."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        old_role = user.role
+        if old_role not in self.ALLOWED_ROLES:
+            return Response(
+                {"error": f"'{old_role}' rolidagi foydalanuvchining rolini bu endpoint orqali o'zgartirib bo'lmaydi."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if old_role == new_role:
+            return Response(
+                {"error": f"Foydalanuvchi allaqachon '{new_role}' rolida."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        old_profile = getattr(user, self.PROFILE_RELATED_NAME_MAP[old_role], None)
+        if old_profile is None:
+            return Response(
+                {"error": f"Foydalanuvchining '{old_role}' profili topilmadi."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        class_name = None
+        if new_role == "student":
+            class_name_id = request.data.get("class_name")
+            if not class_name_id:
+                return Response(
+                    {"error": "new_role='student' uchun 'class_name' (sinf) majburiy."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            class_name = Subject.objects.filter(id=class_name_id).first()
+            if not class_name:
+                return Response(
+                    {"error": f"class_name={class_name_id} topilmadi."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        # Umumiy maydonlarni eski profildan meros qilib olamiz
+        common_fields = {"full_name": old_profile.full_name, "status": True}
+        for field in ("region", "districts", "address", "lang"):
+            value = getattr(old_profile, field, None)
+            if value:
+                common_fields[field] = value
+
+        new_model = self.PROFILE_MODEL_MAP[new_role]
+
+        with transaction.atomic():
+            old_profile.delete()
+
+            new_kwargs = {"user": user, **common_fields}
+            if new_role == "student":
+                new_kwargs["class_name"] = class_name
+
+            new_profile = new_model.objects.create(**new_kwargs)
+
+            user.role = new_role
+            user.save(update_fields=["role"])
+
+        return Response(
+            {
+                "success": f"Foydalanuvchi roli '{old_role}' dan '{new_role}' ga o'zgartirildi.",
+                "user_id": user.id,
+                "phone": user.phone,
+                "new_role": new_role,
+                "profile_id": new_profile.id,
+                "full_name": new_profile.full_name,
+            },
             status=status.HTTP_200_OK,
         )

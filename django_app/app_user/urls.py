@@ -11,7 +11,7 @@ from .views import (
        AdminResetUserPasswordAPIView
 
 )
-from .all_role_listview import All_Role_ListView, DeleteStudentProfileAPIView, ParentDetailAPIView, SuperAdminDeleteUserAPIView
+from .all_role_listview import All_Role_ListView, DeleteStudentProfileAPIView, ParentDetailAPIView, SuperAdminDeleteUserAPIView, SuperAdminChangeUserRoleAPIView
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
@@ -87,6 +87,7 @@ urlpatterns = [
 
     # SuperAdmin — user o'chirish
     path("superadmin/delete-user/<int:user_id>/", SuperAdminDeleteUserAPIView.as_view(), name="superadmin-delete-user"),
+    path("superadmin/change-role/<int:user_id>/", SuperAdminChangeUserRoleAPIView.as_view(), name="superadmin-change-role"),
 
     # Bloklash / blokdan chiqarish (faqat superadmin)
     path("user/block/", BlockUserAPIView.as_view(), name="block-user"),
