@@ -424,13 +424,16 @@ class StudentTopAPIView(APIView):
 
         students = (
             StudentScore.objects
-            .select_related("student", "student__user")
+            .select_related("student", "student__user", "student__class_name", "student__class_name__classes")
             .order_by(ordering_field)[:top_count]
         )
 
         # -------- 3) JSON formatlash --------
         data = []
         for item in students:
+            class_obj = item.student.class_name
+            class_grade = class_obj.classes if class_obj else None
+
             data.append({
                 "student_id": item.student.id,
                 "full_name": item.student.full_name,
@@ -438,6 +441,8 @@ class StudentTopAPIView(APIView):
                 "score": item.score,
                 "coin": item.coin,
                 "som": item.som,
+                "class_uz": f"{class_grade.name}-sinf" if class_grade else None,
+                "class_ru": f"{class_grade.name}-класс" if class_grade else None,
             })
 
         return Response({
