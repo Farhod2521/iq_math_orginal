@@ -159,11 +159,15 @@ class Chapter_STUDENT_ID_Serializer(serializers.ModelSerializer):
 
 
 class TopicSerializer1(serializers.ModelSerializer):
-
+    is_locked = serializers.SerializerMethodField()
 
     class Meta:
         model = Topic
         fields = ['id', 'name_uz', 'name_ru', 'chapter', "video_url_uz", "video_url_ru","content_uz", "content_ru", "is_locked"]
+
+    def get_is_locked(self, obj):
+        # Barcha mavzular ochiq — oldingi mavzudan 80% talab qilinmaydi
+        return False
 
 class Topic_STUDENT_ID_Serializer(serializers.ModelSerializer):
     is_open = serializers.SerializerMethodField()
@@ -198,106 +202,15 @@ class Topic_STUDENT_ID_Serializer(serializers.ModelSerializer):
     # LOCKED
     # ================================
     def get_is_locked(self, obj):
-        if self.context.get("is_staff"):
-            return False  # Admin/Teacher -> doim open
-
-        student = self.context.get("student")
-
-        # Mavzu ishlanganmi?
-        if TopicProgress.objects.filter(user=student, topic=obj).exists():
-            return False
-
-        # Chapter ichidagi topiclar
-        chapter_topics = list(Topic.objects.filter(
-            chapter=obj.chapter).order_by('order')
-        )
-
-        topic_ids = [t.id for t in chapter_topics]
-
-        try:
-            index = topic_ids.index(obj.id)
-        except ValueError:
-            return True
-
-        # BIRINCHI mavzu → doim ochiq
-        if index == 0:
-            return False
-
-        # Oldingi mavzu
-        prev_topic = chapter_topics[index - 1]
-        prev_progress = TopicProgress.objects.filter(
-            user=student, topic=prev_topic
-        ).first()
-
-        return not (prev_progress and prev_progress.score >= 80)
+        # Barcha mavzular ochiq — oldingi mavzudan 80% talab qilinmaydi
+        return False
 
     # ================================
     # OPEN
     # ================================
     def get_is_open(self, obj):
-        if self.context.get("is_staff"):
-            return True
-
-        student = self.context.get("student")
-
-        # 1️⃣ Mavzu ishlangan → open
-        if TopicProgress.objects.filter(user=student, topic=obj).exists():
-            return True
-
-        # 2️⃣ Fanning 1-bobi → 1-mavzusi → open
-        first_chapter = Chapter.objects.filter(
-            subject=obj.chapter.subject
-        ).order_by("order").first()
-
-        if first_chapter:
-            first_topic = Topic.objects.filter(
-                chapter=first_chapter
-            ).order_by("order").first()
-
-            if first_topic and first_topic.id == obj.id:
-                return True
-
-        # 3️⃣ chapter ichidagi mavzular
-        chapter_topics = list(Topic.objects.filter(
-            chapter=obj.chapter).order_by("order")
-        )
-
-        try:
-            index = chapter_topics.index(obj)
-        except ValueError:
-            return False
-
-        # Oldingi mavzu
-        if index > 0:
-            prev_topic = chapter_topics[index - 1]
-            prev_progress = TopicProgress.objects.filter(
-                user=student, topic=prev_topic
-            ).first()
-
-            if prev_progress and prev_progress.score >= 80:
-                return True
-
-        # 4️⃣ Birinchi mavzu → oldingi bobni tekshirish
-        if index == 0:
-            prev_chapter = Chapter.objects.filter(
-                subject=obj.chapter.subject,
-                order__lt=obj.chapter.order
-            ).order_by('-order').first()
-
-            if prev_chapter:
-                last_topic_prev = Topic.objects.filter(
-                    chapter=prev_chapter
-                ).order_by('-order').first()
-
-                if last_topic_prev:
-                    prev_progress = TopicProgress.objects.filter(
-                        user=student, topic=last_topic_prev
-                    ).first()
-
-                    if prev_progress and prev_progress.score >= 80:
-                        return True
-
-        return False
+        # Barcha mavzular ochiq — oldingi mavzudan 80% talab qilinmaydi
+        return True
 
 class TopicSerializer(serializers.ModelSerializer):
     is_open = serializers.SerializerMethodField()
@@ -328,96 +241,12 @@ class TopicSerializer(serializers.ModelSerializer):
             return 0.0
 
     def get_is_locked(self, obj):
-        request = self.context.get('request')
-        user = request.user
-
-        if user.role in ['teacher', 'admin']:
-            return False  # 👨‍🏫 Admin va teacher uchun doim ochiq
-
-        try:
-            student = Student.objects.get(user=user)
-        except Student.DoesNotExist:
-            return True
-
-        # 1. Agar bu mavzu allaqachon ishlangan bo'lsa → ochiq
-        if TopicProgress.objects.filter(user=student, topic=obj).exists():
-            return False
-
-        # 2. Chapterdagi topiclar
-        chapter_topics = Topic.objects.filter(chapter=obj.chapter).order_by('order')
-        topic_ids = list(chapter_topics.values_list('id', flat=True))
-
-        try:
-            current_index = topic_ids.index(obj.id)
-        except ValueError:
-            return True
-
-        # ✅ 3. Agar bu chapter ichidagi BIRINCHI mavzu bo'lsa → har doim ochiq bo'lsin
-        if current_index == 0:
-            return False  # ❗ istisno: chapter ichida birinchi mavzu doim ochiq
-
-        # 4. Aks holda — oldingi topicni tekshiramiz
-        prev_topic_id = topic_ids[current_index - 1]
-        try:
-            prev_topic = Topic.objects.get(id=prev_topic_id)
-            prev_progress = TopicProgress.objects.get(user=student, topic=prev_topic)
-            return not (prev_progress.score >= 80)
-        except TopicProgress.DoesNotExist:
-            return True
+        # Barcha mavzular ochiq — oldingi mavzudan 80% talab qilinmaydi
+        return False
 
     def get_is_open(self, obj):
-        request = self.context.get('request')
-        user = request.user
-
-        if user.role in ['teacher', 'admin']:
-            return True  # Admin va teacher uchun doim ochiq
-
-        try:
-            student = Student.objects.get(user=user)
-        except Student.DoesNotExist:
-            return False
-
-        # 1️⃣ Agar mavzu allaqachon ishlangan bo'lsa → ochiq
-        if TopicProgress.objects.filter(user=student, topic=obj).exists():
-            return True
-
-        # 2️⃣ Fanning eng birinchi bobining eng birinchi mavzusi → ochiq
-        first_chapter = Chapter.objects.filter(subject=obj.chapter.subject).order_by('order').first()
-        if first_chapter:
-            first_topic = Topic.objects.filter(chapter=first_chapter).order_by('order').first()
-            if first_topic and obj.id == first_topic.id:
-                return True
-
-        # 3️⃣ Shu bobdagi mavzular
-        chapter_topics = list(Topic.objects.filter(chapter=obj.chapter).order_by('order'))
-        try:
-            current_index = chapter_topics.index(obj)
-        except ValueError:
-            return False
-
-        # Agar birinchi mavzu bo'lmasa → oldingi mavzuni tekshirish
-        if current_index > 0:
-            prev_topic = chapter_topics[current_index - 1]
-            prev_progress = TopicProgress.objects.filter(user=student, topic=prev_topic).first()
-            if prev_progress and prev_progress.score >= 80:
-                return True
-
-        # 4️⃣ Agar bu bobdagi birinchi mavzu bo'lsa → oldingi bobning oxirgi mavzusi tekshiriladi
-        if current_index == 0:
-            prev_chapter = Chapter.objects.filter(
-                subject=obj.chapter.subject,
-                order__lt=obj.chapter.order
-            ).order_by('-order').first()
-
-            if prev_chapter:
-                last_topic_prev_chapter = Topic.objects.filter(chapter=prev_chapter).order_by('-order').first()
-                if last_topic_prev_chapter:
-                    prev_progress = TopicProgress.objects.filter(user=student, topic=last_topic_prev_chapter).first()
-                    if prev_progress and prev_progress.score >= 80:
-                        return True
-
-        # 5️⃣ Aks holda yopiq
-        return False
+        # Barcha mavzular ochiq — oldingi mavzudan 80% talab qilinmaydi
+        return True
 
 
 class ChoiceSerializer(serializers.ModelSerializer):
