@@ -1,13 +1,65 @@
+import hashlib
+import logging
+import uuid
+from datetime import timedelta
+
+import requests
+from django.conf import settings
+from django.db import transaction
+from django.utils import timezone
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import BasePermission, IsAuthenticated
-from django.db import transaction
 
-from .models import Category, Tag, Book, BookPurchase, OfflineBookOrder
+from .models import Category, Tag, Book, BookPurchase, OfflineBookOrder, BookPayment
 from .serializers import CategorySerializer, TagSerializer, BookReadSerializer, BookWriteSerializer
 from django_app.app_management.models import ConversionRate
 from django_app.app_student.models import StudentScore
+from django_app.app_payments.utils import (
+    get_multicard_token,
+    get_payment_pending_timeout_minutes,
+    MULTICARD_BASE_URL,
+    MULTICARD_STORE_ID,
+    SECRET_KEY as MULTICARD_SECRET_KEY,
+)
+
+logger = logging.getLogger(__name__)
+
+# Kitob to'lovi uchun OFD (soliq) ma'lumotlari.
+# TODO: kitob uchun haqiqiy MXIK va package_code ni soliq organidan olib, settings orqali almashtiring.
+BOOK_OFD_PACKAGE_CODE = getattr(settings, "BOOK_OFD_PACKAGE_CODE", "1165336")
+BOOK_OFD_MXIK = getattr(settings, "BOOK_OFD_MXIK", "10899001001000000")
+
+# Multicard to'lovdan keyin foydalanuvchini qaytaradigan / callback yuboradigan manzillar.
+BOOK_PAYMENT_RETURN_URL = getattr(settings, "BOOK_PAYMENT_RETURN_URL", "https://iqmath.uz/dashboard/library")
+BOOK_PAYMENT_CALLBACK_URL = getattr(
+    settings, "BOOK_PAYMENT_CALLBACK_URL", "https://api.iqmath.uz/api/v1/book/payment-callback/"
+)
+
+
+def calc_book_prices(book, rate):
+    """
+    Kitob narxini uchala valyutada qaytaradi: (so'm, tanga, ball).
+    `rate` — ConversionRate obyekti.
+    """
+    price_som = float(book.price)
+    coin_to_money = float(rate.coin_to_money)
+    coin_to_score = int(rate.coin_to_score)
+
+    price_coin = round(price_som / coin_to_money, 2) if coin_to_money else 0
+    price_score = round(price_coin * coin_to_score, 2)
+    return price_som, price_coin, price_score
+
+
+def expire_pending_book_payments(user=None):
+    """Muddati o'tgan pending kitob to'lovlarini failed holatiga o'tkazadi."""
+    now = timezone.now()
+    cutoff = now - timedelta(minutes=get_payment_pending_timeout_minutes())
+    qs = BookPayment.objects.filter(status='pending', created_at__lt=cutoff)
+    if user is not None:
+        qs = qs.filter(user=user)
+    return qs.update(status='failed', updated_at=now)
 
 
 class IsSuperAdmin(BasePermission):
@@ -416,12 +468,32 @@ class BookPurchaseAPIView(APIView):
                 except StudentScore.DoesNotExist:
                     return Response({"detail": "Student balansi topilmadi."}, status=400)
 
-                if payment_method == 'som' and student_score.som < paid_amount:
-                    return Response({"detail": f"So'm yetarli emas. Balans: {student_score.som}, kerak: {paid_amount}."}, status=400)
-                if payment_method == 'coin' and student_score.coin < paid_amount:
-                    return Response({"detail": f"Tanga yetarli emas. Balans: {student_score.coin}, kerak: {paid_amount}."}, status=400)
-                if payment_method == 'score' and student_score.score < paid_amount:
-                    return Response({"detail": f"Ball yetarli emas. Balans: {student_score.score}, kerak: {paid_amount}."}, status=400)
+                # Balans yetarli emasmi? Unda karta orqali to'lash imkoniyatini qaytaramiz.
+                balance_map = {
+                    'som':   (student_score.som,   "So'm"),
+                    'coin':  (student_score.coin,  "Tanga"),
+                    'score': (student_score.score, "Ball"),
+                }
+                balance, label = balance_map[payment_method]
+
+                if balance < paid_amount:
+                    payable_som = round(price_som * quantity, 2)
+                    return Response({
+                        "detail": (
+                            f"{label} yetarli emas. Balans: {balance}, kerak: {paid_amount}. "
+                            f"Kitobni {payable_som:,.0f} so'mga karta orqali sotib olishingiz mumkin."
+                        ),
+                        "code":            "insufficient_balance",
+                        "payment_method":  payment_method,
+                        "required":        paid_amount,
+                        "balance":         balance,
+                        "shortage":        round(paid_amount - balance, 2),
+                        # Karta orqali to'lash uchun /book/initiate-payment/ ga murojaat qilinadi
+                        "payment_required": True,
+                        "payable_som":     payable_som,
+                        "book_id":         book.id,
+                        "quantity":        quantity,
+                    }, status=400)
 
                 if payment_method == 'som':
                     student_score.som -= int(paid_amount)
@@ -725,5 +797,288 @@ class AdminOfflineOrderAPIView(APIView):
                 "name_uz":     book.name_uz,
                 "name_ru":     book.name_ru,
                 "cover_image": book.cover_image.url if book.cover_image else None,
+            },
+        }
+
+
+# ─────────────────────────────────────────────
+#  KITOBNI KARTA ORQALI SOTIB OLISH (MULTICARD)
+# ─────────────────────────────────────────────
+class BookInitiatePaymentAPIView(APIView):
+    """
+    POST /book/initiate-payment/
+    Body: {
+        "book_id": 1,
+        "quantity": 1,
+        "delivery_address": "...",   # faqat oflayn kitob uchun
+        "delivery_phone":   "+998901234567"
+    }
+
+    Tanga / ball / so'm balansi yetmaganda foydalanuvchi kitobni to'liq so'm
+    summasi bilan karta orqali sotib oladi. Javobdagi `checkout_url` ga
+    yo'naltiriladi, to'lov tasdiqlangach `BookPurchase` avtomatik yaratiladi.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        role = getattr(request.user, 'role', None)
+        if role not in ('student', 'tutor'):
+            return Response({"detail": "Faqat student yoki tutor uchun."}, status=403)
+
+        book_id          = request.data.get('book_id')
+        delivery_address = (request.data.get('delivery_address') or '').strip()
+        delivery_phone   = (request.data.get('delivery_phone') or '').strip()
+
+        if not book_id:
+            return Response({"detail": "book_id talab qilinadi."}, status=400)
+
+        try:
+            quantity = int(request.data.get('quantity', 1))
+        except (TypeError, ValueError):
+            return Response({"detail": "quantity butun son bo'lishi kerak."}, status=400)
+        if quantity < 1:
+            return Response({"detail": "quantity kamida 1 bo'lishi kerak."}, status=400)
+
+        try:
+            book = Book.objects.get(pk=book_id, status='active')
+        except Book.DoesNotExist:
+            return Response({"detail": "Kitob topilmadi."}, status=404)
+
+        if book.quantity is not None and quantity > book.quantity:
+            return Response({"detail": f"Omborda faqat {book.quantity} dona mavjud."}, status=400)
+
+        # Oflayn kitob uchun manzil va telefon majburiy
+        if book.is_offline:
+            if not delivery_address:
+                return Response({"detail": "Oflayn kitob uchun delivery_address talab qilinadi."}, status=400)
+            if not delivery_phone:
+                return Response({"detail": "Oflayn kitob uchun delivery_phone talab qilinadi."}, status=400)
+
+        if BookPurchase.objects.filter(user=request.user, book=book).exists():
+            return Response({"detail": "Siz bu kitobni allaqachon sotib olgansiz."}, status=400)
+
+        unit_price = float(book.price)
+        if unit_price <= 0:
+            return Response({"detail": "Bu kitob bepul, onlayn to'lov talab qilinmaydi."}, status=400)
+
+        amount = round(unit_price * quantity, 2)
+
+        # Muddati o'tgan pending to'lovlarni yopamiz
+        expire_pending_book_payments(user=request.user)
+
+        try:
+            token = get_multicard_token()
+        except Exception as e:
+            logger.error(f"Multicard token error (book): {e}")
+            return Response({"error": "Token olishda xatolik", "details": str(e)}, status=500)
+
+        transaction_id     = str(uuid.uuid4())
+        amount_in_tiyin    = int(round(amount * 100))
+        unit_price_in_tiyin = int(round(unit_price * 100))
+
+        book_title = (book.name_uz or book.name_ru or book.name or '').strip()
+        ofd_name   = f"IQMATH.UZ — {book_title} (kitob)"[:250]
+
+        payload = {
+            "store_id":     MULTICARD_STORE_ID,
+            "amount":       amount_in_tiyin,
+            "invoice_id":   transaction_id,
+            "return_url":   BOOK_PAYMENT_RETURN_URL,
+            "callback_url": BOOK_PAYMENT_CALLBACK_URL,
+            "ofd": [
+                {
+                    "vat":          0,
+                    "price":        unit_price_in_tiyin,
+                    "qty":          quantity,
+                    "name":         ofd_name,
+                    "package_code": BOOK_OFD_PACKAGE_CODE,
+                    "mxik":         BOOK_OFD_MXIK,
+                    "total":        amount_in_tiyin,
+                }
+            ],
+        }
+
+        try:
+            response = requests.post(
+                f"{MULTICARD_BASE_URL}/payment/invoice",
+                headers={"Authorization": f"Bearer {token}"},
+                json=payload,
+            )
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Multicard connection error (book): {e}")
+            return Response({"error": "Multicard bilan bog'lanishda xatolik", "details": str(e)}, status=500)
+
+        if response.status_code != 200:
+            logger.error(f"Multicard invoice error (book): {response.text}")
+            return Response({"error": "To'lov yaratilishda xatolik", "details": response.text}, status=500)
+
+        payment_data = response.json()
+        checkout_url = (payment_data.get('data') or {}).get('checkout_url')
+
+        book_payment = BookPayment.objects.create(
+            user=request.user,
+            book=book,
+            quantity=quantity,
+            unit_price=unit_price,
+            amount=amount,
+            transaction_id=transaction_id,
+            status='pending',
+            payment_gateway='multicard',
+            checkout_url=checkout_url,
+            delivery_address=delivery_address or None,
+            delivery_phone=delivery_phone or None,
+        )
+
+        return Response({
+            "payment_data":    payment_data,
+            "checkout_url":    checkout_url,
+            "transaction_id":  transaction_id,
+            "book_payment_id": book_payment.id,
+            "book": {
+                "id":          book.id,
+                "name_uz":     book.name_uz,
+                "name_ru":     book.name_ru,
+                "cover_image": book.cover_image.url if book.cover_image else None,
+                "is_offline":  book.is_offline,
+            },
+            "quantity":   quantity,
+            "unit_price": unit_price,
+            "amount":     amount,
+            "status":     book_payment.status,
+        }, status=200)
+
+
+class BookPaymentCallbackAPIView(APIView):
+    """
+    POST /book/payment-callback/  — Multicard callback.
+
+    Imzo to'g'ri bo'lsa: BookPayment "success" ga o'tadi va BookPurchase
+    (oflayn kitob bo'lsa OfflineBookOrder bilan birga) yaratiladi.
+    """
+    authentication_classes = []
+    permission_classes = []
+
+    def generate_sign(self, store_id, invoice_id, amount, secret):
+        raw = f"{store_id}{invoice_id}{amount}{secret}"
+        return hashlib.md5(raw.encode()).hexdigest()
+
+    def post(self, request):
+        try:
+            expire_pending_book_payments()
+            data = request.data
+            logger.info(f"🔔 Book payment callback received: {data}")
+
+            store_id      = str(data.get("store_id", ""))
+            invoice_id    = str(data.get("invoice_id", ""))
+            amount        = str(data.get("amount", ""))
+            received_sign = data.get("sign", "")
+            uuid_val      = data.get("uuid")
+            invoice_uuid  = data.get("invoice_uuid")
+            billing_id    = data.get("billing_id")
+
+            expected_sign = self.generate_sign(store_id, invoice_id, amount, MULTICARD_SECRET_KEY)
+            if received_sign != expected_sign:
+                logger.error(f"❌ Book callback invalid signature. Expected: {expected_sign}, got: {received_sign}")
+                return Response({"error": "Invalid signature"}, status=status.HTTP_400_BAD_REQUEST)
+
+            try:
+                payment = BookPayment.objects.select_related('book', 'user').get(transaction_id=invoice_id)
+            except BookPayment.DoesNotExist:
+                logger.error(f"❌ BookPayment not found: {invoice_id}")
+                return Response({"error": "Payment not found"}, status=status.HTTP_404_NOT_FOUND)
+
+            # Idempotentlik — Multicard callbackni bir necha marta yuborishi mumkin
+            if payment.status == 'success':
+                logger.info(f"ℹ️ Book payment already processed: {payment.id}")
+                return Response({"status": "ok", "message": "Already processed"}, status=status.HTTP_200_OK)
+
+            with transaction.atomic():
+                payment.store_id     = store_id
+                payment.invoice_uuid = invoice_uuid
+                payment.uuid         = uuid_val
+                payment.billing_id   = billing_id
+                payment.sign         = received_sign
+                payment.status       = 'success'
+                payment.payment_date = timezone.now()
+                payment.receipt_url  = f"{MULTICARD_BASE_URL}/invoice/{uuid_val}"
+
+                purchase, created = BookPurchase.objects.get_or_create(
+                    user=payment.user,
+                    book=payment.book,
+                    defaults={
+                        "quantity":       payment.quantity,
+                        "payment_method": 'card',
+                        "paid_amount":    payment.amount,
+                    },
+                )
+                payment.purchase = purchase
+                payment.save()
+
+                if payment.book.is_offline and created:
+                    OfflineBookOrder.objects.create(
+                        purchase=purchase,
+                        delivery_address=payment.delivery_address or '',
+                        phone=payment.delivery_phone or '',
+                    )
+
+            logger.info(f"🎉 Book payment processed: payment={payment.id}, purchase={purchase.id}")
+            return Response({"status": "ok", "message": "Payment processed successfully"}, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            logger.error(f"💥 Book payment callback error: {e}", exc_info=True)
+            return Response({"error": "Internal server error"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class MyBookPaymentsAPIView(APIView):
+    """
+    GET /book/my-payments/                       → o'z kitob to'lovlari ro'yxati
+    GET /book/my-payments/?transaction_id=<uuid> → bitta to'lov holati
+
+    Foydalanuvchi to'lov sahifasidan qaytgach, frontend shu endpoint orqali
+    to'lov tasdiqlanganini tekshiradi.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        expire_pending_book_payments(user=request.user)
+
+        qs = BookPayment.objects.select_related('book', 'purchase').filter(user=request.user)
+
+        transaction_id = request.GET.get('transaction_id')
+        if transaction_id:
+            payment = qs.filter(transaction_id=transaction_id).first()
+            if not payment:
+                return Response({"detail": "To'lov topilmadi."}, status=404)
+            return Response(self._serialize(payment))
+
+        status_filter = request.GET.get('status')
+        if status_filter:
+            qs = qs.filter(status=status_filter)
+
+        data = [self._serialize(p) for p in qs]
+        return Response({"count": len(data), "results": data})
+
+    def _serialize(self, p):
+        book = p.book
+        return {
+            "id":             p.id,
+            "transaction_id": p.transaction_id,
+            "status":         p.status,
+            "status_display": p.get_status_display(),
+            "quantity":       p.quantity,
+            "unit_price":     float(p.unit_price),
+            "amount":         float(p.amount),
+            "checkout_url":   p.checkout_url,
+            "receipt_url":    p.receipt_url,
+            "purchase_id":    p.purchase_id,
+            "created_at":     p.created_at.strftime("%d/%m/%Y %H:%M"),
+            "payment_date":   p.payment_date.strftime("%d/%m/%Y %H:%M") if p.payment_date else None,
+            "book": {
+                "id":          book.id,
+                "name_uz":     book.name_uz,
+                "name_ru":     book.name_ru,
+                "cover_image": book.cover_image.url if book.cover_image else None,
+                "is_offline":  book.is_offline,
+                "file":        book.file.url if (book.file and p.status == 'success' and not book.is_offline) else None,
             },
         }

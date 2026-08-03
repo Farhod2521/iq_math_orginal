@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Category, Tag, Book, BookPurchase, OfflineBookOrder
+from .models import Category, Tag, Book, BookPurchase, OfflineBookOrder, BookPayment
 
 
 @admin.register(Category)
@@ -30,6 +30,15 @@ class BookPurchaseAdmin(admin.ModelAdmin):
     list_filter = ['payment_method']
     search_fields = ['user__phone', 'book__name']
     readonly_fields = ['purchased_at']
+
+
+@admin.register(BookPayment)
+class BookPaymentAdmin(admin.ModelAdmin):
+    list_display = ['id', 'user', 'book', 'quantity', 'amount', 'status', 'created_at', 'payment_date']
+    list_filter = ['status', 'payment_gateway']
+    search_fields = ['user__phone', 'book__name', 'transaction_id', 'uuid']
+    readonly_fields = ['created_at', 'updated_at', 'transaction_id', 'checkout_url', 'receipt_url']
+    raw_id_fields = ['user', 'book', 'purchase']
 
 
 @admin.register(OfflineBookOrder)

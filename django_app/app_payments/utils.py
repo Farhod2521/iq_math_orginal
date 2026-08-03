@@ -9,6 +9,10 @@ MULTICARD_AUTH_URL = "https://mesh.multicard.uz/auth"
 APPLICATION_ID = "raqamli_iqtisodiyot_va_agrotexnologiyalar_universiteti"
 SECRET_KEY = "b7lydo1mu8abay9x"
 
+# Multicard umumiy sozlamalari — obuna ham, kitob to'lovi ham shu qiymatlardan foydalanadi.
+MULTICARD_BASE_URL = "https://mesh.multicard.uz"
+MULTICARD_STORE_ID = 1915
+
 
 # MULTICARD_AUTH_URL = "https://mesh.multicard.uz/auth"
 # APPLICATION_ID = "udea"

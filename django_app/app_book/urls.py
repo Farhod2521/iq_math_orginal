@@ -3,6 +3,7 @@ from .views import (
     CategoryCRUDAPIView, TagCRUDAPIView, BookCRUDAPIView,
     BookListForUserAPIView, BookPurchaseAPIView,
     MyPurchasedBooksAPIView, AdminOfflineOrderAPIView,
+    BookInitiatePaymentAPIView, BookPaymentCallbackAPIView, MyBookPaymentsAPIView,
 )
 
 urlpatterns = [
@@ -27,6 +28,11 @@ urlpatterns = [
 
     # Foydalanuvchi o'zi sotib olgan kitoblar (online/offline ajratilgan)
     path('my-purchases/', MyPurchasedBooksAPIView.as_view(), name='book-my-purchases'),
+
+    # Karta orqali to'lov (balans yetmaganda)
+    path('initiate-payment/', BookInitiatePaymentAPIView.as_view(), name='book-initiate-payment'),
+    path('payment-callback/', BookPaymentCallbackAPIView.as_view(), name='book-payment-callback'),
+    path('my-payments/', MyBookPaymentsAPIView.as_view(), name='book-my-payments'),
 
     # Admin: offline buyurtmalarni boshqarish
     path('offline-orders/', AdminOfflineOrderAPIView.as_view(), name='book-offline-orders'),

@@ -90,6 +90,7 @@ class BookPurchase(models.Model):
         ('som',   "So'm"),
         ('coin',  "Tanga"),
         ('score', "Ball"),
+        ('card',  "Karta (onlayn to'lov)"),
     ]
 
     user           = models.ForeignKey(User, on_delete=models.CASCADE, related_name='book_purchases', verbose_name="Foydalanuvchi")
@@ -107,6 +108,63 @@ class BookPurchase(models.Model):
         verbose_name_plural = "Kitob xaridlari"
         unique_together = ('user', 'book')
         ordering = ['-purchased_at']
+
+
+class BookPayment(models.Model):
+    """
+    Kitob uchun onlayn (Multicard) to'lov.
+
+    Foydalanuvchining tanga/ball/so'm balansi yetmagan holatda kitob shu model
+    orqali karta bilan sotib olinadi:
+        1. `BookInitiatePaymentAPIView` invoys yaratadi  → status="pending"
+        2. Foydalanuvchi to'lov sahifasiga yo'naltiriladi (checkout_url)
+        3. Multicard callback yuboradi → status="success" va `BookPurchase` yaratiladi
+    """
+    STATUS_CHOICES = [
+        ('pending', "Kutilmoqda"),
+        ('success', "Muvaffaqiyatli"),
+        ('failed',  "Muvaffaqiyatsiz"),
+    ]
+
+    user           = models.ForeignKey(User, on_delete=models.CASCADE, related_name='book_payments', verbose_name="Foydalanuvchi")
+    book           = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='payments', verbose_name="Kitob")
+    purchase       = models.OneToOneField(
+        'BookPurchase', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='payment', verbose_name="Yaratilgan xarid"
+    )
+
+    quantity       = models.PositiveIntegerField(default=1, verbose_name="Soni")
+    unit_price     = models.DecimalField(max_digits=14, decimal_places=2, verbose_name="Dona narxi (so'm)")
+    amount         = models.DecimalField(max_digits=14, decimal_places=2, verbose_name="To'lov summasi (so'm)")
+
+    transaction_id = models.CharField(max_length=100, unique=True, verbose_name="Tranzaksiya ID (invoice_id)")
+    status         = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending', verbose_name="Holat")
+    payment_gateway = models.CharField(max_length=50, default='multicard', verbose_name="To'lov tizimi")
+    checkout_url   = models.URLField(max_length=500, null=True, blank=True, verbose_name="To'lov sahifasi havolasi")
+
+    # Multicard callback maydonlari
+    store_id       = models.CharField(max_length=100, null=True, blank=True, verbose_name="Multicard store ID")
+    invoice_uuid   = models.CharField(max_length=100, null=True, blank=True, verbose_name="Invoys UUID")
+    uuid           = models.CharField(max_length=100, null=True, blank=True, verbose_name="Tranzaksiya UUID")
+    billing_id     = models.CharField(max_length=100, null=True, blank=True, verbose_name="Billing ID")
+    sign           = models.CharField(max_length=100, null=True, blank=True, verbose_name="MD5 HASH")
+    receipt_url    = models.URLField(null=True, blank=True, verbose_name="Chek havolasi")
+
+    # Oflayn kitob uchun yetkazib berish ma'lumotlari (to'lov tasdiqlangach ishlatiladi)
+    delivery_address = models.TextField(null=True, blank=True, verbose_name="Yetkazib berish manzili")
+    delivery_phone   = models.CharField(max_length=20, null=True, blank=True, verbose_name="Telefon raqam")
+
+    payment_date   = models.DateTimeField(null=True, blank=True, verbose_name="To'lov sanasi")
+    created_at     = models.DateTimeField(auto_now_add=True, verbose_name="Yaratilgan sana")
+    updated_at     = models.DateTimeField(auto_now=True, verbose_name="Yangilangan sana")
+
+    def __str__(self):
+        return f"{self.user.phone} — {self.book.name} — {self.amount} ({self.status})"
+
+    class Meta:
+        verbose_name = "Kitob to'lovi"
+        verbose_name_plural = "Kitob to'lovlari"
+        ordering = ['-created_at']
 
 
 class OfflineBookOrder(models.Model):
