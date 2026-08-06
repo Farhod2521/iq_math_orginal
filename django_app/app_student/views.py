@@ -90,17 +90,35 @@ class GenerateCheckAnswersAPIView(APIView):
 
         correct_answers, total_answers, index = 0, 0, 1
         question_details, wrong_topics = [], {}
+        weak_topics_map = {}
         wrong_topic_instances = set()
 
         def add_wrong_topic(question):
-            if question.topic:
-                wrong_topic_instances.add(question.topic)
-                if question.topic.name_uz not in wrong_topics:
-                    wrong_topics[question.topic.name_uz] = {
-                        'index': len(wrong_topics) + 1,
-                        'topic_name_ru': question.topic.name_ru,
-                        'topic_name_uz': question.topic.name_uz
-                    }
+            topic = question.topic
+            if not topic:
+                return
+
+            wrong_topic_instances.add(topic)
+
+            # Legacy shape (kept for backward compatibility)
+            if topic.name_uz not in wrong_topics:
+                wrong_topics[topic.name_uz] = {
+                    'index': len(wrong_topics) + 1,
+                    'topic_name_ru': topic.name_ru,
+                    'topic_name_uz': topic.name_uz
+                }
+
+            # Shape consumed by the diagnostic result upsell (frontend)
+            if topic.id not in weak_topics_map:
+                weak_topics_map[topic.id] = {
+                    'topic_id': topic.id,
+                    'chapter_uz': topic.chapter.name_uz if topic.chapter else '',
+                    'chapter_ru': topic.chapter.name_ru if topic.chapter else '',
+                    'topic_uz': topic.name_uz,
+                    'topic_ru': topic.name_ru,
+                    'wrong_count': 0
+                }
+            weak_topics_map[topic.id]['wrong_count'] += 1
 
         # TEXT
         for answer in serializer.validated_data.get('text_answers', []):
@@ -190,9 +208,24 @@ class GenerateCheckAnswersAPIView(APIView):
 
         score = round((correct_answers / total_answers) * 100, 2) if total_answers else 0.0
 
+        # Faqat haqiqiy pullik (aktiv) obunachilar to'lov reklamasini ko'rmaydi.
+        # Bepul sinov muddatidagilar ham hali "to'lamagan" hisoblanadi.
+        is_paid = False
+        try:
+            subscription = student_instance.subscription
+            now_time = now()
+            if subscription.is_paid and subscription.start_date <= now_time <= subscription.end_date:
+                is_paid = True
+        except Subscription.DoesNotExist:
+            pass
+
+        weak_topics = sorted(weak_topics_map.values(), key=lambda item: item['wrong_count'], reverse=True)
+
         result_json = {
             "question": question_details,
             "Topic": list(wrong_topics.values()),
+            "is_paid": is_paid,
+            "weak_topics": weak_topics,
             "result": [{
                 "total_answers": total_answers,
                 "correct_answers": correct_answers,
