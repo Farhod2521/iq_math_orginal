@@ -89,6 +89,11 @@ class CompositeSubQuestion(models.Model):
     class Meta:
         verbose_name = "Kichik savol"
         verbose_name_plural = "Kichik savollar"
+        # MUHIM: tartib qat'iy bo'lishi shart. Tartibsiz SELECT da PostgreSQL
+        # qatorlarni ixtiyoriy tartibda qaytaradi (UPDATE dan keyin tartib o'zgaradi).
+        # Natijada o'quvchiga ko'rsatilgan input tartibi bilan tekshiruv tartibi
+        # mos kelmay, to'g'ri javoblar noto'g'ri deb belgilanardi.
+        ordering = ['id']
     
 class Choice(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='choices')

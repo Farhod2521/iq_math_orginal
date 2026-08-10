@@ -1,7 +1,56 @@
-﻿import sympy as sp
+﻿import html as _html
+import sympy as sp
 import re
 from sympy import randprime
+from sympy.parsing.sympy_parser import (
+    parse_expr,
+    standard_transformations,
+    implicit_multiplication_application,
+    convert_xor,
+)
 from django.utils.html import strip_tags
+
+_SYMPY_TRANSFORMS = standard_transformations + (
+    implicit_multiplication_application,
+    convert_xor,
+)
+
+# Matematik belgilarning Unicode variantlari -> ASCII ekvivalenti.
+# O'quvchi matematik klaviatura yoki nusxa-ko'chirish orqali kiritganda
+# "−" (U+2212) kabi belgilar keladi va ular oddiy "-" bilan teng emas edi.
+UNICODE_MATH_MAP = {
+    # Minus va tire variantlari
+    "\u2212": "-",   # MINUS SIGN
+    "\u2010": "-", "\u2011": "-", "\u2012": "-",
+    "\u2013": "-", "\u2014": "-",   # en dash, em dash
+    # Ko'paytirish
+    "\u00d7": "*",   # MULTIPLICATION SIGN
+    "\u22c5": "*", "\u2219": "*", "\u00b7": "*",   # dot operator
+    # Bo'lish
+    "\u00f7": "/", "\u2215": "/",
+    # Taqqoslash
+    "\u2264": "<=", "\u2265": ">=",
+    "\u2260": "!=",
+    "\u2261": "=",
+    "\u02c2": "<", "\u02c3": ">",
+    "\u2039": "<", "\u203a": ">",
+    "\uff1c": "<", "\uff1e": ">", "\uff1d": "=",   # fullwidth
+    # Tirnoqlar
+    "\u201c": '"', "\u201d": '"', "\u2018": "'", "\u2019": "'",
+    # Turli probellar -> oddiy probel / bo'shliq
+    "\u00a0": " ", "\u2007": " ", "\u2009": " ",
+    "\u202f": " ", "\u200b": "", "\ufeff": "",
+}
+
+
+def normalize_symbols(s):
+    """Unicode matematik belgilarni ASCII ko'rinishga keltiradi."""
+    if not s:
+        return s
+    for src, dst in UNICODE_MATH_MAP.items():
+        s = s.replace(src, dst)
+    return s
+
 
 def html_to_math_text(s):
     """
@@ -15,14 +64,34 @@ def html_to_math_text(s):
     s = s.replace('&nbsp;', ' ').replace('\xa0', ' ')
     s = re.sub(r'<sup[^>]*>(.*?)</sup>', r'^(\1)', s, flags=re.IGNORECASE | re.DOTALL)
     s = re.sub(r'<sub[^>]*>(.*?)</sub>', r'_(\1)', s, flags=re.IGNORECASE | re.DOTALL)
-    return strip_tags(s)
+    s = strip_tags(s)
+    # MUHIM: strip_tags HTML entity larni faqat matnda tag bo'lsa ochadi.
+    # Ya'ni "<p>&gt;</p>" -> ">" bo'ladi, lekin yalang "&gt;" o'zgarishsiz qoladi.
+    # Shu sababli o'quvchining ">" javobi bazadagi "&gt;" bilan teng emas deb
+    # hisoblanardi. unescape() ni har doim o'zimiz chaqiramiz.
+    s = _html.unescape(s)
+    return normalize_symbols(s)
+
+def safe_sympify(expr):
+    """
+    Ifodani sympy ga o'giradi.
+      - implicit_multiplication_application: "2x" -> 2*x, "xy" -> x*y.
+        Ilgari oddiy sympify() "2x" ni tahlil qila olmay, "2x" va "2*x"
+        javoblari teng emas deb hisoblanardi.
+      - convert_xor: "^" ni daraja deb tushunadi. sympify() da bu sozlama
+        sukut bo'yicha yoqiq, parse_expr() da esa YO'Q — shuning uchun uni
+        oshkora qo'shamiz, aks holda html_to_math_text yasagan "8^(7)"
+        (ya'ni "8<sup>7</sup>") XOR sifatida hisoblanib qolardi.
+    """
+    return parse_expr(expr, transformations=_SYMPY_TRANSFORMS)
+
 
 def detect_variables(expr):
     try:
-        parsed_expr = sp.sympify(expr)
+        parsed_expr = safe_sympify(expr)
         return [str(s) for s in parsed_expr.free_symbols]
-    except:
-        return []
+    except Exception:
+        return None  # tahlil qilib bo'lmadi (None != bo'sh ro'yxat)
 
 def clean_latex(expr):
     """
@@ -69,27 +138,42 @@ def advanced_math_check(student_answer, correct_answer):
     Bu funksiya studentning javobi bilan to"g'ri javobni solishtiradi."
     Vergul va nuqta bilan yozilgan sonlarni teng deb hisoblaydi.
     """
-    student_answer = html_to_math_text(student_answer)
-    correct_answer = html_to_math_text(correct_answer)
+    if student_answer is None or correct_answer is None:
+        return False
+
+    student_answer = html_to_math_text(str(student_answer))
+    correct_answer = html_to_math_text(str(correct_answer))
 
     student = insert_multiplication(clean_latex(student_answer))
     correct = insert_multiplication(clean_latex(correct_answer))
 
-    # Son bo'lsa, vergullarni nuqtaga almashtirib solishtiramiz
+    # 1) Aynan bir xil matn — eng arzon va eng ishonchli tekshiruv.
+    #    "<", ">", "=" kabi sympy tahlil qila olmaydigan javoblar shu yerda hal bo'ladi.
+    if student.strip().lower() == correct.strip().lower():
+        return True
+
+    # 2) Son bo'lsa, vergullarni nuqtaga almashtirib solishtiramiz
     if is_number(student) and is_number(correct):
         student_clean = student.replace(',', '.')
         correct_clean = correct.replace(',', '.')
         return abs(float(student_clean) - float(correct_clean)) < 1e-6
 
+    # 3) Simvolik (sympy) taqqoslash — "2(x+1)" va "2x+2" kabilar uchun
     try:
         vars_student = detect_variables(student)
         vars_correct = detect_variables(correct)
 
-        if set(vars_student) != set(vars_correct):
-            return False
+        # detect_variables None qaytarsa, sympy tomonni tahlil qila olmadi.
+        # Bunday holda darhol False qaytarmaymiz — 4-bosqichga tushamiz,
+        # aks holda tahlil qilinmaydigan to'g'ri javob ham noto'g'ri bo'lardi.
+        if vars_student is None or vars_correct is None:
+            raise ValueError("sympy tahlil qila olmadi")
 
-        expr1 = sp.sympify(student)
-        expr2 = sp.sympify(correct)
+        if set(vars_student) != set(vars_correct):
+            raise ValueError("o'zgaruvchilar to'plami mos emas")
+
+        expr1 = safe_sympify(student)
+        expr2 = safe_sympify(correct)
 
         diff = sp.simplify(expr1 - expr2)
         if diff == 0:
@@ -104,13 +188,16 @@ def advanced_math_check(student_answer, correct_answer):
 
         return True
 
-    except:
-        # `student`/`correct` ishlatiladi (clean_latex'dan o'tgan, probelsiz) -
-        # `student_answer`/`correct_answer`da probel saqlanib qolgani uchun
-        # "1, 2, 3" va "1,2,3" kabi ro'yxat javoblari noto'g'ri deb chiqib qolardi.
-        student_clean = student.replace(',', '.').strip().lower()
-        correct_clean = correct.replace(',', '.').strip().lower()
-        return student_clean == correct_clean
+    except Exception:
+        pass
+
+    # 4) Oxirgi chora: vergul/nuqta farqini yo'qotib matnli solishtirish.
+    # `student`/`correct` ishlatiladi (clean_latex'dan o'tgan, probelsiz) -
+    # `student_answer`/`correct_answer`da probel saqlanib qolgani uchun
+    # "1, 2, 3" va "1,2,3" kabi ro'yxat javoblari noto'g'ri deb chiqib qolardi.
+    student_clean = student.replace(',', '.').strip().lower()
+    correct_clean = correct.replace(',', '.').strip().lower()
+    return student_clean == correct_clean
 
 def clean_student_answers_list(answers_list):
     """

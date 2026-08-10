@@ -386,7 +386,7 @@ class TopicHelpRequestIndependentSerializer(serializers.ModelSerializer):
                 q["system_response"] = strip_tags(question_obj.correct_text_answer or "")
             elif question_obj.question_type == "composite":
                 q["system_response"] = [
-                    sub.correct_answer for sub in question_obj.sub_questions.all()
+                    sub.correct_answer for sub in question_obj.sub_questions.order_by('id')
                 ]
             elif question_obj.question_type in ["choice", "image_choice"]:
                 q["system_response"] = [

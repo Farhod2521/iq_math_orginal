@@ -75,6 +75,40 @@ class GenerateTestAPIView(APIView):
 
 
 from datetime import timedelta
+
+
+def pick_text_answer(answer, question):
+    """
+    Matnli savol uchun (o'quvchi javobi, to'g'ri javob) juftligini bir xil
+    tilda qaytaradi.
+
+    Frontend `answer_uz` va `answer_ru` kalitlarining ikkalasini ham yuborishi
+    (biri bo'sh bo'lishi) mumkin. Shu sababli javob va to'g'ri javob bir xil
+    tildan olinishi kafolatlanishi kerak, aks holda ruscha javob o'zbekcha
+    to'g'ri javob bilan solishtirilib, to'g'ri javob noto'g'ri deb chiqadi.
+
+    Hozircha frontend faqat bitta til kalitini yuboradi, shuning uchun bu
+    funksiya joriy xatti-harakatni o'zgartirmaydi — u kelajakda ikkala kalit
+    yuborilsa ham til chalkashib ketmasligi uchun himoya sifatida turadi.
+
+    Ataylab cross-til fallback QILINMAYDI: tanlangan tilda to'g'ri javob
+    kiritilmagan bo'lsa, bo'sh qaytariladi va chaqiruvchi savolni o'tkazib
+    yuboradi (eski xatti-harakat aynan shunday edi).
+    """
+    answer_uz = (answer.get('answer_uz') or '').strip()
+    answer_ru = (answer.get('answer_ru') or '').strip()
+
+    if answer_uz:
+        return answer_uz, (question.correct_text_answer_uz or '').strip()
+    if answer_ru:
+        return answer_ru, (question.correct_text_answer_ru or '').strip()
+
+    # Javob bo'sh — qaysi til kaliti yuborilganiga qarab to'g'ri javobni beramiz
+    if 'answer_ru' in answer and 'answer_uz' not in answer:
+        return '', (question.correct_text_answer_ru or '').strip()
+    return '', (question.correct_text_answer_uz or '').strip()
+
+
 class GenerateCheckAnswersAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -126,8 +160,12 @@ class GenerateCheckAnswersAPIView(APIView):
             if not question:
                 continue
 
-            student_answer = answer.get('answer_uz') or answer.get('answer_ru')
-            correct_answer = question.correct_text_answer_uz if 'answer_uz' in answer else question.correct_text_answer_ru
+            # Til mos kelishi SHART: avval qaysi til bo'yicha javob kelganini
+            # aniqlaymiz, keyin AYNAN o'sha tilning to'g'ri javobini olamiz.
+            # Ilgari student_answer `answer_uz or answer_ru` dan, correct_answer esa
+            # `'answer_uz' in answer` (kalit bor-yo'qligi) bo'yicha olinardi —
+            # natijada ruscha javob o'zbekcha to'g'ri javob bilan solishtirilardi.
+            student_answer, correct_answer = pick_text_answer(answer, question)
             if not student_answer or not correct_answer:
                 continue
 
@@ -180,15 +218,21 @@ class GenerateCheckAnswersAPIView(APIView):
             if not question:
                 continue
 
-            correct_subs = question.sub_questions.all()
+            # order_by('id') SHART: tartibsiz queryset da javoblar boshqa
+            # kichik savolga solishtirilib, to'g'ri javob noto'g'ri deb chiqadi.
+            correct_subs = list(question.sub_questions.order_by('id'))
             student_answers = answer['answers']
-            
-            # Har bir sub question uchun javoblarni solishtiramiz
-            all_correct = True
-            for i, (student_ans, sub_question) in enumerate(zip(student_answers, correct_subs)):
-                if not advanced_math_check(str(student_ans), str(sub_question.correct_answer)):
-                    all_correct = False
-                    break
+
+            # Javoblar soni kichik savollar soniga teng bo'lishi shart —
+            # aks holda zip() ortiqchasini jimgina tashlab yuborardi.
+            if len(student_answers) != len(correct_subs):
+                all_correct = False
+            else:
+                all_correct = True
+                for student_ans, sub_question in zip(student_answers, correct_subs):
+                    if not advanced_math_check(str(student_ans), str(sub_question.correct_answer)):
+                        all_correct = False
+                        break
 
             is_correct = all_correct
             total_answers += 1
@@ -605,8 +649,8 @@ class CheckAnswersAPIView(APIView):
             if not question:
                 continue
 
-            student_answer = answer.get('answer_uz') or answer.get('answer_ru')
-            correct_answer = question.correct_text_answer_uz if 'answer_uz' in answer else question.correct_text_answer_ru
+            # Til mos kelishi SHART — izohni yuqoridagi TEXT blokida qarang.
+            student_answer, correct_answer = pick_text_answer(answer, question)
 
             if student_answer is None or correct_answer is None:
                 continue
@@ -656,15 +700,21 @@ class CheckAnswersAPIView(APIView):
             if not question:
                 continue
 
-            correct_subs = question.sub_questions.all()
+            # order_by('id') SHART: tartibsiz queryset da javoblar boshqa
+            # kichik savolga solishtirilib, to'g'ri javob noto'g'ri deb chiqadi.
+            correct_subs = list(question.sub_questions.order_by('id'))
             student_answers = answer['answers']
-            
-            # Har bir sub question uchun javoblarni advanced_math_check bilan solishtiramiz
-            all_correct = True
-            for student_ans, sub_question in zip(student_answers, correct_subs):
-                if not advanced_math_check(str(student_ans), str(sub_question.correct_answer)):
-                    all_correct = False
-                    break
+
+            # Javoblar soni kichik savollar soniga teng bo'lishi shart —
+            # aks holda zip() ortiqchasini jimgina tashlab yuborardi.
+            if len(student_answers) != len(correct_subs):
+                all_correct = False
+            else:
+                all_correct = True
+                for student_ans, sub_question in zip(student_answers, correct_subs):
+                    if not advanced_math_check(str(student_ans), str(sub_question.correct_answer)):
+                        all_correct = False
+                        break
 
             is_correct = all_correct
             total_answers += 1
