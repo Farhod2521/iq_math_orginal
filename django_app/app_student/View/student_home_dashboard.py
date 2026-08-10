@@ -96,6 +96,35 @@ class StudentHomeDashboardAPIView(APIView):
                 ).count(),
             }
 
+        recent_progresses = (
+            TopicProgress.objects.filter(user=student)
+            .select_related("topic", "topic__chapter", "topic__chapter__subject")
+            .order_by("-completed_at", "-id")[:5]
+        )
+
+        recent_activity = []
+        for progress in recent_progresses:
+            topic = progress.topic
+            chapter = topic.chapter
+            topic_subject = chapter.subject
+            logs = StudentScoreLog.objects.filter(student_score__student=student, question__topic=topic)
+
+            recent_activity.append(
+                {
+                    "topic_id": topic.id,
+                    "chapter_id": chapter.id,
+                    "subject_id": topic_subject.id,
+                    "subject_name_uz": topic_subject.name_uz,
+                    "subject_name_ru": topic_subject.name_ru,
+                    "topic_name_uz": topic.name_uz,
+                    "topic_name_ru": topic.name_ru,
+                    "score": progress.score,
+                    "ball_earned": logs.filter(award_type="score").count(),
+                    "coin_earned": logs.filter(award_type="coin").count(),
+                    "completed_at": progress.completed_at.strftime("%d.%m.%Y %H:%M") if progress.completed_at else None,
+                }
+            )
+
         return Response(
             {
                 "classes": classes,
@@ -103,6 +132,7 @@ class StudentHomeDashboardAPIView(APIView):
                 "current_class_name": subject.classes.name if subject and subject.classes else None,
                 "continue_learning": continue_learning,
                 "stats": stats,
+                "recent_activity": recent_activity,
             },
             status=200,
         )
