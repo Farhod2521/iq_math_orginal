@@ -22,6 +22,7 @@ from .View.score_log_api import StudentScoreLogAPIView, MyScoreLogAPIView
 from .View.superadmin_diagnost_crud import SuperAdminDiagnostCRUDAPIView
 from .View.conversion_history_crud import ConversionHistoryCRUDAPIView
 from .View.certificate_view import CertificateDownloadAPIView
+from .View.student_home_dashboard import StudentHomeDashboardAPIView
 
 urlpatterns = [
     path('subject/name-list/', SubjectNameListAPIView.as_view(), name='subject-name-list'),
@@ -90,6 +91,7 @@ urlpatterns = [
     path("student/studenttop/app", StudentTopAPIView.as_view(), name='convert'),
     path("student/subjectprogress/app", SubjectProgressAPIView.as_view(), name='convert'),
     path("student/subject-category-detail/app", SubjectCategoryDetailAPIView.as_view(), name='convert'),
+    path("student/home-dashboard/app", StudentHomeDashboardAPIView.as_view(), name='student-home-dashboard'),
     path("quick-math/question/", QuickMathQuestionAPIView.as_view()),
     path("quick-math/submit/", SubmitQuickMathAnswerAPIView.as_view()),
 
