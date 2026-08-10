@@ -40,17 +40,13 @@ class StudentHomeDashboardAPIView(APIView):
             subject = (
                 Subject.objects.filter(classes_id=requested_class_id, active=True).order_by("order").first()
             )
-            scoped_to_requested_class = True
         else:
             subject = student.class_name  # o'quvchining o'z sinfi/fani
-            scoped_to_requested_class = False
 
+        # Har doim aynan shu (tanlangan/o'z) sinf fani doirasida davom etish mavzusini topamiz —
+        # boshqa fandagi progress bu yerga aralashmasligi kerak.
         continue_learning = None
-        next_topic_info = (
-            get_next_topic_for_student(student, subject=subject if scoped_to_requested_class else None)
-            if subject
-            else None
-        )
+        next_topic_info = get_next_topic_for_student(student, subject=subject) if subject else None
         if next_topic_info:
             topic = Topic.objects.select_related("chapter", "chapter__subject").get(id=next_topic_info["topic_id"])
             chapter = topic.chapter

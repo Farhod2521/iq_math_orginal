@@ -19,8 +19,15 @@ def get_next_topic_for_student(student, subject=None):
     progresses = progresses.order_by('-completed_at', '-id')
 
     if progresses.exists():
-        last_topic = progresses.first().topic
+        last_progress = progresses.first()
+        last_topic = last_progress.topic
         current_subject = last_topic.chapter.subject
+
+        # Agar oxirgi urinilgan mavzu hali o'zlashtirilmagan bo'lsa (score < 80),
+        # keyingisiga o'tmasdan, aynan shu mavzuni davom ettirish kerak.
+        if last_progress.score < 80:
+            return _build_response(last_topic, current_subject)
+
         chapter_topics = list(Topic.objects.filter(chapter=last_topic.chapter).order_by('order'))
 
         try:
