@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 
 from django_app.app_user.models import Class, Subject
-from django_app.app_teacher.models import Chapter, Topic
+from django_app.app_teacher.models import Chapter, Topic, Question
 from django_app.app_student.models import TopicProgress, StudentScoreLog
 from django_app.app_student.helper_next_topic import get_next_topic_for_student
 
@@ -73,9 +73,11 @@ class StudentHomeDashboardAPIView(APIView):
 
         stats = {
             "chapter_count": 0,
+            "chapters_started_count": 0,
             "topic_count": 0,
             "completed_topic_count": 0,
             "average_score_percent": 0,
+            "question_count": 0,
             "solved_questions_count": 0,
         }
         if subject:
@@ -84,11 +86,15 @@ class StudentHomeDashboardAPIView(APIView):
 
             stats = {
                 "chapter_count": Chapter.objects.filter(subject=subject).count(),
+                "chapters_started_count": Chapter.objects.filter(
+                    subject=subject, topics__progress__user=student
+                ).distinct().count(),
                 "topic_count": Topic.objects.filter(chapter__subject=subject).count(),
                 "completed_topic_count": topic_progresses.filter(score__gte=80).count(),
                 "average_score_percent": (
                     round(sum(attempted_scores) / len(attempted_scores)) if attempted_scores else 0
                 ),
+                "question_count": Question.objects.filter(topic__chapter__subject=subject).count(),
                 "solved_questions_count": StudentScoreLog.objects.filter(
                     student_score__student=student, question__topic__chapter__subject=subject
                 ).count(),

@@ -53,6 +53,8 @@ def get_next_topic_for_student(student, subject=None):
 def _build_response(topic, subject):
     return {
         "topic_id": topic.id,
+        "chapter_id": topic.chapter_id,
+        "subject_id": subject.id,
         "subject_name_uz": subject.name_uz,
         "subject_name_ru": subject.name_ru,
         "chapter_name_uz": topic.chapter.name_uz,
