@@ -86,6 +86,18 @@ def safe_sympify(expr):
     return parse_expr(expr, transformations=_SYMPY_TRANSFORMS)
 
 
+def decimal_comma_to_dot(s):
+    """
+    Faqat raqamlar orasidagi vergulni o'nlik nuqtaga aylantiradi:
+        "-18,4" -> "-18.4"
+    "1,2,3" kabi ro'yxatlar "1.2.3" bo'lib tahlil qilinmaydi va pastdagi
+    matnli solishtirishga tushadi — bu to'g'ri xatti-harakat.
+    """
+    if not s:
+        return s
+    return re.sub(r'(?<=\d),(?=\d)', '.', s)
+
+
 def detect_variables(expr):
     try:
         parsed_expr = safe_sympify(expr)
@@ -108,6 +120,21 @@ def clean_latex(expr):
 
     expr = re.sub(r'\\left|\\right', '', expr)
     expr = re.sub(r'\\\(|\\\)|\\\[|\\\]', '', expr)
+
+    # ── ARALASH SON (mixed number) ──────────────────────────────────────────
+    # "3\frac{5}{6}" = 3 + 5/6,  "-18\frac{2}{5}" = -(18 + 2/5) = -18.4
+    # Bu \frac ni oddiy bo'linmaga aylantirishdan OLDIN bajarilishi shart,
+    # aks holda "18(2)/(5)" hosil bo'lib, yashirin ko'paytirish tufayli
+    # 18 * 2/5 = 7.2 deb noto'g'ri hisoblanardi.
+    expr = re.sub(
+        r'(\d+)\s*\\frac\{([^{}]+)\}\{([^{}]+)\}',
+        r'(\1+(\2)/(\3))',
+        expr,
+    )
+    # Matn ko'rinishidagi aralash son: "3 5/6" -> (3+(5)/(6)).
+    # Probellar olib tashlanishidan OLDIN bajariladi, aks holda "35/6" bo'lardi.
+    expr = re.sub(r'(\d+)\s+(\d+)\s*/\s*(\d+)', r'(\1+(\2)/(\3))', expr)
+
     expr = re.sub(r'\\frac\{([^}]+)\}\{([^}]+)\}', r'(\1)/(\2)', expr)
     expr = re.sub(r'\\sqrt\{([^}]+)\}', r'sqrt(\1)', expr)
     expr = expr.replace(r'\le', '<=')
@@ -158,10 +185,15 @@ def advanced_math_check(student_answer, correct_answer):
         correct_clean = correct.replace(',', '.')
         return abs(float(student_clean) - float(correct_clean)) < 1e-6
 
-    # 3) Simvolik (sympy) taqqoslash — "2(x+1)" va "2x+2" kabilar uchun
+    # 3) Simvolik (sympy) taqqoslash — "2(x+1)" va "2x+2" kabilar uchun.
+    # Sympy vergulni o'nlik ajratgich deb tushunmaydi ("-18,4" ni juftlik deb
+    # o'qiydi), shuning uchun bu bosqichda nuqtaga aylantiramiz.
+    student_expr = decimal_comma_to_dot(student)
+    correct_expr = decimal_comma_to_dot(correct)
+
     try:
-        vars_student = detect_variables(student)
-        vars_correct = detect_variables(correct)
+        vars_student = detect_variables(student_expr)
+        vars_correct = detect_variables(correct_expr)
 
         # detect_variables None qaytarsa, sympy tomonni tahlil qila olmadi.
         # Bunday holda darhol False qaytarmaymiz — 4-bosqichga tushamiz,
@@ -172,8 +204,17 @@ def advanced_math_check(student_answer, correct_answer):
         if set(vars_student) != set(vars_correct):
             raise ValueError("o'zgaruvchilar to'plami mos emas")
 
-        expr1 = safe_sympify(student)
-        expr2 = safe_sympify(correct)
+        expr1 = safe_sympify(student_expr)
+        expr2 = safe_sympify(correct_expr)
+
+        # Ikkala tomon ham sof son bo'lsa, kichik yaxlitlash farqini hisobga
+        # olib solishtiramiz. Aks holda Rational(-92/5) va Float(-18.4) ayirmasi
+        # nolga teng chiqmay, to'g'ri javob noto'g'ri deb belgilanardi.
+        if not expr1.free_symbols and not expr2.free_symbols:
+            try:
+                return abs(float(expr1) - float(expr2)) < 1e-9
+            except (TypeError, ValueError):
+                pass
 
         diff = sp.simplify(expr1 - expr2)
         if diff == 0:
