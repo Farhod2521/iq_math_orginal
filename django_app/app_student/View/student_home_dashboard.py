@@ -2,16 +2,24 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 
-from django_app.app_user.models import Class
+from django_app.app_user.models import Class, Subject
 from django_app.app_teacher.models import Chapter, Topic
 from django_app.app_student.models import TopicProgress, StudentScoreLog
 from django_app.app_student.helper_next_topic import get_next_topic_for_student
 
 
+def _class_sort_key(class_obj):
+    # Raqamli sinflar (1, 2, ... 11) sonli tartibda, raqamsiz nomlar (masalan "Testlar") oxirida.
+    return (0, int(class_obj.name)) if class_obj.name.isdigit() else (1, class_obj.name)
+
+
 class StudentHomeDashboardAPIView(APIView):
     """
     Bosh sahifa uchun: mavjud sinflar ro'yxati, davom etilayotgan mavzu va
-    o'quvchining o'z sinfi bo'yicha statistikasi bitta so'rovda qaytariladi.
+    tanlangan sinf bo'yicha statistika bitta so'rovda qaytariladi.
+
+    Query param: ?class_id=<Class.id> — berilsa, o'sha sinfning fani bo'yicha
+    continue_learning/stats hisoblanadi (bo'lmasa, o'quvchining o'z sinfi ishlatiladi).
     """
 
     permission_classes = [IsAuthenticated]
@@ -21,17 +29,28 @@ class StudentHomeDashboardAPIView(APIView):
             return Response({"error": "Faqat talaba uchun"}, status=403)
 
         student = request.user.student_profile
-        subject = student.class_name  # Subject instance (o'quvchining o'z sinfi/fani)
 
-        classes_qs = (
-            Class.objects.filter(subjects__active=True, subjects__chapters__topics__isnull=False)
-            .distinct()
-            .order_by("name")
-        )
-        classes = [{"id": c.id, "name": c.name} for c in classes_qs]
+        classes_qs = Class.objects.filter(
+            subjects__active=True, subjects__chapters__topics__isnull=False
+        ).distinct()
+        classes = [{"id": c.id, "name": c.name} for c in sorted(classes_qs, key=_class_sort_key)]
+
+        requested_class_id = request.query_params.get("class_id")
+        if requested_class_id:
+            subject = (
+                Subject.objects.filter(classes_id=requested_class_id, active=True).order_by("order").first()
+            )
+            scoped_to_requested_class = True
+        else:
+            subject = student.class_name  # o'quvchining o'z sinfi/fani
+            scoped_to_requested_class = False
 
         continue_learning = None
-        next_topic_info = get_next_topic_for_student(student)
+        next_topic_info = (
+            get_next_topic_for_student(student, subject=subject if scoped_to_requested_class else None)
+            if subject
+            else None
+        )
         if next_topic_info:
             topic = Topic.objects.select_related("chapter", "chapter__subject").get(id=next_topic_info["topic_id"])
             chapter = topic.chapter
