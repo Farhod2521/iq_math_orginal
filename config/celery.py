@@ -18,7 +18,10 @@ app.conf.beat_schedule = {
     },
     "send-daily-topic-notifications": {
         "task": "send_daily_topic_notifications",
-        # Har kuni soat 08:00 Toshkent vaqti (UTC+5 = 03:00 UTC)
-        "schedule": crontab(hour=3, minute=0),
+        # Har kuni soat 08:00 Toshkent vaqti.
+        # Diqqat: CELERY_TIMEZONE = 'Asia/Tashkent' va CELERY_ENABLE_UTC = False
+        # (config/settings/base.py), shuning uchun crontab soatlari UTC'ga emas,
+        # to'g'ridan-to'g'ri Toshkent mahalliy vaqtiga nisbatan hisoblanadi.
+        "schedule": crontab(hour=8, minute=0),
     },
 }
