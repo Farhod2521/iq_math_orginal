@@ -6,7 +6,7 @@ from channels.db import database_sync_to_async
 from django.utils import timezone
 
 from .models import BattleRoom, BattleParticipant
-from .serializers import serialize_room_snapshot
+from .serializers import serialize_room_snapshot, serialize_question
 from . import engine
 
 logger = logging.getLogger(__name__)
@@ -98,7 +98,24 @@ class BattleConsumer(AsyncWebsocketConsumer):
         room = BattleRoom.objects.filter(id=self.room_id).select_related('grade').first()
         if not room:
             return None
-        return serialize_room_snapshot(room, self.student)
+        snapshot = serialize_room_snapshot(room, self.student)
+
+        # A (re)connect must be able to recover an in-progress match on its
+        # own — `room_snapshot` alone used to carry no question data, so any
+        # reconnect (page refresh, a duplicate WS mount, etc.) left the
+        # client stuck on a spinner forever with no further event to fix it.
+        if room.status == BattleRoom.STATUS_ACTIVE:
+            current_room_question = room.questions.filter(order=room.current_question_index).first()
+            snapshot['current_question'] = serialize_question(current_room_question)
+            snapshot['question_seconds_elapsed'] = (
+                (timezone.now() - room.current_question_started_at).total_seconds()
+                if room.current_question_started_at else 0
+            )
+        else:
+            snapshot['current_question'] = None
+            snapshot['question_seconds_elapsed'] = 0
+
+        return snapshot
 
     def _get_participant(self):
         return BattleParticipant.objects.filter(room_id=self.room_id, student=self.student).first()
