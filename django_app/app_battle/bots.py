@@ -55,5 +55,24 @@ def pick_bot_difficulty(rating):
     return BattleBotDifficulty.objects.filter(tier=chosen_tier).first()
 
 
+# During the student's own placement, `rating.elo` is 0 (hidden by design)
+# so a bot can't be jittered off the student's real ELO — give it a
+# plausible tier-appropriate ELO instead, so the opponent card never shows
+# a broken near-zero number.
+_PLACEMENT_TIER_DISPLAY_ELO = {
+    'easy': 700,
+    'medium': 1100,
+    'hard': 1500,
+    'expert': 1900,
+}
+
+
 def bot_elo_before(student_elo):
     return max(0, min(3000, student_elo + random.randint(-80, 40)))
+
+
+def bot_elo_for_match(rating, difficulty):
+    if rating.is_in_placement:
+        base = _PLACEMENT_TIER_DISPLAY_ELO.get(difficulty.tier, 1200)
+        return max(0, min(3000, base + random.randint(-60, 60)))
+    return bot_elo_before(rating.elo)

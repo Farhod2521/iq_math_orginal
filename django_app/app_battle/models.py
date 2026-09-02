@@ -46,19 +46,46 @@ def level_for_elo(elo):
     return 1
 
 
+def level_progress(elo):
+    """(floor, ceiling, elo_into_band, band_width, pct_to_next) for the
+    level-progress widget — ceiling/pct_to_next are None at the top level."""
+    level = level_for_elo(elo)
+    floor, ceiling = 0, None
+    for lvl, low, high in LEVEL_BREAKPOINTS:
+        if lvl == level:
+            floor, ceiling = low, high
+            break
+    if ceiling is None:
+        return {'floor': floor, 'ceiling': None, 'elo_into_band': elo - floor, 'band_width': None, 'pct_to_next': None}
+    band_width = ceiling - floor + 1
+    elo_into_band = max(0, elo - floor)
+    pct = min(100, round((elo_into_band / band_width) * 100))
+    return {'floor': floor, 'ceiling': ceiling, 'elo_into_band': elo_into_band, 'band_width': band_width, 'pct_to_next': pct}
+
+
 class BattleRating(models.Model):
     PLACEMENT_MATCHES = 10
-    STARTING_ELO = 800
+    STARTING_ELO = 800  # internal-only placeholder while in placement; never shown to the player
+
+    # Placement reveal formula: purely win/loss-driven so the outcome is
+    # legible ("lose all 10 -> Level 1, ~400 ELO" per product spec), with a
+    # small nudge from average per-match performance (accuracy+speed) that
+    # cannot push the result past the floor/ceiling.
+    PLACEMENT_BASE_ELO = 1200
+    PLACEMENT_ELO_PER_MATCH = 80
+    PLACEMENT_MIN_ELO = 400
+    PLACEMENT_MAX_ELO = 2100
 
     student = models.OneToOneField(Student, on_delete=models.CASCADE, related_name='battle_rating')
-    elo = models.PositiveIntegerField(default=STARTING_ELO)
+    elo = models.PositiveIntegerField(default=0)  # 0 while in placement — frontend must never render this as a real ELO
     level = models.PositiveSmallIntegerField(default=0, verbose_name="Daraja (0 = Aniqlanmoqda)")
     matches_played = models.PositiveIntegerField(default=0)
     wins = models.PositiveIntegerField(default=0)
     losses = models.PositiveIntegerField(default=0)
     draws = models.PositiveIntegerField(default=0)
     win_streak = models.PositiveIntegerField(default=0)
-    best_elo = models.PositiveIntegerField(default=STARTING_ELO)
+    best_elo = models.PositiveIntegerField(default=0)
+    placement_performance_sum = models.FloatField(default=0.0)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -67,6 +94,8 @@ class BattleRating(models.Model):
         ordering = ['-elo']
 
     def __str__(self):
+        if self.is_in_placement:
+            return f"{self.student.full_name} - aniqlanmoqda ({self.matches_played}/{self.PLACEMENT_MATCHES})"
         return f"{self.student.full_name} - {self.elo} ELO (L{self.level})"
 
     @property
@@ -74,13 +103,51 @@ class BattleRating(models.Model):
         return self.matches_played < self.PLACEMENT_MATCHES
 
     def k_factor(self):
-        if self.matches_played < self.PLACEMENT_MATCHES:
-            return 70
         if self.matches_played < 30:
             return 30
         return 20
 
+    def record_placement_match(self, result, performance):
+        """Placement matches (the student's first 10) never move a visible
+        ELO number — only win/loss/draw and a performance accumulator are
+        tracked. The moment the 10th match completes, a single ELO value is
+        revealed via `_reveal_placement_elo`."""
+        self.matches_played += 1
+        if result == 'win':
+            self.wins += 1
+            self.win_streak += 1
+        elif result == 'loss':
+            self.losses += 1
+            self.win_streak = 0
+        else:
+            self.draws += 1
+            self.win_streak = 0
+        self.placement_performance_sum += performance
+
+        just_completed_placement = self.matches_played >= self.PLACEMENT_MATCHES
+        if just_completed_placement:
+            self._reveal_placement_elo()
+
+        self.save(update_fields=[
+            'matches_played', 'wins', 'losses', 'draws', 'win_streak',
+            'placement_performance_sum', 'elo', 'best_elo', 'level', 'updated_at',
+        ])
+        return just_completed_placement
+
+    def _reveal_placement_elo(self):
+        net_wins = self.wins - self.losses
+        avg_performance = self.placement_performance_sum / max(self.matches_played, 1)
+        raw = (
+            self.PLACEMENT_BASE_ELO
+            + net_wins * self.PLACEMENT_ELO_PER_MATCH
+            + (avg_performance - 0.5) * 100
+        )
+        self.elo = int(max(self.PLACEMENT_MIN_ELO, min(self.PLACEMENT_MAX_ELO, raw)))
+        self.best_elo = self.elo
+        self.level = level_for_elo(self.elo)
+
     def apply_result(self, elo_after, result):
+        """Post-placement matches only — normal incremental ELO."""
         self.elo = elo_after
         self.best_elo = max(self.best_elo, elo_after)
         self.matches_played += 1
@@ -93,8 +160,7 @@ class BattleRating(models.Model):
         else:
             self.draws += 1
             self.win_streak = 0
-        if not self.is_in_placement:
-            self.level = level_for_elo(self.elo)
+        self.level = level_for_elo(self.elo)
         self.save(update_fields=[
             'elo', 'best_elo', 'matches_played', 'wins', 'losses',
             'draws', 'win_streak', 'level', 'updated_at',
@@ -301,6 +367,12 @@ class BattleEloLog(models.Model):
     elo_after = models.PositiveIntegerField()
     elo_change = models.IntegerField()
     result = models.CharField(max_length=4, choices=RESULT_CHOICES)
+    # True for every one of the student's first PLACEMENT_MATCHES rows.
+    # elo_before/elo_after/elo_change stay 0 for placement rows except the
+    # one where placement completes (matches_played reaches 10), which
+    # carries the freshly revealed elo_after — frontend distinguishes a
+    # "placement reveal" row from a "still calibrating" row by elo_after > 0.
+    is_placement = models.BooleanField(default=False)
 
     created_at = models.DateTimeField(auto_now_add=True)
 

@@ -7,7 +7,7 @@ from rest_framework.permissions import IsAuthenticated
 from django_app.app_user.models import Student, Class, Subject
 
 from . import matchmaking
-from .models import BattleRoom, BattleRating, BattleEloLog, level_for_elo
+from .models import BattleRoom, BattleRating, BattleEloLog, level_for_elo, level_progress
 from .serializers import RoomCreateSerializer, RoomJoinSerializer, serialize_room_snapshot
 
 
@@ -96,6 +96,7 @@ class MyRatingAPIView(APIView):
         if not student:
             return Response({"message": "O'quvchi topilmadi"}, status=404)
         rating, _ = BattleRating.objects.get_or_create(student=student)
+        progress = None if rating.is_in_placement else level_progress(rating.elo)
         return Response({
             "elo": rating.elo,
             "level": rating.level,
@@ -107,6 +108,7 @@ class MyRatingAPIView(APIView):
             "draws": rating.draws,
             "win_streak": rating.win_streak,
             "best_elo": rating.best_elo,
+            "level_progress": progress,
         })
 
 
@@ -165,6 +167,8 @@ class HistoryAPIView(APIView):
                 "result": log.result,
                 "elo_change": log.elo_change,
                 "elo_after": log.elo_after,
+                "is_placement": log.is_placement,
+                "is_placement_reveal": log.is_placement and log.elo_after > 0,
                 "opponent": opponent,
                 "created_at": log.created_at,
             })
@@ -195,6 +199,7 @@ class EloHistoryAPIView(APIView):
 
         logs = (
             BattleEloLog.objects.filter(student=student)
+            .exclude(is_placement=True, elo_after=0)  # skip hidden placement-calibration rows
             .order_by('created_at')
             .values('created_at', 'elo_after')
         )

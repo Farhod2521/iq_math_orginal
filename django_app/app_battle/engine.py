@@ -16,7 +16,7 @@ from django_app.app_teacher.models import Question, Choice
 from django_app.app_student.models import StudentScore
 
 from . import elo as elo_module
-from .bots import pick_bot_identity, pick_bot_difficulty, bot_elo_before
+from .bots import pick_bot_identity, pick_bot_difficulty, bot_elo_for_match
 from .grading import check_answer
 from .models import (
     BattleRoom, BattleParticipant, BattleRoomQuestion, BattleAnswer,
@@ -101,7 +101,7 @@ def maybe_inject_bot(room_id):
 
     BattleParticipant.objects.create(
         room=room, bot_identity=identity, bot_difficulty=difficulty,
-        elo_before=bot_elo_before(rating.elo),
+        elo_before=bot_elo_for_match(rating, difficulty),
     )
     start_match(room)
 
@@ -287,22 +287,44 @@ def finish_battle(room_id):
                 participant.score, room.question_count, avg_correct_time, room.seconds_per_question,
             )
 
+            # "Still calibrating" = a placement match that did NOT just
+            # complete placement — no visible ELO number for these.
+            participant_still_calibrating = False
+            participant_is_placement_reveal = False
+
             if participant.is_bot:
                 elo_after = participant.elo_before
                 elo_change = 0
             else:
                 rating, _ = BattleRating.objects.select_for_update().get_or_create(student=participant.student)
-                k = rating.k_factor()
-                elo_change = elo_module.compute_elo_delta(
-                    participant.elo_before, opponent.elo_before, result, k, performance,
-                )
-                elo_after = max(0, participant.elo_before + elo_change)
-                rating.apply_result(elo_after, result)
-                BattleEloLog.objects.create(
-                    student=participant.student, room=room,
-                    elo_before=participant.elo_before, elo_after=elo_after,
-                    elo_change=elo_change, result=result,
-                )
+
+                if rating.is_in_placement:
+                    just_completed_placement = rating.record_placement_match(result, performance)
+                    if just_completed_placement:
+                        participant_is_placement_reveal = True
+                        elo_after = rating.elo
+                        elo_change = rating.elo - BattleRating.PLACEMENT_BASE_ELO
+                    else:
+                        participant_still_calibrating = True
+                        elo_after = 0
+                        elo_change = 0
+                    BattleEloLog.objects.create(
+                        student=participant.student, room=room,
+                        elo_before=0, elo_after=elo_after, elo_change=elo_change,
+                        result=result, is_placement=True,
+                    )
+                else:
+                    k = rating.k_factor()
+                    elo_change = elo_module.compute_elo_delta(
+                        participant.elo_before, opponent.elo_before, result, k, performance,
+                    )
+                    elo_after = max(0, participant.elo_before + elo_change)
+                    rating.apply_result(elo_after, result)
+                    BattleEloLog.objects.create(
+                        student=participant.student, room=room,
+                        elo_before=participant.elo_before, elo_after=elo_after,
+                        elo_change=elo_change, result=result,
+                    )
                 if result == 'win':
                     _award_battle_win_reward(participant.student)
 
@@ -318,6 +340,11 @@ def finish_battle(room_id):
                 'elo_before': participant.elo_before,
                 'elo_after': elo_after,
                 'elo_change': elo_change,
+                'still_calibrating': participant_still_calibrating,
+                'is_placement_reveal': participant_is_placement_reveal,
+                'level': None if participant.is_bot else rating.level,
+                'matches_played': None if participant.is_bot else rating.matches_played,
+                'placement_matches_total': BattleRating.PLACEMENT_MATCHES,
             })
 
         winner_id = winner.id if winner else None

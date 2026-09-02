@@ -202,6 +202,78 @@ class EngineFullMatchTests(BattleFixtureMixin, TestCase):
         self.assertEqual(alice_score.coin, engine.BATTLE_WIN_COIN_REWARD)
 
 
+class PlacementEloRevealTests(BattleFixtureMixin, TestCase):
+    """Covers the product spec directly: no visible ELO during the first 10
+    matches, then a single reveal on the 10th — e.g. losing all 10 must land
+    exactly on Level 1 / 400 ELO, matching the user's own example."""
+
+    def setUp(self):
+        klass = self._make_class('6')
+        user = User.objects.create_user(phone='+998900000099', password='pass12345', role='student')
+        self.student = Student.objects.create(user=user, full_name='Placement Student')
+        self.rating = BattleRating.objects.create(student=self.student)
+
+    def test_elo_and_level_stay_hidden_through_first_nine_matches(self):
+        for i in range(9):
+            just_completed = self.rating.record_placement_match('loss', performance=0.3)
+            self.assertFalse(just_completed)
+            self.assertTrue(self.rating.is_in_placement)
+            self.assertEqual(self.rating.elo, 0)
+            self.assertEqual(self.rating.level, 0)
+
+    def test_losing_all_ten_lands_on_level_one_400_elo(self):
+        for i in range(9):
+            self.rating.record_placement_match('loss', performance=0.3)
+        just_completed = self.rating.record_placement_match('loss', performance=0.3)
+
+        self.assertTrue(just_completed)
+        self.assertFalse(self.rating.is_in_placement)
+        self.assertEqual(self.rating.elo, BattleRating.PLACEMENT_MIN_ELO)
+        self.assertEqual(self.rating.elo, 400)
+        self.assertEqual(self.rating.level, 1)
+        self.assertEqual(self.rating.matches_played, 10)
+
+    def test_winning_all_ten_lands_near_the_top(self):
+        for i in range(10):
+            just_completed = self.rating.record_placement_match('win', performance=0.9)
+
+        # 1200 base + 10*80 net wins + (0.9-0.5)*100 performance nudge = 2040.
+        self.assertTrue(just_completed)
+        self.assertEqual(self.rating.elo, 2040)
+        self.assertEqual(self.rating.level, 10)  # comfortably above the 2001+ Level 10 floor
+        self.assertLessEqual(self.rating.elo, BattleRating.PLACEMENT_MAX_ELO)
+
+    def test_engine_hides_elo_until_tenth_match_then_reveals(self):
+        klass = self._make_class('10')
+        subject = self._make_subject_with_questions(klass, level=1, question_count=1)
+        opponent_user = User.objects.create_user(phone='+998900000098', password='pass12345', role='student')
+        opponent = Student.objects.create(user=opponent_user, full_name='Opponent')
+        BattleRating.objects.create(student=opponent, matches_played=10, elo=1000)
+
+        with patch('django_app.app_battle.engine._arm_question_timers'), \
+                patch('django_app.app_battle.engine.send_event'):
+            for match_number in range(1, 11):
+                room = self._make_room(klass, [subject], question_count=1)
+                me = matchmaking.create_participant_for_student(room, self.student, is_creator=True)
+                opp = matchmaking.create_participant_for_student(room, opponent, is_creator=False)
+                engine.start_match(room)
+
+                room_question = room.questions.get(order=0)
+                correct_id = room_question.question.choices.get(is_correct=True).id
+                wrong_id = room_question.question.choices.get(is_correct=False).id
+                engine.record_answer(room.id, opp.id, 0, {'choices': [correct_id]})
+                engine.record_answer(room.id, me.id, 0, {'choices': [wrong_id]})
+
+                self.rating.refresh_from_db()
+                if match_number < 10:
+                    self.assertTrue(self.rating.is_in_placement)
+                    self.assertEqual(self.rating.elo, 0)
+                else:
+                    self.assertFalse(self.rating.is_in_placement)
+                    self.assertEqual(self.rating.elo, 400)
+                    self.assertEqual(self.rating.level, 1)
+
+
 class GradingTests(BattleFixtureMixin, TestCase):
     def test_choice_question_graded_correctly(self):
         klass = self._make_class('8')
