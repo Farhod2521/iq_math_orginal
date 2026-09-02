@@ -1,3 +1,6 @@
+from collections import defaultdict
+
+from django.db.models import Count
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.views import APIView
@@ -110,6 +113,46 @@ class MyRatingAPIView(APIView):
             "best_elo": rating.best_elo,
             "level_progress": progress,
         })
+
+
+class GradeStatsAPIView(APIView):
+    """Real, platform-wide per-grade activity numbers (total finished
+    battles + win rate) — powers the grade-picker cards on the setup page.
+    Not personal history: a fresh student picking an untried grade still
+    sees genuine numbers, not fabricated ones."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        totals = {
+            row['grade_id']: row['total']
+            for row in BattleRoom.objects.filter(status=BattleRoom.STATUS_FINISHED)
+            .values('grade_id').annotate(total=Count('id'))
+        }
+
+        win_counts = defaultdict(int)
+        decided_counts = defaultdict(int)
+        for row in (
+            BattleEloLog.objects.filter(room__isnull=False)
+            .exclude(result='draw')
+            .values('room__grade_id', 'result')
+            .annotate(count=Count('id'))
+        ):
+            grade_id = row['room__grade_id']
+            decided_counts[grade_id] += row['count']
+            if row['result'] == 'win':
+                win_counts[grade_id] += row['count']
+
+        results = []
+        for grade in Class.objects.all().order_by('id'):
+            decided = decided_counts.get(grade.id, 0)
+            win_rate = round((win_counts.get(grade.id, 0) / decided) * 100) if decided else 0
+            results.append({
+                "grade_id": grade.id,
+                "name": grade.name,
+                "total_matches": totals.get(grade.id, 0),
+                "win_rate": win_rate,
+            })
+        return Response({"results": results})
 
 
 class LeaderboardAPIView(APIView):

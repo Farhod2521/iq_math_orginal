@@ -2,6 +2,7 @@ from django.urls import path
 from .views import (
     CreateRoomAPIView, JoinRoomAPIView, RoomDetailAPIView, CancelRoomAPIView,
     MyRatingAPIView, LeaderboardAPIView, HistoryAPIView, EloHistoryAPIView,
+    GradeStatsAPIView,
 )
 
 urlpatterns = [
@@ -13,4 +14,5 @@ urlpatterns = [
     path("leaderboard/", LeaderboardAPIView.as_view()),
     path("history/", HistoryAPIView.as_view()),
     path("elo-history/", EloHistoryAPIView.as_view()),
+    path("grade-stats/", GradeStatsAPIView.as_view()),
 ]
