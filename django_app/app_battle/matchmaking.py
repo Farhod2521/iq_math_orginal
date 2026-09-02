@@ -15,7 +15,7 @@ from django.db import connection, transaction
 from .models import BattleRoom, BattleParticipant, BattleRating, compute_subjects_key
 from . import engine
 
-DEFAULT_BOT_INJECT_DELAY_SECONDS = 18
+DEFAULT_BOT_INJECT_DELAY_SECONDS = 15  # chess.com-style: real opponent gets ~15s to show up first
 PLACEMENT_BOT_DELAY_SECONDS = 3  # short "searching" UX beat, always resolves to a bot
 
 

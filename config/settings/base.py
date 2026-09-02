@@ -272,4 +272,4 @@ CELERY_ENABLE_UTC = False
 # Battle matchmaking: how long a post-placement random-queue room waits for
 # a real opponent before a disguised bot is injected. Placement matches
 # (first 10 for every student) skip this entirely and go straight to a bot.
-BATTLE_BOT_INJECT_DELAY_SECONDS = int(os.getenv("BATTLE_BOT_INJECT_DELAY_SECONDS", "18"))
+BATTLE_BOT_INJECT_DELAY_SECONDS = int(os.getenv("BATTLE_BOT_INJECT_DELAY_SECONDS", "15"))
