@@ -37,6 +37,8 @@ CHANNEL_LAYERS = {
     },
 }
 CSRF_TRUSTED_ORIGINS = [
+    "https://api.iqmath.uz",
+    "https://www.api.iqmath.uz",
     "https://backend.iq-math.uz",
     "https://www.backend.iq-math.uz",
     "http://127.0.0.1:8000",

@@ -16,11 +16,12 @@ os.environ["DJANGO_SETTINGS_MODULE"] = "config.settings.production"
 django.setup()
 
 from django_app.app_chat import routing as chat_routing
+from django_app.app_battle import routing as battle_routing
 from django_app.app_chat.middleware import JwtAuthMiddlewareStack
 
 application = ProtocolTypeRouter({
     "http": get_asgi_application(),
     "websocket": JwtAuthMiddlewareStack(
-        URLRouter(chat_routing.websocket_urlpatterns)
+        URLRouter(chat_routing.websocket_urlpatterns + battle_routing.websocket_urlpatterns)
     ),
 })

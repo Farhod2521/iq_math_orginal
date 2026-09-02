@@ -9,11 +9,12 @@ django.setup()
 from channels.routing import ProtocolTypeRouter, URLRouter
 from django.core.asgi import get_asgi_application
 from django_app.app_chat import routing as chat_routing
+from django_app.app_battle import routing as battle_routing
 from django_app.app_chat.middleware import JwtAuthMiddlewareStack
 
 application = ProtocolTypeRouter({
     "http": get_asgi_application(),
     "websocket": JwtAuthMiddlewareStack(
-        URLRouter(chat_routing.websocket_urlpatterns)
+        URLRouter(chat_routing.websocket_urlpatterns + battle_routing.websocket_urlpatterns)
     ),
 })

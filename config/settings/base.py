@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     "django_app.app_tutor",
     "django_app.app_chat",
     "django_app.app_book",
+    "django_app.app_battle",
 ]
 
 MIDDLEWARE = [
@@ -267,3 +268,8 @@ CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_ENABLE_UTC = False
+
+# Battle matchmaking: how long a post-placement random-queue room waits for
+# a real opponent before a disguised bot is injected. Placement matches
+# (first 10 for every student) skip this entirely and go straight to a bot.
+BATTLE_BOT_INJECT_DELAY_SECONDS = int(os.getenv("BATTLE_BOT_INJECT_DELAY_SECONDS", "18"))
