@@ -41,11 +41,11 @@ class BattleConsumer(AsyncWebsocketConsumer):
 
         await database_sync_to_async(self._clear_disconnect_marker)()
 
-        room = await database_sync_to_async(self._get_room)()
-        if room:
+        snapshot = await database_sync_to_async(self._get_room_snapshot)()
+        if snapshot:
             await self.send(text_data=json.dumps({
                 "event": "room_snapshot",
-                "payload": serialize_room_snapshot(room, self.student),
+                "payload": snapshot,
             }))
 
     async def disconnect(self, close_code):
@@ -91,8 +91,14 @@ class BattleConsumer(AsyncWebsocketConsumer):
         from django_app.app_user.models import Student
         return Student.objects.filter(user=user).first()
 
-    def _get_room(self):
-        return BattleRoom.objects.filter(id=self.room_id).select_related('grade').first()
+    def _get_room_snapshot(self):
+        # Built entirely inside this sync-wrapped call: serialize_room_snapshot
+        # touches lazy relations (subjects M2M, bot_identity FK, BattleRating
+        # lookups) that must not run directly in the consumer's async context.
+        room = BattleRoom.objects.filter(id=self.room_id).select_related('grade').first()
+        if not room:
+            return None
+        return serialize_room_snapshot(room, self.student)
 
     def _get_participant(self):
         return BattleParticipant.objects.filter(room_id=self.room_id, student=self.student).first()
