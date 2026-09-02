@@ -30,10 +30,12 @@ BATTLE_WIN_COIN_REWARD = 2
 
 
 def snapshot_questions(room):
+    # No difficulty filter on purpose: nobody knows in advance whether the
+    # opponent (real or bot) is strong or weak, so questions are drawn
+    # across every level within the selected subjects — difficulty comes up
+    # random per question rather than being a pre-match user choice.
     questions = list(
-        Question.objects.filter(
-            topic__chapter__subject__in=room.subjects.all(), level=room.difficulty_level,
-        ).distinct()
+        Question.objects.filter(topic__chapter__subject__in=room.subjects.all()).distinct()
     )
     count = min(room.question_count, len(questions))
     picked = random.sample(questions, count) if count else []

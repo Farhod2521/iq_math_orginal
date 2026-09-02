@@ -27,8 +27,8 @@ class RoomNotJoinable(Exception):
     pass
 
 
-def _advisory_lock_key(grade_id, subjects_key, difficulty_level, question_count, seconds_per_question):
-    raw = f"{grade_id}:{subjects_key}:{difficulty_level}:{question_count}:{seconds_per_question}"
+def _advisory_lock_key(grade_id, subjects_key, question_count, seconds_per_question):
+    raw = f"{grade_id}:{subjects_key}:{question_count}:{seconds_per_question}"
     digest = hashlib.sha1(raw.encode()).hexdigest()
     # Postgres advisory locks take a 64-bit signed int; fold the hash down.
     return int(digest[:15], 16) - (1 << 59)
@@ -50,9 +50,9 @@ def create_participant_for_student(room, student, is_creator=False):
     )
 
 
-def _new_room(grade, subjects, subjects_key, difficulty_level, question_count, seconds_per_question):
+def _new_room(grade, subjects, subjects_key, question_count, seconds_per_question):
     room = BattleRoom.objects.create(
-        grade=grade, subjects_key=subjects_key, difficulty_level=difficulty_level,
+        grade=grade, subjects_key=subjects_key,
         question_count=question_count, seconds_per_question=seconds_per_question,
         is_random=True, chat_enabled=True, status=BattleRoom.STATUS_WAITING,
     )
@@ -60,8 +60,11 @@ def _new_room(grade, subjects, subjects_key, difficulty_level, question_count, s
     return room
 
 
-def find_or_create_room(student, *, grade, subjects, difficulty_level, question_count, seconds_per_question):
-    """Returns (room, matched_immediately)."""
+def find_or_create_room(student, *, grade, subjects, question_count, seconds_per_question):
+    """Returns (room, matched_immediately). Question difficulty is never a
+    user choice — engine.snapshot_questions draws from every level within
+    the selected subjects, so difficulty comes up random per question,
+    matching a real opponent's unpredictable strength."""
     from .tasks import maybe_inject_bot
 
     subject_ids = [s.id for s in subjects]
@@ -69,12 +72,12 @@ def find_or_create_room(student, *, grade, subjects, difficulty_level, question_
     rating, _ = BattleRating.objects.get_or_create(student=student)
 
     if rating.is_in_placement:
-        room = _new_room(grade, subjects, subjects_key, difficulty_level, question_count, seconds_per_question)
+        room = _new_room(grade, subjects, subjects_key, question_count, seconds_per_question)
         create_participant_for_student(room, student, is_creator=True)
         maybe_inject_bot.apply_async(args=[room.id], countdown=PLACEMENT_BOT_DELAY_SECONDS)
         return room, False
 
-    lock_key = _advisory_lock_key(grade.id, subjects_key, difficulty_level, question_count, seconds_per_question)
+    lock_key = _advisory_lock_key(grade.id, subjects_key, question_count, seconds_per_question)
     matched_room = None
     with transaction.atomic():
         _take_matchmaking_lock(lock_key)
@@ -82,7 +85,7 @@ def find_or_create_room(student, *, grade, subjects, difficulty_level, question_
             BattleRoom.objects.select_for_update()
             .filter(
                 status=BattleRoom.STATUS_WAITING, is_random=True,
-                grade=grade, subjects_key=subjects_key, difficulty_level=difficulty_level,
+                grade=grade, subjects_key=subjects_key,
                 question_count=question_count, seconds_per_question=seconds_per_question,
             )
             .exclude(participants__student=student)
@@ -93,7 +96,7 @@ def find_or_create_room(student, *, grade, subjects, difficulty_level, question_
             create_participant_for_student(existing, student, is_creator=False)
             matched_room = existing
         else:
-            room = _new_room(grade, subjects, subjects_key, difficulty_level, question_count, seconds_per_question)
+            room = _new_room(grade, subjects, subjects_key, question_count, seconds_per_question)
             create_participant_for_student(room, student, is_creator=True)
 
     if matched_room:

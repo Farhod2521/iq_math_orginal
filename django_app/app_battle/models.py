@@ -175,7 +175,6 @@ class BattleRoom(models.Model):
         max_length=200, db_index=True, default='',
         help_text="Sorted comma-joined subject ids — matchmaking bucket key.",
     )
-    difficulty_level = models.PositiveIntegerField()
 
     question_count = models.PositiveSmallIntegerField(default=10)
     seconds_per_question = models.PositiveSmallIntegerField(default=60)
@@ -201,7 +200,7 @@ class BattleRoom(models.Model):
         ordering = ['-created_at']
         indexes = [
             models.Index(fields=[
-                'status', 'is_random', 'grade', 'subjects_key', 'difficulty_level',
+                'status', 'is_random', 'grade', 'subjects_key',
                 'question_count', 'seconds_per_question',
             ], name='battleroom_matchmaking_idx'),
         ]

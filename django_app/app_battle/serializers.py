@@ -38,7 +38,6 @@ def serialize_room_snapshot(room, viewer_student=None):
         'status': room.status,
         'grade': room.grade.name,
         'subjects': [s.name for s in room.subjects.all()],
-        'difficulty_level': room.difficulty_level,
         'question_count': room.question_count,
         'seconds_per_question': room.seconds_per_question,
         'chat_enabled': room.chat_enabled,
@@ -59,7 +58,6 @@ def serialize_question(room_question):
 class RoomCreateSerializer(serializers.Serializer):
     grade_id = serializers.IntegerField()
     subject_ids = serializers.ListField(child=serializers.IntegerField(), allow_empty=False, min_length=1)
-    difficulty_level = serializers.IntegerField()
     question_count = serializers.IntegerField(default=10, min_value=1, max_value=30)
     seconds_per_question = serializers.IntegerField(default=60, min_value=10, max_value=300)
 

@@ -31,8 +31,8 @@ class BattleParticipantInline(admin.TabularInline):
 
 @admin.register(BattleRoom)
 class BattleRoomAdmin(admin.ModelAdmin):
-    list_display = ('id', 'code', 'grade', 'difficulty_level', 'status', 'is_random', 'created_at')
-    list_filter = ('status', 'is_random', 'grade', 'difficulty_level')
+    list_display = ('id', 'code', 'grade', 'status', 'is_random', 'created_at')
+    list_filter = ('status', 'is_random', 'grade')
     search_fields = ('code',)
     filter_horizontal = ('subjects',)
     inlines = [BattleParticipantInline]

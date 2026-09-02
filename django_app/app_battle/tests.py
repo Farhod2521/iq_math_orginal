@@ -64,10 +64,10 @@ class BattleFixtureMixin:
             Choice.objects.create(question=question, letter='B', text='x=2', is_correct=False)
         return subject
 
-    def _make_room(self, klass, subjects, difficulty_level=1, question_count=3, seconds_per_question=30):
+    def _make_room(self, klass, subjects, question_count=3, seconds_per_question=30):
         room = BattleRoom.objects.create(
             grade=klass, subjects_key=compute_subjects_key([s.id for s in subjects]),
-            difficulty_level=difficulty_level, question_count=question_count,
+            question_count=question_count,
             seconds_per_question=seconds_per_question, is_random=True, chat_enabled=True,
         )
         room.subjects.set(subjects)
@@ -98,7 +98,7 @@ class MatchmakingTests(BattleFixtureMixin, TestCase):
         BattleRating.objects.create(student=bob, matches_played=10)
 
         room_kwargs = dict(
-            grade=self.klass, subjects=[self.subject], difficulty_level=1,
+            grade=self.klass, subjects=[self.subject],
             question_count=3, seconds_per_question=30,
         )
 
@@ -123,7 +123,7 @@ class MatchmakingTests(BattleFixtureMixin, TestCase):
 
         with patch('django_app.app_battle.tasks.maybe_inject_bot.apply_async') as mock_apply_async:
             room, matched = matchmaking.find_or_create_room(
-                alice, grade=self.klass, subjects=[self.subject], difficulty_level=1,
+                alice, grade=self.klass, subjects=[self.subject],
                 question_count=3, seconds_per_question=30,
             )
         self.assertFalse(matched)

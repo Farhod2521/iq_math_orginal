@@ -34,7 +34,7 @@ class CreateRoomAPIView(APIView):
 
         room, matched = matchmaking.find_or_create_room(
             student,
-            grade=grade, subjects=subjects, difficulty_level=data['difficulty_level'],
+            grade=grade, subjects=subjects,
             question_count=data['question_count'], seconds_per_question=data['seconds_per_question'],
         )
         return Response({
