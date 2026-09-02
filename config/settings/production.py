@@ -43,6 +43,8 @@ CSRF_TRUSTED_ORIGINS = [
     "https://www.backend.iq-math.uz",
     "http://127.0.0.1:8000",
     "http://localhost:8000",
+    "http://127.0.0.1:3002",
+    "http://localhost:3002",
 ]
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
