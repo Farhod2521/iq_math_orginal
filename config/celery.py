@@ -4,7 +4,7 @@ from celery import Celery
 from celery.schedules import crontab
 
 
-env = os.getenv("DJANGO_ENV", "development")
+env = os.getenv("DJANGO_ENV", "production")
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", f"config.settings.{env}")
 
 app = Celery("config")
