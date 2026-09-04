@@ -8,6 +8,7 @@ room by its share code, via `join_room_by_code`.
 """
 
 import hashlib
+import random
 
 from django.conf import settings
 from django.db import connection, transaction
@@ -15,8 +16,18 @@ from django.db import connection, transaction
 from .models import BattleRoom, BattleParticipant, BattleRating, compute_subjects_key
 from . import engine
 
-DEFAULT_BOT_INJECT_DELAY_SECONDS = 15  # chess.com-style: real opponent gets ~15s to show up first
+# chess.com-style: a real opponent gets a randomized 10-18s window to show
+# up first — a fixed delay felt mechanical/instant, since it always landed
+# on the exact same second every time.
+BOT_INJECT_DELAY_MIN_SECONDS = 10
+BOT_INJECT_DELAY_MAX_SECONDS = 18
 PLACEMENT_BOT_DELAY_SECONDS = 3  # short "searching" UX beat, always resolves to a bot
+
+
+def _random_bot_delay():
+    lo = getattr(settings, 'BATTLE_BOT_INJECT_DELAY_MIN_SECONDS', BOT_INJECT_DELAY_MIN_SECONDS)
+    hi = getattr(settings, 'BATTLE_BOT_INJECT_DELAY_MAX_SECONDS', BOT_INJECT_DELAY_MAX_SECONDS)
+    return random.uniform(lo, hi)
 
 
 class RoomFull(Exception):
@@ -103,8 +114,7 @@ def find_or_create_room(student, *, grade, subjects, question_count, seconds_per
         engine.start_match(matched_room)
         return matched_room, True
 
-    delay = getattr(settings, 'BATTLE_BOT_INJECT_DELAY_SECONDS', DEFAULT_BOT_INJECT_DELAY_SECONDS)
-    maybe_inject_bot.apply_async(args=[room.id], countdown=delay)
+    maybe_inject_bot.apply_async(args=[room.id], countdown=_random_bot_delay())
     return room, False
 
 

@@ -78,6 +78,16 @@ class BattleConsumer(AsyncWebsocketConsumer):
                 await database_sync_to_async(engine.record_chat_message)(
                     self.room_id, self.participant.id, text,
                 )
+        elif msg_type == "timeout_check":
+            # Client-side self-heal: the browser's own countdown hit zero
+            # with no `next_question` event ever arriving — nudge the
+            # server to advance in case the scheduled Celery timeout task
+            # was lost (worker restart, broker hiccup, etc). Safe to call
+            # redundantly: advance_to_next_question no-ops if the question
+            # already moved on.
+            await database_sync_to_async(engine.advance_to_next_question)(
+                self.room_id, data.get("question_order"),
+            )
 
     async def battle_event(self, event):
         await self.send(text_data=json.dumps({
@@ -98,6 +108,16 @@ class BattleConsumer(AsyncWebsocketConsumer):
         room = BattleRoom.objects.filter(id=self.room_id).select_related('grade').first()
         if not room:
             return None
+
+        if room.status == BattleRoom.STATUS_ACTIVE and room.current_question_started_at:
+            elapsed = (timezone.now() - room.current_question_started_at).total_seconds()
+            if elapsed >= room.seconds_per_question:
+                # The scheduled Celery timeout task appears to have been
+                # lost (worker restart, broker hiccup, etc.) — self-heal on
+                # (re)connect rather than leaving the match stuck forever.
+                engine.advance_to_next_question(room.id, room.current_question_index)
+                room = BattleRoom.objects.filter(id=self.room_id).select_related('grade').first()
+
         snapshot = serialize_room_snapshot(room, self.student)
 
         # A (re)connect must be able to recover an in-progress match on its
