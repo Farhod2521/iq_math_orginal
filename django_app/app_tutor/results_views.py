@@ -426,3 +426,48 @@ class TutorResultsOverviewAPIView(APIView):
                 "growth": _round(period_average - prev_average),
             },
         }, status=status.HTTP_200_OK)
+
+
+class TutorResultsChartAPIView(APIView):
+    """
+    GET /api/v1/tutor/tutor/results/chart/?period=30 - o'quvchilar natijalari dinamikasi.
+
+    Har bir nuqta - shu sanagacha ishlangan barcha mavzular bo'yicha o'rtacha ball
+    (kumulyativ o'rtacha). Shu sababli faoliyatsiz haftalarda chiziq nolga tushmaydi.
+    """
+    permission_classes = [IsTutor]
+
+    BUCKETS = 5
+
+    def get(self, request):
+        tutor = get_tutor(request)
+
+        try:
+            period_days = int(request.GET.get('period', DEFAULT_PERIOD_DAYS))
+        except (TypeError, ValueError):
+            period_days = DEFAULT_PERIOD_DAYS
+        period_days = max(7, min(period_days, 365))
+
+        student_ids = list(get_tutor_students(tutor).values_list('id', flat=True))
+        now = timezone.now()
+        step = period_days / self.BUCKETS
+
+        points = []
+        for index in range(self.BUCKETS):
+            end = now - timedelta(days=step * (self.BUCKETS - index - 1))
+            average = TopicProgress.objects.filter(
+                user_id__in=student_ids, completed_at__lt=end
+            ).aggregate(average=Avg('score'))['average']
+
+            points.append({
+                "date": end.strftime("%Y-%m-%d"),
+                "label": end.strftime("%d.%m"),
+                "value": _round(average),
+            })
+
+        return Response({
+            "period_days": period_days,
+            "labels": [point["label"] for point in points],
+            "values": [point["value"] for point in points],
+            "points": points,
+        }, status=status.HTTP_200_OK)

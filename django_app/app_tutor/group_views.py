@@ -14,7 +14,7 @@ from rest_framework.views import APIView
 
 from django_app.app_user.models import Student
 
-from .helpers import IsTutor, get_tutor, get_tutor_students
+from .helpers import IsTutor, get_group_average_map, get_tutor, get_tutor_students
 from .models import TutorGroup
 from .serializers import (
     TutorGroupDetailSerializer,
@@ -42,6 +42,11 @@ def _tutor_groups(tutor):
     )
 
 
+def _detail_context(tutor, group):
+    """TutorGroupDetailSerializer uchun kontekst (tutor + o'rtacha ball)."""
+    return {'tutor': tutor, 'average_map': get_group_average_map([group.id] if group else [])}
+
+
 class TutorGroupListCreateAPIView(APIView):
     """
     GET  /api/v1/tutor/tutor/groups/ - tutor guruhlari ro'yxati
@@ -61,7 +66,9 @@ class TutorGroupListCreateAPIView(APIView):
         if is_active is not None:
             groups = groups.filter(is_active=is_active.lower() in ('1', 'true', 'yes'))
 
-        serializer = TutorGroupListSerializer(groups, many=True)
+        groups = list(groups)
+        average_map = get_group_average_map([group.id for group in groups])
+        serializer = TutorGroupListSerializer(groups, many=True, context={'average_map': average_map})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
@@ -70,7 +77,7 @@ class TutorGroupListCreateAPIView(APIView):
         serializer.is_valid(raise_exception=True)
         group = serializer.save()
         return Response(
-            TutorGroupDetailSerializer(group, context={'tutor': tutor}).data,
+            TutorGroupDetailSerializer(group, context=_detail_context(tutor, group)).data,
             status=status.HTTP_201_CREATED
         )
 
@@ -90,7 +97,7 @@ class TutorGroupDetailAPIView(APIView):
     def get(self, request, pk):
         tutor = get_tutor(request)
         group = self._get_group(request, pk)
-        serializer = TutorGroupDetailSerializer(group, context={'tutor': tutor})
+        serializer = TutorGroupDetailSerializer(group, context=_detail_context(tutor, group))
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def put(self, request, pk):
@@ -108,7 +115,7 @@ class TutorGroupDetailAPIView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(
-            TutorGroupDetailSerializer(self._get_group(request, pk), context={'tutor': tutor}).data,
+            TutorGroupDetailSerializer(self._get_group(request, pk), context=_detail_context(tutor, group)).data,
             status=status.HTTP_200_OK
         )
 
@@ -160,7 +167,7 @@ class TutorGroupStudentsAPIView(APIView):
         group.students.add(*allowed_students)
 
         return Response(
-            TutorGroupDetailSerializer(self._get_group(request, pk), context={'tutor': tutor}).data,
+            TutorGroupDetailSerializer(self._get_group(request, pk), context=_detail_context(tutor, group)).data,
             status=status.HTTP_200_OK
         )
 
@@ -176,7 +183,7 @@ class TutorGroupStudentsAPIView(APIView):
         group.students.remove(*students)
 
         return Response(
-            TutorGroupDetailSerializer(self._get_group(request, pk), context={'tutor': tutor}).data,
+            TutorGroupDetailSerializer(self._get_group(request, pk), context=_detail_context(tutor, group)).data,
             status=status.HTTP_200_OK
         )
 

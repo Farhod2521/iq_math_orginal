@@ -11,7 +11,7 @@ from .group_views import (
 )
 from .results_views import (
     TutorStudentsResultsAPIView, TutorStudentResultDetailAPIView,
-    TutorGroupResultsAPIView, TutorResultsOverviewAPIView
+    TutorGroupResultsAPIView, TutorResultsOverviewAPIView, TutorResultsChartAPIView
 )
 
 
@@ -39,6 +39,7 @@ urlpatterns = [
     # === O'quvchilar va natijalar ===
     path('tutor/my-students/', TutorStudentListAPIView.as_view(), name='tutor-my-students'),
     path('tutor/results/overview/', TutorResultsOverviewAPIView.as_view(), name='tutor-results-overview'),
+    path('tutor/results/chart/', TutorResultsChartAPIView.as_view(), name='tutor-results-chart'),
     path('tutor/results/students/', TutorStudentsResultsAPIView.as_view(), name='tutor-results-students'),
     path('tutor/results/students/<int:student_id>/', TutorStudentResultDetailAPIView.as_view(), name='tutor-results-student-detail'),
 

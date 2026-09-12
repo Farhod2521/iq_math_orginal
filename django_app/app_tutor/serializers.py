@@ -150,10 +150,15 @@ class TutorStudentBriefSerializer(serializers.ModelSerializer):
 class TutorGroupListSerializer(serializers.ModelSerializer):
     student_count = serializers.IntegerField(source='students.count', read_only=True)
     created_at = serializers.DateTimeField(format="%d/%m/%Y %H:%M", read_only=True)
+    average_score = serializers.SerializerMethodField()
 
     class Meta:
         model = TutorGroup
-        fields = ['id', 'name', 'description', 'is_active', 'student_count', 'created_at']
+        fields = ['id', 'name', 'description', 'is_active', 'student_count', 'average_score', 'created_at']
+
+    def get_average_score(self, obj):
+        """View'da bitta so'rovda hisoblangan xarita orqali (N+1 bo'lmasligi uchun)."""
+        return self.context.get('average_map', {}).get(obj.id, 0.0)
 
 
 class TutorGroupDetailSerializer(TutorGroupListSerializer):

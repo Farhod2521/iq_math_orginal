@@ -1,5 +1,6 @@
 """O'qituvchi (tutor) modullari uchun umumiy yordamchi funksiyalar."""
 
+from django.db.models import Avg
 from rest_framework.permissions import BasePermission
 
 from django_app.app_management.models import CouponUsage_Tutor_Student
@@ -53,3 +54,24 @@ def get_tutor_students(tutor):
     return Student.objects.filter(
         id__in=get_tutor_student_ids(tutor)
     ).select_related('user', 'class_name', 'class_name__classes')
+
+
+def get_group_average_map(group_ids):
+    """
+    {group_id: o'rtacha ball} — guruhlar ro'yxati uchun bitta so'rovda hisoblanadi.
+    Ball TopicProgress.score dan olinadi (0-100).
+    """
+    from django_app.app_student.models import TopicProgress
+
+    if not group_ids:
+        return {}
+
+    rows = (
+        TopicProgress.objects.filter(user__tutor_groups__id__in=group_ids)
+        .values('user__tutor_groups__id')
+        .annotate(average=Avg('score'))
+    )
+    return {
+        row['user__tutor_groups__id']: round(float(row['average'] or 0), 1)
+        for row in rows
+    }
