@@ -107,3 +107,37 @@ class WithdrawalLimitSettings(models.Model):
 
     def __str__(self):
         return f"Min: {self.min_amount} | Max: {self.max_amount}"
+
+
+class TutorGroup(models.Model):
+    """
+    O'qituvchi (tutor) o'z promo/referal havolasi orqali qo'shgan o'quvchilarini
+    ajratib qo'yadigan guruh. app_teacher.Group faqat Teacher uchun ishlaydi,
+    shuning uchun tutor uchun alohida model.
+    """
+    tutor = models.ForeignKey(
+        Tutor,
+        on_delete=models.CASCADE,
+        related_name='tutor_groups',
+        verbose_name="O'qituvchi"
+    )
+    name = models.CharField(max_length=200, verbose_name="Guruh nomi")
+    description = models.TextField(blank=True, null=True, verbose_name="Izoh")
+    students = models.ManyToManyField(
+        Student,
+        related_name='tutor_groups',
+        blank=True,
+        verbose_name="O'quvchilar"
+    )
+    is_active = models.BooleanField(default=True, verbose_name="Faolmi")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Yaratilgan sana")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Yangilangan sana")
+
+    class Meta:
+        verbose_name = "Tutor guruhi"
+        verbose_name_plural = "Tutor guruhlari"
+        ordering = ['-created_at']
+        unique_together = ('tutor', 'name')
+
+    def __str__(self):
+        return f"{self.name} - {self.tutor.full_name}"

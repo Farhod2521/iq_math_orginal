@@ -1,6 +1,8 @@
 ﻿from rest_framework import serializers
 from django_app.app_management.models import  Coupon_Tutor_Student, Referral_Tutor_Student
-from .models import TutorReferralTransaction, TutorCouponTransaction, TutorWithdrawal
+from django_app.app_user.models import Student
+from .models import TutorReferralTransaction, TutorCouponTransaction, TutorWithdrawal, TutorGroup
+from .helpers import get_tutor_student_ids
 
 
 
@@ -98,3 +100,125 @@ class TutorWithdrawalSerializer(serializers.ModelSerializer):
     class Meta:
         model = TutorWithdrawal
         fields = ['id', 'amount', 'status', 'created_at']
+
+
+class TutorStudentBriefSerializer(serializers.ModelSerializer):
+    """Guruh ichida yoki ro'yxatda ko'rsatiladigan qisqa o'quvchi ma'lumoti."""
+    phone = serializers.CharField(source='user.phone', read_only=True)
+    class_uz = serializers.SerializerMethodField()
+    class_ru = serializers.SerializerMethodField()
+    group_id = serializers.SerializerMethodField()
+    group_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Student
+        fields = [
+            'id', 'full_name', 'identification', 'phone',
+            'class_uz', 'class_ru', 'region', 'districts',
+            'group_id', 'group_name',
+        ]
+
+    def get_class_uz(self, obj):
+        if not obj.class_name:
+            return None
+        if obj.class_name.classes:
+            return f"{obj.class_name.classes.name}-sinf {obj.class_name.name_uz}"
+        return obj.class_name.name_uz
+
+    def get_class_ru(self, obj):
+        if not obj.class_name:
+            return None
+        if obj.class_name.classes:
+            return f"{obj.class_name.classes.name}-класс {obj.class_name.name_ru}"
+        return obj.class_name.name_ru
+
+    def _tutor_group(self, obj):
+        tutor = self.context.get('tutor')
+        if not tutor:
+            return None
+        return next((g for g in obj.tutor_groups.all() if g.tutor_id == tutor.id), None)
+
+    def get_group_id(self, obj):
+        group = self._tutor_group(obj)
+        return group.id if group else None
+
+    def get_group_name(self, obj):
+        group = self._tutor_group(obj)
+        return group.name if group else None
+
+
+class TutorGroupListSerializer(serializers.ModelSerializer):
+    student_count = serializers.IntegerField(source='students.count', read_only=True)
+    created_at = serializers.DateTimeField(format="%d/%m/%Y %H:%M", read_only=True)
+
+    class Meta:
+        model = TutorGroup
+        fields = ['id', 'name', 'description', 'is_active', 'student_count', 'created_at']
+
+
+class TutorGroupDetailSerializer(TutorGroupListSerializer):
+    students = TutorStudentBriefSerializer(many=True, read_only=True)
+
+    class Meta(TutorGroupListSerializer.Meta):
+        fields = TutorGroupListSerializer.Meta.fields + ['students']
+
+
+class TutorGroupWriteSerializer(serializers.ModelSerializer):
+    """Guruh yaratish/tahrirlash. student_ids — ixtiyoriy, guruh tarkibini to'liq almashtiradi."""
+    student_ids = serializers.ListField(
+        child=serializers.IntegerField(), required=False, write_only=True, allow_empty=True
+    )
+
+    class Meta:
+        model = TutorGroup
+        fields = ['id', 'name', 'description', 'is_active', 'student_ids']
+
+    def validate_name(self, value):
+        value = (value or '').strip()
+        if not value:
+            raise serializers.ValidationError("Guruh nomi bo'sh bo'lishi mumkin emas")
+
+        tutor = self.context['tutor']
+        qs = TutorGroup.objects.filter(tutor=tutor, name__iexact=value)
+        if self.instance is not None:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise serializers.ValidationError("Bunday nomli guruh allaqachon mavjud")
+        return value
+
+    def validate_student_ids(self, value):
+        tutor = self.context['tutor']
+        allowed_ids = get_tutor_student_ids(tutor)
+        invalid_ids = [student_id for student_id in value if student_id not in allowed_ids]
+        if invalid_ids:
+            raise serializers.ValidationError(
+                f"Bu o'quvchilar sizning o'quvchilaringiz emas: {invalid_ids}"
+            )
+        return value
+
+    def create(self, validated_data):
+        student_ids = validated_data.pop('student_ids', [])
+        group = TutorGroup.objects.create(tutor=self.context['tutor'], **validated_data)
+        if student_ids:
+            set_group_students(group, student_ids)
+        return group
+
+    def update(self, instance, validated_data):
+        student_ids = validated_data.pop('student_ids', None)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        if student_ids is not None:
+            set_group_students(group=instance, student_ids=student_ids)
+        return instance
+
+
+def set_group_students(group, student_ids):
+    """
+    Guruh tarkibini belgilaydi. Bir o'quvchi bitta tutorning faqat bitta guruhida
+    bo'lishi kerak, shuning uchun u tutorning boshqa guruhlaridan olib tashlanadi.
+    """
+    students = Student.objects.filter(id__in=student_ids)
+    for other_group in TutorGroup.objects.filter(tutor=group.tutor).exclude(pk=group.pk):
+        other_group.students.remove(*students)
+    group.students.set(students)
