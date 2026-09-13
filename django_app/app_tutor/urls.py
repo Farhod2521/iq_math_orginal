@@ -14,6 +14,7 @@ from .invitation_views import (
     TutorInvitationCancelAPIView, StudentInvitationListAPIView,
     StudentInvitationRespondAPIView
 )
+from .ratings_views import TutorRatingAPIView
 from .results_views import (
     TutorStudentsResultsAPIView, TutorStudentResultDetailAPIView,
     TutorGroupResultsAPIView, TutorResultsOverviewAPIView, TutorResultsChartAPIView
@@ -40,6 +41,9 @@ urlpatterns = [
     path('tutor/groups/<int:pk>/', TutorGroupDetailAPIView.as_view(), name='tutor-group-detail'),
     path('tutor/groups/<int:pk>/students/', TutorGroupStudentsAPIView.as_view(), name='tutor-group-students'),
     path('tutor/groups/<int:pk>/results/', TutorGroupResultsAPIView.as_view(), name='tutor-group-results'),
+
+    # === O'qituvchilar reytingi ===
+    path('tutor/ratings/', TutorRatingAPIView.as_view(), name='tutor-ratings'),
 
     # === Guruhga takliflar ===
     path('tutor/students/search/', TutorStudentSearchAPIView.as_view(), name='tutor-student-search'),
