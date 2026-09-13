@@ -1,4 +1,5 @@
 ﻿from django.db import models
+from django.db.models import Q
 from django_app.app_user.models import Student, Tutor
 from django_app.app_management.models import  Coupon_Tutor_Student, Referral_Tutor_Student
 
@@ -141,3 +142,52 @@ class TutorGroup(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.tutor.full_name}"
+
+
+class TutorGroupInvitation(models.Model):
+    """
+    O'qituvchi tizimdagi istalgan o'quvchini o'z guruhiga taklif qiladi.
+    O'quvchi tizimga kirganda taklifni ko'radi va qabul qiladi yoki rad etadi.
+    """
+    STATUS_PENDING = 'pending'
+    STATUS_ACCEPTED = 'accepted'
+    STATUS_REJECTED = 'rejected'
+    STATUS_CANCELLED = 'cancelled'
+
+    STATUS_CHOICES = (
+        (STATUS_PENDING, 'Kutilmoqda'),
+        (STATUS_ACCEPTED, 'Qabul qilingan'),
+        (STATUS_REJECTED, 'Rad etilgan'),
+        (STATUS_CANCELLED, 'Bekor qilingan'),
+    )
+
+    group = models.ForeignKey(
+        TutorGroup, on_delete=models.CASCADE, related_name='invitations', verbose_name="Guruh"
+    )
+    tutor = models.ForeignKey(
+        Tutor, on_delete=models.CASCADE, related_name='group_invitations', verbose_name="Taklif qilgan o'qituvchi"
+    )
+    student = models.ForeignKey(
+        Student, on_delete=models.CASCADE, related_name='tutor_group_invitations', verbose_name="O'quvchi"
+    )
+    status = models.CharField(
+        max_length=10, choices=STATUS_CHOICES, default=STATUS_PENDING, verbose_name="Holat"
+    )
+    message = models.TextField(blank=True, null=True, verbose_name="Xabar")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Yuborilgan sana")
+    responded_at = models.DateTimeField(blank=True, null=True, verbose_name="Javob berilgan sana")
+
+    class Meta:
+        verbose_name = "Guruhga taklif"
+        verbose_name_plural = "Guruhga takliflar"
+        ordering = ['-created_at']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['group', 'student'],
+                condition=Q(status='pending'),
+                name='unique_pending_tutor_group_invitation'
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.student.full_name} -> {self.group.name} ({self.status})"

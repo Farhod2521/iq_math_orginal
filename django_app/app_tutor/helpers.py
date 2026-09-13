@@ -6,7 +6,7 @@ from rest_framework.permissions import BasePermission
 from django_app.app_management.models import CouponUsage_Tutor_Student
 from django_app.app_user.models import Student
 
-from .models import TutorCouponTransaction, TutorReferralTransaction
+from .models import TutorCouponTransaction, TutorGroup, TutorReferralTransaction
 
 
 class IsTutor(BasePermission):
@@ -18,6 +18,22 @@ class IsTutor(BasePermission):
         if not request.user or not request.user.is_authenticated:
             return False
         return getattr(request.user, 'tutor_profile', None) is not None
+
+
+class IsStudent(BasePermission):
+    """Faqat o'quvchi profiliga ega foydalanuvchi."""
+
+    message = "Foydalanuvchi o'quvchi emas"
+
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+        return getattr(request.user, 'student_profile', None) is not None
+
+
+def get_student(request):
+    """Request egasining o'quvchi profili yoki None."""
+    return getattr(request.user, 'student_profile', None)
 
 
 def get_tutor(request):
@@ -32,7 +48,8 @@ def get_tutor_student_ids(tutor):
     Uchta manba birlashtiriladi:
       1. TutorReferralTransaction — ro'yxatdan o'tishda referal kod ishlatganlar;
       2. TutorCouponTransaction   — tutor kuponi bilan to'lov qilganlar;
-      3. CouponUsage_Tutor_Student — kupon ishlatilgan, lekin to'lov hali yakunlanmaganlar.
+      3. CouponUsage_Tutor_Student — kupon ishlatilgan, lekin to'lov hali yakunlanmaganlar;
+      4. Tutor guruhlariga taklif orqali qo'shilganlar.
     """
     referral_ids = TutorReferralTransaction.objects.filter(
         tutor=tutor
@@ -46,7 +63,12 @@ def get_tutor_student_ids(tutor):
         used_by_tutor=tutor, used_by_student__isnull=False
     ).values_list('used_by_student_id', flat=True)
 
-    return set(referral_ids) | set(coupon_ids) | set(usage_ids)
+    # 4. Taklif orqali guruhga qo'shilganlar (promo/kupon orqali kelmagan bo'lishi mumkin)
+    group_member_ids = TutorGroup.objects.filter(tutor=tutor).values_list('students__id', flat=True)
+
+    ids = set(referral_ids) | set(coupon_ids) | set(usage_ids)
+    ids.update(student_id for student_id in group_member_ids if student_id)
+    return ids
 
 
 def get_tutor_students(tutor):

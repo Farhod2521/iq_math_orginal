@@ -220,10 +220,10 @@ class TutorGroupWriteSerializer(serializers.ModelSerializer):
 
 def set_group_students(group, student_ids):
     """
-    Guruh tarkibini belgilaydi. Bir o'quvchi bitta tutorning faqat bitta guruhida
-    bo'lishi kerak, shuning uchun u tutorning boshqa guruhlaridan olib tashlanadi.
+    Guruh tarkibini belgilaydi. Bir o'quvchi bir vaqtda faqat bitta guruhda
+    bo'ladi (istalgan tutorniki), shuning uchun boshqa guruhlardan olib tashlanadi.
     """
     students = Student.objects.filter(id__in=student_ids)
-    for other_group in TutorGroup.objects.filter(tutor=group.tutor).exclude(pk=group.pk):
+    for other_group in TutorGroup.objects.filter(students__in=students).exclude(pk=group.pk).distinct():
         other_group.students.remove(*students)
     group.students.set(students)

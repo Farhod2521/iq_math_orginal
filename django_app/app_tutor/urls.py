@@ -9,6 +9,11 @@ from .group_views import (
     TutorGroupListCreateAPIView, TutorGroupDetailAPIView,
     TutorGroupStudentsAPIView, TutorStudentListAPIView
 )
+from .invitation_views import (
+    TutorStudentSearchAPIView, TutorGroupInvitationListCreateAPIView,
+    TutorInvitationCancelAPIView, StudentInvitationListAPIView,
+    StudentInvitationRespondAPIView
+)
 from .results_views import (
     TutorStudentsResultsAPIView, TutorStudentResultDetailAPIView,
     TutorGroupResultsAPIView, TutorResultsOverviewAPIView, TutorResultsChartAPIView
@@ -35,6 +40,13 @@ urlpatterns = [
     path('tutor/groups/<int:pk>/', TutorGroupDetailAPIView.as_view(), name='tutor-group-detail'),
     path('tutor/groups/<int:pk>/students/', TutorGroupStudentsAPIView.as_view(), name='tutor-group-students'),
     path('tutor/groups/<int:pk>/results/', TutorGroupResultsAPIView.as_view(), name='tutor-group-results'),
+
+    # === Guruhga takliflar ===
+    path('tutor/students/search/', TutorStudentSearchAPIView.as_view(), name='tutor-student-search'),
+    path('tutor/groups/<int:pk>/invitations/', TutorGroupInvitationListCreateAPIView.as_view(), name='tutor-group-invitations'),
+    path('tutor/invitations/<int:pk>/', TutorInvitationCancelAPIView.as_view(), name='tutor-invitation-cancel'),
+    path('student/my-invitations/', StudentInvitationListAPIView.as_view(), name='student-invitations'),
+    path('student/my-invitations/<int:pk>/respond/', StudentInvitationRespondAPIView.as_view(), name='student-invitation-respond'),
 
     # === O'quvchilar va natijalar ===
     path('tutor/my-students/', TutorStudentListAPIView.as_view(), name='tutor-my-students'),

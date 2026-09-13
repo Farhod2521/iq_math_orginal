@@ -1,6 +1,6 @@
 ﻿from django.contrib import admin
 
-from .models import TutorCouponTransaction, TutorGroup, WithdrawalLimitSettings
+from .models import TutorCouponTransaction, TutorGroup, TutorGroupInvitation, WithdrawalLimitSettings
 
 @admin.register(TutorCouponTransaction)
 class TutorCouponTransactionAdmin(admin.ModelAdmin):
@@ -36,3 +36,12 @@ class TutorGroupAdmin(admin.ModelAdmin):
     @admin.display(description="O'quvchilar soni")
     def student_count(self, obj):
         return obj.students.count()
+
+
+@admin.register(TutorGroupInvitation)
+class TutorGroupInvitationAdmin(admin.ModelAdmin):
+    list_display = ('student', 'group', 'tutor', 'status', 'created_at', 'responded_at')
+    list_filter = ('status', 'created_at', 'tutor')
+    search_fields = ('student__full_name', 'student__identification', 'group__name', 'tutor__full_name')
+    readonly_fields = ('created_at', 'responded_at')
+    ordering = ('-created_at',)

@@ -161,8 +161,10 @@ class TutorGroupStudentsAPIView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Bir o'quvchi bir vaqtda tutorning faqat bitta guruhida bo'ladi
-        for other_group in TutorGroup.objects.filter(tutor=tutor).exclude(pk=group.pk):
+        # Bir o'quvchi bir vaqtda faqat bitta guruhda bo'ladi (istalgan tutorniki)
+        for other_group in TutorGroup.objects.filter(
+            students__in=allowed_students
+        ).exclude(pk=group.pk).distinct():
             other_group.students.remove(*allowed_students)
         group.students.add(*allowed_students)
 
