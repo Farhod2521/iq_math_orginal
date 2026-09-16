@@ -1,4 +1,5 @@
 from rest_framework import status
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -11,13 +12,18 @@ class SystemSettingsCRUDAPIView(APIView):
     """
     Singleton model - tizimda faqat 1 ta SystemSettings yozuvi bo'ladi.
 
-    GET    /api/v1/management/system-settings/ -> joriy sozlamani olish
+    GET    /api/v1/management/system-settings/ -> joriy sozlamani olish (ochiq, login shart emas)
     POST   /api/v1/management/system-settings/ -> birinchi marta yaratish
     PUT    /api/v1/management/system-settings/ -> mavjud sozlamani yangilash
     DELETE /api/v1/management/system-settings/ -> mavjud sozlamani o'chirish
     """
 
     permission_classes = [IsTeacherOrSuperAdmin]
+
+    def get_permissions(self):
+        if self.request.method == "GET":
+            return [AllowAny()]
+        return super().get_permissions()
 
     def _get_settings(self):
         return SystemSettings.objects.order_by("id").last()
