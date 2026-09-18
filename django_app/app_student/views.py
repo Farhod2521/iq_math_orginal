@@ -9,7 +9,7 @@ from .serializers import (
     TopicSerializer, TopicSerializer1, Chapter_STUDENT_ID_Serializer, Topic_STUDENT_ID_Serializer
     )
 import random
-from django.db.models import Q
+from django.db.models import Q, Count
 from collections import defaultdict
 from bs4 import BeautifulSoup  # HTML teglarini tozalash uchun
 from django.utils.html import strip_tags
@@ -314,7 +314,10 @@ class StudentSubjectListAPIView(APIView):
 
         # 👉 Agar teacher yoki admin bo'lsa — barcha fanlar to'liq ochiq
         if user.role in ['teacher', 'admin']:
-            all_subjects = Subject.objects.all().order_by('order')
+            all_subjects = Subject.objects.all().annotate(
+                topics_count=Count("chapters__topics", distinct=True),
+                questions_count=Count("chapters__topics__questions", distinct=True),
+            ).order_by('order')
             result = []
 
             for subject in all_subjects:
@@ -343,7 +346,10 @@ class StudentSubjectListAPIView(APIView):
             except Subscription.DoesNotExist:
                 pass
 
-            all_subjects = Subject.objects.filter(active=True).order_by('order')
+            all_subjects = Subject.objects.filter(active=True).annotate(
+                topics_count=Count("chapters__topics", distinct=True),
+                questions_count=Count("chapters__topics__questions", distinct=True),
+            ).order_by('order')
             result = []
 
             for subject in all_subjects:

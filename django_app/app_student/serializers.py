@@ -57,12 +57,15 @@ class SubjectSerializer(serializers.ModelSerializer):
     class_ru = serializers.SerializerMethodField()
     is_open = serializers.SerializerMethodField()
     is_diagnost_open = serializers.SerializerMethodField()  # ✅ yangi field
+    topics_count = serializers.IntegerField()
+    questions_count = serializers.IntegerField()
 
     class Meta:
         model = Subject
         fields = [
             "id", "name_uz", "name_ru", "class_name", "class_uz", "class_ru",
-            "image_uz", "image_ru", "is_open", "is_diagnost_open"
+            "image_uz", "image_ru", "is_open", "is_diagnost_open",
+            "topics_count", "questions_count"
         ]
 
     def get_class_uz(self, obj):
