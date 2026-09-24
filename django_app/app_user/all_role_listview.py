@@ -8,7 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 from openpyxl import Workbook
 from openpyxl.styles import Alignment
 import pytz
-from django.db.models import Q
+from django.db.models import Q, Count, Max
 from .models import User, Student, Teacher, Parent, Tutor, Subject, StudentLoginHistory, TeacherLoginHistory, TutorLoginHistory, ParentLoginHistory, ParentStudentRelation
 from django_app.app_payments.models import Payment
 from django.utils import timezone
@@ -125,32 +125,22 @@ class All_Role_ListView(APIView):
                 Q(role='tutor', tutor_profile__status=True)
             )
 
-        # Bugun mavzu bajargan studentlar — 1 ta query, loopda ishlatiladi
-        today = timezone.localdate()
-        completed_today_ids = set(
-            TopicProgress.objects
-            .filter(completed_at__date=today)
-            .values_list('user_id', flat=True)
-        )
+        # Profil va bog'liq jadvallarni bitta JOIN bilan olish (N+1 oldini olish)
+        users = users.select_related(
+            'student_profile__class_name__classes',
+            'student_profile__subscription',
+            'teacher_profile',
+            'parent_profile',
+            'tutor_profile',
+        ).order_by('-date_joined', '-id')
 
-        data_json = []
-        data_excel = []
-
-        for idx, user in enumerate(users, start=1):
-            profile_data = self.get_profile_data(user, ashgabat_tz, completed_today_ids)
-            if profile_data:
-                # JSON data - profile_id ni qo'shamiz
-                data_json.append({
-                    "id": profile_data['json'].get('profile_id', user.id),
-                    "user_id": user.id,
-                    
-                    "phone": user.phone,
-                    "email": user.email,
-                    "device": user.device,
-                    **{k: v for k, v in profile_data['json'].items() if k != 'profile_id'}
-                })
-                
-                # Excel data
+        # --- EXPORT TO EXCEL ---
+        if export_excel:
+            user_list = list(users)
+            lookups = self.build_lookups(user_list)
+            data_excel = []
+            for idx, user in enumerate(user_list, start=1):
+                profile_data = self.get_profile_data(user, ashgabat_tz, lookups)
                 data_excel.append({
                     "№": idx,
                     "F.I.Sh.": profile_data['excel'].get('full_name', ''),
@@ -166,8 +156,6 @@ class All_Role_ListView(APIView):
                     "Roli": self.get_role_display(user.role),
                 })
 
-        # --- EXPORT TO EXCEL ---
-        if export_excel:
             if not data_excel:
                 return Response({"error": "Eksport qilish uchun ma'lumot topilmadi"}, status=status.HTTP_404_NOT_FOUND)
             
@@ -196,20 +184,20 @@ class All_Role_ListView(APIView):
             return response
 
         # --- ROLE COUNTS (global, filtrsiz) ---
-        role_counts = {
-            "student_count":    User.objects.filter(role="student").count(),
-            "teacher_count":    User.objects.filter(role="teacher").count(),
-            "parent_count":     User.objects.filter(role="parent").count(),
-            "tutor_count":      User.objects.filter(role="tutor").count(),
-            "superadmin_count": User.objects.filter(role="superadmin").count(),
-            "total_count":      User.objects.count(),
-        }
+        role_counts = User.objects.aggregate(
+            student_count=Count('id', filter=Q(role="student")),
+            teacher_count=Count('id', filter=Q(role="teacher")),
+            parent_count=Count('id', filter=Q(role="parent")),
+            tutor_count=Count('id', filter=Q(role="tutor")),
+            superadmin_count=Count('id', filter=Q(role="superadmin")),
+            total_count=Count('id'),
+        )
 
-        # --- PAGINATION ---
+        # --- PAGINATION (bazada — faqat joriy sahifa yuklanadi) ---
         page = int(request.GET.get('page', 1))
         size = int(request.GET.get('size', 10))
 
-        paginator = Paginator(data_json, size)
+        paginator = Paginator(users, size)
         total_count = paginator.count
         total_pages = paginator.num_pages
 
@@ -226,16 +214,97 @@ class All_Role_ListView(APIView):
                 "results": []
             }, status=status.HTTP_404_NOT_FOUND)
 
+        page_users = list(current_page.object_list)
+        lookups = self.build_lookups(page_users)
+
+        data_json = []
+        for user in page_users:
+            profile_data = self.get_profile_data(user, ashgabat_tz, lookups)
+            data_json.append({
+                "id": profile_data['json'].get('profile_id', user.id),
+                "user_id": user.id,
+                "phone": user.phone,
+                "email": user.email,
+                "device": user.device,
+                **{k: v for k, v in profile_data['json'].items() if k != 'profile_id'}
+            })
+
         return Response({
             "page": page,
             "size": size,
             "total": total_count,
             "total_pages": total_pages,
             **role_counts,
-            "results": current_page.object_list
+            "results": data_json
         })
 
-    def get_profile_data(self, user, timezone, completed_today_ids=None):
+    @staticmethod
+    def _chunks(ids, size=1000):
+        ids = list(ids)
+        for i in range(0, len(ids), size):
+            yield ids[i:i + size]
+
+    def _last_login_map(self, model, fk_name, ids):
+        """{profile_id: oxirgi login_time} — bitta GROUP BY so'rov bilan"""
+        result = {}
+        for chunk in self._chunks(ids):
+            rows = (
+                model.objects
+                .filter(**{f"{fk_name}_id__in": chunk})
+                .values(f"{fk_name}_id")
+                .annotate(last=Max('login_time'))
+            )
+            for row in rows:
+                result[row[f"{fk_name}_id"]] = row['last']
+        return result
+
+    def build_lookups(self, users):
+        """Berilgan userlar uchun login/to'lov/diagnostika ma'lumotlarini oldindan yig'ish"""
+        student_ids, teacher_ids, parent_ids, tutor_ids = [], [], [], []
+        for user in users:
+            if user.role == 'student' and hasattr(user, 'student_profile'):
+                student_ids.append(user.student_profile.id)
+            elif user.role == 'teacher' and hasattr(user, 'teacher_profile'):
+                teacher_ids.append(user.teacher_profile.id)
+            elif user.role == 'parent' and hasattr(user, 'parent_profile'):
+                parent_ids.append(user.parent_profile.id)
+            elif user.role == 'tutor' and hasattr(user, 'tutor_profile'):
+                tutor_ids.append(user.tutor_profile.id)
+
+        last_payments = {}
+        diagnost_ids = set()
+        completed_today_ids = set()
+        today = timezone.localdate()
+        for chunk in self._chunks(student_ids):
+            payments = (
+                Payment.objects
+                .filter(student_id__in=chunk, status="success")
+                .order_by('student_id', '-payment_date')
+                .values_list('student_id', 'amount')
+            )
+            for student_id, amount in payments:
+                last_payments.setdefault(student_id, amount)
+
+            diagnost_ids.update(
+                Diagnost_Student.objects.filter(student_id__in=chunk)
+                .values_list('student_id', flat=True).distinct()
+            )
+            completed_today_ids.update(
+                TopicProgress.objects.filter(user_id__in=chunk, completed_at__date=today)
+                .values_list('user_id', flat=True).distinct()
+            )
+
+        return {
+            'student_login': self._last_login_map(StudentLoginHistory, 'student', student_ids),
+            'teacher_login': self._last_login_map(TeacherLoginHistory, 'teacher', teacher_ids),
+            'parent_login': self._last_login_map(ParentLoginHistory, 'parent', parent_ids),
+            'tutor_login': self._last_login_map(TutorLoginHistory, 'tutor', tutor_ids),
+            'last_payments': last_payments,
+            'diagnost_ids': diagnost_ids,
+            'completed_today_ids': completed_today_ids,
+        }
+
+    def get_profile_data(self, user, timezone, lookups):
         """Foydalanuvchi roliga qarab profil ma'lumotlarini olish"""
         profile_data = {
             'json': {},
@@ -247,12 +316,12 @@ class All_Role_ListView(APIView):
             student_datetime = student.student_date.astimezone(timezone) if student.student_date else None
 
             # Login history
-            last_login_obj = StudentLoginHistory.objects.filter(student=student).order_by('-login_time').first()
-            last_login_formatted = last_login_obj.login_time.astimezone(timezone).strftime('%d/%m/%Y %H:%M') if last_login_obj else None
+            last_login_time = lookups['student_login'].get(student.id)
+            last_login_formatted = last_login_time.astimezone(timezone).strftime('%d/%m/%Y %H:%M') if last_login_time else None
 
             # Last payment
-            last_payment = Payment.objects.filter(student=student, status="success").order_by('-payment_date').first()
-            last_payment_amount = float(last_payment.amount) if last_payment else 0
+            last_payment = lookups['last_payments'].get(student.id)
+            last_payment_amount = float(last_payment) if last_payment is not None else 0
 
             # Subscription qolgan kun
             subscription = getattr(student, 'subscription', None)
@@ -270,7 +339,7 @@ class All_Role_ListView(APIView):
                 now = datetime.now(pytz.timezone("Asia/Ashgabat"))
                 if subscription.start_date <= now <= subscription.end_date:
                     is_subscription_active = True
-            has_diagnost = Diagnost_Student.objects.filter(student=student).exists()
+            has_diagnost = student.id in lookups['diagnost_ids']
             profile_data['json'] = {
                 "profile_id": student.id,
                 "full_name": student.full_name,
@@ -296,7 +365,7 @@ class All_Role_ListView(APIView):
                 "last_payment_amount": last_payment_amount,
                  "subscription_end_date": end_date.strftime('%d/%m/%Y') if end_date else None,
                 "remaining_days": remaining_days,
-                "completed_today": student.id in (completed_today_ids or set()),
+                "completed_today": student.id in lookups['completed_today_ids'],
             }
 
 
@@ -316,8 +385,8 @@ class All_Role_ListView(APIView):
             teacher = user.teacher_profile
             teacher_datetime = teacher.teacher_date.astimezone(timezone) if teacher.teacher_date else None
 
-            last_login_teacher = TeacherLoginHistory.objects.filter(teacher=teacher).order_by('-login_time').first()
-            last_login_teacher_fmt = last_login_teacher.login_time.astimezone(timezone).strftime('%d/%m/%Y %H:%M') if last_login_teacher else None
+            last_login_teacher = lookups['teacher_login'].get(teacher.id)
+            last_login_teacher_fmt = last_login_teacher.astimezone(timezone).strftime('%d/%m/%Y %H:%M') if last_login_teacher else None
 
             profile_data['json'] = {
                 "profile_id": teacher.id,
@@ -354,8 +423,8 @@ class All_Role_ListView(APIView):
             parent = user.parent_profile
             parent_datetime = parent.parent_date.astimezone(timezone) if parent.parent_date else None
 
-            last_login_parent = ParentLoginHistory.objects.filter(parent=parent).order_by('-login_time').first()
-            last_login_parent_fmt = last_login_parent.login_time.astimezone(timezone).strftime('%d/%m/%Y %H:%M') if last_login_parent else None
+            last_login_parent = lookups['parent_login'].get(parent.id)
+            last_login_parent_fmt = last_login_parent.astimezone(timezone).strftime('%d/%m/%Y %H:%M') if last_login_parent else None
 
             profile_data['json'] = {
                 "profile_id": parent.id,
@@ -387,8 +456,8 @@ class All_Role_ListView(APIView):
             tutor = user.tutor_profile
             tutor_datetime = tutor.tutor_date.astimezone(timezone) if tutor.tutor_date else None
 
-            last_login_tutor = TutorLoginHistory.objects.filter(tutor=tutor).order_by('-login_time').first()
-            last_login_tutor_fmt = last_login_tutor.login_time.astimezone(timezone).strftime('%d/%m/%Y %H:%M') if last_login_tutor else None
+            last_login_tutor = lookups['tutor_login'].get(tutor.id)
+            last_login_tutor_fmt = last_login_tutor.astimezone(timezone).strftime('%d/%m/%Y %H:%M') if last_login_tutor else None
 
             profile_data['json'] = {
                 "profile_id": tutor.id,

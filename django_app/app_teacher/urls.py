@@ -7,6 +7,7 @@ from .views import(
 )
 from .View.unsolved import  TeacherUnsolvedQuestionReportListView, TeacherAnswerUnsolvedQuestionView
 from  .View.gruop_student import AddStudentsToGroupAPIView, GroupCreateAPIView, GroupListAPIView, StudentsWithoutGroupAPIView, SuperAdminGroupCRUDAPIView
+from .View.teacher_groups import TeacherGroupListCreateAPIView, TeacherGroupDetailAPIView, TeacherGroupStudentsAPIView, TeacherUngroupedStudentsAPIView
 from .View.reorderOrderIndex  import  ReorderTopicAPIView, ReorderChapterAPIView, ReorderSubjectAPIView
 from .View.independentView import  TeacherTopicHelpRequestListAPIView, TeacherTopicHelpRequestDeleteAPIView,TeacherTopicHelpRequestDetailAPIView, GetTelegramIDFromHelpRequestAPIView,TeacherTopicHelpRequestFromTelegramAPIView,TeacherCommitToHelpRequestAPIView, TeacherHelpRequestNotificationAPIView
 from .View.coupon import CreateTeacherCouponAPIView, TeacherCouponStudentsAPIView
@@ -49,6 +50,12 @@ urlpatterns = [
     path('students/without-group/new-students/', StudentsWithoutGroupAPIView.as_view(), name='group-new-students'),
     path('superadmin/group/', SuperAdminGroupCRUDAPIView.as_view(), name='superadmin-group-list'),
     path('superadmin/group/<int:pk>/', SuperAdminGroupCRUDAPIView.as_view(), name='superadmin-group-detail'),
+
+    # Teacher guruhlari (kupon/havolasiz) — frontend /dashboard/teacher/groups
+    path('groups/', TeacherGroupListCreateAPIView.as_view(), name='teacher-group-list-create'),
+    path('groups/students-without-group/', TeacherUngroupedStudentsAPIView.as_view(), name='teacher-group-ungrouped-students'),
+    path('groups/<int:pk>/', TeacherGroupDetailAPIView.as_view(), name='teacher-group-detail'),
+    path('groups/<int:pk>/students/', TeacherGroupStudentsAPIView.as_view(), name='teacher-group-students'),
 
 
     path('topics/reorder/', ReorderTopicAPIView.as_view(), name='topic-reorder'),

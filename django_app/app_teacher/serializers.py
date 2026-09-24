@@ -324,3 +324,58 @@ class ProductExchangeSerializer(serializers.ModelSerializer):
             'id', 'student', 'product',
             'used_coin', 'status', 'created_at'
         ]
+
+
+# ---------------------------------------------------------------------------
+# Teacher guruhlari (/func_teacher/groups/) — tutor guruhlari bilan bir xil javob shakli
+# ---------------------------------------------------------------------------
+from django_app.app_tutor.serializers import TutorStudentBriefSerializer
+
+
+class TeacherGroupStudentSerializer(TutorStudentBriefSerializer):
+    """
+    Tutor o'quvchi serializeridan meros: sinf nomlari o'sha yerda hisoblanadi.
+    Guruh esa teacher Group'dan olinadi (view'da `groups` teacher bo'yicha prefetch qilinadi).
+    """
+
+    def _tutor_group(self, obj):
+        groups = obj.groups.all()
+        return groups[0] if groups else None
+
+
+class TeacherGroupListSerializer(serializers.ModelSerializer):
+    student_count = serializers.IntegerField(source='students.count', read_only=True)
+    created_at = serializers.DateTimeField(format="%d/%m/%Y %H:%M", read_only=True)
+    average_score = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Group
+        fields = ['id', 'name', 'student_count', 'average_score', 'created_at']
+
+    def get_average_score(self, obj):
+        return self.context.get('average_map', {}).get(obj.id, 0.0)
+
+
+class TeacherGroupDetailSerializer(TeacherGroupListSerializer):
+    students = TeacherGroupStudentSerializer(many=True, read_only=True)
+
+    class Meta(TeacherGroupListSerializer.Meta):
+        fields = TeacherGroupListSerializer.Meta.fields + ['students']
+
+
+class TeacherGroupWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Group
+        fields = ['id', 'name']
+
+    def validate_name(self, value):
+        value = (value or '').strip()
+        if not value:
+            raise serializers.ValidationError("Guruh nomi bo'sh bo'lishi mumkin emas")
+
+        qs = Group.objects.filter(teacher=self.context['teacher'], name__iexact=value)
+        if self.instance is not None:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise serializers.ValidationError("Bunday nomli guruh allaqachon mavjud")
+        return value
