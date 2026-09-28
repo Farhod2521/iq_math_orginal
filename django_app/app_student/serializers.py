@@ -59,13 +59,17 @@ class SubjectSerializer(serializers.ModelSerializer):
     is_diagnost_open = serializers.SerializerMethodField()  # ✅ yangi field
     topics_count = serializers.IntegerField()
     questions_count = serializers.IntegerField()
+    progress = serializers.SerializerMethodField()
+    completed_topics = serializers.SerializerMethodField()
+    in_progress_topics = serializers.SerializerMethodField()
 
     class Meta:
         model = Subject
         fields = [
             "id", "name_uz", "name_ru", "class_name", "class_uz", "class_ru",
             "image_uz", "image_ru", "is_open", "is_diagnost_open",
-            "topics_count", "questions_count"
+            "topics_count", "questions_count", "progress",
+            "completed_topics", "in_progress_topics"
         ]
 
     def get_class_uz(self, obj):
@@ -85,6 +89,19 @@ class SubjectSerializer(serializers.ModelSerializer):
 
     def get_is_diagnost_open(self, obj):
         return self.context.get("is_diagnost_open", False)
+
+    def get_progress(self, obj):
+        """Tugatilgan mavzular foizi (0-100). completed_topics view'da bitta so'rovda hisoblanadi."""
+        total = getattr(obj, 'topics_count', 0) or 0
+        if not total:
+            return 0
+        return min(100, round(self.context.get("completed_topics", 0) * 100 / total))
+
+    def get_completed_topics(self, obj):
+        return self.context.get("completed_topics", 0)
+
+    def get_in_progress_topics(self, obj):
+        return self.context.get("in_progress_topics", 0)
 
     
 class ChapterSerializer(serializers.ModelSerializer):

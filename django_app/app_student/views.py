@@ -346,19 +346,35 @@ class StudentSubjectListAPIView(APIView):
             except Subscription.DoesNotExist:
                 pass
 
-            all_subjects = Subject.objects.filter(active=True).annotate(
+            all_subjects = Subject.objects.filter(active=True).select_related('classes').annotate(
                 topics_count=Count("chapters__topics", distinct=True),
                 questions_count=Count("chapters__topics__questions", distinct=True),
             ).order_by('order')
             result = []
+            is_open = is_subscription_valid or is_free_trial_active
+
+            # Diagnostika va tugatilgan mavzular — har fan uchun alohida emas, bitta so'rovda
+            diagnost_subject_ids = set(
+                Diagnost_Student.objects.filter(student=student).values_list('subject_id', flat=True)
+            )
+            # Mavzu holati: ball >= 80 — yakunlangan, topshirilgan lekin < 80 — davom etilmoqda
+            progress_map = {
+                row['topic__chapter__subject_id']: row
+                for row in TopicProgress.objects.filter(user=student)
+                .values('topic__chapter__subject_id')
+                .annotate(
+                    done=Count('topic', filter=Q(score__gte=80), distinct=True),
+                    started=Count('topic', filter=Q(score__lt=80), distinct=True),
+                )
+            }
 
             for subject in all_subjects:
-                has_diagnost = Diagnost_Student.objects.filter(student=student, subject=subject).exists()
-                is_open = is_subscription_valid or is_free_trial_active
-
+                row = progress_map.get(subject.id, {})
                 serialized = SubjectSerializer(subject, context={
                     "is_open": is_open,
-                    "is_diagnost_open": has_diagnost
+                    "is_diagnost_open": subject.id in diagnost_subject_ids,
+                    "completed_topics": row.get('done', 0),
+                    "in_progress_topics": row.get('started', 0),
                 }).data
 
                 result.append(serialized)
