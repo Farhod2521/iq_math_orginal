@@ -1302,9 +1302,9 @@
     "semantic_hash": "e12d7b57e458ce431ff8d7a02ade5c33"
   },
   "django_app/app_student/serializers.py": {
-    "mtime": 1790573955.6607351,
-    "seen": 1790574047.239306,
-    "ast_hash": "af98613672009bd5889ce3f7d6881a15",
+    "mtime": 1790574247.615796,
+    "seen": 1790574337.7979481,
+    "ast_hash": "e87303f19ae09b879339a6b2a83594d9",
     "semantic_hash": ""
   },
   "django_app/app_student/tasks.py": {
@@ -1338,9 +1338,9 @@
     "semantic_hash": "d9263d91f19ca531322c85fe4b4c322d"
   },
   "django_app/app_student/views.py": {
-    "mtime": 1790573955.6607351,
-    "seen": 1790574047.2393112,
-    "ast_hash": "e758175b00f80bc618a08fe7b86f3398",
+    "mtime": 1790574247.615796,
+    "seen": 1790574337.7979531,
+    "ast_hash": "790a87138e68c48d2492ca06cf1da371",
     "semantic_hash": ""
   },
   "django_app/app_teacher/View/coupon.py": {

@@ -1038,10 +1038,10 @@
     "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
   },
   "django_app/app_student/View/app_diagnost.py": {
-    "mtime": 1785301014.9296231,
-    "seen": 1790226083.6568792,
-    "ast_hash": "33f0e4247b7c712b1e2480352b9b22ad",
-    "semantic_hash": "33f0e4247b7c712b1e2480352b9b22ad"
+    "mtime": 1790581740.9363074,
+    "seen": 1790581856.2494147,
+    "ast_hash": "c42c6a7af7e578d25a31cda38b2dcb77",
+    "semantic_hash": ""
   },
   "django_app/app_student/View/certificate_view.py": {
     "mtime": 1785301014.9296231,

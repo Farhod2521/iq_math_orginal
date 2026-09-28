@@ -1,4 +1,4 @@
-﻿from rest_framework.views import APIView
+from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
@@ -8,43 +8,43 @@ from django_app.app_student.models import Diagnost_Student, TopicProgress
 from django_app.app_teacher.models import Chapter, Topic
 
 from rest_framework import status
+from django.db.models import Count
 
 class StudentDiagnostSubjectsAPIView(APIView):
+    """
+    GET /api/v1/func_student/my-diagnost-subjects/
+    Har bir fan: oxirgi diagnostika natijasi (progress_percent), topshirilganmi,
+    urinishlar soni, oxirgi sana va zaif (xato ishlangan) mavzular soni.
+    Diagnostikalar bitta so'rovda olinadi — fan soniga qarab so'rov ko'paymaydi.
+    """
     permission_classes = [IsAuthenticated]
+
+    @staticmethod
+    def _score(diagnost):
+        try:
+            return (diagnost.result or {}).get("result", [{}])[0].get("score")
+        except Exception:
+            return None
 
     def get(self, request):
         student = Student.objects.get(user=request.user)
 
-        diagnost_dict = {}
-        diagnost_list = Diagnost_Student.objects.filter(student=student).select_related('subject')
+        latest = {}    # subject_id -> eng oxirgi Diagnost_Student
+        attempts = {}  # subject_id -> urinishlar soni
+        diagnost_qs = (
+            Diagnost_Student.objects.filter(student=student)
+            .annotate(weak_topics=Count('topic', distinct=True))
+            .order_by('subject_id', '-id')
+        )
+        for d in diagnost_qs:
+            attempts[d.subject_id] = attempts.get(d.subject_id, 0) + 1
+            latest.setdefault(d.subject_id, d)
 
-        for d in diagnost_list:
-            # Har bir subject bo'yicha oxirgi diagnostika yozuvini olish
-            latest_diagnost = Diagnost_Student.objects.filter(
-                student=student,
-                subject=d.subject
-            ).order_by('-id').first()
-
-            progress_percent = None
-            if latest_diagnost and latest_diagnost.result:
-                try:
-                    # result JSON ichidan score olish
-                    score = latest_diagnost.result.get("result", [{}])[0].get("score")
-                    if score is not None:
-                        progress_percent = score
-                except Exception:
-                    progress_percent = None
-
-            diagnost_dict[d.subject.id] = progress_percent
-
-        # Barcha fanlarni olamiz
         subjects = Subject.objects.all().select_related('classes')
         data = []
         for subject in subjects:
             class_name = subject.classes.name if subject.classes else ""
-            progress_percent = diagnost_dict.get(subject.id)
-
-            has_diagnost = Diagnost_Student.objects.filter(student=student, subject=subject).exists()
+            last = latest.get(subject.id)
 
             data.append({
                 "id": subject.id,
@@ -55,8 +55,12 @@ class StudentDiagnostSubjectsAPIView(APIView):
                 "class_ru": f"{class_name}-класс {subject.name_ru}",
                 "image_uz": subject.image_uz.url if subject.image_uz else "",
                 "image_ru": subject.image_ru.url if subject.image_ru else "",
-                "progress_percent": progress_percent,   # ✅ endi oxirgi score chiqadi
-                "has_taken_diagnostic": has_diagnost
+                "progress_percent": self._score(last) if last else None,  # oxirgi diagnostika bali
+                "has_taken_diagnostic": last is not None,
+                "attempts_count": attempts.get(subject.id, 0),
+                "last_taken_at": last.create_date.strftime("%d.%m.%Y") if last and last.create_date else None,
+                "weak_topics_count": last.weak_topics if last else 0,
+                "level": last.level if last else None,
             })
 
         return Response(data)
