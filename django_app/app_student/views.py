@@ -579,6 +579,11 @@ class QuestionListByTopicAPIView(APIView):
             return Response(
                 {
                     "subject_is_active": subject_is_active,
+                    "topic": {
+                        "id": topic.id,
+                        "name_uz": getattr(topic, 'name_uz', None) or topic.name,
+                        "name_ru": getattr(topic, 'name_ru', None) or topic.name,
+                    },
                     "questions": serializer.data
                 },
                 status=status.HTTP_200_OK
