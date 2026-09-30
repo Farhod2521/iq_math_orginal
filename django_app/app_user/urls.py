@@ -16,7 +16,7 @@ from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
 )
-from .authentication import DeviceTokenRefreshView
+from .token_refresh import DeviceTokenRefreshView
 from .VIEW.devices_view import MyDevicesAPIView, MyDeviceDetailAPIView
 from .VIEW.unversial_update_view import ChangePasswordView, UniversalUpdateView, VerifyPhoneChangeView
 urlpatterns = [
