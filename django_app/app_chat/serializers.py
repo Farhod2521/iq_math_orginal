@@ -266,6 +266,7 @@ class MessageSerializer(serializers.ModelSerializer):
 class ConversationListSerializer(ConversationMetaMixin, serializers.ModelSerializer):
     other_user_name = serializers.SerializerMethodField()
     other_user_id = serializers.SerializerMethodField()
+    other_user_role = serializers.SerializerMethodField()
     unread_count = serializers.SerializerMethodField()
 
     class Meta:
@@ -283,6 +284,7 @@ class ConversationListSerializer(ConversationMetaMixin, serializers.ModelSeriali
             "rating",
             "other_user_name",
             "other_user_id",
+            "other_user_role",
             "unread_count",
         ]
 
@@ -309,6 +311,12 @@ class ConversationListSerializer(ConversationMetaMixin, serializers.ModelSeriali
 
         # fallback (parent/admin/tutor)
         return other.phone
+
+    def get_other_user_role(self, obj):
+        # Chat ro'yxatidagi "O'qituvchilar / O'quvchilar" filtri uchun
+        current_user = self.context["request"].user
+        participant = obj.participants.exclude(user=current_user).select_related("user").first()
+        return getattr(participant.user, "role", "") if participant else ""
 
     def get_other_user_id(self, obj):
         current_user = self.context["request"].user

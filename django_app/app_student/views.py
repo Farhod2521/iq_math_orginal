@@ -182,7 +182,11 @@ class GenerateCheckAnswersAPIView(APIView):
                 "question_id": question.id,
                 "question_uz": question.question_text_uz,
                 "question_ru": question.question_text_ru,
-                "answer": is_correct
+                "answer": is_correct,
+                # "Xatolar" sahifasi uchun: o'quvchi nima belgilagani va to'g'ri javob
+                "question_type": question.question_type,
+                "student_answer": student_answer,
+                "correct_answer": correct_answer
             })
             index += 1
 
@@ -207,7 +211,11 @@ class GenerateCheckAnswersAPIView(APIView):
                 "question_id": question.id,
                 "question_uz": question.question_text_uz,
                 "question_ru": question.question_text_ru,
-                "answer": is_correct
+                "answer": is_correct,
+                # "Xatolar" sahifasi uchun: o'quvchi nima belgilagani va to'g'ri javob
+                "question_type": question.question_type,
+                "student_answer": sorted(selected_choices),
+                "correct_answer": sorted(correct_choices)
             })
             index += 1
 
@@ -246,7 +254,11 @@ class GenerateCheckAnswersAPIView(APIView):
                 "question_id": question.id,
                 "question_uz": question.question_text_uz,
                 "question_ru": question.question_text_ru,
-                "answer": is_correct
+                "answer": is_correct,
+                # "Xatolar" sahifasi uchun: o'quvchi nima belgilagani va to'g'ri javob
+                "question_type": question.question_type,
+                "student_answer": [str(ans) for ans in student_answers],
+                "correct_answer": [str(sub.correct_answer) for sub in correct_subs]
             })
             index += 1
 
