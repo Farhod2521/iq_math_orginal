@@ -38,6 +38,8 @@ class TopicProgress(models.Model):
     score = models.FloatField(default=0.0)  # Testdagi ball (0 - 100)
     is_unlocked = models.BooleanField(default=False)
     completed_at = models.DateTimeField(null=True, blank=True)
+    # Urinishlar haqida qo'shimcha ma'lumot: sarflangan vaqt, oxirgi urinish natijasi va h.k.
+    result = models.JSONField(null=True, blank=True, verbose_name="Urinishlar ma'lumoti")
 
     def __str__(self):
         return f"{self.user} - {self.topic.name} - {self.score}%"

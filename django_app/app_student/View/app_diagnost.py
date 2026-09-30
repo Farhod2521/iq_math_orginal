@@ -339,6 +339,16 @@ class StudentDiagnosticHistoryAPIView(APIView):
 # Diagnostika "Xatolar" sahifasi
 # ---------------------------------------------------------------------------
 
+def _is_answered(detail):
+    """O'quvchi savolga javob berganmi (eski urinishlarda noma'lum — javob berilgan deb olinadi)."""
+    if "student_answer" not in detail:
+        return True
+    answer = detail.get("student_answer")
+    if isinstance(answer, list):
+        return any(str(item).strip() for item in answer)
+    return bool(str(answer or "").strip())
+
+
 def _diagnost_summary(diag):
     """Bitta urinishning qisqa ma'lumoti (ro'yxat va sahifa sarlavhasi uchun)."""
     result = diag.result or {}
@@ -353,6 +363,7 @@ def _diagnost_summary(diag):
         total = len(questions)
     if correct is None:
         correct = sum(1 for q in questions if q.get("answer"))
+    unanswered = sum(1 for q in questions if not q.get("answer") and not _is_answered(q))
     return {
         "id": diag.id,
         "date": diag.create_date.strftime("%d.%m.%Y %H:%M") if diag.create_date else None,
@@ -360,7 +371,10 @@ def _diagnost_summary(diag):
         "score": summary.get("score", 0) or 0,
         "total_answers": total,
         "correct_answers": correct,
-        "wrong_answers": max(0, (total or 0) - (correct or 0)),
+        # Xato = javob berilgan, lekin noto'g'ri; javob berilmaganlar alohida
+        "wrong_answers": max(0, (total or 0) - (correct or 0) - unanswered),
+        "unanswered_answers": unanswered,
+        "duration_seconds": result.get("duration_seconds"),
         # Eski urinishlarda o'quvchi javobi saqlanmagan
         "has_answers": any("student_answer" in q for q in questions),
     }
@@ -439,6 +453,7 @@ class StudentDiagnostMistakesAPIView(APIView):
                 "topic_ru": question.topic.name_ru if question.topic else "",
                 "is_correct": bool(detail.get("answer")),
                 "has_answer": has_answer,
+                "is_answered": _is_answered(detail),
             }
 
             if q_type in ("choice", "image_choice"):
@@ -476,8 +491,13 @@ class StudentDiagnostMistakesAPIView(APIView):
 
             items.append(item)
 
+        # "Tahlil" (AI yechim) tugmasi admin paneldagi fanlar sozlamasiga bo'ysunadi
+        from django_app.app_management.models import SolutionStatus
+        solution_status = SolutionStatus.objects.first()
+
         return Response({
             "subject": _subject_payload(diag.subject),
+            "solution_enabled": bool(solution_status and solution_status.subject_is_active),
             "attempt": _diagnost_summary(diag),
             "questions": items,
         })

@@ -277,8 +277,16 @@ class GenerateCheckAnswersAPIView(APIView):
 
         weak_topics = sorted(weak_topics_map.values(), key=lambda item: item['wrong_count'], reverse=True)
 
+        # Test uchun sarflangan vaqt (soniya) — frontend yuboradi, bo'lmasa None
+        try:
+            duration_seconds = int(request.data.get('duration_seconds'))
+            duration_seconds = duration_seconds if 0 <= duration_seconds <= 6 * 3600 else None
+        except (TypeError, ValueError):
+            duration_seconds = None
+
         result_json = {
             "question": question_details,
+            "duration_seconds": duration_seconds,
             "Topic": list(wrong_topics.values()),
             "is_paid": is_paid,
             "weak_topics": weak_topics,
@@ -785,6 +793,27 @@ class CheckAnswersAPIView(APIView):
                 if score > topic_progress.score:
                     topic_progress.score = score
                 topic_progress.completed_at = timezone.now()
+
+                # Urinish ma'lumotlari (sarflangan vaqt va h.k.) — result JSON ichida
+                try:
+                    duration_seconds = int(request.data.get('duration_seconds'))
+                    duration_seconds = duration_seconds if 0 <= duration_seconds <= 6 * 3600 else None
+                except (TypeError, ValueError):
+                    duration_seconds = None
+                progress_result = topic_progress.result if isinstance(topic_progress.result, dict) else {}
+                progress_result["attempts_count"] = (progress_result.get("attempts_count") or 0) + 1
+                if duration_seconds is not None:
+                    progress_result["total_duration_seconds"] = (
+                        (progress_result.get("total_duration_seconds") or 0) + duration_seconds
+                    )
+                progress_result["last_attempt"] = {
+                    "date": timezone.now().isoformat(),
+                    "score": score,
+                    "correct_answers": correct_answers,
+                    "total_answers": total_answers,
+                    "duration_seconds": duration_seconds,
+                }
+                topic_progress.result = progress_result
                 topic_progress.save()
 
         response_data = {
