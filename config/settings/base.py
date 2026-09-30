@@ -62,7 +62,8 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.TokenAuthentication',
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        # JWT + qurilma tekshiruvi ("Qurilmalar" bo'limidan o'chirilgan qurilma tokeni rad etiladi)
+        'django_app.app_user.authentication.DeviceJWTAuthentication',
     ),
 }
 CORS_ALLOW_ALL_ORIGINS = True

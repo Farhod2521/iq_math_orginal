@@ -363,3 +363,37 @@ class ParentLoginHistory(models.Model):
     class Meta:
         verbose_name = "Ota-ona login tarixi"
         verbose_name_plural = "Ota-ona login tarixi"
+
+class UserDevice(models.Model):
+    """
+    Foydalanuvchi tizimga kirgan qurilma. O'quvchi bir vaqtda ko'pi bilan
+    MAX_ACTIVE_DEVICES ta qurilmadan foydalana oladi; o'chirilgan qurilmaning
+    tokenlari keyingi so'rovda rad etiladi.
+    """
+    DEVICE_TYPES = (
+        ("desktop", "Kompyuter"),
+        ("mobile", "Telefon"),
+        ("tablet", "Planshet"),
+        ("other", "Boshqa"),
+    )
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="devices", verbose_name="Foydalanuvchi")
+    # Qurilmani taniydigan kalit: frontend yuborgan device_id yoki User-Agent xeshi
+    device_key = models.CharField(max_length=100, db_index=True, verbose_name="Qurilma kaliti")
+    device_name = models.CharField(max_length=255, blank=True, default="", verbose_name="Qurilma nomi")
+    device_type = models.CharField(max_length=10, choices=DEVICE_TYPES, default="other", verbose_name="Qurilma turi")
+    user_agent = models.TextField(blank=True, default="")
+    ip_address = models.GenericIPAddressField(blank=True, null=True)
+    is_active = models.BooleanField(default=True, db_index=True, verbose_name="Faol")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Kirgan vaqti")
+    last_used_at = models.DateTimeField(auto_now_add=True, verbose_name="Oxirgi faollik")
+    logged_out_at = models.DateTimeField(blank=True, null=True, verbose_name="Chiqarilgan vaqti")
+
+    class Meta:
+        verbose_name = "Qurilma"
+        verbose_name_plural = "Qurilmalar"
+        ordering = ["-last_used_at"]
+
+    def __str__(self):
+        return f"{self.user.phone} | {self.device_name or self.device_key}"

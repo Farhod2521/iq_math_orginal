@@ -16,6 +16,8 @@ from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
 )
+from .authentication import DeviceTokenRefreshView
+from .VIEW.devices_view import MyDevicesAPIView, MyDeviceDetailAPIView
 from .VIEW.unversial_update_view import ChangePasswordView, UniversalUpdateView, VerifyPhoneChangeView
 urlpatterns = [
     ###################################################################################
@@ -54,7 +56,11 @@ urlpatterns = [
     ###################################################################################
     path('class/class_name_listview/', ClassListView.as_view(), name='class_name_listview'),
 
-    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    # O'chirilgan qurilmaning refresh tokeni ham rad etiladi
+    path('token/refresh/', DeviceTokenRefreshView.as_view(), name='token_refresh'),
+    # Qurilmalar
+    path('user/devices/', MyDevicesAPIView.as_view(), name='my-devices'),
+    path('user/devices/<uuid:device_id>/', MyDeviceDetailAPIView.as_view(), name='my-device-detail'),
     path('check-telegram-id/', TelegramIDCheckAPIView.as_view(), name='token_refresh'),
 
     path('update-telegram-id/', UpdateTelegramIDAPIView.as_view(), name='update-telegram-id'),

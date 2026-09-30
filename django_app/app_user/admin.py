@@ -102,3 +102,13 @@ class ReferralAdmin(admin.ModelAdmin):
     def referred_full_name(self, obj):
         return obj.referred.full_name
     referred_full_name.short_description = "Taklif qilingan"
+
+from .models import UserDevice
+
+
+@admin.register(UserDevice)
+class UserDeviceAdmin(admin.ModelAdmin):
+    list_display = ("user", "device_name", "device_type", "is_active", "created_at", "last_used_at")
+    list_filter = ("is_active", "device_type")
+    search_fields = ("user__phone", "device_name")
+    readonly_fields = ("id", "device_key", "user_agent", "created_at", "last_used_at", "logged_out_at")

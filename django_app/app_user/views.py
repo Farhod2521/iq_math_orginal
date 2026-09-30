@@ -376,10 +376,19 @@ class UniversalVerifySmsCodeAPIView(APIView):
             else:
                 return Response({"detail": "Noma'lum role."}, status=status.HTTP_400_BAD_REQUEST)
 
+            from .device_service import (
+                DeviceLimitReached, attach_device_claim, device_limit_response_data, register_login,
+            )
+            try:
+                login_device = register_login(user, request, request.data.get("replace_device_id"))
+            except DeviceLimitReached as exc:
+                return Response(device_limit_response_data(exc.devices), status=status.HTTP_409_CONFLICT)
+
             # 🔑 Token yaratish
             refresh = RefreshToken.for_user(user)
             access_token = refresh.access_token
             access_token.set_exp(lifetime=timedelta(minutes=30))
+            attach_device_claim(refresh, access_token, login_device)
             access_token["role"] = user.role
 
             # profile_data ichidagi ma'lumotlarni token ichiga yozish
@@ -1085,10 +1094,20 @@ class LoginAPIView(APIView):
             if update_fields:
                 user.save(update_fields=update_fields)
 
+            # Qurilma cheklovi (o'quvchi 2 tadan ortiq qurilmadan kira olmaydi)
+            from .device_service import (
+                DeviceLimitReached, attach_device_claim, device_limit_response_data, register_login,
+            )
+            try:
+                login_device = register_login(user, request, request.data.get("replace_device_id"))
+            except DeviceLimitReached as exc:
+                return Response(device_limit_response_data(exc.devices), status=status.HTTP_409_CONFLICT)
+
             # Tokenlarni yaratish
             refresh = RefreshToken.for_user(user)
             access_token = refresh.access_token
             access_token.set_exp(lifetime=timedelta(minutes=30))
+            attach_device_claim(refresh, access_token, login_device)
             expires_in = timedelta(minutes=30).total_seconds()
 
             profile_data = {}
@@ -1268,6 +1287,15 @@ class LogoutAPIView(APIView):
                 latest_login.save()
         except Student.DoesNotExist:
             pass  # Teacher uchun yozmaslik mumkin
+
+        # Joriy qurilmani bo'shatamiz — boshqa qurilmadan kirish uchun joy ochiladi
+        from .device_service import DEVICE_CLAIM, deactivate_device
+        from .models import UserDevice
+        device_id = request.auth.get(DEVICE_CLAIM) if request.auth is not None else None
+        if device_id:
+            device = UserDevice.objects.filter(id=device_id, user=user).first()
+            if device:
+                deactivate_device(device)
 
         # Tokenni blacklist qilish yoki frontend tokenni o'chirish logikasi shu yerda bo'lishi mumkin
         return Response({"detail": "Chiqqan vaqtingiz yozildi."}, status=200)
