@@ -638,7 +638,12 @@ class ParentChildPaymentsAPIView(APIView):
         months_param = 12 if months_param >= 12 else 6
 
         now = timezone.now()
-        payments = list(Payment.objects.filter(student=child).order_by("-payment_date", "-created_at"))
+        payments = list(
+            Payment.objects.filter(student=child)
+            .exclude(status="failed")
+            .select_related("coupon")
+            .order_by("-payment_date", "-created_at")
+        )
         success = [p for p in payments if p.status == "success"]
         last = success[0] if success else None
 
@@ -695,6 +700,20 @@ class ParentChildPaymentsAPIView(APIView):
                 "gateway": _gateway_label(payment.payment_gateway),
                 "status": payment.status,
                 "receipt_url": payment.receipt_url or "",
+                # Kvitansiya ("Ko'rish") oynasi uchun
+                "student_name": child.full_name,
+                "store_id": payment.store_id or "",
+                "invoice_uuid": payment.invoice_uuid or "",
+                "uuid": payment.uuid or "",
+                "billing_id": payment.billing_id or "",
+                "sign": payment.sign or "",
+                "transaction_id": payment.transaction_id or "",
+                "coupon_code": payment.coupon.code if payment.coupon else "",
+                "coupon_type": payment.get_coupon_type_display() if payment.coupon_type else "",
+                "discount_amount": (
+                    float(payment.original_amount - payment.amount)
+                    if payment.original_amount and payment.original_amount > payment.amount else 0
+                ),
             }
             for index, payment in enumerate(payments)
         ]
