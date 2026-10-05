@@ -11,7 +11,7 @@ GET /api/v1/func_student/achievements/?student=<id>
 from collections import defaultdict
 from datetime import timedelta
 
-from django.db.models import Avg, Count
+from django.db.models import Avg, Count, Q
 from django.db.models.functions import TruncDate
 from django.utils import timezone
 from rest_framework import status
@@ -331,4 +331,243 @@ class StudentAchievementsAPIView(APIView):
             "total": len(items),
             "metrics": metrics,
             "achievements": items,
+        })
+
+
+# ---------------------------------------------------------------------------
+# Farzand sahifasi: GET /api/v1/func_student/parent/children/<id>/overview/
+# ---------------------------------------------------------------------------
+
+def _duration_seconds(student, since=None):
+    """Testlarda sarflangan vaqt: mavzu testlari (result JSON) + diagnostikalar."""
+    total = 0
+    topic_qs = TopicProgress.objects.filter(user=student, result__isnull=False)
+    if since is not None:
+        topic_qs = topic_qs.filter(completed_at__gte=since)
+    for result in topic_qs.values_list("result", flat=True):
+        if isinstance(result, dict):
+            if since is None:
+                total += result.get("total_duration_seconds") or 0
+            else:
+                total += (result.get("last_attempt") or {}).get("duration_seconds") or 0
+    diag_qs = Diagnost_Student.objects.filter(student=student)
+    if since is not None:
+        diag_qs = diag_qs.filter(create_date__gte=since)
+    for result in diag_qs.values_list("result", flat=True):
+        if isinstance(result, dict):
+            total += result.get("duration_seconds") or 0
+    return int(total)
+
+
+def _recent_item(kind, at, title_uz="", title_ru="", subject_uz="", subject_ru="", value=None):
+    return {
+        "type": kind,
+        "title_uz": title_uz or "",
+        "title_ru": title_ru or "",
+        "subject_uz": subject_uz or "",
+        "subject_ru": subject_ru or "",
+        "value": value,
+        "at": at.isoformat(),
+    }
+
+
+class ParentChildOverviewAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, student_id):
+        from django_app.app_payments.models import Payment
+        from django_app.app_teacher.models import Topic
+        from django_app.app_user.device_service import serialize_device
+        from django_app.app_user.models import StudentLoginHistory, Subject, UserDevice
+
+        parent = getattr(request.user, "parent_profile", None)
+        relation = None
+        if parent is not None:
+            relation = (
+                ParentStudentRelation.objects.filter(parent=parent, student_id=student_id, is_confirmed=True)
+                .select_related("student__user", "student__class_name__classes")
+                .first()
+            )
+        if relation is None:
+            return Response({"detail": "Farzand topilmadi."}, status=status.HTTP_404_NOT_FOUND)
+        child = relation.student
+        check_achievements_safe(child)
+
+        now = timezone.now()
+        today = timezone.localdate()
+        month_ago = now - timedelta(days=30)
+        two_months_ago = now - timedelta(days=60)
+        class_obj = getattr(child.class_name, "classes", None) if child.class_name else None
+
+        # ---- Profil ----
+        last_login = StudentLoginHistory.objects.filter(student=child).order_by("-login_time").first()
+        profile = {
+            "id": child.id,
+            "full_name": child.full_name,
+            "identification": child.identification,
+            "class_name": class_obj.name if class_obj else "",
+            "is_active": _is_active(child),
+            "registered_at": child.user.date_joined.isoformat() if child.user.date_joined else None,
+            "last_login": last_login.login_time.isoformat() if last_login else None,
+            "study_time_seconds": _duration_seconds(child),
+        }
+
+        # ---- Obuna va to'lovlar ----
+        payments = Payment.objects.filter(student=child, status="success").order_by("-payment_date", "-created_at")
+        last_payment = payments.first()
+        try:
+            sub = child.subscription
+        except Exception:  # noqa: BLE001 — obuna yo'q
+            sub = None
+        subscription = None
+        if sub is not None:
+            total_days = max(1, (sub.end_date - sub.start_date).days) if sub.start_date and sub.end_date else 0
+            subscription = {
+                "is_active": bool(sub.end_date and sub.end_date >= now),
+                "is_paid": sub.is_paid,
+                "start_date": sub.start_date.isoformat() if sub.start_date else None,
+                "end_date": sub.end_date.isoformat() if sub.end_date else None,
+                "next_payment_date": sub.next_payment_date.isoformat() if sub.next_payment_date else None,
+                "days_left": max(0, (sub.end_date - now).days) if sub.end_date else 0,
+                "total_days": total_days,
+                "months": last_payment.subscription_months if last_payment else None,
+            }
+        payment_info = {
+            "last_amount": float(last_payment.amount) if last_payment else 0,
+            "last_date": (last_payment.payment_date or last_payment.created_at).isoformat() if last_payment else None,
+            "total_paid": float(sum(p.amount for p in payments)),
+            "count": payments.count(),
+        }
+
+        # ---- Fanlar natijasi ----
+        rows = list(
+            TopicProgress.objects.filter(user=child)
+            .values("topic__chapter__subject_id", "topic__chapter__subject__name_uz", "topic__chapter__subject__name_ru")
+            .annotate(
+                avg=Avg("score"),
+                tests=Count("topic", distinct=True),
+                done=Count("topic", filter=Q(score__gte=80), distinct=True),
+            )
+            .order_by("-tests")
+        )
+        subject_ids = [r["topic__chapter__subject_id"] for r in rows]
+        topic_totals = dict(
+            Topic.objects.filter(chapter__subject_id__in=subject_ids)
+            .values("chapter__subject_id")
+            .annotate(n=Count("id"))
+            .values_list("chapter__subject_id", "n")
+        )
+        diag_counts = dict(
+            Diagnost_Student.objects.filter(student=child, subject_id__in=subject_ids)
+            .values("subject_id")
+            .annotate(n=Count("id"))
+            .values_list("subject_id", "n")
+        )
+        subjects = [
+            {
+                "id": r["topic__chapter__subject_id"],
+                "name_uz": r["topic__chapter__subject__name_uz"],
+                "name_ru": r["topic__chapter__subject__name_ru"],
+                "percent": round(r["avg"] or 0),
+                "completed_topics": r["done"],
+                "total_topics": topic_totals.get(r["topic__chapter__subject_id"], 0),
+                "tests": r["tests"],
+                "diagnostics": diag_counts.get(r["topic__chapter__subject_id"], 0),
+            }
+            for r in rows
+        ]
+        available_subjects = Subject.objects.filter(classes=class_obj).count() if class_obj else 0
+
+        # ---- Boblar bo'yicha natija (radar) ----
+        chapters = [
+            {"name_uz": r["topic__chapter__name_uz"], "name_ru": r["topic__chapter__name_ru"], "percent": round(r["avg"] or 0)}
+            for r in TopicProgress.objects.filter(user=child)
+            .values("topic__chapter_id", "topic__chapter__name_uz", "topic__chapter__name_ru")
+            .annotate(avg=Avg("score"), n=Count("id"))
+            .order_by("-n")[:6]
+        ]
+
+        # ---- Statistika kartalari ----
+        dates = activity_dates(child, days=60)
+        active_now = sum(1 for d in dates if d > today - timedelta(days=30))
+        active_prev = sum(1 for d in dates if today - timedelta(days=60) < d <= today - timedelta(days=30))
+        progress = TopicProgress.objects.filter(user=child)
+        tests_now = progress.filter(completed_at__gte=month_ago).count()
+        tests_prev = progress.filter(completed_at__gte=two_months_ago, completed_at__lt=month_ago).count()
+        avg_all = progress.aggregate(a=Avg("score"))["a"]
+        avg_now = progress.filter(completed_at__gte=month_ago).aggregate(a=Avg("score"))["a"]
+        avg_prev = progress.filter(completed_at__gte=two_months_ago, completed_at__lt=month_ago).aggregate(a=Avg("score"))["a"]
+        stats = {
+            "activity": {"percent": _percent(active_now, 30), "delta": _percent(active_now, 30) - _percent(active_prev, 30)},
+            "subjects": {"studied": len(subjects), "total": max(available_subjects, len(subjects))},
+            "study_time_30": _duration_seconds(child, since=month_ago),
+            "tests": {"count": progress.count(), "delta": tests_now - tests_prev},
+            "correct": {
+                "percent": round(avg_all or 0),
+                "delta": round(avg_now - avg_prev) if avg_now is not None and avg_prev is not None else None,
+            },
+        }
+
+        # ---- 30 kunlik faollik (yechilgan misollar) ----
+        daily = dict(
+            StudentScoreLog.objects.filter(student_score__student=child, awarded_at__gte=now - timedelta(days=30))
+            .annotate(day=TruncDate("awarded_at"))
+            .values("day")
+            .annotate(n=Count("id"))
+            .values_list("day", "n")
+        )
+        activity_days = [
+            {"date": (today - timedelta(days=o)).isoformat(), "count": daily.get(today - timedelta(days=o), 0)}
+            for o in range(29, -1, -1)
+        ]
+
+        # ---- So'nggi faoliyatlar ----
+        recent = [
+            _recent_item("login", h.login_time)
+            for h in StudentLoginHistory.objects.filter(student=child).order_by("-login_time")[:RECENT_LIMIT]
+        ]
+        for tp in (
+            TopicProgress.objects.filter(user=child, completed_at__isnull=False)
+            .select_related("topic__chapter__subject")
+            .order_by("-completed_at")[:RECENT_LIMIT]
+        ):
+            subject = tp.topic.chapter.subject if tp.topic and tp.topic.chapter else None
+            recent.append(_recent_item(
+                "topic_test", tp.completed_at, tp.topic.name_uz, tp.topic.name_ru,
+                subject.name_uz if subject else "", subject.name_ru if subject else "", round(tp.score),
+            ))
+        for diag in (
+            Diagnost_Student.objects.filter(student=child, create_date__isnull=False)
+            .select_related("subject")
+            .order_by("-create_date")[:RECENT_LIMIT]
+        ):
+            recent.append(_recent_item(
+                "diagnostic", diag.create_date,
+                diag.subject.name_uz if diag.subject else "", diag.subject.name_ru if diag.subject else "",
+                value=_diag_score(diag),
+            ))
+        for award in StudentAchievement.objects.filter(student=child).select_related("achievement").order_by("-awarded_at")[:RECENT_LIMIT]:
+            recent.append(_recent_item(
+                "achievement", award.awarded_at, award.achievement.title_uz, award.achievement.title_ru,
+                award.achievement.description_uz, award.achievement.description_ru,
+            ))
+        recent.sort(key=lambda x: x["at"], reverse=True)
+
+        # ---- Qurilmalar ----
+        devices = [
+            serialize_device(d)
+            for d in UserDevice.objects.filter(user=child.user).order_by("-is_active", "-last_used_at")[:6]
+        ]
+
+        return Response({
+            "profile": profile,
+            "subscription": subscription,
+            "payments": payment_info,
+            "stats": stats,
+            "subjects": subjects,
+            "chapters": chapters,
+            "activity_days": activity_days,
+            "recent": recent[:RECENT_LIMIT],
+            "devices": devices,
+            "achievements": student_achievements(child, request)[0],
         })
