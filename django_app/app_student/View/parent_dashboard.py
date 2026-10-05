@@ -87,6 +87,7 @@ def _subject_scores(student_ids, since=None):
             "topic__chapter__subject_id",
             "topic__chapter__subject__name_uz",
             "topic__chapter__subject__name_ru",
+            "topic__chapter__subject__classes__name",
         )
         .annotate(avg=Avg("score"), topics=Count("topic", distinct=True))
         .order_by("-topics")
@@ -138,6 +139,7 @@ class ParentDashboardAPIView(APIView):
                 "id": row["topic__chapter__subject_id"],
                 "name_uz": row["topic__chapter__subject__name_uz"],
                 "name_ru": row["topic__chapter__subject__name_ru"],
+                "class_name": row["topic__chapter__subject__classes__name"] or "",
                 "percent": round(row["avg"] or 0),
             })
 
@@ -421,11 +423,16 @@ class ParentChildOverviewAPIView(APIView):
             sub = None
         subscription = None
         if sub is not None:
-            total_days = max(1, (sub.end_date - sub.start_date).days) if sub.start_date and sub.end_date else 0
+            # Joriy tarif davri: tugash sanasidan tarif oylari ayiriladi (obuna yaratilgan sana emas)
+            months = last_payment.subscription_months if last_payment else None
+            period_start = sub.start_date
+            if months and sub.end_date:
+                period_start = max(sub.start_date or sub.end_date, sub.end_date - timedelta(days=30 * months))
+            total_days = max(1, (sub.end_date - period_start).days) if period_start and sub.end_date else 0
             subscription = {
                 "is_active": bool(sub.end_date and sub.end_date >= now),
                 "is_paid": sub.is_paid,
-                "start_date": sub.start_date.isoformat() if sub.start_date else None,
+                "start_date": period_start.isoformat() if period_start else None,
                 "end_date": sub.end_date.isoformat() if sub.end_date else None,
                 "next_payment_date": sub.next_payment_date.isoformat() if sub.next_payment_date else None,
                 "days_left": max(0, (sub.end_date - now).days) if sub.end_date else 0,
@@ -442,7 +449,12 @@ class ParentChildOverviewAPIView(APIView):
         # ---- Fanlar natijasi ----
         rows = list(
             TopicProgress.objects.filter(user=child)
-            .values("topic__chapter__subject_id", "topic__chapter__subject__name_uz", "topic__chapter__subject__name_ru")
+            .values(
+                "topic__chapter__subject_id",
+                "topic__chapter__subject__name_uz",
+                "topic__chapter__subject__name_ru",
+                "topic__chapter__subject__classes__name",
+            )
             .annotate(
                 avg=Avg("score"),
                 tests=Count("topic", distinct=True),
@@ -468,6 +480,7 @@ class ParentChildOverviewAPIView(APIView):
                 "id": r["topic__chapter__subject_id"],
                 "name_uz": r["topic__chapter__subject__name_uz"],
                 "name_ru": r["topic__chapter__subject__name_ru"],
+                "class_name": r["topic__chapter__subject__classes__name"] or "",
                 "percent": round(r["avg"] or 0),
                 "completed_topics": r["done"],
                 "total_topics": topic_totals.get(r["topic__chapter__subject_id"], 0),
@@ -570,4 +583,133 @@ class ParentChildOverviewAPIView(APIView):
             "recent": recent[:RECENT_LIMIT],
             "devices": devices,
             "achievements": student_achievements(child, request)[0],
+        })
+
+
+# ---------------------------------------------------------------------------
+# Farzand to'lovlari: GET /api/v1/func_student/parent/children/<id>/payments/?months=6
+# ---------------------------------------------------------------------------
+
+GATEWAY_LABELS = {"multicard": "Multicard", "payme": "Payme", "click": "Click", "uzum": "Uzum"}
+
+
+def _gateway_label(value):
+    if not value:
+        return ""
+    return GATEWAY_LABELS.get(str(value).lower(), str(value).capitalize())
+
+
+def _month_starts(count):
+    """Oxirgi `count` oyning birinchi kunlari (eskidan yangiga)."""
+    today = timezone.localdate()
+    year, month = today.year, today.month
+    starts = []
+    for _ in range(count):
+        starts.append((year, month))
+        month -= 1
+        if month == 0:
+            month, year = 12, year - 1
+    return list(reversed(starts))
+
+
+class ParentChildPaymentsAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, student_id):
+        from django_app.app_payments.models import Payment
+        from django_app.app_user.models import Subject
+
+        parent = getattr(request.user, "parent_profile", None)
+        relation = None
+        if parent is not None:
+            relation = (
+                ParentStudentRelation.objects.filter(parent=parent, student_id=student_id, is_confirmed=True)
+                .select_related("student__class_name__classes")
+                .first()
+            )
+        if relation is None:
+            return Response({"detail": "Farzand topilmadi."}, status=status.HTTP_404_NOT_FOUND)
+        child = relation.student
+
+        try:
+            months_param = int(request.query_params.get("months", 6))
+        except (TypeError, ValueError):
+            months_param = 6
+        months_param = 12 if months_param >= 12 else 6
+
+        now = timezone.now()
+        payments = list(Payment.objects.filter(student=child).order_by("-payment_date", "-created_at"))
+        success = [p for p in payments if p.status == "success"]
+        last = success[0] if success else None
+
+        def paid_at(payment):
+            return payment.payment_date or payment.created_at
+
+        # ---- Joriy tarif ----
+        try:
+            sub = child.subscription
+        except Exception:  # noqa: BLE001 — obuna yo'q
+            sub = None
+        class_obj = getattr(child.class_name, "classes", None) if child.class_name else None
+        subject_names = list(
+            Subject.objects.filter(classes=class_obj).order_by("order").values("name_uz", "name_ru")
+        ) if class_obj else []
+
+        current = None
+        if sub is not None:
+            months = last.subscription_months if last else None
+            period_start = sub.start_date
+            if months and sub.end_date:
+                period_start = max(sub.start_date or sub.end_date, sub.end_date - timedelta(days=30 * months))
+            total_days = max(1, (sub.end_date - period_start).days) if period_start and sub.end_date else 0
+            current = {
+                "is_active": bool(sub.end_date and sub.end_date >= now),
+                "months": months,
+                "start_date": period_start.isoformat() if period_start else None,
+                "end_date": sub.end_date.isoformat() if sub.end_date else None,
+                "next_payment_date": (sub.next_payment_date or sub.end_date).isoformat() if (sub.next_payment_date or sub.end_date) else None,
+                "days_left": max(0, (sub.end_date - now).days) if sub.end_date else 0,
+                "total_days": total_days,
+                "subjects": subject_names,
+            }
+
+        total_paid = float(sum(p.amount for p in success))
+        total_months = sum(p.subscription_months or 1 for p in success)
+
+        # ---- Oylik statistika (muvaffaqiyatli to'lovlar) ----
+        sums = defaultdict(float)
+        for payment in success:
+            moment = timezone.localtime(paid_at(payment)) if timezone.is_aware(paid_at(payment)) else paid_at(payment)
+            sums[(moment.year, moment.month)] += float(payment.amount)
+        monthly = [{"year": y, "month": m, "amount": sums.get((y, m), 0)} for y, m in _month_starts(months_param)]
+
+        history = [
+            {
+                "id": payment.id,
+                "number": len(payments) - index,
+                "date": paid_at(payment).isoformat(),
+                "amount": float(payment.amount),
+                "original_amount": float(payment.original_amount) if payment.original_amount else None,
+                "discount_percent": payment.discount_percent,
+                "months": payment.subscription_months,
+                "gateway": _gateway_label(payment.payment_gateway),
+                "status": payment.status,
+                "receipt_url": payment.receipt_url or "",
+            }
+            for index, payment in enumerate(payments)
+        ]
+
+        return Response({
+            "current": current,
+            "summary": {
+                "total_paid": total_paid,
+                "success_count": len(success),
+                "last_amount": float(last.amount) if last else 0,
+                "last_date": paid_at(last).isoformat() if last else None,
+                "last_gateway": _gateway_label(last.payment_gateway) if last else "",
+                # Oylik ekvivalent: jami to'langan / jami sotib olingan oylar
+                "monthly_equivalent": round(total_paid / total_months) if total_months else 0,
+            },
+            "monthly": monthly,
+            "history": history,
         })
