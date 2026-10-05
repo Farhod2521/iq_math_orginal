@@ -132,11 +132,28 @@ def register_login(user, request, replace_device_id=None):
         return UserDevice.objects.create(user=user, **info)
 
 
+def _browser_os(ua_string):
+    """User-Agent dan brauzer ("Chrome 154") va OS ("Android 14") ni ajratadi."""
+    if not ua_string:
+        return "", ""
+    try:
+        from user_agents import parse
+    except ImportError:
+        return "", ""
+    ua = parse(ua_string)
+    browser = " ".join(filter(None, [ua.browser.family, str(ua.browser.version[0]) if ua.browser.version else ""])).strip()
+    os_name = " ".join(filter(None, [ua.os.family, ua.os.version_string])).strip()
+    return ("" if browser.startswith("Other") else browser), ("" if os_name.startswith("Other") else os_name)
+
+
 def serialize_device(device, current_id=None):
+    browser, os_name = _browser_os(device.user_agent)
     return {
         "id": str(device.id),
         "device_name": device.device_name,
         "device_type": device.device_type,
+        "browser": browser,
+        "os": os_name,
         "ip_address": device.ip_address,
         "is_active": device.is_active,
         "is_current": current_id is not None and str(device.id) == str(current_id),

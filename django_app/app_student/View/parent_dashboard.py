@@ -569,7 +569,7 @@ class ParentChildOverviewAPIView(APIView):
         # ---- Qurilmalar ----
         devices = [
             serialize_device(d)
-            for d in UserDevice.objects.filter(user=child.user).order_by("-is_active", "-last_used_at")[:6]
+            for d in UserDevice.objects.filter(user=child.user).order_by("-is_active", "-last_used_at")[:30]
         ]
 
         return Response({
@@ -732,3 +732,28 @@ class ParentChildPaymentsAPIView(APIView):
             "monthly": monthly,
             "history": history,
         })
+
+
+class ParentChildDeviceAPIView(APIView):
+    """
+    DELETE /api/v1/func_student/parent/children/<id>/devices/<uuid>/
+    Ota-ona farzandining qurilmasini hisobdan chiqarib yuboradi.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, student_id, device_id):
+        from django_app.app_user.device_service import deactivate_device
+        from django_app.app_user.models import UserDevice
+
+        parent = getattr(request.user, "parent_profile", None)
+        allowed = parent is not None and ParentStudentRelation.objects.filter(
+            parent=parent, student_id=student_id, is_confirmed=True
+        ).exists()
+        if not allowed:
+            return Response({"detail": "Farzand topilmadi."}, status=status.HTTP_404_NOT_FOUND)
+
+        device = UserDevice.objects.filter(id=device_id, user__student_profile__id=student_id).first()
+        if device is None:
+            return Response({"detail": "Qurilma topilmadi."}, status=status.HTTP_404_NOT_FOUND)
+        deactivate_device(device)
+        return Response({"detail": "Qurilma chiqarib yuborildi."}, status=status.HTTP_200_OK)

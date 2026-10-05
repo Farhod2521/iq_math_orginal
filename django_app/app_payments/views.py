@@ -23,6 +23,25 @@ from django.db.models import Q
 from rest_framework.permissions import BasePermission
 URL_TEST = "https://dev-mesh.multicard.uz"
 URL_DEV = "https://mesh.multicard.uz"
+def resolve_paying_student(request):
+    """
+    To'lov kim uchun: o'quvchi o'zi uchun yoki ota-ona tasdiqlangan farzandi uchun
+    (request.data["student_id"]). Topilmasa None.
+    """
+    student = getattr(request.user, "student_profile", None)
+    if student is not None:
+        return student
+    parent = getattr(request.user, "parent_profile", None)
+    student_id = request.data.get("student_id")
+    if parent is not None and student_id:
+        from django_app.app_user.models import ParentStudentRelation
+        relation = ParentStudentRelation.objects.filter(
+            parent=parent, student_id=student_id, is_confirmed=True
+        ).select_related("student").first()
+        return relation.student if relation else None
+    return None
+
+
 class InitiatePaymentAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -31,9 +50,9 @@ class InitiatePaymentAPIView(APIView):
         subscription_id = request.data.get('subscription_id')
         coupon_code = request.data.get('coupon_code', None)
         
-        try:
-            student = Student.objects.get(user=request.user)
-        except Student.DoesNotExist:
+        # O'quvchi o'zi yoki ota-ona farzandi uchun (student_id)
+        student = resolve_paying_student(request)
+        if student is None:
             return Response({"error": "Talaba topilmadi"}, status=status.HTTP_404_NOT_FOUND)
 
         # Muddatidan o'tgan pending paymentlarni failed holatiga o'tkazamiz
@@ -708,8 +727,8 @@ class CheckCouponAPIView(APIView):
                 status=status.HTTP_200_OK
             )
 
-        # 👤 Joriy studentni olish
-        student = getattr(request.user, "student_profile", None)
+        # 👤 Joriy student (yoki ota-ona uchun — farzandi)
+        student = resolve_paying_student(request)
         if not student:
             return Response({"error": "Foydalanuvchi student emas"}, status=403)
 

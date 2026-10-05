@@ -6,7 +6,7 @@ from .views import (
      DiagnostLevelDetailAPIView, Diagnostika_TopicDetailAPIView, PathFromIdsAPIView, PathFromIdsStudentAPIView,
      ChapterListBySubject_STUDENT_ID_APIView, TopicListByChapter_STUDENT_ID_APIView, SubjectNameListAPIView
 )
-from .View.parent_dashboard import ParentDashboardAPIView, ParentChildOverviewAPIView, ParentChildPaymentsAPIView, StudentAchievementsAPIView
+from .View.parent_dashboard import ParentDashboardAPIView, ParentChildDeviceAPIView, ParentChildOverviewAPIView, ParentChildPaymentsAPIView, StudentAchievementsAPIView
 from .View.app_diagnost import StudentDiagnostSubjectsAPIView, SubjectChaptersAPIView, ChapterTopicsAPIView, StudentDiagnosticHistoryAPIView, ParentStudentDiagnosticHistoryAPIView, \
     StudentDiagnostAttemptsAPIView, StudentDiagnostMistakesAPIView
 from .View.product_exchange import ProductExchangeView, ProductExchangeListView, ProductExchangeConfirmAPIView
@@ -61,6 +61,7 @@ urlpatterns = [
     path('parent/dashboard/', ParentDashboardAPIView.as_view(), name='parent-dashboard'),
     path('parent/children/<int:student_id>/overview/', ParentChildOverviewAPIView.as_view(), name='parent-child-overview'),
     path('parent/children/<int:student_id>/payments/', ParentChildPaymentsAPIView.as_view(), name='parent-child-payments'),
+    path('parent/children/<int:student_id>/devices/<uuid:device_id>/', ParentChildDeviceAPIView.as_view(), name='parent-child-device'),
     path('achievements/', StudentAchievementsAPIView.as_view(), name='student-achievements'),
     path('my-diagnost/subjects/<int:subject_id>/attempts/', StudentDiagnostAttemptsAPIView.as_view()),
     path('my-diagnost/<int:diagnost_id>/mistakes/', StudentDiagnostMistakesAPIView.as_view()),
