@@ -96,3 +96,58 @@ class TopicHelpRequestIndependentAdmin(TranslationAdmin):
 
 
 
+
+
+from django.utils.html import format_html
+from .models import Achievement, StudentAchievement
+
+
+@admin.register(Achievement)
+class AchievementAdmin(admin.ModelAdmin):
+    """
+    Yutuqlar: rasm, uz/ru matn va shart. O'quvchining ko'rsatkichi "Qiymat"ga yetganda
+    yutuq avtomatik beriladi (test/diagnostika tekshirilganda, kirishda va sahifa ochilganda).
+    """
+    list_display = ("badge", "title_uz", "condition_type", "threshold", "subject", "order", "is_active", "awarded_count")
+    list_display_links = ("badge", "title_uz")
+    list_editable = ("order", "is_active")
+    list_filter = ("condition_type", "is_active")
+    search_fields = ("title_uz", "title_ru")
+    fieldsets = (
+        ("Ko'rinishi", {"fields": ("image", "badge_preview", "title_uz", "title_ru", "description_uz", "description_ru")}),
+        ("Shart", {
+            "fields": ("condition_type", "threshold", "subject"),
+            "description": "Masalan: \"To'g'ri yechilgan savollar soni\" va Qiymat = 100 — 100 ta savolni to'g'ri yechgan o'quvchiga beriladi. "
+                           "\"Fan bo'yicha o'zlashtirish\" uchun Fanni tanlang va Qiymatni foizda kiriting (masalan 80).",
+        }),
+        ("Holat", {"fields": ("order", "is_active")}),
+    )
+    readonly_fields = ("badge_preview",)
+
+    def badge(self, obj):
+        if not obj.image:
+            return "—"
+        return format_html('<img src="{}" style="height:40px;width:40px;object-fit:contain" />', obj.image.url)
+
+    badge.short_description = "Rasm"
+
+    def badge_preview(self, obj):
+        if not obj or not obj.image:
+            return "—"
+        return format_html('<img src="{}" style="height:96px;width:96px;object-fit:contain" />', obj.image.url)
+
+    badge_preview.short_description = "Ko'rinishi"
+
+    def awarded_count(self, obj):
+        return obj.awards.count()
+
+    awarded_count.short_description = "Olganlar"
+
+
+@admin.register(StudentAchievement)
+class StudentAchievementAdmin(admin.ModelAdmin):
+    list_display = ("student", "achievement", "awarded_at")
+    list_filter = ("achievement",)
+    search_fields = ("student__full_name", "student__user__phone")
+    raw_id_fields = ("student",)
+    readonly_fields = ("awarded_at",)

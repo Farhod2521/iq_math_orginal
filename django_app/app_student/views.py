@@ -320,6 +320,9 @@ class GenerateCheckAnswersAPIView(APIView):
         diagnost.topic.set(wrong_topic_instances)
         diagnost.chapters.set(wrong_chapter_instances)
 
+        from django_app.app_student.achievements import check_achievements_safe
+        check_achievements_safe(student_instance)
+
         return Response(result_json)
 
 
@@ -815,6 +818,10 @@ class CheckAnswersAPIView(APIView):
                 }
                 topic_progress.result = progress_result
                 topic_progress.save()
+
+                # Shart bajarilgan bo'lsa yangi yutuq beriladi
+                from django_app.app_student.achievements import check_achievements_safe
+                check_achievements_safe(student_instance)
 
         response_data = {
             "question": question_details,

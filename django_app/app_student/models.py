@@ -340,3 +340,79 @@ class StudentReferralTransaction(models.Model):
 
     def __str__(self):
         return f"{self.student} → {self.referral.code} ({self.payment_amount} so'm)"
+
+
+class Achievement(models.Model):
+    """
+    Yutuq (badge). Admin panelda rasm, uz/ru matn va shart bilan yaratiladi.
+    O'quvchining ko'rsatkichi (condition_type bo'yicha) threshold ga yetganda yutuq beriladi.
+    """
+    CONDITION_TYPES = (
+        ("topics_completed", "O'zlashtirilgan mavzular soni (ball ≥ 80)"),
+        ("correct_answers", "To'g'ri yechilgan savollar soni"),
+        ("streak_days", "Ketma-ket faol kunlar (seriya)"),
+        ("active_days_30", "So'nggi 30 kundagi faol kunlar soni"),
+        ("subject_mastery", "Tanlangan fan bo'yicha o'zlashtirish foizi"),
+        ("diagnostics_taken", "Topshirilgan diagnostikalar soni"),
+        ("diagnostic_score", "Diagnostikadagi eng yuqori natija (%)"),
+        ("total_score", "To'plangan ballar"),
+        ("total_coins", "To'plangan tangalar"),
+    )
+
+    title_uz = models.CharField(max_length=120, verbose_name="Nomi (uz)")
+    title_ru = models.CharField(max_length=120, verbose_name="Nomi (ru)")
+    description_uz = models.CharField(max_length=255, blank=True, default="", verbose_name="Tavsif (uz)")
+    description_ru = models.CharField(max_length=255, blank=True, default="", verbose_name="Tavsif (ru)")
+    image = models.ImageField(upload_to="achievements/", verbose_name="Rasm (badge)")
+    condition_type = models.CharField(max_length=30, choices=CONDITION_TYPES, verbose_name="Shart turi")
+    threshold = models.PositiveIntegerField(
+        default=1,
+        verbose_name="Qiymat",
+        help_text="Ko'rsatkich shu qiymatga yetganda yutuq beriladi (foizli shartlarda 0–100).",
+    )
+    subject = models.ForeignKey(
+        Subject,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        verbose_name="Fan",
+        help_text="Faqat \"fan bo'yicha o'zlashtirish\" sharti uchun.",
+    )
+    order = models.PositiveIntegerField(default=0, verbose_name="Tartib")
+    is_active = models.BooleanField(default=True, verbose_name="Faol")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Yutuq"
+        verbose_name_plural = "Yutuqlar"
+        ordering = ["order", "id"]
+
+    def __str__(self):
+        return f"{self.title_uz} ({self.get_condition_type_display()} ≥ {self.threshold})"
+
+    PERCENT_CONDITIONS = ("subject_mastery", "diagnostic_score")
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+
+        if self.condition_type == "subject_mastery" and not self.subject_id:
+            raise ValidationError({"subject": "Bu shart uchun fanni tanlang."})
+        if self.condition_type in self.PERCENT_CONDITIONS and self.threshold > 100:
+            raise ValidationError({"threshold": "Foizli shart uchun qiymat 0–100 oralig'ida bo'lishi kerak."})
+        if self.threshold < 1:
+            raise ValidationError({"threshold": "Qiymat kamida 1 bo'lishi kerak."})
+
+
+class StudentAchievement(models.Model):
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name="achievements", verbose_name="O'quvchi")
+    achievement = models.ForeignKey(Achievement, on_delete=models.CASCADE, related_name="awards", verbose_name="Yutuq")
+    awarded_at = models.DateTimeField(auto_now_add=True, verbose_name="Olingan vaqti")
+
+    class Meta:
+        verbose_name = "O'quvchi yutug'i"
+        verbose_name_plural = "O'quvchilar yutuqlari"
+        unique_together = ("student", "achievement")
+        ordering = ["-awarded_at"]
+
+    def __str__(self):
+        return f"{self.student.full_name} — {self.achievement.title_uz}"

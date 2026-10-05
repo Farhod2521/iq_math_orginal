@@ -1116,6 +1116,9 @@ class LoginAPIView(APIView):
                 try:
                     student = Student.objects.get(user=user)
                     StudentLoginHistory.objects.create(student=student)
+                    # Seriya (ketma-ket kunlar) kabi yutuqlar kirishda ham tekshiriladi
+                    from django_app.app_student.achievements import check_achievements_safe
+                    check_achievements_safe(student)
                     if lang:
                         student.lang = lang
                         student.save(update_fields=["lang"])
