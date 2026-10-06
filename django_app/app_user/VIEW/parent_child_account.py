@@ -256,3 +256,117 @@ class ParentUnlinkChildAPIView(APIView):
                 child_user.is_active = False
                 child_user.save(update_fields=["is_active"])
         return Response({"detail": "Farzand ro'yxatdan chiqarildi."}, status=status.HTTP_200_OK)
+
+
+# ---------------------------------------------------------------------------
+# Farzandning telefoni bor, lekin hali ro'yxatdan o'tmagan:
+# ota-ona uni shu raqam bilan ro'yxatdan o'tkazadi (SMS kod farzand telefoniga boradi).
+#   POST parent/children/register/         {full_name, phone, class_name}
+#   POST parent/children/register/verify/  {phone, code}
+# ---------------------------------------------------------------------------
+from django.core.cache import cache
+
+_REG_KEY = "parent-child-reg:{}:{}"
+_REG_TTL = 600  # 10 daqiqa
+_REG_MAX_TRIES = 5
+
+
+def _normalize_phone(value):
+    digits = "".join(ch for ch in str(value or "") if ch.isdigit())
+    if len(digits) == 9:
+        digits = "998" + digits
+    return digits if len(digits) == 12 and digits.startswith("998") else None
+
+
+class ParentRegisterChildAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        parent = _parent_of(request)
+        if parent is None:
+            return Response({"detail": "Faqat ota-onalar uchun."}, status=status.HTTP_403_FORBIDDEN)
+
+        full_name = str(request.data.get("full_name") or "").strip()
+        phone = _normalize_phone(request.data.get("phone"))
+        class_name = Subject.objects.filter(id=request.data.get("class_name")).first() if request.data.get("class_name") else None
+        if len(full_name) < 3:
+            return Response({"detail": "Farzandning ism-familiyasini kiriting."}, status=status.HTTP_400_BAD_REQUEST)
+        if phone is None:
+            return Response({"detail": "Telefon raqamni to'g'ri kiriting."}, status=status.HTTP_400_BAD_REQUEST)
+        if class_name is None:
+            return Response({"detail": "Sinfni tanlang."}, status=status.HTTP_400_BAD_REQUEST)
+        if User.objects.filter(phone=phone).exists():
+            return Response({"detail": "Bu telefon raqam allaqachon ro'yxatdan o'tgan."}, status=status.HTTP_400_BAD_REQUEST)
+
+        from django_app.app_user.sms_service import send_sms
+
+        code = str(random.randint(10000, 99999))
+        cache.set(_REG_KEY.format(parent.id, phone), {
+            "full_name": full_name[:200],
+            "class_id": class_name.id,
+            "code": code,
+            "tries": 0,
+        }, _REG_TTL)
+        if not send_sms(phone, code):
+            return Response({"detail": "SMS yuborishda xatolik."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({"detail": "SMS kod yuborildi.", "phone": phone})
+
+
+class ParentRegisterChildVerifyAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        parent = _parent_of(request)
+        if parent is None:
+            return Response({"detail": "Faqat ota-onalar uchun."}, status=status.HTTP_403_FORBIDDEN)
+        phone = _normalize_phone(request.data.get("phone"))
+        code = str(request.data.get("code") or "").strip()
+        key = _REG_KEY.format(parent.id, phone)
+        pending = cache.get(key) if phone else None
+        if not pending:
+            return Response({"detail": "Kod muddati tugagan. Qaytadan kod oling."}, status=status.HTTP_400_BAD_REQUEST)
+        if pending["code"] != code:
+            pending["tries"] += 1
+            if pending["tries"] >= _REG_MAX_TRIES:
+                cache.delete(key)
+                return Response({"detail": "Urinishlar soni tugadi. Qaytadan kod oling."}, status=status.HTTP_400_BAD_REQUEST)
+            cache.set(key, pending, _REG_TTL)
+            return Response({"detail": "Kod noto'g'ri."}, status=status.HTTP_400_BAD_REQUEST)
+        if User.objects.filter(phone=phone).exists():
+            cache.delete(key)
+            return Response({"detail": "Bu telefon raqam allaqachon ro'yxatdan o'tgan."}, status=status.HTTP_400_BAD_REQUEST)
+
+        from django_app.app_payments.models import Subscription, SubscriptionSetting
+
+        password = "".join(random.choices(string.ascii_letters + string.digits, k=8))
+        with transaction.atomic():
+            user = User(phone=phone, role="student")
+            user.set_password(password)
+            user.save()
+            student = Student.objects.create(
+                user=user,
+                full_name=pending["full_name"],
+                class_name=Subject.objects.filter(id=pending["class_id"]).first(),
+                status=True,
+                lang=parent.lang or "uz",
+                student_date=timezone.now(),
+            )
+            setting = SubscriptionSetting.objects.first()
+            free_days = setting.free_trial_days if setting else 7
+            Subscription.objects.create(
+                student=student,
+                start_date=timezone.now(),
+                end_date=timezone.now() + timedelta(days=free_days),
+                is_paid=False,
+            )
+            ParentStudentRelation.objects.create(parent=parent, student=student, is_confirmed=True)
+        cache.delete(key)
+
+        return Response({
+            "id": student.id,
+            "full_name": student.full_name,
+            "identification": student.identification,
+            "login": phone,
+            "password": password,
+            "has_phone": True,
+        }, status=status.HTTP_201_CREATED)

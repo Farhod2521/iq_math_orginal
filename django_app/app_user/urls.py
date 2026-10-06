@@ -20,7 +20,7 @@ from .token_refresh import DeviceTokenRefreshView
 from .VIEW.devices_view import MyDevicesAPIView, MyDeviceDetailAPIView
 from .VIEW.parent_child_account import (
     ParentCreateChildAPIView, ParentSwitchToChildAPIView, ReturnToParentAPIView, ParentChildSetPhoneAPIView,
-    ParentUnlinkChildAPIView,
+    ParentUnlinkChildAPIView, ParentRegisterChildAPIView, ParentRegisterChildVerifyAPIView,
 )
 from .VIEW.unversial_update_view import ChangePasswordView, UniversalUpdateView, VerifyPhoneChangeView
 urlpatterns = [
@@ -74,6 +74,8 @@ urlpatterns = [
     path("parent/confirm-child/list/", ParentChildrenListAPIView.as_view()),
     # Telefonsiz farzand hisobi va farzand profiliga o'tish
     path("parent/children/create/", ParentCreateChildAPIView.as_view()),
+    path("parent/children/register/", ParentRegisterChildAPIView.as_view()),
+    path("parent/children/register/verify/", ParentRegisterChildVerifyAPIView.as_view()),
     path("parent/children/<int:student_id>/", ParentUnlinkChildAPIView.as_view()),
     path("parent/children/<int:student_id>/switch/", ParentSwitchToChildAPIView.as_view()),
     path("parent/children/<int:student_id>/set-phone/", ParentChildSetPhoneAPIView.as_view()),

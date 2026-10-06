@@ -1463,7 +1463,16 @@ class AddChildRequestAPIView(APIView):
         try:
             student_user = User.objects.get(phone=phone, role="student")
         except User.DoesNotExist:
-            return Response({"detail": "Bunday student topilmadi"}, status=status.HTTP_404_NOT_FOUND)
+            # Raqam umuman ro'yxatdan o'tmagan — frontend ro'yxatdan o'tkazish formasini ochadi
+            if not User.objects.filter(phone=phone).exists():
+                return Response(
+                    {"detail": "Bu raqam hali ro'yxatdan o'tmagan", "code": "not_registered"},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+            return Response(
+                {"detail": "Bu raqam o'quvchi sifatida ro'yxatdan o'tmagan", "code": "other_role"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
 
         # Tasodifiy SMS kod generatsiya qilamiz
         sms_code = str(random.randint(10000, 99999))
