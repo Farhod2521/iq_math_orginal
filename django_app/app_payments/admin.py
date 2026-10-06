@@ -33,10 +33,11 @@ class SubscriptionAdmin(admin.ModelAdmin):
 
 @admin.register(Payment)
 class PaymentAdmin(admin.ModelAdmin):
-    list_display = ("student", "amount", "payment_date", "status", "transaction_id")
-    list_filter = ("status", "payment_date")
-    search_fields = ("student__full_name", "transaction_id")
+    list_display = ("student", "amount", "payment_date", "status", "payment_gateway", "paid_by_parent", "transaction_id")
+    list_filter = ("status", "payment_gateway", "payment_date")
+    search_fields = ("student__full_name", "transaction_id", "paid_by_parent__full_name")
     autocomplete_fields = ("student",)
+    raw_id_fields = ("paid_by_parent",)
     date_hierarchy = "payment_date"
 
 

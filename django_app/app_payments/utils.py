@@ -60,3 +60,53 @@ def expire_pending_payments(student=None):
         qs = qs.filter(student=student)
 
     return qs.update(status="failed", updated_at=now)
+
+
+def plan_base_price(plan):
+    """Tarifning o'z chegirmasi bilan narxi (`price_per_month` — tarifning to'liq narxi)."""
+    price = float(plan.price_per_month)
+    if plan.discount_percent:
+        price = price * (1 - plan.discount_percent / 100)
+    return price
+
+
+def coupon_discount_amount(coupon_percent):
+    """
+    Kupon chegirmasi summasi: 1 oylik tarif narxining kupon foizi.
+    Tekshirish (check-coupon) va to'lov (initiate-payment) bir xil hisoblashi uchun yagona joy.
+    """
+    from .models import SubscriptionPlan  # Local import to avoid circular imports.
+
+    if not coupon_percent:
+        return 0
+    one_month_plan = SubscriptionPlan.objects.filter(months=1, is_active=True).first()
+    if one_month_plan is None:
+        return 0
+    return plan_base_price(one_month_plan) * coupon_percent / 100
+
+
+# Multicard callback'idagi `ps` (to'lov tizimi) qiymatlari -> bazada saqlanadigan nom
+PAYMENT_SYSTEMS = {
+    "click": "click",
+    "payme": "payme",
+    "uzum": "uzum",
+    "uzumbank": "uzum",
+    "uzcard": "uzcard",
+    "humo": "humo",
+    "visa": "visa",
+    "mastercard": "mastercard",
+    "anorbank": "anorbank",
+    "alif": "alif",
+    "oson": "oson",
+    "xazna": "xazna",
+    "apelsin": "apelsin",
+    "beepul": "beepul",
+}
+
+
+def normalize_payment_system(value):
+    """Callback'dagi to'lov tizimi nomini (masalan "Click", "PAYME") bir xil ko'rinishga keltiradi."""
+    if not value:
+        return None
+    key = str(value).strip().lower().replace(" ", "").replace("_", "")
+    return PAYMENT_SYSTEMS.get(key, key[:50] or None)

@@ -48,6 +48,12 @@ class Payment(models.Model):
     ], default="pending", verbose_name="Holat")
     payment_gateway = models.CharField(max_length=50, null=True, blank=True, verbose_name="To'lov tizimi")
     receipt_url = models.URLField(null=True, blank=True, verbose_name="To'lov chek havolasi")
+    card_pan = models.CharField(max_length=32, null=True, blank=True, verbose_name="Karta raqami (yashirilgan)")
+    # Ota-ona farzandi uchun to'lagan bo'lsa — kim to'lagani (o'quvchi o'zi to'lasa bo'sh)
+    paid_by_parent = models.ForeignKey(
+        "app_user.Parent", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="child_payments", verbose_name="To'lagan ota-ona"
+    )
     
     # Coupon related fields
     coupon = models.ForeignKey(Coupon_Tutor_Student, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Ishlatilgan kupon")

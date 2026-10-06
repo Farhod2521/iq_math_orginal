@@ -1,4 +1,4 @@
-"""
+﻿"""
 Ota-ona bosh sahifasi (dashboard/parent/home) uchun API'lar.
 
 GET /api/v1/func_student/parent/dashboard/?period=month|all&child=<id>
@@ -590,7 +590,11 @@ class ParentChildOverviewAPIView(APIView):
 # Farzand to'lovlari: GET /api/v1/func_student/parent/children/<id>/payments/?months=6
 # ---------------------------------------------------------------------------
 
-GATEWAY_LABELS = {"multicard": "Multicard", "payme": "Payme", "click": "Click", "uzum": "Uzum"}
+GATEWAY_LABELS = {
+    "multicard": "Multicard", "payme": "Payme", "click": "Click", "uzum": "Uzum",
+    "uzcard": "Uzcard", "humo": "Humo", "visa": "Visa", "mastercard": "Mastercard",
+    "anorbank": "Anorbank", "alif": "Alif", "oson": "Oson", "xazna": "Xazna", "apelsin": "Apelsin",
+}
 
 
 def _gateway_label(value):
@@ -641,7 +645,7 @@ class ParentChildPaymentsAPIView(APIView):
         payments = list(
             Payment.objects.filter(student=child)
             .exclude(status="failed")
-            .select_related("coupon")
+            .select_related("coupon", "paid_by_parent")
             .order_by("-payment_date", "-created_at")
         )
         success = [p for p in payments if p.status == "success"]
@@ -700,6 +704,10 @@ class ParentChildPaymentsAPIView(APIView):
                 "gateway": _gateway_label(payment.payment_gateway),
                 "status": payment.status,
                 "receipt_url": payment.receipt_url or "",
+                # Kim to'lagan: ota-ona (farzand uchun) yoki o'quvchining o'zi
+                "paid_by": "parent" if payment.paid_by_parent_id else "student",
+                "payer_name": payment.paid_by_parent.full_name if payment.paid_by_parent_id else child.full_name,
+                "card_pan": payment.card_pan or "",
                 # Kvitansiya ("Ko'rish") oynasi uchun
                 "student_name": child.full_name,
                 "store_id": payment.store_id or "",

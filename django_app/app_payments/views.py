@@ -8,7 +8,10 @@ from .models import Payment, Subscription, SubscriptionSetting, SubscriptionPlan
 from django_app.app_management.models import  Coupon_Tutor_Student, CouponUsage_Tutor_Student, ReferralAndCouponSettings
 from datetime import timedelta
 import hashlib
-from .utils import get_multicard_token, expire_pending_payments
+from .utils import (
+    get_multicard_token, expire_pending_payments, plan_base_price, coupon_discount_amount,
+    normalize_payment_system,
+)
 from django_app.app_user.models import Student, User
 import requests
 import uuid
@@ -68,9 +71,7 @@ class InitiatePaymentAPIView(APIView):
             return Response({"error": "Obuna rejasi topilmadi"}, status=status.HTTP_400_BAD_REQUEST)
 
         # Asl narxni hisoblash (planning o'zidagi chegirma bilan)
-        original_price = float(plan.price_per_month)
-        if plan.discount_percent > 0:
-            original_price = original_price * (1 - plan.discount_percent / 100)
+        original_price = plan_base_price(plan)
 
         # Kupon tekshirish
         discount_percent = 0
@@ -127,17 +128,8 @@ class InitiatePaymentAPIView(APIView):
                     student_cashback_amount = 0
                     teacher_cashback_amount = 0
                 
-                # Sale price hisoblash
-                one_month_plan = SubscriptionPlan.objects.filter(months=1, is_active=True).first()
-                one_month_discount = 0
-                if one_month_plan:
-                    one_month_price = float(one_month_plan.price_per_month)
-                    if one_month_plan.discount_percent > 0:
-                        one_month_price = one_month_price * (1 - one_month_plan.discount_percent / 100)
-                    one_month_discount = one_month_price * discount_percent / 100
-
-                # Sale price = original_price - 1 oylik kupon chegirma
-                sale_price = original_price - one_month_discount
+                # Sale price = original_price - 1 oylik kupon chegirma (check-coupon bilan bir xil)
+                sale_price = max(original_price - coupon_discount_amount(discount_percent), 0)
                 
                 # Matnni yaratish
                 if coupon_owner_name:
@@ -154,6 +146,16 @@ class InitiatePaymentAPIView(APIView):
         except Exception as e:
             return Response({"error": "Token olishda xatolik", "details": str(e)}, status=500)
 
+        # Ota-ona farzandi uchun to'layaptimi
+        paying_parent = None
+        if getattr(request.user, "student_profile", None) is None:
+            paying_parent = getattr(request.user, "parent_profile", None)
+
+        # To'lovdan keyin qaytish sahifasi: ota-ona — farzand sahifasiga, o'quvchi — bosh sahifaga
+        return_url = "https://iqmath.uz/"
+        if paying_parent is not None:
+            return_url = f"https://iqmath.uz/dashboard/parent/my-children/{student.id}"
+
         # Tranzaksiya ID yaratish
         transaction_id = str(uuid.uuid4())
         headers = {"Authorization": f"Bearer {token}"}
@@ -164,7 +166,7 @@ class InitiatePaymentAPIView(APIView):
             "store_id": 1915,
             "amount": amount_in_tiyin,
             "invoice_id": transaction_id,
-            "return_url": "https://iqmath.uz/",
+            "return_url": return_url,
             "callback_url": "https://api.iqmath.uz/api/v1/payments/payment-callback/",
             "ofd": [
                 {
@@ -195,7 +197,9 @@ class InitiatePaymentAPIView(APIView):
             original_amount=original_price,
             transaction_id=transaction_id,
             status="pending",
+            # Multicard orqali boshlanadi; aniq tizim (click, payme, uzcard...) callback'da yoziladi
             payment_gateway="multicard",
+            paid_by_parent=paying_parent,
             coupon=coupon_obj,
             coupon_type=coupon_type,
             discount_percent=discount_percent,
@@ -212,8 +216,12 @@ class InitiatePaymentAPIView(APIView):
                 used_by_tutor=coupon_obj.created_by_tutor if coupon_obj.created_by_tutor else None
             )
 
+        payment_data = response.json()
         return Response({
-            "payment_data": response.json(),
+            "payment_data": payment_data,
+            "checkout_url": (payment_data.get("data") or {}).get("checkout_url") if isinstance(payment_data, dict) else None,
+            "payment_id": payment.id,
+            "paid_by_parent": paying_parent is not None,
             "price_details": {
                 "original_price": original_price,
                 "sale_price": sale_price,
@@ -262,6 +270,10 @@ class PaymentCallbackAPIView(APIView):
             uuid_val = data.get("uuid")
             invoice_uuid = data.get("invoice_uuid")
             billing_id = data.get("billing_id")
+            # Foydalanuvchi checkout'da tanlagan to'lov tizimi: click, payme, uzcard, humo...
+            payment_system = normalize_payment_system(data.get("ps"))
+            card_pan = data.get("card_pan")
+            receipt_url = data.get("receipt_url")
 
             # 2. Signature tekshirish
             SECRET_KEY = "b7lydo1mu8abay9x"
@@ -279,6 +291,11 @@ class PaymentCallbackAPIView(APIView):
                 logger.error(f"❌ Payment not found with transaction_id: {invoice_id}")
                 return Response({"error": "Payment not found"}, status=status.HTTP_404_NOT_FOUND)
 
+            # Callback qayta kelsa, obuna ikkinchi marta uzaytirilmasin
+            if payment.status == "success":
+                logger.info(f"ℹ️ Payment already processed: {payment.id}")
+                return Response({"status": "ok", "message": "Payment already processed"}, status=status.HTTP_200_OK)
+
             # 4. Payment statusini yangilash
             payment.store_id = store_id
             payment.invoice_uuid = invoice_uuid
@@ -287,7 +304,11 @@ class PaymentCallbackAPIView(APIView):
             payment.sign = received_sign
             payment.status = "success"
             payment.payment_date = timezone.now()
-            payment.receipt_url = f"https://mesh.multicard.uz/invoice/{uuid_val}"
+            payment.receipt_url = receipt_url or f"https://mesh.multicard.uz/invoice/{uuid_val}"
+            if payment_system:
+                payment.payment_gateway = payment_system
+            if card_pan:
+                payment.card_pan = str(card_pan)[:32]
             payment.save()
             logger.info(f"✅ Payment status updated to SUCCESS: {payment.id}")
 
@@ -765,16 +786,15 @@ class CheckCouponAPIView(APIView):
 
         # 📦 Tarifni olish
         try:
-            plan = SubscriptionPlan.objects.get(id=subscription_id)
+            plan = SubscriptionPlan.objects.get(id=subscription_id, is_active=True)
         except SubscriptionPlan.DoesNotExist:
             return Response({"error": "Tarif topilmadi"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # 💰 Narxlarni hisoblash
-        original_price = plan.price_per_month - (plan.price_per_month * plan.discount_percent / 100)
-        one_month_plan = SubscriptionPlan.objects.filter(months=1).first()
-        one_month_discount = one_month_plan.price_per_month * coupon.discount_percent / 100 if one_month_plan else 0
-        sale_price = original_price - one_month_discount
-        saved_amount = plan.price_per_month - sale_price
+        # 💰 Narxlarni hisoblash — initiate-payment bilan bir xil formula
+        original_price = plan_base_price(plan)
+        discount_amount = coupon_discount_amount(coupon.discount_percent)
+        sale_price = max(original_price - discount_amount, 0)
+        saved_amount = float(plan.price_per_month) - sale_price
 
         # 🏷️ Kupon turi
         if coupon.created_by_student:
@@ -791,6 +811,7 @@ class CheckCouponAPIView(APIView):
             "price": plan.price_per_month,
             "original_price": original_price,
             "sale_price": sale_price,
+            "discount_amount": discount_amount,
             "saved_amount": saved_amount,
             "coupon_type": coupon_type
         }, status=status.HTTP_200_OK)

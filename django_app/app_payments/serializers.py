@@ -199,11 +199,16 @@ class PaymentSuperAdminSerializer(serializers.ModelSerializer):
     student_id = serializers.IntegerField(source="student.id", read_only=True)
     coupon_code = serializers.CharField(source="coupon.code", read_only=True)
     plan_name = serializers.SerializerMethodField()
+    paid_by = serializers.SerializerMethodField()
+    parent_name = serializers.CharField(source="paid_by_parent.full_name", read_only=True, default=None)
 
     class Meta:
         model = Payment
         fields = [
             "id",
+            "paid_by",
+            "parent_name",
+            "card_pan",
             "student_id",
             "student_name",
             "student_phone",
@@ -222,6 +227,9 @@ class PaymentSuperAdminSerializer(serializers.ModelSerializer):
             "created_at",
             "receipt_url",
         ]
+
+    def get_paid_by(self, obj):
+        return "parent" if obj.paid_by_parent_id else "student"
 
     def get_plan_name(self, obj):
         plan = SubscriptionPlan.objects.filter(months=obj.subscription_months, is_active=True).first()
