@@ -226,3 +226,33 @@ class ParentChildSetPhoneAPIView(APIView):
         child_user.set_password(password)
         child_user.save()
         return Response({"login": digits, "password": password, "has_phone": True})
+
+
+class ParentUnlinkChildAPIView(APIView):
+    """
+    DELETE parent/children/<id>/ — farzandni ota-ona ro'yxatidan chiqarish.
+    Farzand hisobi va natijalari o'chirilmaydi. Telefonsiz hisobga boshqa ota-ona
+    ulanmagan bo'lsa, unga endi hech kim kira olmaydi — hisob nofaol qilinadi.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, student_id):
+        parent = _parent_of(request)
+        if parent is None:
+            return Response({"detail": "Faqat ota-onalar uchun."}, status=status.HTTP_403_FORBIDDEN)
+        relation = (
+            ParentStudentRelation.objects.filter(parent=parent, student_id=student_id)
+            .select_related("student__user")
+            .first()
+        )
+        if relation is None:
+            return Response({"detail": "Farzand topilmadi."}, status=status.HTTP_404_NOT_FOUND)
+
+        child_user = relation.student.user
+        with transaction.atomic():
+            relation.delete()
+            orphan = not ParentStudentRelation.objects.filter(student_id=student_id, is_confirmed=True).exists()
+            if is_virtual_phone(child_user.phone) and orphan:
+                child_user.is_active = False
+                child_user.save(update_fields=["is_active"])
+        return Response({"detail": "Farzand ro'yxatdan chiqarildi."}, status=status.HTTP_200_OK)
