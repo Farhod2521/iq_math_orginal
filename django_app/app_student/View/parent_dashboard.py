@@ -43,7 +43,7 @@ def _parent_children(user):
         return None, []
     children = list(
         Student.objects.filter(parent_relations__parent=parent, parent_relations__is_confirmed=True)
-        .select_related("class_name__classes")
+        .select_related("class_name__classes", "user")
         .distinct()
         .order_by("id")
     )
@@ -153,6 +153,7 @@ class ParentDashboardAPIView(APIView):
             children_data.append({
                 "id": child.id,
                 "full_name": child.full_name,
+                "has_phone": not str(child.user.phone or "").startswith("c"),
                 "class_name": _class_name(child),
                 "is_active": _is_active(child),
                 "subjects": per_child_subjects.get(child.id, [])[:3],
@@ -407,6 +408,7 @@ class ParentChildOverviewAPIView(APIView):
             "id": child.id,
             "full_name": child.full_name,
             "identification": child.identification,
+            "has_phone": not str(child.user.phone or "").startswith("c"),
             "class_name": class_obj.name if class_obj else "",
             "is_active": _is_active(child),
             "registered_at": child.user.date_joined.isoformat() if child.user.date_joined else None,

@@ -613,11 +613,12 @@ class StudentSerializerParent(serializers.ModelSerializer):
     last_payment_amount = serializers.SerializerMethodField()
     subscription_end_date = serializers.SerializerMethodField()
     remaining_days = serializers.SerializerMethodField()
+    has_phone = serializers.SerializerMethodField()
 
     class Meta:
         model = Student
         fields = [
-            "id", "full_name", "identification", "region", "districts", "address", "brithday",
+            "id", "full_name", "identification", "has_phone", "region", "districts", "address", "brithday",
             "academy_or_school", "academy_or_school_name", "class_num",
             "subject_name_uz", "subject_name_ru", "document_type", "document",
             "type_of_education", "status", "registration_date", "registration_time",
@@ -627,6 +628,10 @@ class StudentSerializerParent(serializers.ModelSerializer):
 
     def get_class_num(self, obj):
         return obj.class_name.classes.name if obj.class_name else None
+
+    def get_has_phone(self, obj):
+        # Telefonsiz farzand hisobi (ota-ona yaratgan) — ichki login "c..." bilan boshlanadi
+        return not str(obj.user.phone or "").startswith("c")
 
     def get_subject_name_uz(self, obj):
         return obj.class_name.name_uz if obj.class_name else None

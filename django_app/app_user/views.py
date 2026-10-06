@@ -641,7 +641,9 @@ class UserProfileAPIView(APIView):
             "id": student.id, 
             "identification": student.identification, 
             'full_name': student.full_name,
-            'phone': getattr(student.user, 'phone', None),
+            # Telefonsiz farzand hisobining ichki logini ("c...") ko'rsatilmaydi
+            'phone': None if str(getattr(student.user, 'phone', '') or '').startswith('c') else getattr(student.user, 'phone', None),
+            'has_phone': not str(getattr(student.user, 'phone', '') or '').startswith('c'),
             'email': getattr(student.user, 'email', None),
             "telegram_id":getattr(student.user, 'telegram_id', None),
             'region': student.region,
