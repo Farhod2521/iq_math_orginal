@@ -269,6 +269,7 @@ from django.core.cache import cache
 _REG_KEY = "parent-child-reg:{}:{}"
 _REG_TTL = 600  # 10 daqiqa
 _REG_MAX_TRIES = 5
+_REG_RESEND_SECONDS = 120  # SMS qayta yuborish uchun kutish (frontend taymeri bilan bir xil)
 
 
 def _normalize_phone(value):
@@ -300,12 +301,23 @@ class ParentRegisterChildAPIView(APIView):
 
         from django_app.app_user.sms_service import send_sms
 
+        key = _REG_KEY.format(parent.id, phone)
+        previous = cache.get(key)
+        now_ts = timezone.now().timestamp()
+        if previous and now_ts - previous.get("sent_at", 0) < _REG_RESEND_SECONDS:
+            retry_after = int(_REG_RESEND_SECONDS - (now_ts - previous["sent_at"])) + 1
+            return Response(
+                {"detail": f"Kodni qayta olish uchun {retry_after} soniya kuting.", "retry_after": retry_after},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+
         code = str(random.randint(10000, 99999))
-        cache.set(_REG_KEY.format(parent.id, phone), {
+        cache.set(key, {
             "full_name": full_name[:200],
             "class_id": class_name.id,
             "code": code,
             "tries": 0,
+            "sent_at": now_ts,
         }, _REG_TTL)
         if not send_sms(phone, code):
             return Response({"detail": "SMS yuborishda xatolik."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

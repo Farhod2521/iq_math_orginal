@@ -618,13 +618,124 @@ def _month_starts(count):
     return list(reversed(starts))
 
 
+def _months_param(request):
+    try:
+        months = int(request.query_params.get("months", 6))
+    except (TypeError, ValueError):
+        months = 6
+    return 12 if months >= 12 else 6
+
+
+def _payments_payload(child, months_param):
+    """O'quvchining to'lovlari: joriy tarif, umumiy ko'rsatkichlar, oylik grafik va tarix (kvitansiya bilan)."""
+    from django_app.app_payments.models import Payment
+    from django_app.app_user.models import Subject
+
+    now = timezone.now()
+    payments = list(
+        Payment.objects.filter(student=child)
+        .exclude(status="failed")
+        .select_related("coupon", "paid_by_parent")
+        .order_by("-payment_date", "-created_at")
+    )
+    success = [p for p in payments if p.status == "success"]
+    last = success[0] if success else None
+
+    def paid_at(payment):
+        return payment.payment_date or payment.created_at
+
+    # ---- Joriy tarif ----
+    try:
+        sub = child.subscription
+    except Exception:  # noqa: BLE001 — obuna yo'q
+        sub = None
+    class_obj = getattr(child.class_name, "classes", None) if child.class_name else None
+    subject_names = list(
+        Subject.objects.filter(classes=class_obj).order_by("order").values("name_uz", "name_ru")
+    ) if class_obj else []
+
+    current = None
+    if sub is not None:
+        months = last.subscription_months if last else None
+        period_start = sub.start_date
+        if months and sub.end_date:
+            period_start = max(sub.start_date or sub.end_date, sub.end_date - timedelta(days=30 * months))
+        total_days = max(1, (sub.end_date - period_start).days) if period_start and sub.end_date else 0
+        current = {
+            "is_active": bool(sub.end_date and sub.end_date >= now),
+            "months": months,
+            "start_date": period_start.isoformat() if period_start else None,
+            "end_date": sub.end_date.isoformat() if sub.end_date else None,
+            "next_payment_date": (sub.next_payment_date or sub.end_date).isoformat() if (sub.next_payment_date or sub.end_date) else None,
+            "days_left": max(0, (sub.end_date - now).days) if sub.end_date else 0,
+            "total_days": total_days,
+            "subjects": subject_names,
+        }
+
+    total_paid = float(sum(p.amount for p in success))
+    total_months = sum(p.subscription_months or 1 for p in success)
+
+    # ---- Oylik statistika (muvaffaqiyatli to'lovlar) ----
+    sums = defaultdict(float)
+    for payment in success:
+        moment = timezone.localtime(paid_at(payment)) if timezone.is_aware(paid_at(payment)) else paid_at(payment)
+        sums[(moment.year, moment.month)] += float(payment.amount)
+    monthly = [{"year": y, "month": m, "amount": sums.get((y, m), 0)} for y, m in _month_starts(months_param)]
+
+    history = [
+        {
+            "id": payment.id,
+            "number": len(payments) - index,
+            "date": paid_at(payment).isoformat(),
+            "amount": float(payment.amount),
+            "original_amount": float(payment.original_amount) if payment.original_amount else None,
+            "discount_percent": payment.discount_percent,
+            "months": payment.subscription_months,
+            "gateway": _gateway_label(payment.payment_gateway),
+            "status": payment.status,
+            "receipt_url": payment.receipt_url or "",
+            # Kim to'lagan: ota-ona (farzand uchun) yoki o'quvchining o'zi
+            "paid_by": "parent" if payment.paid_by_parent_id else "student",
+            "payer_name": payment.paid_by_parent.full_name if payment.paid_by_parent_id else child.full_name,
+            "card_pan": payment.card_pan or "",
+            # Kvitansiya ("Ko'rish") oynasi uchun
+            "student_name": child.full_name,
+            "store_id": payment.store_id or "",
+            "invoice_uuid": payment.invoice_uuid or "",
+            "uuid": payment.uuid or "",
+            "billing_id": payment.billing_id or "",
+            "sign": payment.sign or "",
+            "transaction_id": payment.transaction_id or "",
+            "coupon_code": payment.coupon.code if payment.coupon else "",
+            "coupon_type": payment.get_coupon_type_display() if payment.coupon_type else "",
+            "discount_amount": (
+                float(payment.original_amount - payment.amount)
+                if payment.original_amount and payment.original_amount > payment.amount else 0
+            ),
+        }
+        for index, payment in enumerate(payments)
+    ]
+
+    return {
+        "current": current,
+        "summary": {
+            "total_paid": total_paid,
+            "success_count": len(success),
+            "last_amount": float(last.amount) if last else 0,
+            "last_date": paid_at(last).isoformat() if last else None,
+            "last_gateway": _gateway_label(last.payment_gateway) if last else "",
+            # Oylik ekvivalent: jami to'langan / jami sotib olingan oylar
+            "monthly_equivalent": round(total_paid / total_months) if total_months else 0,
+        },
+        "monthly": monthly,
+        "history": history,
+    }
+
+
 class ParentChildPaymentsAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, student_id):
-        from django_app.app_payments.models import Payment
-        from django_app.app_user.models import Subject
-
         parent = getattr(request.user, "parent_profile", None)
         relation = None
         if parent is not None:
@@ -635,113 +746,25 @@ class ParentChildPaymentsAPIView(APIView):
             )
         if relation is None:
             return Response({"detail": "Farzand topilmadi."}, status=status.HTTP_404_NOT_FOUND)
-        child = relation.student
+        return Response(_payments_payload(relation.student, _months_param(request)))
 
-        try:
-            months_param = int(request.query_params.get("months", 6))
-        except (TypeError, ValueError):
-            months_param = 6
-        months_param = 12 if months_param >= 12 else 6
 
-        now = timezone.now()
-        payments = list(
-            Payment.objects.filter(student=child)
-            .exclude(status="failed")
-            .select_related("coupon", "paid_by_parent")
-            .order_by("-payment_date", "-created_at")
+class StudentMyPaymentsAPIView(APIView):
+    """
+    GET /api/v1/func_student/my-payments/?months=6|12
+    O'quvchining o'z to'lovlari (o'zi yoki ota-onasi to'lagan) — profil sahifasidagi "To'lovlarim" tabi uchun.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        student = (
+            Student.objects.filter(user=request.user)
+            .select_related("class_name__classes")
+            .first()
         )
-        success = [p for p in payments if p.status == "success"]
-        last = success[0] if success else None
-
-        def paid_at(payment):
-            return payment.payment_date or payment.created_at
-
-        # ---- Joriy tarif ----
-        try:
-            sub = child.subscription
-        except Exception:  # noqa: BLE001 — obuna yo'q
-            sub = None
-        class_obj = getattr(child.class_name, "classes", None) if child.class_name else None
-        subject_names = list(
-            Subject.objects.filter(classes=class_obj).order_by("order").values("name_uz", "name_ru")
-        ) if class_obj else []
-
-        current = None
-        if sub is not None:
-            months = last.subscription_months if last else None
-            period_start = sub.start_date
-            if months and sub.end_date:
-                period_start = max(sub.start_date or sub.end_date, sub.end_date - timedelta(days=30 * months))
-            total_days = max(1, (sub.end_date - period_start).days) if period_start and sub.end_date else 0
-            current = {
-                "is_active": bool(sub.end_date and sub.end_date >= now),
-                "months": months,
-                "start_date": period_start.isoformat() if period_start else None,
-                "end_date": sub.end_date.isoformat() if sub.end_date else None,
-                "next_payment_date": (sub.next_payment_date or sub.end_date).isoformat() if (sub.next_payment_date or sub.end_date) else None,
-                "days_left": max(0, (sub.end_date - now).days) if sub.end_date else 0,
-                "total_days": total_days,
-                "subjects": subject_names,
-            }
-
-        total_paid = float(sum(p.amount for p in success))
-        total_months = sum(p.subscription_months or 1 for p in success)
-
-        # ---- Oylik statistika (muvaffaqiyatli to'lovlar) ----
-        sums = defaultdict(float)
-        for payment in success:
-            moment = timezone.localtime(paid_at(payment)) if timezone.is_aware(paid_at(payment)) else paid_at(payment)
-            sums[(moment.year, moment.month)] += float(payment.amount)
-        monthly = [{"year": y, "month": m, "amount": sums.get((y, m), 0)} for y, m in _month_starts(months_param)]
-
-        history = [
-            {
-                "id": payment.id,
-                "number": len(payments) - index,
-                "date": paid_at(payment).isoformat(),
-                "amount": float(payment.amount),
-                "original_amount": float(payment.original_amount) if payment.original_amount else None,
-                "discount_percent": payment.discount_percent,
-                "months": payment.subscription_months,
-                "gateway": _gateway_label(payment.payment_gateway),
-                "status": payment.status,
-                "receipt_url": payment.receipt_url or "",
-                # Kim to'lagan: ota-ona (farzand uchun) yoki o'quvchining o'zi
-                "paid_by": "parent" if payment.paid_by_parent_id else "student",
-                "payer_name": payment.paid_by_parent.full_name if payment.paid_by_parent_id else child.full_name,
-                "card_pan": payment.card_pan or "",
-                # Kvitansiya ("Ko'rish") oynasi uchun
-                "student_name": child.full_name,
-                "store_id": payment.store_id or "",
-                "invoice_uuid": payment.invoice_uuid or "",
-                "uuid": payment.uuid or "",
-                "billing_id": payment.billing_id or "",
-                "sign": payment.sign or "",
-                "transaction_id": payment.transaction_id or "",
-                "coupon_code": payment.coupon.code if payment.coupon else "",
-                "coupon_type": payment.get_coupon_type_display() if payment.coupon_type else "",
-                "discount_amount": (
-                    float(payment.original_amount - payment.amount)
-                    if payment.original_amount and payment.original_amount > payment.amount else 0
-                ),
-            }
-            for index, payment in enumerate(payments)
-        ]
-
-        return Response({
-            "current": current,
-            "summary": {
-                "total_paid": total_paid,
-                "success_count": len(success),
-                "last_amount": float(last.amount) if last else 0,
-                "last_date": paid_at(last).isoformat() if last else None,
-                "last_gateway": _gateway_label(last.payment_gateway) if last else "",
-                # Oylik ekvivalent: jami to'langan / jami sotib olingan oylar
-                "monthly_equivalent": round(total_paid / total_months) if total_months else 0,
-            },
-            "monthly": monthly,
-            "history": history,
-        })
+        if student is None:
+            return Response({"detail": "O'quvchi topilmadi."}, status=status.HTTP_404_NOT_FOUND)
+        return Response(_payments_payload(student, _months_param(request)))
 
 
 class ParentChildDeviceAPIView(APIView):

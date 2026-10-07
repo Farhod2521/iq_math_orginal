@@ -8,6 +8,43 @@ from django_app.app_student.models import TopicProgress, StudentScoreLog
 from django_app.app_student.helper_next_topic import get_next_topic_for_student
 
 
+# Bosh sahifa yuqori paneli uchun sozlamalar
+LEVEL_STEP = 20  # har 20 ball — yangi daraja (1-daraja 0 balldan)
+DAILY_GOAL_TOPICS = 5  # kunlik maqsad: bugun 5 ta mavzu yakunlash
+
+
+def _greeting_name(full_name):
+    """"ABDIKARIMOV FARHOD" -> "Farhod" (familiya + ism tartibida ism ikkinchi so'z)."""
+    parts = [p for p in str(full_name or "").split() if p]
+    name = parts[1] if len(parts) > 1 else (parts[0] if parts else "")
+    return name[:1].upper() + name[1:].lower()
+
+
+def _header(student):
+    """Yuqori panel: ism, streak, ball, tanga, daraja, kunlik maqsad."""
+    from django.utils import timezone
+    from django_app.app_student.models import StudentScore
+    from django_app.app_student.achievements import activity_dates, streak_from_dates
+
+    score_obj = StudentScore.objects.filter(student=student).first()
+    score = score_obj.score if score_obj else 0
+    today = timezone.localdate()
+    done_today = (
+        TopicProgress.objects.filter(user=student, completed_at__date=today)
+        .values("topic_id").distinct().count()
+    )
+    return {
+        "full_name": student.full_name,
+        "first_name": _greeting_name(student.full_name),
+        "streak_days": streak_from_dates(activity_dates(student, days=120)),
+        "score": score,
+        "coin": score_obj.coin if score_obj else 0,
+        "level": 1 + score // LEVEL_STEP,
+        "level_step": LEVEL_STEP,
+        "daily_goal": {"done": min(done_today, DAILY_GOAL_TOPICS), "target": DAILY_GOAL_TOPICS},
+    }
+
+
 def _class_sort_key(class_obj):
     # Raqamli sinflar (1, 2, ... 11) sonli tartibda, raqamsiz nomlar (masalan "Testlar") oxirida.
     return (0, int(class_obj.name)) if class_obj.name.isdigit() else (1, class_obj.name)
@@ -133,6 +170,7 @@ class StudentHomeDashboardAPIView(APIView):
                 "continue_learning": continue_learning,
                 "stats": stats,
                 "recent_activity": recent_activity,
+                "header": _header(student),
             },
             status=200,
         )
