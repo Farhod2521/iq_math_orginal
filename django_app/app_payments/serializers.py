@@ -35,9 +35,31 @@ class SubscriptionCreateUpdateSerializer(serializers.ModelSerializer):
         fields = ["student", "end_date", "next_payment_date", "is_paid"]
 
 class PaymentSerializer(serializers.ModelSerializer):
+    # Mobil ilovadagi "To'lovlarim" va chek oynasi uchun qo'shimcha maydonlar
+    coupon_code = serializers.CharField(source="coupon.code", read_only=True, default="")
+    paid_by = serializers.SerializerMethodField()
+    payer_name = serializers.SerializerMethodField()
+    student_name = serializers.CharField(source="student.full_name", read_only=True)
+
+    def get_paid_by(self, obj):
+        return "parent" if obj.paid_by_parent_id else "student"
+
+    def get_payer_name(self, obj):
+        return obj.paid_by_parent.full_name if obj.paid_by_parent_id else obj.student.full_name
+
     class Meta:
         model = Payment
         fields = [
+            'original_amount',
+            'discount_percent',
+            'subscription_months',
+            'coupon_code',
+            'coupon_type',
+            'card_pan',
+            'paid_by',
+            'payer_name',
+            'student_name',
+            'created_at',
             'id',
             'store_id',             # Multicard ID raqami
             'student',              # Talaba

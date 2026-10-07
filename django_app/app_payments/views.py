@@ -711,7 +711,11 @@ class MyPaymentsAPIView(APIView):
     def get(self, request):
         student = request.user.student_profile    # Agar Student modelida OneToOneField bo'lsa
         expire_pending_payments(student=student)
-        payments = Payment.objects.filter(student=student)
+        payments = (
+            Payment.objects.filter(student=student)
+            .select_related("coupon", "paid_by_parent", "student")
+            .order_by("-payment_date", "-created_at")
+        )
         serializer = PaymentSerializer(payments, many=True)
         return Response(serializer.data)
     
