@@ -18,6 +18,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from django_app.app_student.models import Diagnost_Student
+from django_app.app_user.all_role_listview import All_Role_ListView
 from django_app.app_user.models import User
 
 # zoneinfo (pytz emas): Django 5 da pytz zonasi ExtractDay'ga "LMT" nomi bilan
@@ -111,7 +112,45 @@ class MonthlyUsersReportAPIView(APIView):
             name = item[0]
             return (0, int(name)) if str(name).isdigit() else (1, str(name))
 
+        # Shu oyda ro'yxatdan o'tganlarning to'liq ro'yxati (Word hisobot jadvali uchun).
+        # Ustunlar "Foydalanuvchilar" sahifasidagi jadval bilan bir xil — qiymatlar o'sha
+        # All_Role_ListView mantiqidan olinadi (holat, diagnostika, obuna, oxirgi kirish...).
+        joined = list(
+            current_qs.filter(role__in=ROLES)
+            .select_related(
+                "student_profile__class_name__classes",
+                "student_profile__subscription",
+                "parent_profile",
+                "teacher_profile",
+                "tutor_profile",
+            )
+            .order_by("date_joined", "id")
+        )
+        lister = All_Role_ListView()
+        lookups = lister.build_lookups(joined)
+        users = []
+        for user in joined:
+            info = lister.get_profile_data(user, TZ, lookups).get("json", {})
+            users.append({
+                "full_name": info.get("full_name") or "",
+                "role": user.role,
+                "phone": user.phone or "",
+                "status": bool(info.get("status")),
+                "has_diagnost": bool(info.get("has_diagnost")),
+                "completed_today": bool(info.get("completed_today")),
+                "class_num": info.get("class_num") or "",
+                "subject_name_uz": info.get("subject_name_uz") or "",
+                "subject_name_ru": info.get("subject_name_ru") or "",
+                "subscription_end_date": info.get("subscription_end_date") or "",
+                "remaining_days": info.get("remaining_days"),
+                "lang": (info.get("lang") or "").upper(),
+                "device": user.device or "",
+                "last_login_time": info.get("last_login_time") or "",
+                "date": user.date_joined.astimezone(TZ).strftime("%d.%m.%Y %H:%M") if user.date_joined else "",
+            })
+
         return Response({
+            "users": users,
             "period": {"year": year, "month": month, "days": days_in_month},
             "previous_period": {"year": prev_year, "month": prev_month},
             "current": current,
