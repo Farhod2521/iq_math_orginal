@@ -9,8 +9,8 @@ diagnostika kesimi. Oy chegaralari Toshkent vaqti bo'yicha olinadi.
 import calendar
 from collections import Counter
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
-import pytz
 from django.db.models import Count, Q
 from django.db.models.functions import ExtractDay
 from rest_framework.permissions import IsAuthenticated
@@ -19,13 +19,15 @@ from rest_framework.views import APIView
 
 from django_app.app_user.models import User
 
-TZ = pytz.timezone("Asia/Tashkent")
+# zoneinfo (pytz emas): Django 5 da pytz zonasi ExtractDay'ga "LMT" nomi bilan
+# uzatilib, PostgreSQL uni tanimaydi va so'rov 500 bilan tushadi.
+TZ = ZoneInfo("Asia/Tashkent")
 ROLES = ("student", "parent", "tutor", "teacher")
 
 
 def _month_range(year, month):
-    start = TZ.localize(datetime(year, month, 1))
-    end = TZ.localize(datetime(year + 1, 1, 1) if month == 12 else datetime(year, month + 1, 1))
+    start = datetime(year, month, 1, tzinfo=TZ)
+    end = datetime(year + 1, 1, 1, tzinfo=TZ) if month == 12 else datetime(year, month + 1, 1, tzinfo=TZ)
     return start, end
 
 
