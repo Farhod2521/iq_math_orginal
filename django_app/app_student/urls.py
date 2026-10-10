@@ -25,8 +25,10 @@ from .View.superadmin_diagnost_crud import SuperAdminDiagnostCRUDAPIView
 from .View.conversion_history_crud import ConversionHistoryCRUDAPIView
 from .View.certificate_view import CertificateDownloadAPIView
 from .View.student_home_dashboard import StudentHomeDashboardAPIView
+from .View.landing_stats import LandingStatsAPIView
 
 urlpatterns = [
+    path('landing-stats/', LandingStatsAPIView.as_view(), name='landing-stats'),
     path('subject/name-list/', SubjectNameListAPIView.as_view(), name='subject-name-list'),
     path('my-subjects/', StudentSubjectListAPIView.as_view(), name='my-subjects'),
     path('my-chapter/<int:subject_id>/', ChapterListBySubjectAPIView.as_view(), name='chapter-list-by-subject'),

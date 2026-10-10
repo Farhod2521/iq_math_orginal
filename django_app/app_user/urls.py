@@ -18,6 +18,7 @@ from rest_framework_simplejwt.views import (
 )
 from .token_refresh import DeviceTokenRefreshView
 from .VIEW.devices_view import MyDevicesAPIView, MyDeviceDetailAPIView
+from .VIEW.monthly_report_view import MonthlyUsersReportAPIView
 from .VIEW.parent_child_account import (
     ParentCreateChildAPIView, ParentSwitchToChildAPIView, ReturnToParentAPIView, ParentChildSetPhoneAPIView,
     ParentUnlinkChildAPIView, ParentRegisterChildAPIView, ParentRegisterChildVerifyAPIView,
@@ -34,6 +35,7 @@ urlpatterns = [
     path('student/profile/', StudentProfileAPIView.as_view(), name='profile'),
     # path('student/profile-update/', UpdateStudentFieldAPIView.as_view(), name='profile'),
     path('student/student_list/', All_Role_ListView.as_view(), name='student_list'),
+    path('student/monthly-report/', MonthlyUsersReportAPIView.as_view(), name='monthly_users_report'),
     path('student/delete-profile/', DeleteStudentProfileAPIView.as_view(), name='student_list'),
     path('student/forgot-password/', ForgotPasswordView.as_view(), name='forgot_password'),
     path('student/verify-sms-code/', VerifySMSCodeView.as_view(), name='verify-sms-code'),###foget-pasword
