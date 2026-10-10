@@ -95,9 +95,9 @@ class All_Role_ListView(APIView):
         # --- HAS_DIAGNOST FILTER (faqat studentlar uchun) ---
         if has_diagnost_filter in ('true', 'false') and role == 'student':
             if has_diagnost_filter == 'true':
-                users = users.filter(student_profile__diagnost_student_set__isnull=False).distinct()
+                users = users.filter(student_profile__diagnost_student__isnull=False).distinct()
             else:
-                users = users.filter(student_profile__diagnost_student_set__isnull=True)
+                users = users.filter(student_profile__diagnost_student__isnull=True)
 
         # --- STATUS FILTER ---
         if status_filter == 'active':

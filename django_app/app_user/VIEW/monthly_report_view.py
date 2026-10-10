@@ -17,6 +17,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from django_app.app_student.models import Diagnost_Student
 from django_app.app_user.models import User
 
 # zoneinfo (pytz emas): Django 5 da pytz zonasi ExtractDay'ga "LMT" nomi bilan
@@ -98,8 +99,12 @@ class MonthlyUsersReportAPIView(APIView):
         lang_counter = Counter(
             (value or "uz").lower() for value in new_students.values_list("student_profile__lang", flat=True)
         )
+        # Diagnost_Student.student da related_name yo'q — to'g'ridan-to'g'ri jadvaldan sanaymiz
         with_diagnostic = (
-            new_students.filter(student_profile__diagnost_student_set__isnull=False).distinct().count()
+            Diagnost_Student.objects.filter(student__user__in=new_students)
+            .values("student_id")
+            .distinct()
+            .count()
         )
 
         def sort_class(item):
