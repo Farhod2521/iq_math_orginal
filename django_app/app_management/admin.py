@@ -333,7 +333,7 @@ class CertificateSettingsAdmin(admin.ModelAdmin):
 
 @admin.register(SiteVisit)
 class SiteVisitAdmin(admin.ModelAdmin):
-    list_display = ("created_at", "path", "source", "device_type", "country_code", "region", "user", "is_new_visitor")
+    list_display = ("created_at", "path", "source", "device_type", "ip_address", "country_code", "region", "geo_resolved", "user", "is_new_visitor")
     list_filter = ("source", "device_type", "country_code", "region", "is_new_visitor")
     search_fields = ("path", "visitor_id", "ip_address", "user__phone")
     raw_id_fields = ("user",)

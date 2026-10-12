@@ -21,10 +21,10 @@ from rest_framework.views import APIView
 from django_app.app_management.models import SiteVisit
 from django_app.app_management.permissions import IsTeacherOrSuperAdmin
 from django_app.app_management.site_stats import (
-    REGION_NAMES, cached_geo, detect_source, is_public_ip, normalize_region,
+    REGION_NAMES, detect_source, is_public_ip, normalize_region, resolve_ip, visitor_ip,
 )
 from django_app.app_payments.models import Payment, Subscription
-from django_app.app_user.device_service import _parse_user_agent, client_ip
+from django_app.app_user.device_service import _parse_user_agent
 from django_app.app_user.models import User
 
 # Xodimlarning tashriflari statistikani buzmasligi uchun yozilmaydi
@@ -49,7 +49,7 @@ class SiteVisitTrackAPIView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        ip = client_ip(request)
+        ip = visitor_ip(request)
         rate_key = f"sitetrack-rate:{ip}"
         hits = cache.get_or_set(rate_key, 0, 60)
         if hits >= TRACK_RATE_LIMIT:
@@ -104,12 +104,17 @@ class SiteVisitTrackAPIView(APIView):
         if not is_public_ip(ip):
             visit.geo_resolved = True
         else:
-            geo = cached_geo(ip)
+            geo = resolve_ip(ip)
             if geo is not None:
                 visit.country_code = geo["country_code"]
                 visit.country_name = geo["country_name"]
                 visit.region = geo["region"]
                 visit.geo_resolved = True
+
+        # Cloudflare orqali kelsa davlat kodi sarlavhada tayyor bo'ladi
+        cf_country = (request.META.get("HTTP_CF_IPCOUNTRY") or "").upper()
+        if not visit.country_code and len(cf_country) == 2 and cf_country not in ("XX", "T1"):
+            visit.country_code = cf_country
 
         if profile_region:
             visit.region = profile_region

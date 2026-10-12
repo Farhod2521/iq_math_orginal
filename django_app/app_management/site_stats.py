@@ -209,3 +209,52 @@ def lookup_ips(ips):
     for ip, geo in result.items():
         cache.set(GEO_CACHE_KEY.format(ip), geo, GEO_CACHE_TTL)
     return result
+
+
+def visitor_ip(request):
+    """
+    Haqiqiy tashrifchi IP si: Cloudflare / nginx proksi sarlavhalaridan birinchi ommaviy IP.
+    Proksi sarlavha yubormasa REMOTE_ADDR (odatda 127.0.0.1) qaytadi.
+    """
+    meta = request.META
+    candidates = [meta.get("HTTP_CF_CONNECTING_IP"), meta.get("HTTP_X_REAL_IP")]
+    candidates += [ip.strip() for ip in (meta.get("HTTP_X_FORWARDED_FOR") or "").split(",")]
+    for ip in candidates:
+        if ip and is_public_ip(ip):
+            return ip
+    return meta.get("REMOTE_ADDR") or None
+
+
+def _lookup_ip_api_single(ip):
+    """ip-api.com bitta IP (daqiqasiga 45 so'rov) — tashrif paytida darhol aniqlash uchun."""
+    try:
+        resp = requests.get(
+            f"http://ip-api.com/json/{ip}?fields=status,countryCode,country,region,regionName",
+            timeout=3,
+        )
+        if resp.status_code == 429:  # limit — celery keyinroq aniqlaydi
+            return None
+        resp.raise_for_status()
+        row = resp.json()
+    except (requests.RequestException, ValueError) as exc:
+        logger.warning("ip-api single lookup failed for %s: %s", ip, exc)
+        return None
+    if row.get("status") != "success":
+        return {"country_code": "", "country_name": "", "region": ""}
+    code = row.get("countryCode") or ""
+    region = ""
+    if code == "UZ":
+        region = REGION_ISO.get(row.get("region") or "", "") or normalize_region(row.get("regionName"))
+    return {"country_code": code, "country_name": row.get("country") or "", "region": region}
+
+
+def resolve_ip(ip):
+    """Bitta IP: kesh -> MaxMind -> ip-api. Aniqlanmasa None (celery qayta urinadi)."""
+    geo = cached_geo(ip)
+    if geo is not None:
+        return geo
+    result = _lookup_maxmind([ip])
+    geo = result.get(ip) if result is not None else _lookup_ip_api_single(ip)
+    if geo is not None:
+        cache.set(GEO_CACHE_KEY.format(ip), geo, GEO_CACHE_TTL)
+    return geo
