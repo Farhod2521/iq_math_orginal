@@ -19,11 +19,14 @@ from .VIEW.conversion_rate_crud import ConversionRateCRUDAPIView
 from .VIEW.solution_status_crud import SolutionStatusCRUDAPIView
 from .VIEW.upload_setting_crud import UploadSettingCRUDAPIView
 from .VIEW.logentry_crud import LogEntryCRUDAPIView
+from .VIEW.site_statistics import SiteVisitTrackAPIView, SiteStatisticsAPIView
 urlpatterns = [
     path('banner/', BannerListView.as_view(), name='system-settings-list'),
     path('faqs/', FAQListView.as_view(), name='faq-list'),
     path('products/', ProductListView.as_view(), name='product-list'),
     path('statistics/', FullStatisticsAPIView.as_view(), name='statistics'),
+    path('site-stats/', SiteStatisticsAPIView.as_view(), name='site-statistics'),
+    path('site-stats/track/', SiteVisitTrackAPIView.as_view(), name='site-visit-track'),
 
 
     ######################  MOBILE APP ####################################

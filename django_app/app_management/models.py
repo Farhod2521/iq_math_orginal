@@ -499,3 +499,54 @@ class CertificateSettings(models.Model):
 
     def __str__(self):
         return f"Top {self.top_count} sertifikat"
+
+
+class SiteVisit(models.Model):
+    """
+    Saytdagi har bir sahifa ko'rish (page view). Frontend har sahifa almashganda
+    /api/v1/management/site-stats/track/ ga yuboradi. Davlat/viloyat IP bo'yicha
+    keyinroq (celery) aniqlanadi — geo_resolved shuni bildiradi.
+    """
+    SOURCE_CHOICES = (
+        ("direct", "To'g'ridan-to'g'ri"),
+        ("search", "Qidiruv tizimlari"),
+        ("social", "Ijtimoiy tarmoqlar"),
+        ("telegram", "Telegram"),
+        ("referral", "Boshqa saytlar"),
+    )
+    DEVICE_CHOICES = (
+        ("mobile", "Telefon"),
+        ("desktop", "Kompyuter"),
+        ("tablet", "Planshet"),
+        ("other", "Boshqa"),
+    )
+
+    visitor_id = models.CharField(max_length=64, db_index=True, verbose_name="Tashrifchi ID")
+    session_id = models.CharField(max_length=64, db_index=True, verbose_name="Sessiya ID")
+    user = models.ForeignKey(
+        "app_user.User", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="site_visits", verbose_name="Foydalanuvchi"
+    )
+    path = models.CharField(max_length=300, db_index=True, verbose_name="Sahifa")
+    referrer = models.CharField(max_length=500, blank=True, default="", verbose_name="Qayerdan kelgan")
+    source = models.CharField(max_length=10, choices=SOURCE_CHOICES, default="direct", db_index=True, verbose_name="Manba")
+    device_type = models.CharField(max_length=10, choices=DEVICE_CHOICES, default="other", verbose_name="Qurilma turi")
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    country_code = models.CharField(max_length=2, blank=True, default="", db_index=True, verbose_name="Davlat kodi")
+    country_name = models.CharField(max_length=100, blank=True, default="", verbose_name="Davlat")
+    region = models.CharField(max_length=30, blank=True, default="", db_index=True, verbose_name="Viloyat")
+    geo_resolved = models.BooleanField(default=False, db_index=True)
+    is_entry = models.BooleanField(default=False, verbose_name="Sessiyaning birinchi sahifasi")
+    is_new_visitor = models.BooleanField(default=False, verbose_name="Yangi tashrifchi")
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True, verbose_name="Vaqti")
+
+    class Meta:
+        verbose_name = "Sayt tashrifi"
+        verbose_name_plural = "Sayt tashriflari"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["created_at", "visitor_id"], name="sitevisit_created_visitor"),
+        ]
+
+    def __str__(self):
+        return f"{self.visitor_id[:8]} | {self.path}"

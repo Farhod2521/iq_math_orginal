@@ -3,7 +3,7 @@ from .models import (
     Motivation, SystemSettings, FAQ, Product, ReferralAndCouponSettings,
     Banner, Coupon_Tutor_Student, ConversionRate, SolutionStatus,
     Elon, Category, Tag, UploadedFile, UploadSetting, Mathematician,
-    DailyCoinSettings, CertificateSettings,
+    DailyCoinSettings, CertificateSettings, SiteVisit,
 )
 from modeltranslation.admin import TranslationAdmin
 from django.utils.html import format_html
@@ -330,3 +330,11 @@ class UploadSettingAdmin(admin.ModelAdmin):
 class CertificateSettingsAdmin(admin.ModelAdmin):
     list_display = ("top_count", "is_active", "updated_at")
     list_editable = ("is_active",)
+
+@admin.register(SiteVisit)
+class SiteVisitAdmin(admin.ModelAdmin):
+    list_display = ("created_at", "path", "source", "device_type", "country_code", "region", "user", "is_new_visitor")
+    list_filter = ("source", "device_type", "country_code", "region", "is_new_visitor")
+    search_fields = ("path", "visitor_id", "ip_address", "user__phone")
+    raw_id_fields = ("user",)
+    date_hierarchy = "created_at"

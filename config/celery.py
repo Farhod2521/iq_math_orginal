@@ -24,4 +24,8 @@ app.conf.beat_schedule = {
         # to'g'ridan-to'g'ri Toshkent mahalliy vaqtiga nisbatan hisoblanadi.
         "schedule": crontab(hour=8, minute=0),
     },
+    "resolve-site-visit-geo-every-minute": {
+        "task": "django_app.app_management.tasks.resolve_site_visit_geo_task",
+        "schedule": crontab(minute="*"),
+    },
 }
