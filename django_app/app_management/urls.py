@@ -19,7 +19,7 @@ from .VIEW.conversion_rate_crud import ConversionRateCRUDAPIView
 from .VIEW.solution_status_crud import SolutionStatusCRUDAPIView
 from .VIEW.upload_setting_crud import UploadSettingCRUDAPIView
 from .VIEW.logentry_crud import LogEntryCRUDAPIView
-from .VIEW.site_statistics import SiteVisitTrackAPIView, SiteStatisticsAPIView
+from .VIEW.site_statistics import SiteVisitTrackAPIView, SiteStatisticsAPIView, SiteRegistrationsListAPIView
 urlpatterns = [
     path('banner/', BannerListView.as_view(), name='system-settings-list'),
     path('faqs/', FAQListView.as_view(), name='faq-list'),
@@ -27,6 +27,7 @@ urlpatterns = [
     path('statistics/', FullStatisticsAPIView.as_view(), name='statistics'),
     path('site-stats/', SiteStatisticsAPIView.as_view(), name='site-statistics'),
     path('site-stats/track/', SiteVisitTrackAPIView.as_view(), name='site-visit-track'),
+    path('site-stats/registrations/', SiteRegistrationsListAPIView.as_view(), name='site-registrations'),
 
 
     ######################  MOBILE APP ####################################

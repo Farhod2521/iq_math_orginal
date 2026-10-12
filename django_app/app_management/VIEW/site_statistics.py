@@ -10,7 +10,7 @@ GET parametrlari:
 from datetime import datetime, time, timedelta
 
 from django.core.cache import cache
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.db.models.functions import TruncDay, TruncHour, TruncMonth, TruncWeek
 from django.utils import timezone
 from rest_framework import status
@@ -323,3 +323,78 @@ class SiteStatisticsAPIView(APIView):
             "week": build(TruncWeek, weeks),
             "month": build(TruncMonth, months),
         }
+
+
+PROFILE_RELATIONS = ("student_profile", "tutor_profile", "parent_profile", "teacher_profile")
+
+
+class SiteRegistrationsListAPIView(APIView):
+    """
+    Grafikdagi ustun bosilganda: shu davrda ro'yxatdan o'tgan foydalanuvchilar.
+    GET /api/v1/management/site-stats/registrations/?start=2026-10-06&end=2026-10-12&page=1&page_size=20
+      start, end — YYYY-MM-DD (ikkalasi ham kiradi); role, search — ixtiyoriy
+    """
+    permission_classes = [IsTeacherOrSuperAdmin]
+
+    def get(self, request):
+        tz = timezone.get_current_timezone()
+        try:
+            start_date = datetime.strptime(request.query_params.get("start", ""), "%Y-%m-%d").date()
+            end_date = datetime.strptime(
+                request.query_params.get("end") or request.query_params.get("start", ""), "%Y-%m-%d"
+            ).date()
+        except ValueError:
+            return Response({"detail": "start va end YYYY-MM-DD formatida bo'lishi kerak"}, status=status.HTTP_400_BAD_REQUEST)
+
+        start = timezone.make_aware(datetime.combine(start_date, time.min), tz)
+        end = timezone.make_aware(datetime.combine(end_date + timedelta(days=1), time.min), tz)
+
+        users = (User.objects.filter(date_joined__gte=start, date_joined__lt=end)
+                 .select_related(*PROFILE_RELATIONS, "student_profile__subscription")
+                 .order_by("-date_joined"))
+
+        role = request.query_params.get("role")
+        if role:
+            users = users.filter(role=role)
+        search = (request.query_params.get("search") or "").strip()
+        if search:
+            users = users.filter(
+                Q(phone__icontains=search)
+                | Q(student_profile__full_name__icontains=search)
+                | Q(tutor_profile__full_name__icontains=search)
+                | Q(parent_profile__full_name__icontains=search)
+                | Q(teacher_profile__full_name__icontains=search)
+            )
+
+        try:
+            page = max(1, int(request.query_params.get("page", 1)))
+            page_size = min(100, max(1, int(request.query_params.get("page_size", 20))))
+        except ValueError:
+            page, page_size = 1, 20
+
+        count = users.count()
+        offset = (page - 1) * page_size
+        now = timezone.now()
+        results = []
+        for u in users[offset:offset + page_size]:
+            profile = next((getattr(u, rel, None) for rel in PROFILE_RELATIONS if getattr(u, rel, None)), None)
+            region = getattr(profile, "region", "") or ""
+            sub = getattr(getattr(u, "student_profile", None), "subscription", None)
+            subscription = None
+            if sub:
+                if sub.end_date and sub.end_date < now:
+                    subscription = "expired"
+                else:
+                    subscription = "paid" if sub.is_paid else "trial"
+            results.append({
+                "id": u.id,
+                "full_name": getattr(profile, "full_name", "") or "",
+                "phone": u.phone,
+                "role": u.role,
+                "region": region,
+                "region_key": normalize_region(region),
+                "date_joined": timezone.localtime(u.date_joined, tz).isoformat(),
+                "subscription": subscription,
+            })
+
+        return Response({"count": count, "page": page, "page_size": page_size, "results": results})
