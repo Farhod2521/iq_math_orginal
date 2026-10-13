@@ -226,7 +226,9 @@ class All_Role_ListView(APIView):
                 "phone": user.phone,
                 "email": user.email,
                 "device": user.device,
-                **{k: v for k, v in profile_data['json'].items() if k != 'profile_id'}
+                **{k: v for k, v in profile_data['json'].items() if k != 'profile_id'},
+                # Haqiqiy ro'yxatdan o'tgan vaqt (student_date auto_now — har saqlashda yangilanadi)
+                "date_joined": user.date_joined.astimezone(ashgabat_tz).strftime('%d/%m/%Y %H:%M') if user.date_joined else None,
             })
 
         return Response({
