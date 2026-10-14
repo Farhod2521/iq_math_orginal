@@ -23,6 +23,10 @@ from .VIEW.parent_child_account import (
     ParentCreateChildAPIView, ParentSwitchToChildAPIView, ReturnToParentAPIView, ParentChildSetPhoneAPIView,
     ParentUnlinkChildAPIView, ParentRegisterChildAPIView, ParentRegisterChildVerifyAPIView,
 )
+from .VIEW.parent_qr_link import (
+    StudentParentQrAPIView, ParentQrInfoAPIView, ParentQrCheckPhoneAPIView, ParentQrLoginAPIView,
+    ParentQrRegisterAPIView, ParentQrRegisterVerifyAPIView, ParentQrRegisterCompleteAPIView,
+)
 from .VIEW.unversial_update_view import ChangePasswordView, UniversalUpdateView, VerifyPhoneChangeView
 urlpatterns = [
     ###################################################################################
@@ -82,6 +86,14 @@ urlpatterns = [
     path("parent/children/<int:student_id>/switch/", ParentSwitchToChildAPIView.as_view()),
     path("parent/children/<int:student_id>/set-phone/", ParentChildSetPhoneAPIView.as_view()),
     path("child/return-to-parent/", ReturnToParentAPIView.as_view()),
+    # Ota-onani QR kod orqali farzandga biriktirish
+    path("student/parent-qr/", StudentParentQrAPIView.as_view()),
+    path("parent-qr/info/", ParentQrInfoAPIView.as_view()),
+    path("parent-qr/check-phone/", ParentQrCheckPhoneAPIView.as_view()),
+    path("parent-qr/login/", ParentQrLoginAPIView.as_view()),
+    path("parent-qr/register/", ParentQrRegisterAPIView.as_view()),
+    path("parent-qr/register/verify/", ParentQrRegisterVerifyAPIView.as_view()),
+    path("parent-qr/register/complete/", ParentQrRegisterCompleteAPIView.as_view()),
     path("parent/<int:pk>/detail/", ParentDetailAPIView.as_view(), name="parent-detail"),
     path("teacher-telegram-id/list/", TeacherTelegramIdListView.as_view()),
 
