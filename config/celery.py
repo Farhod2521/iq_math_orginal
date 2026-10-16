@@ -10,6 +10,8 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", f"config.settings.{env}")
 app = Celery("config")
 app.config_from_object("django.conf:settings", namespace="CELERY")
 app.autodiscover_tasks()
+# Telegram bot (marketing xabarlari va kunlik backup) — telegram_bot/tasks.py
+app.autodiscover_tasks(["telegram_bot"])
 
 app.conf.beat_schedule = {
     "expire-pending-payments-every-minute": {
@@ -27,5 +29,15 @@ app.conf.beat_schedule = {
     "resolve-site-visit-geo-every-minute": {
         "task": "django_app.app_management.tasks.resolve_site_visit_geo_task",
         "schedule": crontab(minute="*"),
+    },
+    # Yangi o'quvchilar haqida marketing chatiga xabar
+    "telegram-new-students-every-minute": {
+        "task": "telegram_bot.notify_new_students",
+        "schedule": crontab(minute="*"),
+    },
+    # Baza va fayllar backupi admin chatiga — har kuni 03:00 (Toshkent)
+    "telegram-daily-backup": {
+        "task": "telegram_bot.daily_backup",
+        "schedule": crontab(hour=3, minute=0),
     },
 }

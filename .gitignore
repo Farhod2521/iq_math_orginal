@@ -34,3 +34,8 @@ media/
 *.swo
 .DS_Store"*.json" 
 serviceAccountKey.json
+
+# Telegram bot: tokenlar va holat
+telegram_bot/.telegram-env
+telegram_bot/state.json
+telegram_bot/backup.lock
