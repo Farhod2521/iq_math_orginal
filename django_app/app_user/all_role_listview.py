@@ -99,9 +99,19 @@ class All_Role_ListView(APIView):
             else:
                 users = users.filter(student_profile__diagnost_student__isnull=True)
 
+        # --- RO'YXATDAN O'TGAN SANA ORALIG'I (date_from / date_to, YYYY-MM-DD, ikkala chet ham kiradi) ---
+        # date_joined ishlatiladi: student_date auto_now — har saqlashda o'zgaradi
+        for param, lookup in (("date_from", "date_joined__date__gte"), ("date_to", "date_joined__date__lte")):
+            value = request.GET.get(param, "").strip()
+            if value:
+                try:
+                    users = users.filter(**{lookup: datetime.strptime(value, "%Y-%m-%d").date()})
+                except ValueError:
+                    pass  # noto'g'ri formatdagi sana e'tiborsiz qoldiriladi
+
         # --- STATUS FILTER ---
         if status_filter == 'active':
-            
+
             users = users.filter(
                 Q(
                     role='student',
