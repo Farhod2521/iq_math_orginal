@@ -26,6 +26,7 @@ from .View.conversion_history_crud import ConversionHistoryCRUDAPIView
 from .View.certificate_view import CertificateDownloadAPIView
 from .View.student_home_dashboard import StudentHomeDashboardAPIView
 from .View.landing_stats import LandingStatsAPIView
+from .View.student_streak import StudentStreakAPIView
 
 urlpatterns = [
     path('landing-stats/', LandingStatsAPIView.as_view(), name='landing-stats'),
@@ -129,4 +130,6 @@ urlpatterns = [
 
     ###############################################  CERTIFICATE  ##################################################
     path("certificate/download/", CertificateDownloadAPIView.as_view(), name="certificate-download"),
+    # Kunlik kirish seriyasi (🔥 N kun) — POST: bugungi kirishni belgilash, GET: kalendar uchun
+    path("streak/", StudentStreakAPIView.as_view(), name="student-streak"),
 ]
