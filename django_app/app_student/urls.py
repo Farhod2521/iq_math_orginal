@@ -7,6 +7,7 @@ from .views import (
      ChapterListBySubject_STUDENT_ID_APIView, TopicListByChapter_STUDENT_ID_APIView, SubjectNameListAPIView
 )
 from .View.parent_dashboard import ParentDashboardAPIView, ParentChildDeviceAPIView, ParentChildOverviewAPIView, ParentChildPaymentsAPIView, StudentMyPaymentsAPIView, StudentAchievementsAPIView
+from .View.teacher_student_overview import TeacherStudentOverviewAPIView
 from .View.app_diagnost import StudentDiagnostSubjectsAPIView, SubjectChaptersAPIView, ChapterTopicsAPIView, StudentDiagnosticHistoryAPIView, ParentStudentDiagnosticHistoryAPIView, \
     StudentDiagnostAttemptsAPIView, StudentDiagnostMistakesAPIView
 from .View.product_exchange import ProductExchangeView, ProductExchangeListView, ProductExchangeConfirmAPIView
@@ -63,6 +64,8 @@ urlpatterns = [
     # Ota-ona bosh sahifasi va yutuqlar
     path('parent/dashboard/', ParentDashboardAPIView.as_view(), name='parent-dashboard'),
     path('parent/children/<int:student_id>/overview/', ParentChildOverviewAPIView.as_view(), name='parent-child-overview'),
+    # O'qituvchi / admin: o'quvchi sahifasi (kabinet ko'rinishida)
+    path('teacher/students/<int:student_id>/overview/', TeacherStudentOverviewAPIView.as_view(), name='teacher-student-overview'),
     path('parent/children/<int:student_id>/payments/', ParentChildPaymentsAPIView.as_view(), name='parent-child-payments'),
     path('my-payments/', StudentMyPaymentsAPIView.as_view(), name='student-my-payments'),
     path('parent/children/<int:student_id>/devices/<uuid:device_id>/', ParentChildDeviceAPIView.as_view(), name='parent-child-device'),

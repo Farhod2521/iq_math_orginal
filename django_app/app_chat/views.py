@@ -201,7 +201,8 @@ class CreateDirectChatAPIView(APIView):
             teacher = student.class_name.teacher_profile
             other_user = teacher.user
 
-        elif user.role == "teacher":
+        elif user.role in ("teacher", "admin", "superadmin"):
+            # O'qituvchi (va admin) o'quvchi sahifasidan to'g'ridan-to'g'ri yozishi mumkin
             student_id = request.data.get("student_id")
             try:
                 other_user = Student.objects.get(id=student_id).user
