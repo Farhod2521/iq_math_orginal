@@ -471,7 +471,9 @@ def build_child_overview(child, request):
     )
     subject_ids = [r["topic__chapter__subject_id"] for r in rows]
     topic_totals = dict(
+        # order_by() — Topic.Meta.ordering GROUP BY ga qo'shilib, fanni bo'laklarga bo'lib yubormasin
         Topic.objects.filter(chapter__subject_id__in=subject_ids)
+        .order_by()
         .values("chapter__subject_id")
         .annotate(n=Count("id"))
         .values_list("chapter__subject_id", "n")
