@@ -6,6 +6,7 @@ Sayt statistikasi:
 GET parametrlari:
   period = today | 7d | 30d | 90d | 365d   (default: today)
   date   = YYYY-MM-DD — davr shu kun bilan tugaydi (default: bugun)
+  start, end = YYYY-MM-DD — ixtiyoriy oraliq (berilsa period/date e'tiborga olinmaydi)
 """
 from datetime import datetime, time, timedelta
 
@@ -144,13 +145,20 @@ class SiteStatisticsAPIView(APIView):
 
         tz = timezone.get_current_timezone()
         today = timezone.localdate()
-        try:
-            end_date = datetime.strptime(request.query_params.get("date", ""), "%Y-%m-%d").date()
-            end_date = min(end_date, today)
-        except ValueError:
-            end_date = today
+        custom = self._custom_range(request, today)
+        if custom:
+            # Ixtiyoriy oraliq: start..end (ikkalasi ham kiradi)
+            period = "custom"
+            start_date, end_date = custom
+            days = (end_date - start_date).days + 1
+        else:
+            try:
+                end_date = datetime.strptime(request.query_params.get("date", ""), "%Y-%m-%d").date()
+                end_date = min(end_date, today)
+            except ValueError:
+                end_date = today
+            start_date = end_date - timedelta(days=days - 1)
 
-        start_date = end_date - timedelta(days=days - 1)
         start = timezone.make_aware(datetime.combine(start_date, time.min), tz)
         end = timezone.make_aware(datetime.combine(end_date + timedelta(days=1), time.min), tz)
         prev_start = start - timedelta(days=days)
@@ -178,6 +186,21 @@ class SiteStatisticsAPIView(APIView):
             "user_types": self._user_types(),
             "registrations": self._registrations(end_date, tz),
         })
+
+    @staticmethod
+    def _custom_range(request, today):
+        """?start=YYYY-MM-DD&end=YYYY-MM-DD — ikkalasi to'g'ri bo'lsa (start, end), aks holda None."""
+        try:
+            start_date = datetime.strptime(request.query_params.get("start", ""), "%Y-%m-%d").date()
+            end_date = datetime.strptime(request.query_params.get("end", ""), "%Y-%m-%d").date()
+        except ValueError:
+            return None
+        end_date = min(end_date, today)
+        if start_date > end_date:
+            start_date, end_date = end_date, start_date
+        # Juda katta oraliq so'rovni og'irlashtirmasligi uchun — ko'pi bilan 3 yil
+        start_date = max(start_date, end_date - timedelta(days=3 * 365))
+        return start_date, end_date
 
     # ---------- bloklar ----------
 
