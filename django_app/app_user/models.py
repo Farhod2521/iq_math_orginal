@@ -59,6 +59,7 @@ class User(AbstractUser):
     lang = models.CharField(max_length=10, verbose_name="Til", blank=True, null=True, default="uz")
     fcm_token = models.TextField(blank=True, null=True, verbose_name="FCM Token")
     is_blocked = models.BooleanField(default=False, verbose_name="Bloklangan")
+    avatar = models.ImageField(upload_to="FILES/avatars/", blank=True, null=True, verbose_name="Profil rasmi")
     USERNAME_FIELD = 'phone'
     REQUIRED_FIELDS = []  
     objects = UserManager()  

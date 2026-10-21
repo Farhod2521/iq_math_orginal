@@ -28,6 +28,7 @@ from .VIEW.parent_qr_link import (
     ParentQrRegisterAPIView, ParentQrRegisterVerifyAPIView, ParentQrRegisterCompleteAPIView,
 )
 from .VIEW.unversial_update_view import ChangePasswordView, UniversalUpdateView, VerifyPhoneChangeView
+from .VIEW.user_avatar import UserAvatarAPIView
 urlpatterns = [
     ###################################################################################
     #########################  STUDENT  ################################################
@@ -123,6 +124,8 @@ urlpatterns = [
 
     # Bloklash / blokdan chiqarish (faqat superadmin)
     path("user/block/", BlockUserAPIView.as_view(), name="block-user"),
+    # Profil rasmi (POST — yuklash, DELETE — olib tashlash)
+    path("user/avatar/", UserAvatarAPIView.as_view(), name="user-avatar"),
 
     # Admin/Superadmin: foydalanuvchi parolini yangilash
     path("user/reset-password/", AdminResetUserPasswordAPIView.as_view(), name="admin-reset-password"),

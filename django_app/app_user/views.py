@@ -905,6 +905,7 @@ class StudentProfileAPIView(APIView):
         else:
             return Response({"error": "Role not supported"}, status=403)
 
+        data["avatar"] = request.build_absolute_uri(user.avatar.url) if user.avatar else None
         return Response(data)
 
 class UpdateStudentFieldAPIView(APIView):
