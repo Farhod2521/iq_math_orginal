@@ -398,3 +398,21 @@ class UserDevice(models.Model):
 
     def __str__(self):
         return f"{self.user.phone} | {self.device_name or self.device_key}"
+
+
+class UserDailyActivity(models.Model):
+    """
+    Foydalanuvchi shu kuni tizimdan foydalanganmi (sayt yoki mobil ilova) — kuniga bitta yozuv.
+    Token bilan kelgan so'rovda yoziladi (device_service.mark_user_active); D30 retention shundan hisoblanadi.
+    """
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="daily_activity", verbose_name="Foydalanuvchi")
+    date = models.DateField(db_index=True, verbose_name="Sana")
+
+    class Meta:
+        verbose_name = "Kunlik faollik"
+        verbose_name_plural = "Kunlik faollik"
+        unique_together = ("user", "date")
+        ordering = ["-date"]
+
+    def __str__(self):
+        return f"{self.user_id} | {self.date}"

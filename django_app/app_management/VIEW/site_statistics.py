@@ -20,6 +20,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from django_app.app_management.models import SiteVisit
+from django_app.app_management.VIEW.product_metrics import build_product_metrics
 from django_app.app_management.permissions import IsTeacherOrSuperAdmin
 from django_app.app_management.site_stats import (
     REGION_NAMES, detect_source, is_public_ip, normalize_region, resolve_ip, visitor_ip,
@@ -185,6 +186,8 @@ class SiteStatisticsAPIView(APIView):
             "top_pages": self._top_pages(visits),
             "user_types": self._user_types(),
             "registrations": self._registrations(end_date, tz),
+            # O'quvchilar statusi, konversiya, D30 retention
+            **build_product_metrics(end_date, days, tz),
         })
 
     @staticmethod

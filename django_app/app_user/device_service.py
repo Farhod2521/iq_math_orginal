@@ -193,3 +193,27 @@ def is_device_active(device_id):
         UserDevice.objects.filter(id=device_id).update(last_used_at=timezone.now())
         cache.set(_SEEN_CACHE.format(device_id), True, _SEEN_TTL)
     return status
+
+
+_ACTIVE_DAY_CACHE = "uact:{}:{}"
+
+
+def mark_user_active(user_id):
+    """
+    Foydalanuvchini bugun faol deb belgilaydi (UserDailyActivity) — kuniga bir marta yoziladi,
+    qolgan so'rovlar keshdan qaytadi. Xato bo'lsa so'rovni to'xtatmaydi.
+    """
+    if not user_id:
+        return
+    today = timezone.localdate()
+    key = _ACTIVE_DAY_CACHE.format(user_id, today.isoformat())
+    try:
+        if cache.get(key):
+            return
+        from .models import UserDailyActivity
+        UserDailyActivity.objects.bulk_create(
+            [UserDailyActivity(user_id=user_id, date=today)], ignore_conflicts=True,
+        )
+        cache.set(key, True, 60 * 60 * 26)
+    except Exception:
+        pass
