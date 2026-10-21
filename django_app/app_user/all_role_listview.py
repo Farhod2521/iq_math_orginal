@@ -19,6 +19,7 @@ from django.db import transaction
 from datetime import datetime
 import pytz
 from django_app.app_student.models import Diagnost_Student, TopicProgress
+from django_app.app_tutor.models import TutorCouponTransaction, TutorGroup, TutorReferralTransaction
 
 
 def escape_uri_path(path):
@@ -324,7 +325,39 @@ class All_Role_ListView(APIView):
                 .values_list('user_id', flat=True).distinct()
             )
 
+        # Ota-ona: biriktirilgan farzandlar soni (jami / tasdiqlangan)
+        children = {}
+        for chunk in self._chunks(parent_ids):
+            rows = (
+                ParentStudentRelation.objects.filter(parent_id__in=chunk)
+                .values('parent_id')
+                .annotate(total=Count('id'), confirmed=Count('id', filter=Q(is_confirmed=True)))
+            )
+            for row in rows:
+                children[row['parent_id']] = (row['total'], row['confirmed'])
+
+        # O'qituvchi: referal havolasi yoki kuponi orqali olib kelgan o'quvchilar (takrorlanmas) va guruhlaridagi o'quvchilar
+        brought, group_students = {}, {}
+        for chunk in self._chunks(tutor_ids):
+            pairs = set(
+                TutorReferralTransaction.objects.filter(tutor_id__in=chunk).values_list('tutor_id', 'student_id')
+            ) | set(
+                TutorCouponTransaction.objects.filter(tutor_id__in=chunk).values_list('tutor_id', 'student_id')
+            )
+            for tutor_id, _ in pairs:
+                brought[tutor_id] = brought.get(tutor_id, 0) + 1
+            rows = (
+                TutorGroup.students.through.objects.filter(tutorgroup__tutor_id__in=chunk)
+                .values('tutorgroup__tutor_id')
+                .annotate(c=Count('student_id', distinct=True))
+            )
+            for row in rows:
+                group_students[row['tutorgroup__tutor_id']] = row['c']
+
         return {
+            'children': children,
+            'brought': brought,
+            'group_students': group_students,
             'student_login': self._last_login_map(StudentLoginHistory, 'student', student_ids),
             'teacher_login': self._last_login_map(TeacherLoginHistory, 'teacher', teacher_ids),
             'parent_login': self._last_login_map(ParentLoginHistory, 'parent', parent_ids),
@@ -466,6 +499,8 @@ class All_Role_ListView(APIView):
                 "status": parent.status,
                 "lang": parent.lang,
                 "last_login_time": last_login_parent_fmt,
+                "children_count": lookups['children'].get(parent.id, (0, 0))[0],
+                "confirmed_children_count": lookups['children'].get(parent.id, (0, 0))[1],
                 "registration_date": parent_datetime.strftime('%d/%m/%Y') if parent_datetime else None,
                 "registration_time": parent_datetime.strftime('%H:%M:%S') if parent_datetime else None
             }
@@ -499,6 +534,8 @@ class All_Role_ListView(APIView):
                 "status": tutor.status,
                 "lang": tutor.lang,
                 "last_login_time": last_login_tutor_fmt,
+                "brought_students_count": lookups['brought'].get(tutor.id, 0),
+                "group_students_count": lookups['group_students'].get(tutor.id, 0),
                 "registration_date": tutor_datetime.strftime('%d/%m/%Y') if tutor_datetime else None,
                 "registration_time": tutor_datetime.strftime('%H:%M:%S') if tutor_datetime else None
             }
