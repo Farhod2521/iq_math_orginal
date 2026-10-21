@@ -5,7 +5,7 @@ from .serializers import (
 UniversalRegisterSerializer, VerifySmsCodeSerializer, 
 LoginSerializer, StudentProfileSerializer, TeacherRegisterSerializer, Class_Serializer,
 TeacherVerifySmsCodeSerializer, TeacherSerializer, StudentSerializer, ParentCreateSerializer, StudentSerializerParent,
-AddAccountSerializer, SessionListSerializer
+AddAccountSerializer, SessionListSerializer, login_error_response
 )
 from .models import Student, UserSMSAttempt, Teacher, Class, StudentLoginHistory, Parent, Tutor, ParentStudentRelation, TeacherLoginHistory, TutorLoginHistory, ParentLoginHistory, Device, UserSession
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -111,7 +111,7 @@ class TeacherLoginAPIView(APIView):
 
             return Response(teacher_data, status=status.HTTP_200_OK)
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return login_error_response(serializer)
 ##############################################################
 ###################     TEACHERS    PROFILE    ###############
 ##############################################################
@@ -1220,7 +1220,7 @@ class LoginAPIView(APIView):
 
             return Response(profile_data, status=status.HTTP_200_OK)
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return login_error_response(serializer)
 
 
 

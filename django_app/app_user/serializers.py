@@ -21,42 +21,108 @@ class StudentProfileSerializer(serializers.Serializer):
         model  =  Student
         fields = "__all__"
 
-def check_login_attempts(phone):
-    """Login urinishlarini tekshiradi va bloklash uchun hisoblaydi."""
-    cache_key = f"login_attempts_{phone}"
-    attempts = cache.get(cache_key, 0)
+# Parolni ketma-ket noto'g'ri kiritish cheklovi
+LOGIN_MAX_ATTEMPTS = 5          # shuncha noto'g'ri urinishdan keyin
+LOGIN_LOCK_SECONDS = 5 * 60     # 5 daqiqaga bloklanadi
+LOGIN_ATTEMPT_WINDOW = 15 * 60  # noto'g'ri urinishlar shu vaqt ichida sanaladi
 
-    if attempts >= 5:
-        return False  # 5 martadan keyin bloklanadi
 
-    cache.set(cache_key, attempts + 1, timeout=600)  # 15 daqiqa ichida 5 martadan ortiq bo'lsa bloklash
-    return True
+def _login_keys(phone):
+    return f"login_attempts_{phone}", f"login_locked_{phone}"
+
+
+def login_lock_remaining(phone):
+    """Blok tugashiga qolgan soniyalar (blok yo'q bo'lsa 0)."""
+    _, lock_key = _login_keys(phone)
+    locked_until = cache.get(lock_key)
+    if not locked_until:
+        return 0
+    return max(0, int(locked_until - now().timestamp()))
+
+
+def register_failed_login(phone):
+    """Noto'g'ri urinishni sanaydi; chegaraga yetsa 5 daqiqaga bloklaydi. Qolgan urinishlar sonini qaytaradi."""
+    attempts_key, lock_key = _login_keys(phone)
+    attempts = cache.get(attempts_key, 0) + 1
+    if attempts >= LOGIN_MAX_ATTEMPTS:
+        cache.set(lock_key, now().timestamp() + LOGIN_LOCK_SECONDS, timeout=LOGIN_LOCK_SECONDS)
+        cache.delete(attempts_key)
+        return 0
+    cache.set(attempts_key, attempts, timeout=LOGIN_ATTEMPT_WINDOW)
+    return LOGIN_MAX_ATTEMPTS - attempts
+
 
 def reset_login_attempts(phone):
     """Agar foydalanuvchi to'g'ri kirsa, urinishlar sonini 0 ga tushiramiz."""
-    cache.delete(f"login_attempts_{phone}")
+    attempts_key, lock_key = _login_keys(phone)
+    cache.delete_many([attempts_key, lock_key])
+
+
+def login_locked_message(seconds):
+    minutes = max(1, -(-seconds // 60))  # yuqoriga yaxlitlash
+    return (
+        "Tizimga kirish uchun urinishlar soni cheklovdan oshib ketdi. "
+        f"{minutes} daqiqadan keyin qayta urinib ko'ring!"
+    )
+
+
+def login_error_response(serializer):
+    """
+    LoginSerializer xatosini frontend uchun tushunarli javobga aylantiradi:
+      {"message": "...", "detail": "...", "code": "...", "retry_after": soniya}
+    Blok bo'lsa — 429, boshqa xatolarda — 400.
+    """
+    from rest_framework import status as http_status
+    from rest_framework.response import Response
+
+    errors = serializer.errors
+    error = (errors.get("non_field_errors") or [None])[0]
+    if error is None:
+        # Maydon xatosi (telefon yoki parol kiritilmagan)
+        message = "Telefon raqam va parolni kiriting."
+        code = "required"
+    else:
+        message = str(error)
+        code = getattr(error, "code", "invalid")
+
+    # non_field_errors — eski mijozlar (mobil ilova) shu kalitni o'qiydi
+    data = {"message": message, "detail": message, "code": code, "non_field_errors": [message]}
+    if code == "login_locked":
+        data["retry_after"] = login_lock_remaining(serializer.initial_data.get("phone"))
+        return Response(data, status=http_status.HTTP_429_TOO_MANY_REQUESTS)
+    return Response(data, status=http_status.HTTP_400_BAD_REQUEST)
+
+
 class LoginSerializer(serializers.Serializer):
     phone = serializers.CharField(required=True)
     password = serializers.CharField(required=True)
-
- 
 
     def validate(self, data):
         phone = data.get('phone')
         password = data.get('password')
 
-        # Foydalanuvchi bloklanganligini tekshirish
-        if not check_login_attempts(phone):
-            raise serializers.ValidationError("Ko'p noto'g'ri urinishlar! 5 daqiqa kuting.")
+        # Ko'p marta noto'g'ri urinilgan bo'lsa — vaqtincha blok
+        remaining = login_lock_remaining(phone)
+        if remaining:
+            raise serializers.ValidationError(login_locked_message(remaining), code="login_locked")
 
         # Foydalanuvchini autentifikatsiya qilish
         user = authenticate(phone=phone, password=password)
 
         if user is None:
-            raise serializers.ValidationError("Telefon raqam yoki parol noto'g'ri.")
+            left = register_failed_login(phone)
+            if left == 0:
+                raise serializers.ValidationError(login_locked_message(LOGIN_LOCK_SECONDS), code="login_locked")
+            raise serializers.ValidationError(
+                f"Telefon raqam yoki parol noto'g'ri. Yana {left} marta urinish mumkin.",
+                code="invalid_credentials",
+            )
 
         if user.is_blocked:
-            raise serializers.ValidationError("Siz admin tomonidan bloklangansiz.")
+            raise serializers.ValidationError(
+                "Hisobingiz administrator tomonidan bloklangan. Iltimos, qo'llab-quvvatlash xizmatiga murojaat qiling.",
+                code="user_blocked",
+            )
 
         # Login urinishlarini reset qilish
         reset_login_attempts(phone)
