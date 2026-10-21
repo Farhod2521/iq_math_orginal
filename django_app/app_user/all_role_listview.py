@@ -1,3 +1,6 @@
+import re
+
+from django.core.cache import cache
 from django.http import HttpResponse
 from django.core.paginator import Paginator, EmptyPage
 from django.utils.http import quote
@@ -55,14 +58,7 @@ class All_Role_ListView(APIView):
             
         # --- SEARCH FILTER ---
         if search_query:
-            users = users.filter(
-                Q(phone__icontains=search_query) |
-                Q(email__icontains=search_query) |
-                Q(student_profile__full_name__icontains=search_query) |
-                Q(teacher_profile__full_name__icontains=search_query) |
-                Q(parent_profile__full_name__icontains=search_query) |
-                Q(tutor_profile__full_name__icontains=search_query)
-            )
+            users = users.filter(self._search_q(search_query, role))
             
         # --- CLASS_NUM FILTER (faqat studentlar uchun) ---
         if class_num and role == 'student':
@@ -110,30 +106,9 @@ class All_Role_ListView(APIView):
                     pass  # noto'g'ri formatdagi sana e'tiborsiz qoldiriladi
 
         # --- STATUS FILTER ---
-        if status_filter == 'active':
-
-            users = users.filter(
-                Q(
-                    role='student',
-                    student_profile__subscription__start_date__lte=now,
-                    student_profile__subscription__end_date__gte=now
-                ) |
-                Q(role='teacher', teacher_profile__status=True) |
-                Q(role='parent', parent_profile__status=True) |
-                Q(role='tutor', tutor_profile__status=True)
-            )
-
-        elif status_filter == 'inactive':
-            users = users.exclude(
-                Q(
-                    role='student',
-                    student_profile__subscription__start_date__lte=now,
-                    student_profile__subscription__end_date__gte=now
-                ) |
-                Q(role='teacher', teacher_profile__status=True) |
-                Q(role='parent', parent_profile__status=True) |
-                Q(role='tutor', tutor_profile__status=True)
-            )
+        if status_filter in ('active', 'inactive'):
+            active_q = self._active_q(role, now)
+            users = users.filter(active_q) if status_filter == 'active' else users.exclude(active_q)
 
         # Profil va bog'liq jadvallarni bitta JOIN bilan olish (N+1 oldini olish)
         users = users.select_related(
@@ -193,15 +168,15 @@ class All_Role_ListView(APIView):
             wb.save(response)
             return response
 
-        # --- ROLE COUNTS (global, filtrsiz) ---
-        role_counts = User.objects.aggregate(
+        # --- ROLE COUNTS (global, filtrsiz) — har so'rovda butun jadvalni sanamaslik uchun 1 daqiqa keshda ---
+        role_counts = cache.get_or_set("all_role_list:role_counts", lambda: User.objects.aggregate(
             student_count=Count('id', filter=Q(role="student")),
             teacher_count=Count('id', filter=Q(role="teacher")),
             parent_count=Count('id', filter=Q(role="parent")),
             tutor_count=Count('id', filter=Q(role="tutor")),
             superadmin_count=Count('id', filter=Q(role="superadmin")),
             total_count=Count('id'),
-        )
+        ), 60)
 
         # --- PAGINATION (bazada — faqat joriy sahifa yuklanadi) ---
         page = int(request.GET.get('page', 1))
@@ -249,6 +224,49 @@ class All_Role_ListView(APIView):
             **role_counts,
             "results": data_json
         })
+
+    PROFILE_BY_ROLE = {
+        'student': 'student_profile',
+        'teacher': 'teacher_profile',
+        'parent': 'parent_profile',
+        'tutor': 'tutor_profile',
+    }
+
+    def _search_q(self, query, role):
+        """
+        Telefon raqamga o'xshasa (+998 95 132-66-99 ham) — faqat raqamlar bo'yicha phone ustunidan.
+        Aks holda ism/email bo'yicha; rol tanlangan bo'lsa faqat shu rol profilidan (ortiqcha JOINsiz).
+        """
+        digits = re.sub(r"\D", "", query)
+        if digits and re.fullmatch(r"[\d\s()+\-]+", query):
+            if len(digits) == 12 and digits.startswith("998"):
+                digits = digits[3:]
+            return Q(phone__contains=digits)
+
+        profiles = [self.PROFILE_BY_ROLE[role]] if role in self.PROFILE_BY_ROLE else list(self.PROFILE_BY_ROLE.values())
+        q = Q(phone__icontains=query) | Q(email__icontains=query)
+        for profile in profiles:
+            q |= Q(**{f"{profile}__full_name__icontains": query})
+        return q
+
+    def _active_q(self, role, now):
+        """Faol foydalanuvchi sharti; rol tanlangan bo'lsa faqat shu rol sharti (so'rov ancha yengil bo'ladi)."""
+        conditions = {
+            'student': Q(
+                role='student',
+                student_profile__subscription__start_date__lte=now,
+                student_profile__subscription__end_date__gte=now,
+            ),
+            'teacher': Q(role='teacher', teacher_profile__status=True),
+            'parent': Q(role='parent', parent_profile__status=True),
+            'tutor': Q(role='tutor', tutor_profile__status=True),
+        }
+        if role in conditions:
+            return conditions[role]
+        q = Q()
+        for condition in conditions.values():
+            q |= condition
+        return q
 
     @staticmethod
     def _chunks(ids, size=1000):
