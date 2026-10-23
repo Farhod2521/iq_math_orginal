@@ -11,14 +11,14 @@ from rest_framework.permissions import IsAuthenticated
 from openpyxl import Workbook
 from openpyxl.styles import Alignment
 import pytz
-from django.db.models import Q, Count, Max
+from django.db.models import Q, Count, Max, ProtectedError
 from .models import User, Student, Teacher, Parent, Tutor, Subject, StudentLoginHistory, TeacherLoginHistory, TutorLoginHistory, ParentLoginHistory, ParentStudentRelation
 from django_app.app_payments.models import Payment
 from django.utils import timezone
 from django.db import transaction
 from datetime import datetime
 import pytz
-from django_app.app_student.models import Diagnost_Student, TopicProgress
+from django_app.app_student.models import Diagnost_Student, TopicHelpRequestIndependent, TopicProgress
 from django_app.app_tutor.models import TutorCouponTransaction, TutorGroup, TutorReferralTransaction
 
 
@@ -764,7 +764,20 @@ class SuperAdminDeleteUserAPIView(APIView):
 
         role = user.role
         phone = user.phone
-        user.delete()  # CASCADE → profil ham o'chadi
+        try:
+            with transaction.atomic():
+                # O'qituvchi tekshirgan natijalar (on_delete=PROTECT) o'chirishni to'sib qo'yadi —
+                # natijalar saqlanib qoladi, faqat tekshiruvchi havolasi bo'shatiladi
+                teacher = getattr(user, "teacher_profile", None)
+                if teacher is not None:
+                    TopicHelpRequestIndependent.objects.filter(teacher=teacher).update(teacher=None)
+                user.delete()  # CASCADE → profil ham o'chadi
+        except ProtectedError as exc:
+            blockers = sorted({obj._meta.verbose_name for obj in exc.protected_objects})
+            return Response(
+                {"error": f"Foydalanuvchini o'chirib bo'lmaydi, bog'langan ma'lumotlar bor: {', '.join(map(str, blockers))}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         return Response(
             {"success": f"{role} ({phone}) foydalanuvchisi to'liq o'chirildi."},
