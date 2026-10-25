@@ -10,7 +10,9 @@ from django.utils import timezone
 
 from .models import UserDevice
 
-MAX_ACTIVE_DEVICES = 2
+# None — cheksiz: o'quvchi istalgancha qurilmadan kira oladi (qurilmalar baribir ro'yxatga olinadi).
+# Qayta cheklash kerak bo'lsa, songa almashtiring (masalan 2).
+MAX_ACTIVE_DEVICES = None
 # Cheklov faqat shu rollarga qo'llanadi
 LIMITED_ROLES = {"student"}
 # Tokendagi qurilma identifikatori claim nomi
@@ -123,7 +125,7 @@ def register_login(user, request, replace_device_id=None):
             _forget_cache(same.id)
             return same
 
-        if len(active) >= MAX_ACTIVE_DEVICES:
+        if MAX_ACTIVE_DEVICES is not None and len(active) >= MAX_ACTIVE_DEVICES:
             target = next((device for device in active if str(device.id) == str(replace_device_id)), None)
             if not target:
                 raise DeviceLimitReached(active)

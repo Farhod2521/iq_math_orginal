@@ -11,6 +11,7 @@ from .views import (
        AdminResetUserPasswordAPIView
 
 )
+from .VIEW.delete_my_account import DeleteMyAccountAPIView
 from .all_role_listview import All_Role_ListView, DeleteStudentProfileAPIView, ParentDetailAPIView, SuperAdminDeleteUserAPIView, SuperAdminChangeUserRoleAPIView
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
@@ -42,6 +43,8 @@ urlpatterns = [
     path('student/student_list/', All_Role_ListView.as_view(), name='student_list'),
     path('student/monthly-report/', MonthlyUsersReportAPIView.as_view(), name='monthly_users_report'),
     path('student/delete-profile/', DeleteStudentProfileAPIView.as_view(), name='student_list'),
+    # O'z akkauntini to'liq o'chirish: o'quvchi, ota-ona, o'qituvchi
+    path('delete-account/', DeleteMyAccountAPIView.as_view(), name='delete-my-account'),
     path('student/forgot-password/', ForgotPasswordView.as_view(), name='forgot_password'),
     path('student/verify-sms-code/', VerifySMSCodeView.as_view(), name='verify-sms-code'),###foget-pasword
     path('student/reset-password/', ResetPasswordView.as_view(), name='reset-password'),

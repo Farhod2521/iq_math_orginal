@@ -12,16 +12,17 @@ class SubscriptionSettingSerializer(serializers.ModelSerializer):
         fields = ['id', 'free_trial_days']
 
 
-class IsSuperAdmin(BasePermission):
+class IsSuperAdminOrMentor(BasePermission):
+    """Tekin muddatni superadmin (admin panel) va super mentor (teacher) boshqaradi."""
     def has_permission(self, request, view):
         return (
             request.user.is_authenticated and
-            getattr(request.user, "role", None) == "superadmin"
+            getattr(request.user, "role", None) in ("superadmin", "teacher")
         )
 
 
 class SubscriptionSettingCRUDAPIView(APIView):
-    permission_classes = [IsSuperAdmin]
+    permission_classes = [IsSuperAdminOrMentor]
 
     # GET — list yoki detail
     def get(self, request, pk=None):

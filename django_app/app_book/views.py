@@ -359,6 +359,10 @@ class BookListForUserAPIView(APIView):
         if is_offline is not None:
             qs = qs.filter(is_offline=is_offline.lower() == 'true')
 
+        # Menyu uchun: faqat kitoblar soni (Kutubxona bo'sh bo'lsa menyuda ko'rinmaydi)
+        if request.GET.get('count_only') == 'true':
+            return Response({"count": qs.count(), "results": []})
+
         data = [self._serialize(b, coin_to_money, coin_to_score) for b in qs]
         return Response({"count": len(data), "results": data})
 
