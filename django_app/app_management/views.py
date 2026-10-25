@@ -262,21 +262,25 @@ class FullStatisticsAPIView(APIView):
         plan_counts = payments_success.values('subscription_months').annotate(count=Count('id'))
         if plan_counts:
             most_sold_plan_months = max(plan_counts, key=lambda x: x['count'])['subscription_months']
-            try:
-                most_sold_plan = SubscriptionPlan.objects.get(months=most_sold_plan_months).get_months_display()
-            except SubscriptionPlan.DoesNotExist:
-                most_sold_plan = f"{most_sold_plan_months} oylik"
+            # Bir muddatda bir nechta tarif bo'lishi mumkin (Start, Start Pro) — .get() emas
+            plan = SubscriptionPlan.objects.filter(months=most_sold_plan_months).first()
+            most_sold_plan = plan.get_months_display() if plan else f"{most_sold_plan_months} oylik"
         else:
             most_sold_plan = None
 
-        # 6. Har bir rejadan tushgan tushum
-        plans_revenue = []
-        for plan in SubscriptionPlan.objects.all():
-            revenue = payments_success.filter(subscription_months=plan.months).aggregate(total=Sum('amount'))['total'] or 0
-            plans_revenue.append({
-                'plan': plan.get_months_display(),
-                'revenue': revenue,
-            })
+        # 6. Har bir tarifdan tushgan tushum (tarif to'lovdagi muddat + chegirmasiz narx bo'yicha aniqlanadi)
+        from django_app.app_user.VIEW.monthly_report_view import _tariff_resolver
+
+        resolve_tariff = _tariff_resolver()
+        revenue_by_plan = {}
+        for payment in payments_success.only("amount", "original_amount", "subscription_months"):
+            name_uz, _ = resolve_tariff(payment)
+            label = f"{name_uz} — {payment.subscription_months} oylik" if name_uz else f"{payment.subscription_months} oylik"
+            revenue_by_plan[label] = revenue_by_plan.get(label, 0) + (payment.amount or 0)
+        plans_revenue = [
+            {'plan': label, 'revenue': revenue}
+            for label, revenue in sorted(revenue_by_plan.items(), key=lambda item: -item[1])
+        ]
 
         # 7. Studentga berilgan umumiy keshbek
         total_student_cashback=0
