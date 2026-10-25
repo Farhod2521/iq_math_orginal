@@ -1,5 +1,5 @@
 """
-"Bepul darsga yoziling" arizalari.
+"Bepul darsga yoziling" arizalari (iqmath.uz/math: banner va pastki forma).
 
 POST  /api/v1/management/free-lesson/              — ochiq (bosh sahifa banneridagi forma)
 GET   /api/v1/management/free-lesson/list/         — mentor / superadmin: ro'yxat, holatlar bo'yicha sonlar
@@ -36,6 +36,27 @@ def _normalize_phone(value):
     if len(digits) == 9:
         digits = "998" + digits
     return digits if len(digits) == 12 and digits.startswith("998") else None
+
+
+EXTRA_FIELDS = (
+    ("region", "Viloyat"),
+    ("role", "Kim"),
+    ("utm_source", "utm_source"),
+    ("utm_medium", "utm_medium"),
+    ("utm_campaign", "utm_campaign"),
+    ("utm_content", "utm_content"),
+    ("fbclid", "fbclid"),
+)
+
+
+def _extra_note(data):
+    """Formadagi qo'shimcha ma'lumotlar (viloyat, kim, reklama UTM) — izohga yoziladi."""
+    parts = []
+    for key, label in EXTRA_FIELDS:
+        value = str(data.get(key) or "").strip()
+        if value:
+            parts.append(f"{label}: {value[:120]}")
+    return "; ".join(parts)
 
 
 def serialize(item):
@@ -95,7 +116,8 @@ class FreeLessonCreateAPIView(APIView):
             parent_name=name[:150],
             phone=phone,
             class_num=class_num,
-            source=str(request.data.get("source") or "home_banner")[:30],
+            source=str(request.data.get("source") or "math_hero")[:30],
+            note=_extra_note(request.data),
             ip_address=ip,
         )
         return Response({"detail": "Arizangiz qabul qilindi.", "id": item.id}, status=status.HTTP_201_CREATED)

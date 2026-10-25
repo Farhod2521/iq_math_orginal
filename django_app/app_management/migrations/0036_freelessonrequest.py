@@ -20,7 +20,7 @@ class Migration(migrations.Migration):
                 ("class_num", models.PositiveSmallIntegerField(blank=True, null=True, verbose_name="Farzand sinfi")),
                 ("status", models.CharField(choices=[("new", "Yangi"), ("contacted", "Bog'lanildi"), ("enrolled", "Ro'yxatdan o'tdi"), ("rejected", "Rad etildi")], db_index=True, default="new", max_length=12, verbose_name="Holati")),
                 ("note", models.TextField(blank=True, default="", verbose_name="Izoh")),
-                ("source", models.CharField(blank=True, default="home_banner", max_length=30, verbose_name="Manba")),
+                ("source", models.CharField(blank=True, default="math_hero", max_length=30, verbose_name="Manba")),
                 ("ip_address", models.GenericIPAddressField(blank=True, null=True)),
                 ("created_at", models.DateTimeField(auto_now_add=True, db_index=True, verbose_name="Yuborilgan vaqti")),
                 ("updated_at", models.DateTimeField(auto_now=True)),

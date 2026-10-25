@@ -554,7 +554,7 @@ class SiteVisit(models.Model):
 
 class FreeLessonRequest(models.Model):
     """
-    "Bepul darsga yoziling" arizasi (bosh sahifa banneridagi forma).
+    "Bepul darsga yoziling" arizasi (iqmath.uz/math sahifasidagi formalar).
     Mentor panelidagi "Arizalar" sahifasida ko'rinadi, Telegram botga xabar boradi.
     """
     STATUS_CHOICES = (
@@ -569,7 +569,7 @@ class FreeLessonRequest(models.Model):
     class_num = models.PositiveSmallIntegerField(null=True, blank=True, verbose_name="Farzand sinfi")
     status = models.CharField(max_length=12, choices=STATUS_CHOICES, default="new", db_index=True, verbose_name="Holati")
     note = models.TextField(blank=True, default="", verbose_name="Izoh")
-    source = models.CharField(max_length=30, blank=True, default="home_banner", verbose_name="Manba")
+    source = models.CharField(max_length=30, blank=True, default="math_hero", verbose_name="Manba")
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     handled_by = models.ForeignKey(
         "app_user.User", on_delete=models.SET_NULL, null=True, blank=True,

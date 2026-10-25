@@ -142,6 +142,12 @@ def format_payment(payment, resolve_tariff):
     return "\n".join(lines)
 
 
+LEAD_SOURCES = {
+    "math_hero": "iqmath.uz/math — banner formasi",
+    "math_bottom": "iqmath.uz/math — pastki forma",
+}
+
+
 def format_lead(lead):
     created = timezone.localtime(lead.created_at).strftime("%d.%m.%Y %H:%M")
     lines = [
@@ -150,8 +156,10 @@ def format_lead(lead):
         f"👤 Ota-ona: <b>{_esc(lead.parent_name)}</b>",
         f"📞 Telefon: +{_esc(lead.phone)}",
         f"🎓 Farzand sinfi: {_esc(f'{lead.class_num}-sinf' if lead.class_num else None)}",
+        f"📍 Qayerdan: {_esc(LEAD_SOURCES.get(lead.source, lead.source))}",
         f"🕒 Sana: {_esc(created)}",
         "",
+        *([f"🗒 {_esc(lead.note)}"] if lead.note else []),
         "☎️ Iltimos, qo'ng'iroq qiling va mentor panelidagi \"Arizalar\" bo'limida holatini belgilang.",
     ]
     lines.append(stats_footer())
