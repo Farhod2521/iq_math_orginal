@@ -79,7 +79,8 @@ def coupon_discount_amount(coupon_percent):
 
     if not coupon_percent:
         return 0
-    one_month_plan = SubscriptionPlan.objects.filter(months=1, is_active=True).first()
+    # Bir nechta 1 oylik tarif (Start, Start Pro) bo'lsa — eng arzoni asos qilinadi
+    one_month_plan = SubscriptionPlan.objects.filter(months=1, is_active=True).order_by("price_per_month", "id").first()
     if one_month_plan is None:
         return 0
     return plan_base_price(one_month_plan) * coupon_percent / 100
