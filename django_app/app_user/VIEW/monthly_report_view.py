@@ -11,12 +11,14 @@ from collections import Counter
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from django.db.models import Count, Q
+from django.db.models import Count, Q, Sum
 from django.db.models.functions import ExtractDay
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from django_app.app_payments.models import Payment, SubscriptionPlan
+from django_app.app_payments.utils import plan_base_price
 from django_app.app_student.models import Diagnost_Student
 from django_app.app_user.all_role_listview import All_Role_ListView
 from django_app.app_user.models import User
@@ -47,6 +49,70 @@ def _device_group(value):
         if value.startswith(key):
             return key
     return "other" if value else "unknown"
+
+
+def _sales_totals(payments):
+    agg = payments.aggregate(revenue=Sum("amount"), count=Count("id"), buyers=Count("student", distinct=True))
+    return {
+        "revenue": float(agg["revenue"] or 0),
+        "payments": agg["count"] or 0,
+        "buyers": agg["buyers"] or 0,
+    }
+
+
+def _tariff_resolver():
+    """
+    To'lovda tarif nomi saqlanmaydi (faqat oylar soni va chegirmasiz narx).
+    Tarif muddat + chegirmasiz narx (kuponsiz bo'lsa — to'langan summa) bo'yicha aniqlanadi.
+    """
+    plans = [
+        (plan.months, round(plan_base_price(plan)), plan.name_uz or plan.name or "", plan.name_ru or plan.name_uz or "")
+        for plan in SubscriptionPlan.objects.all()
+    ]
+
+    def resolve(payment):
+        base = payment.original_amount if payment.original_amount is not None else payment.amount
+        base = round(float(base or 0))
+        for months, price, name_uz, name_ru in plans:
+            if months == payment.subscription_months and abs(price - base) <= 1:
+                return name_uz, name_ru
+        return "", ""
+
+    return resolve
+
+
+def _sales_block(start, end, prev_start, prev_end, new_students):
+    success = Payment.objects.filter(status="success")
+    current = success.filter(payment_date__gte=start, payment_date__lt=end)
+    previous = success.filter(payment_date__gte=prev_start, payment_date__lt=prev_end)
+
+    resolve = _tariff_resolver()
+    groups = {}
+    for payment in current.only("amount", "original_amount", "subscription_months"):
+        name_uz, name_ru = resolve(payment)
+        key = (name_uz, payment.subscription_months)
+        row = groups.setdefault(key, {
+            "name_uz": name_uz, "name_ru": name_ru, "months": payment.subscription_months,
+            "count": 0, "revenue": 0.0,
+        })
+        row["count"] += 1
+        row["revenue"] += float(payment.amount or 0)
+    by_tariff = sorted(groups.values(), key=lambda r: (r["name_uz"] == "", r["name_uz"], r["months"]))
+
+    # Shu oyda ro'yxatdan o'tgan o'quvchilardan nechtasi tarif sotib olgan (hozirgacha)
+    new_total = new_students.count()
+    new_bought = (
+        success.filter(student__user__in=new_students).values("student").distinct().count()
+    )
+
+    return {
+        **_sales_totals(current),
+        "previous": _sales_totals(previous),
+        "by_tariff": by_tariff,
+        "new_students": new_total,
+        "new_bought": new_bought,
+        "new_not_bought": max(new_total - new_bought, 0),
+    }
 
 
 class MonthlyUsersReportAPIView(APIView):
@@ -166,5 +232,7 @@ class MonthlyUsersReportAPIView(APIView):
                 "by_device": [{"name": name, "count": count} for name, count in device_counter.most_common()],
                 "by_lang": [{"name": name, "count": count} for name, count in lang_counter.most_common()],
             },
+            # Sotuvlar: xaridorlar, tushum, tariflar kesimi, yangi o'quvchilarning sotib olgan/olmagani
+            "sales": _sales_block(start, end, prev_start, prev_end, new_students),
             "generated_at": today.strftime("%d.%m.%Y %H:%M"),
         })

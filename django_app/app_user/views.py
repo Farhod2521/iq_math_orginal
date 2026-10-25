@@ -1303,6 +1303,10 @@ class LogoutAPIView(APIView):
             if device:
                 deactivate_device(device)
 
+        # Onlayn sessiyani yopamiz (chiqish vaqti yoziladi)
+        from .online_service import close_online
+        close_online(user.id)
+
         # Tokenni blacklist qilish yoki frontend tokenni o'chirish logikasi shu yerda bo'lishi mumkin
         return Response({"detail": "Chiqqan vaqtingiz yozildi."}, status=200)
 

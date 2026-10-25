@@ -2,7 +2,7 @@
 Qo'lda ishga tushirish (loyiha ildizidan):
 
   python -m telegram_bot test        — admin va marketing chatlariga sinov xabari
-  python -m telegram_bot marketing   — yangi o'quvchilarni hozir yuborish
+  python -m telegram_bot marketing   — yangi o'quvchilar, to'lovlar va arizalarni hozir yuborish
   python -m telegram_bot backup      — backupni hozir yuborish (fayllar rejimi .telegram-env bo'yicha)
   python -m telegram_bot backup-full — backupni hozir yuborish (barcha fayllar bilan)
 """
@@ -20,7 +20,7 @@ def main():
 
     from . import config
     from .backup import run_backup
-    from .marketing import notify_new_students
+    from .marketing import notify_new_leads, notify_new_payments, notify_new_students
     from .telegram_api import broadcast
 
     command = sys.argv[1] if len(sys.argv) > 1 else ""
@@ -28,7 +28,9 @@ def main():
         print("admin:", broadcast(config.ADMIN_CHAT_IDS, "✅ IQMATH bot: admin chat ulandi"))
         print("marketing:", broadcast(config.MARKETING_CHAT_IDS, "✅ IQMATH bot: marketing chat ulandi"))
     elif command == "marketing":
-        print("yuborildi:", notify_new_students())
+        print("o'quvchilar:", notify_new_students())
+        print("to'lovlar:", notify_new_payments())
+        print("arizalar:", notify_new_leads())
     elif command in ("backup", "backup-full"):
         print("muvaffaqiyatli:", run_backup(force_full=command == "backup-full"))
     else:

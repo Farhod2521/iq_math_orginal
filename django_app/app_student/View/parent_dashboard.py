@@ -9,7 +9,7 @@ GET /api/v1/func_student/achievements/?student=<id>
     ota-ona esa tasdiqlangan farzandiniki ko'radi.
 """
 from collections import defaultdict
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from django.db.models import Avg, Count, Q
 from django.db.models.functions import TruncDate
@@ -398,6 +398,7 @@ def build_child_overview(child, request):
     from django_app.app_teacher.models import Topic
     from django_app.app_user.device_service import serialize_device
     from django_app.app_user.models import StudentLoginHistory, Subject, UserDevice
+    from django_app.app_user.online_service import online_stats
 
     check_achievements_safe(child)
 
@@ -543,11 +544,24 @@ def build_child_overview(child, request):
         for o in range(29, -1, -1)
     ]
 
+    # ---- Onlayn vaqt (sessiyalar) ----
+    online = online_stats(child.user)
+
     # ---- So'nggi faoliyatlar ----
-    recent = [
-        _recent_item("login", h.login_time)
-        for h in StudentLoginHistory.objects.filter(student=child).order_by("-login_time")[:RECENT_LIMIT]
-    ]
+    # Kirish va chiqishlar onlayn sessiyalardan; sessiya yozuvlari bo'lmasa — eski kirishlar tarixi
+    recent = []
+    for session in online["sessions"][:RECENT_LIMIT]:
+        recent.append({**_recent_item("login", datetime.fromisoformat(session["started_at"])), "seconds": None})
+        if session["ended_at"]:
+            recent.append({
+                **_recent_item("logout", datetime.fromisoformat(session["ended_at"])),
+                "seconds": session["seconds"],
+            })
+    if not online["sessions"]:
+        recent = [
+            _recent_item("login", h.login_time)
+            for h in StudentLoginHistory.objects.filter(student=child).order_by("-login_time")[:RECENT_LIMIT]
+        ]
     for tp in (
         TopicProgress.objects.filter(user=child, completed_at__isnull=False)
         .select_related("topic__chapter__subject")
@@ -590,6 +604,7 @@ def build_child_overview(child, request):
         "chapters": chapters,
         "activity_days": activity_days,
         "recent": recent[:RECENT_LIMIT],
+        "online": online,
         "devices": devices,
         "achievements": student_achievements(child, request)[0],
     }

@@ -21,7 +21,12 @@ from .VIEW.upload_setting_crud import UploadSettingCRUDAPIView
 from .VIEW.logentry_crud import LogEntryCRUDAPIView
 from .VIEW.site_statistics import SiteVisitTrackAPIView, SiteStatisticsAPIView, SiteRegistrationsListAPIView
 from .VIEW.dashboard_overview import DashboardOverviewAPIView
+from .VIEW.free_lesson import FreeLessonCreateAPIView, FreeLessonListAPIView
 urlpatterns = [
+    # "Bepul darsga yoziling" arizalari: forma (ochiq) va mentor paneli
+    path('free-lesson/', FreeLessonCreateAPIView.as_view(), name='free-lesson-create'),
+    path('free-lesson/list/', FreeLessonListAPIView.as_view(), name='free-lesson-list'),
+    path('free-lesson/list/<int:pk>/', FreeLessonListAPIView.as_view(), name='free-lesson-detail'),
     path('banner/', BannerListView.as_view(), name='system-settings-list'),
     path('faqs/', FAQListView.as_view(), name='faq-list'),
     path('products/', ProductListView.as_view(), name='product-list'),

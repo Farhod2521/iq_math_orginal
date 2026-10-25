@@ -550,3 +550,38 @@ class SiteVisit(models.Model):
 
     def __str__(self):
         return f"{self.visitor_id[:8]} | {self.path}"
+
+
+class FreeLessonRequest(models.Model):
+    """
+    "Bepul darsga yoziling" arizasi (bosh sahifa banneridagi forma).
+    Mentor panelidagi "Arizalar" sahifasida ko'rinadi, Telegram botga xabar boradi.
+    """
+    STATUS_CHOICES = (
+        ("new", "Yangi"),
+        ("contacted", "Bog'lanildi"),
+        ("enrolled", "Ro'yxatdan o'tdi"),
+        ("rejected", "Rad etildi"),
+    )
+
+    parent_name = models.CharField(max_length=150, verbose_name="Ota-ona ismi")
+    phone = models.CharField(max_length=20, db_index=True, verbose_name="Telefon")
+    class_num = models.PositiveSmallIntegerField(null=True, blank=True, verbose_name="Farzand sinfi")
+    status = models.CharField(max_length=12, choices=STATUS_CHOICES, default="new", db_index=True, verbose_name="Holati")
+    note = models.TextField(blank=True, default="", verbose_name="Izoh")
+    source = models.CharField(max_length=30, blank=True, default="home_banner", verbose_name="Manba")
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    handled_by = models.ForeignKey(
+        "app_user.User", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="handled_free_lessons", verbose_name="Ishlov bergan"
+    )
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True, verbose_name="Yuborilgan vaqti")
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Bepul darsga ariza"
+        verbose_name_plural = "Bepul darsga arizalar"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.parent_name} | {self.phone}"

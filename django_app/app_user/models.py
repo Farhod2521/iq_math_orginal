@@ -416,3 +416,25 @@ class UserDailyActivity(models.Model):
 
     def __str__(self):
         return f"{self.user_id} | {self.date}"
+
+
+class UserOnlineSession(models.Model):
+    """
+    Onlayn sessiya: foydalanuvchi uzluksiz faol bo'lgan vaqt oralig'i.
+    Token bilan kelgan har so'rov (sayt, mobil ilova, sayt ochiq turgandagi "ping")
+    last_seen_at ni yangilaydi; 5 daqiqadan uzoq jimlikdan keyin yangi sessiya boshlanadi.
+    Chiqish (logout) qilinsa ended_at yoziladi. Hisoblash: online_service.py
+    """
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="online_sessions", verbose_name="Foydalanuvchi")
+    started_at = models.DateTimeField(db_index=True, verbose_name="Kirgan vaqti")
+    last_seen_at = models.DateTimeField(verbose_name="Oxirgi faollik")
+    ended_at = models.DateTimeField(null=True, blank=True, verbose_name="Chiqqan vaqti")
+
+    class Meta:
+        verbose_name = "Onlayn sessiya"
+        verbose_name_plural = "Onlayn sessiyalar"
+        ordering = ["-started_at"]
+        indexes = [models.Index(fields=["user", "-last_seen_at"], name="online_user_seen_idx")]
+
+    def __str__(self):
+        return f"{self.user_id} | {self.started_at:%Y-%m-%d %H:%M}"

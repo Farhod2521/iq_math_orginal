@@ -338,3 +338,15 @@ class SiteVisitAdmin(admin.ModelAdmin):
     search_fields = ("path", "visitor_id", "ip_address", "user__phone")
     raw_id_fields = ("user",)
     date_hierarchy = "created_at"
+
+
+from .models import FreeLessonRequest  # noqa: E402
+
+
+@admin.register(FreeLessonRequest)
+class FreeLessonRequestAdmin(admin.ModelAdmin):
+    list_display = ("parent_name", "phone", "class_num", "status", "created_at", "handled_by")
+    list_filter = ("status", "class_num", "source")
+    search_fields = ("parent_name", "phone")
+    list_editable = ("status",)
+    readonly_fields = ("ip_address", "created_at", "updated_at")
