@@ -317,9 +317,11 @@ class BattleParticipant(models.Model):
 
     @property
     def display_name(self):
+        # Raqibga faqat ism va familiya bosh harfi ko'rinadi (botlar ham shu ko'rinishda — farq bilinmasin)
+        from django_app.app_student.privacy import public_name
         if self.is_bot:
-            return self.bot_identity.name
-        return self.student.full_name
+            return public_name(self.bot_identity.name)
+        return public_name(self.student.full_name)
 
 
 class BattleRoomQuestion(models.Model):

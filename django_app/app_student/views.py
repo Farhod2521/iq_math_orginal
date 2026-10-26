@@ -617,7 +617,7 @@ class QuestionListByTopicAPIView(APIView):
         
 
 from django.utils.html import strip_tags
-from .math_answer_check import advanced_math_check  
+from .math_answer_check import advanced_math_check, is_blank_answer
 from .helper_coin import get_today_coin_count, get_daily_coin_limit, get_or_create_daily_log
 class CheckAnswersAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -702,10 +702,15 @@ class CheckAnswersAPIView(APIView):
             # Til mos kelishi SHART — izohni yuqoridagi TEXT blokida qarang.
             student_answer, correct_answer = pick_text_answer(answer, question)
 
-            if student_answer is None or correct_answer is None:
+            # Javob berilmagan savol hisobga olinmaydi (topshiriqni ochib qo'yish natija bermaydi)
+            if student_answer is None or correct_answer is None or is_blank_answer(student_answer):
                 continue
 
-            is_correct = advanced_math_check(student_answer.strip(), correct_answer.strip())
+            # To'g'ri javobi kiritilmagan savolda bo'sh == bo'sh "to'g'ri" bo'lib qolmasin
+            if is_blank_answer(correct_answer):
+                is_correct = False
+            else:
+                is_correct = advanced_math_check(student_answer.strip(), correct_answer.strip())
             total_answers += 1
             process_question(question, is_correct)
 
@@ -726,9 +731,13 @@ class CheckAnswersAPIView(APIView):
             if not question:
                 continue
 
-            correct_choices = set(Choice.objects.filter(question=question, is_correct=True).values_list('id', flat=True))
             selected_choices = set(answer['choices'])
-            is_correct = (correct_choices == selected_choices)
+            # Variant tanlanmagan savol hisobga olinmaydi
+            if not selected_choices:
+                continue
+
+            correct_choices = set(Choice.objects.filter(question=question, is_correct=True).values_list('id', flat=True))
+            is_correct = bool(correct_choices) and (correct_choices == selected_choices)
 
             total_answers += 1
             process_question(question, is_correct)
@@ -755,6 +764,10 @@ class CheckAnswersAPIView(APIView):
             correct_subs = list(question.sub_questions.order_by('id'))
             student_answers = answer['answers']
 
+            # Birorta kichik savolga ham javob berilmagan bo'lsa — savol hisobga olinmaydi
+            if all(is_blank_answer(a) for a in student_answers):
+                continue
+
             # Javoblar soni kichik savollar soniga teng bo'lishi shart —
             # aks holda zip() ortiqchasini jimgina tashlab yuborardi.
             if len(student_answers) != len(correct_subs):
@@ -762,7 +775,11 @@ class CheckAnswersAPIView(APIView):
             else:
                 all_correct = True
                 for student_ans, sub_question in zip(student_answers, correct_subs):
-                    if not advanced_math_check(str(student_ans), str(sub_question.correct_answer)):
+                    if (
+                        is_blank_answer(student_ans)
+                        or is_blank_answer(sub_question.correct_answer)
+                        or not advanced_math_check(str(student_ans), str(sub_question.correct_answer))
+                    ):
                         all_correct = False
                         break
 
@@ -789,7 +806,8 @@ class CheckAnswersAPIView(APIView):
             if daily_log is not None:
                 daily_log.save()
 
-            if last_question_topic:
+            # Hech bo'lmasa bitta javob yuborilgandagina mavzu natijasi yoziladi
+            if last_question_topic and total_answers:
                 topic_progress, _ = TopicProgress.objects.get_or_create(
                     user=student_instance, topic=last_question_topic
                 )

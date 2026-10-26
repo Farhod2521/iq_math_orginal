@@ -8,6 +8,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 
 from django_app.app_user.models import Student, Class, Subject
+from django_app.app_student.privacy import public_name, can_see_private_data
 
 from . import matchmaking
 from .models import BattleRoom, BattleRating, BattleEloLog, level_for_elo, level_progress
@@ -159,7 +160,11 @@ class LeaderboardAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        top_count = int(request.query_params.get('top_count', 50))
+        try:
+            top_count = max(1, min(int(request.query_params.get('top_count', 50)), 100))
+        except (TypeError, ValueError):
+            top_count = 50
+        private = can_see_private_data(request.user)
         ratings = (
             BattleRating.objects.filter(matches_played__gte=BattleRating.PLACEMENT_MATCHES)
             .select_related('student', 'student__class_name', 'student__class_name__classes')
@@ -172,7 +177,7 @@ class LeaderboardAPIView(APIView):
             results.append({
                 "rank": rank,
                 "student_id": student.id,
-                "full_name": student.full_name,
+                "full_name": student.full_name if private else public_name(student.full_name),
                 "class_uz": getattr(class_name, 'name', ''),
                 "class_ru": getattr(class_name, 'name', ''),
                 "elo": rating.elo,

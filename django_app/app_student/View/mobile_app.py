@@ -10,6 +10,7 @@ from django_app.app_student.serializers import SubjectCategoryDetailSerializer
 from django.db.models import Count
 from rest_framework import status
 from django_app.app_student.paginations import StandardResultsSetPagination
+from django_app.app_student.privacy import public_name, can_see_private_data
 class StudentRatingAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -29,22 +30,24 @@ class StudentRatingAPIView(APIView):
         )
 
         # Barcha reytinglar
-        all_scores = StudentScore.objects.all()
+        all_scores = StudentScore.objects.select_related("student")
 
-        # --- TOP 3 ni olish funksiyasi ---
+        # --- TOP 3 ni olish funksiyasi (faqat 0 dan katta natijalar, ism + familiya bosh harfi) ---
         def top_3_list(field):
-            top = all_scores.order_by(f"-{field}")[:3]
+            top = all_scores.filter(**{f"{field}__gt": 0}).order_by(f"-{field}", "id")[:3]
             return [
                 {
-                    "full_name": sc.student.full_name,
+                    "full_name": public_name(sc.student.full_name),
                     field: getattr(sc, field)
                 }
                 for sc in top
             ]
 
-        # --- Mening o'rnim ---
+        # --- Mening o'rnim: bitta formula (bosh sahifa va profil bir xil ko'rsatadi); 0 bo'lsa o'rin yo'q ---
         def my_rank(field):
             value = getattr(my_score, field)
+            if not value:
+                return None
             return all_scores.filter(**{f"{field}__gt": value}).count() + 1
 
         data = {
@@ -58,9 +61,10 @@ class StudentRatingAPIView(APIView):
                 "my_rank": my_rank("coin"),
                 "my_value": my_score.coin
             },
+            # Bolalarni pul bo'yicha solishtirish olib tashlandi: faqat o'z qiymati qaytadi
             "som": {
-                "top_3": top_3_list("som"),
-                "my_rank": my_rank("som"),
+                "top_3": [],
+                "my_rank": None,
                 "my_value": my_score.som
             }
         }
@@ -404,28 +408,34 @@ class StudentTopAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        type_value = request.data.get("type")       # score / coin / som
+        type_value = request.data.get("type")       # score / coin
         top_count = request.data.get("top_count")   # integer
 
         # -------- 1) Validatsiya --------
         if type_value not in ["score", "coin", "som"]:
             return Response(
-                {"error": "type faqat 'score', 'coin' yoki 'som' bo'lishi kerak"},
+                {"error": "type faqat 'score' yoki 'coin' bo'lishi kerak"},
                 status=400
             )
 
         try:
             top_count = int(top_count)
-        except:
+        except (TypeError, ValueError):
             return Response({"error": "top_count butun son bo'lishi kerak"}, status=400)
+        top_count = max(1, min(top_count, 100))
 
-        # -------- 2) Dinamik tartiblash --------
-        ordering_field = f"-{type_value}"   # masalan "-score"
+        # Pul (so'm) bo'yicha reyting olib tashlandi — eski ilovalar buzilmasligi uchun bo'sh ro'yxat
+        if type_value == "som":
+            return Response({"type": type_value, "top_count": top_count, "results": []})
 
+        private = can_see_private_data(request.user)
+
+        # -------- 2) Dinamik tartiblash (0 natijali o'quvchilar reytingga kirmaydi) --------
         students = (
             StudentScore.objects
+            .filter(**{f"{type_value}__gt": 0})
             .select_related("student", "student__user", "student__class_name", "student__class_name__classes")
-            .order_by(ordering_field)[:top_count]
+            .order_by(f"-{type_value}", "id")[:top_count]
         )
 
         # -------- 3) JSON formatlash --------
@@ -434,16 +444,18 @@ class StudentTopAPIView(APIView):
             class_obj = item.student.class_name
             class_grade = class_obj.classes if class_obj else None
 
-            data.append({
+            row = {
                 "student_id": item.student.id,
-                "full_name": item.student.full_name,
-                "phone": item.student.user.phone,
+                "full_name": item.student.full_name if private else public_name(item.student.full_name),
                 "score": item.score,
                 "coin": item.coin,
-                "som": item.som,
                 "class_uz": f"{class_grade.name}-sinf" if class_grade else None,
                 "class_ru": f"{class_grade.name}-класс" if class_grade else None,
-            })
+            }
+            # Telefon raqami faqat mentor/admin uchun
+            if private:
+                row["phone"] = item.student.user.phone
+            data.append(row)
 
         return Response({
             "type": type_value,

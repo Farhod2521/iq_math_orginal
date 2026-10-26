@@ -160,6 +160,14 @@ def is_number(s):
     except:
         return False
 
+def is_blank_answer(value):
+    """Javob bo'shmi: HTML/LaTeX o'ramlari olib tashlangach hech narsa qolmasa — bo'sh."""
+    if value is None:
+        return True
+    text = clean_latex(html_to_math_text(str(value)))
+    return not re.sub(r"[\s{}()\\$]", "", text)
+
+
 def advanced_math_check(student_answer, correct_answer):
     """
     Bu funksiya studentning javobi bilan to"g'ri javobni solishtiradi."
