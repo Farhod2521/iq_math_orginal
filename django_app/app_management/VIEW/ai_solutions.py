@@ -1,15 +1,19 @@
 """
 Admin panel: "AI yechimlar" — savollarni AI yordamida qisqa va batafsil yechish.
 
-  GET  /api/v1/management/ai-solutions/config/                    — AI sozlanganmi (.env), qaysi model
-  GET  /api/v1/management/ai-solutions/classes/                   — sinflar
-  GET  /api/v1/management/ai-solutions/tree/?class_id=&lang=uz    — fan → bob → mavzu (savollar va yechilganlar soni)
-  GET  /api/v1/management/ai-solutions/topics/<id>/?lang=uz       — mavzu savollari va ularning yechimlari
-  POST /api/v1/management/ai-solutions/questions/<id>/solve/      — {lang, force} bitta savolni AI bilan yechish
+  GET  /api/v1/management/ai-solutions/config/                       — AI sozlanganmi (.env), qaysi model
+  GET  /api/v1/management/ai-solutions/classes/                      — sinflar
+  GET  /api/v1/management/ai-solutions/tree/?class_id=&lang=uz       — fan → bob → mavzu (savollar va yechilganlar soni)
+  GET  /api/v1/management/ai-solutions/subjects/<id>/queue/          — butun kitob savollari tartib bilan (yechish navbati)
+  GET  /api/v1/management/ai-solutions/topics/<id>/?lang=uz          — mavzu savollari va ularning yechimlari
+  POST /api/v1/management/ai-solutions/questions/<id>/solve/         — {lang, force} savolni o'zbekcha yechish
+  POST /api/v1/management/ai-solutions/questions/<id>/translate/     — {lang, force} o'zbekcha yechimni rus tiliga o'girish
 
-Yechish bittalab chaqiriladi: admin panel mavzudagi savollarni ketma-ket yuborib, progressni o'zi ko'rsatadi.
+Har bir misol bir marta (o'zbekcha) yechiladi, ruscha yechim — uning tarjimasi: hisob va formulalar bir xil qoladi.
+Yechish bittalab chaqiriladi: admin panel savollarni ketma-ket yuborib, progressni o'zi ko'rsatadi.
 """
 import html
+import json
 import re
 
 from django.db.models import Count, Prefetch, Q
@@ -74,12 +78,10 @@ def _serialize_question(question, lang, solution=None):
 
 # ---------------------------------------------------------------- AI so'rovi
 
-SYSTEM_PROMPT = {
-    "uz": "Sen 5–11-sinf o'quvchilariga matematikani tushuntiradigan tajribali o'qituvchisan. "
-    "Yechimni o'zbek tilida (lotin yozuvida), o'quvchi daftarga yozgandek sodda va aniq yozasan.",
-    "ru": "Ты опытный учитель математики для 5–11 классов. "
-    "Пишешь решение на русском языке — просто и понятно, как ученик в тетради.",
-}
+SYSTEM_PROMPT = (
+    "Sen 1–11-sinf o'quvchilariga matematikani tushuntiradigan tajribali o'qituvchisan. "
+    "Yechimni o'zbek tilida (lotin yozuvida), o'quvchi daftarga yozgandek sodda va aniq yozasan."
+)
 
 FORMAT_RULES = """Javobni FAQAT bitta JSON obyekt ko'rinishida qaytar (markdown, ``` va izohlarsiz):
 {
@@ -94,6 +96,7 @@ FORMAT_RULES = """Javobni FAQAT bitta JSON obyekt ko'rinishida qaytar (markdown,
         "answer": "2\\\\ \\\\text{m/s}^2"
       },
       "detailed": {
+        "figure": null,
         "steps": [
           {"title": "1-qadam. Nimani bilamiz?", "text": "Tezlik \\\\(4\\\\) dan \\\\(10\\\\) gacha oshdi ...", "math": ["\\\\Delta v = 10 - 4 = 6"]}
         ],
@@ -112,16 +115,42 @@ Qoidalar:
 - QISQA yechim: kerakli formula (bo'lsa) va 1–4 qatorli hisob — ortiqcha so'zsiz.
 - BATAFSIL yechim: 2–7 qadam. Har qadamda nima qilinayotgani va NIMA UCHUN shunday qilinayotganini tushuntir, oraliq hisoblarni tashlab ketma.
 - Yechim berilgan to'g'ri javobga olib kelishi shart. Variantli savolda "answer" ga to'g'ri variant harfini ham yoz.
-- Savolda [rasm] bo'lsa va ma'lumot yetmasa, matndagi ma'lumot va to'g'ri javobga tayanib yech."""
+- Savolda [rasm] bo'lsa va ma'lumot yetmasa, matndagi ma'lumot va to'g'ri javobga tayanib yech.
+
+CHIZMA ("detailed.figure") — faqat chizma o'quvchiga tushunishda HAQIQATAN yordam beradigan misollarda
+(funksiya grafigi, geometrik shakl, son o'qi, harakat yoki jarayon sxemasi). Oddiy hisoblash, kasrlar,
+tenglamalarda chizma kerak emas — "figure": null. Ikki xil chizma bor:
+1) Funksiya grafigi:
+   {"type": "graph", "x": [-5, 5], "y": [-4, 6],
+    "functions": [{"expr": "2*x + 1", "label": "y = 2x + 1"}],
+    "points": [{"x": 0, "y": 1, "label": "A(0; 1)"}]}
+   "expr" — faqat x, sonlar, + - * / ^, qavslar, sqrt, abs, sin, cos, tan, ln, log, exp, pi. Ko'pi bilan 3 ta funksiya.
+2) Boshqa chizma (uchburchak, aylana, son o'qi, sxema):
+   {"type": "svg", "svg": "<svg viewBox=\\"0 0 400 260\\" xmlns=\\"http://www.w3.org/2000/svg\\">...</svg>"}
+   Faqat line, polyline, polygon, path, circle, ellipse, rect, text elementlari; stroke="currentColor",
+   fill="none" (matn uchun fill="currentColor"), stroke-width="2", matn font-size="18". style, script, rasm ishlatma.
+   Chizma aniq bo'lsin: nuqtalar, uzunliklar va burchaklar yechimdagi qiymatlarga mos kelsin."""
+
+TRANSLATE_SYSTEM = (
+    "Sen matematika yechimlarini o'zbek tilidan rus tiliga tarjima qiladigan tarjimonsan. "
+    "Matematik mazmunni o'zgartirmaysan — faqat so'zlarni tarjima qilasan."
+)
+
+TRANSLATE_RULES = """Quyidagi JSON — o'zbekcha matematik yechim. Uni xuddi shu tuzilishdagi JSON qilib rus tiliga o'gir:
+- "title", "text", "conclusion", "answer" va "label" dagi o'zbekcha so'zlarni ruschaga tarjima qil.
+- LaTeX formulalarni, sonlarni va hisoblarni o'zgartirma. Faqat \\\\text{...} ichidagi o'zbekcha so'zlarni tarjima qil
+  (masalan \\\\text{ta} → \\\\text{шт.}); birliklar ruscha yoziladi (m/s → м/с, sm → см, kg → кг).
+- Elementlar soni va tartibi aynan bir xil qolsin. Hech narsa qo'shma va o'chirma.
+- Javobni FAQAT JSON ko'rinishida qaytar (markdown, ``` va izohlarsiz)."""
 
 
-def _question_prompt(question, lang):
-    lines = [f"Savol ({'o‘zbekcha' if lang == 'uz' else 'ruscha'} yechim yoz):", _plain(_tr(question, "question_text", lang))]
+def _question_prompt(question):
+    lines = ["Savol:", _plain(_tr(question, "question_text", "uz"))]
     choices = list(question.choices.all())
     if choices:
         lines.append("\nVariantlar:")
         for choice in choices:
-            text = _plain(_tr(choice, "text", lang)) or ("[rasm]" if choice.image_url else "")
+            text = _plain(_tr(choice, "text", "uz")) or ("[rasm]" if choice.image_url else "")
             lines.append(f"{choice.letter}) {text}")
         correct = [c.letter for c in choices if c.is_correct]
         if correct:
@@ -130,8 +159,8 @@ def _question_prompt(question, lang):
     if subs:
         lines.append("\nJavob kataklari (to'g'ri javoblar bilan):")
         for i, sub in enumerate(subs, 1):
-            lines.append(f"{i}. {_plain(_tr(sub, 'text1', lang))} [{sub.correct_answer}] {_plain(_tr(sub, 'text2', lang))}".strip())
-    text_answer = _plain(_tr(question, "correct_text_answer", lang))
+            lines.append(f"{i}. {_plain(_tr(sub, 'text1', 'uz'))} [{sub.correct_answer}] {_plain(_tr(sub, 'text2', 'uz'))}".strip())
+    text_answer = _plain(_tr(question, "correct_text_answer", "uz"))
     if text_answer:
         lines.append(f"\nTo'g'ri javob: {text_answer}")
     lines.append("\n" + FORMAT_RULES)
@@ -142,6 +171,56 @@ def _as_list(value):
     if isinstance(value, list):
         return [str(item) for item in value if item not in (None, "")]
     return [str(value)] if value else []
+
+
+def _num(value, default):
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return default
+    return number if -1e6 < number < 1e6 else default
+
+
+def _range(value, default):
+    if isinstance(value, (list, tuple)) and len(value) == 2:
+        low, high = _num(value[0], default[0]), _num(value[1], default[1])
+        if low < high:
+            return [low, high]
+    return list(default)
+
+
+_SVG_FORBIDDEN = re.compile(r"<\s*(script|foreignObject|image|iframe|use|style)\b|\son\w+\s*=|javascript:|href\s*=", re.I)
+
+
+def _normalize_figure(figure):
+    """Chizmani tekshiradi: grafik — raqamli parametrlar, svg — xavfli teglarsiz. Yaroqsiz bo'lsa None."""
+    if not isinstance(figure, dict):
+        return None
+    if figure.get("type") == "graph":
+        functions = [
+            {"expr": str(f.get("expr"))[:120], "label": str(f.get("label") or "")[:60]}
+            for f in (figure.get("functions") or [])[:3]
+            if isinstance(f, dict) and f.get("expr")
+        ]
+        points = [
+            {"x": _num(p.get("x"), 0), "y": _num(p.get("y"), 0), "label": str(p.get("label") or "")[:40]}
+            for p in (figure.get("points") or [])[:12]
+            if isinstance(p, dict)
+        ]
+        if not functions and not points:
+            return None
+        return {
+            "type": "graph",
+            "x": _range(figure.get("x"), (-5, 5)),
+            "y": _range(figure.get("y"), (-5, 5)),
+            "functions": functions,
+            "points": points,
+        }
+    if figure.get("type") == "svg":
+        svg = str(figure.get("svg") or "").strip()
+        if svg.startswith("<svg") and svg.endswith("</svg>") and len(svg) < 20000 and not _SVG_FORBIDDEN.search(svg):
+            return {"type": "svg", "svg": svg}
+    return None
 
 
 def _normalize(data):
@@ -174,7 +253,11 @@ def _normalize(data):
                 "steps": _as_list(short.get("steps")),
                 "answer": str(short.get("answer") or ""),
             },
-            "detailed": {"steps": steps, "answer": str(detailed.get("answer") or short.get("answer") or "")},
+            "detailed": {
+                "figure": _normalize_figure(detailed.get("figure") or part.get("figure")),
+                "steps": steps,
+                "answer": str(detailed.get("answer") or short.get("answer") or ""),
+            },
         })
     if not parts:
         raise ai_client.AIError("AI javobida yechim (parts) yo'q")
@@ -185,9 +268,26 @@ def _normalize(data):
     }
 
 
-def solve_question(question, lang):
-    raw = ai_client.complete(SYSTEM_PROMPT[lang], _question_prompt(question, lang))
+def solve_question(question):
+    """Savolni o'zbek tilida yechadi."""
+    raw = ai_client.complete(SYSTEM_PROMPT, _question_prompt(question))
     return _normalize(ai_client.parse_json(raw))
+
+
+def translate_solution(data):
+    """O'zbekcha yechimni ruschaga o'giradi. Chizmalar tarjimaga yuborilmaydi — o'zbekchasidan ko'chiriladi."""
+    figures = [part["detailed"].get("figure") for part in data["parts"]]
+    payload = {
+        **data,
+        "parts": [{**part, "detailed": {k: v for k, v in part["detailed"].items() if k != "figure"}} for part in data["parts"]],
+    }
+    prompt = TRANSLATE_RULES + "\n\n" + json.dumps(payload, ensure_ascii=False)
+    translated = _normalize(ai_client.parse_json(ai_client.complete(TRANSLATE_SYSTEM, prompt)))
+    if len(translated["parts"]) != len(figures):
+        raise ai_client.AIError("Tarjimada yechim qismlari soni o'zgarib ketdi")
+    for part, figure in zip(translated["parts"], figures):
+        part["detailed"]["figure"] = figure
+    return translated
 
 
 # ---------------------------------------------------------------- Views
@@ -287,26 +387,87 @@ class AISolutionTopicAPIView(APIView):
         })
 
 
+def _question_response(pk, lang):
+    question = get_object_or_404(_questions_qs(lang), pk=pk)
+    return Response(_serialize_question(question, lang, question.lang_solutions[0] if question.lang_solutions else None))
+
+
 class AISolutionSolveAPIView(APIView):
+    """Savolni o'zbekcha yechadi (force — qaytadan; eski ruscha tarjima o'chiriladi). Javob — so'ralgan tilda."""
+
     permission_classes = [IsTeacherOrSuperAdmin]
 
     def post(self, request, pk):
         lang = _lang(request.data.get("lang"))
         force = bool(request.data.get("force"))
-        question = get_object_or_404(_questions_qs(lang), pk=pk)
+        question = get_object_or_404(_questions_qs("uz"), pk=pk)
 
-        existing = question.lang_solutions[0] if question.lang_solutions else None
-        if existing and not force:
-            return Response(_serialize_question(question, lang, existing))
+        if force or not question.lang_solutions:
+            try:
+                data = solve_question(question)
+            except ai_client.AIError as exc:
+                return Response({"detail": str(exc)}, status=status.HTTP_502_BAD_GATEWAY)
+            QuestionAISolution.objects.update_or_create(
+                question=question,
+                lang="uz",
+                defaults={"data": data, "ai_model": ai_client.ai_settings()["model"]},
+            )
+            # Yechim yangilandi — eski tarjima endi mos emas
+            QuestionAISolution.objects.filter(question=question, lang="ru").delete()
+        return _question_response(pk, lang)
 
-        try:
-            data = solve_question(question, lang)
-        except ai_client.AIError as exc:
-            return Response({"detail": str(exc)}, status=status.HTTP_502_BAD_GATEWAY)
 
-        solution, _ = QuestionAISolution.objects.update_or_create(
-            question=question,
-            lang=lang,
-            defaults={"data": data, "ai_model": ai_client.ai_settings()["model"]},
+class AISolutionTranslateAPIView(APIView):
+    """O'zbekcha yechimni rus tiliga o'giradi (o'zbekchasi bo'lmasa — 400)."""
+
+    permission_classes = [IsTeacherOrSuperAdmin]
+
+    def post(self, request, pk):
+        lang = _lang(request.data.get("lang"))
+        force = bool(request.data.get("force"))
+        question = get_object_or_404(Question, pk=pk)
+        source = QuestionAISolution.objects.filter(question=question, lang="uz").first()
+        if not source:
+            return Response({"detail": "Avval o'zbekcha yechim kerak"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if force or not QuestionAISolution.objects.filter(question=question, lang="ru").exists():
+            try:
+                data = translate_solution(source.data)
+            except ai_client.AIError as exc:
+                return Response({"detail": str(exc)}, status=status.HTTP_502_BAD_GATEWAY)
+            QuestionAISolution.objects.update_or_create(
+                question=question,
+                lang="ru",
+                defaults={"data": data, "ai_model": ai_client.ai_settings()["model"]},
+            )
+        return _question_response(pk, lang)
+
+
+class AISolutionSubjectQueueAPIView(APIView):
+    """Butun kitob (fan) savollari — bob, mavzu, daraja tartibida; har birida qaysi tilda yechim borligi."""
+
+    permission_classes = [IsTeacherOrSuperAdmin]
+
+    def get(self, request, pk):
+        subject = get_object_or_404(Subject, pk=pk)
+        solved = {}
+        for question_id, lang in QuestionAISolution.objects.filter(
+            question__topic__chapter__subject=subject
+        ).values_list("question_id", "lang"):
+            solved.setdefault(question_id, set()).add(lang)
+
+        questions = (
+            Question.objects.filter(topic__chapter__subject=subject)
+            .order_by("topic__chapter__order", "topic__chapter_id", "topic__order", "topic_id", "level", "id")
+            .values("id", "topic_id", "topic__chapter_id")
         )
-        return Response(_serialize_question(question, lang, solution))
+        return Response([
+            {
+                "id": q["id"],
+                "topic_id": q["topic_id"],
+                "chapter_id": q["topic__chapter_id"],
+                "uz": "uz" in solved.get(q["id"], ()),
+                "ru": "ru" in solved.get(q["id"], ()),
+            }
+            for q in questions
+        ])

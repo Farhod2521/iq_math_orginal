@@ -23,7 +23,7 @@ from .VIEW.site_statistics import SiteVisitTrackAPIView, SiteStatisticsAPIView, 
 from .VIEW.dashboard_overview import DashboardOverviewAPIView
 from .VIEW.ai_solutions import (
     AISolutionClassesAPIView, AISolutionConfigAPIView, AISolutionSolveAPIView,
-    AISolutionTopicAPIView, AISolutionTreeAPIView,
+    AISolutionSubjectQueueAPIView, AISolutionTopicAPIView, AISolutionTranslateAPIView, AISolutionTreeAPIView,
 )
 from .VIEW.free_lesson import FreeLessonCreateAPIView, FreeLessonListAPIView
 urlpatterns = [
@@ -41,6 +41,8 @@ urlpatterns = [
     path('ai-solutions/tree/', AISolutionTreeAPIView.as_view(), name='ai-solutions-tree'),
     path('ai-solutions/topics/<int:pk>/', AISolutionTopicAPIView.as_view(), name='ai-solutions-topic'),
     path('ai-solutions/questions/<int:pk>/solve/', AISolutionSolveAPIView.as_view(), name='ai-solutions-solve'),
+    path('ai-solutions/questions/<int:pk>/translate/', AISolutionTranslateAPIView.as_view(), name='ai-solutions-translate'),
+    path('ai-solutions/subjects/<int:pk>/queue/', AISolutionSubjectQueueAPIView.as_view(), name='ai-solutions-subject-queue'),
     path('site-stats/', SiteStatisticsAPIView.as_view(), name='site-statistics'),
     path('site-stats/track/', SiteVisitTrackAPIView.as_view(), name='site-visit-track'),
     path('site-stats/registrations/', SiteRegistrationsListAPIView.as_view(), name='site-registrations'),
