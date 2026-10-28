@@ -47,7 +47,33 @@ def _endpoint(base, suffix):
     return base + suffix
 
 
-def _call_anthropic(s, system, prompt):
+def _anthropic_content(prompt, images):
+    if not images:
+        return prompt
+    blocks = []
+    for image in images:
+        if image.get("url"):
+            blocks.append({"type": "image", "source": {"type": "url", "url": image["url"]}})
+        else:
+            blocks.append({
+                "type": "image",
+                "source": {"type": "base64", "media_type": image["media_type"], "data": image["data"]},
+            })
+    blocks.append({"type": "text", "text": prompt})
+    return blocks
+
+
+def _openai_content(prompt, images):
+    if not images:
+        return prompt
+    blocks = [{"type": "text", "text": prompt}]
+    for image in images:
+        url = image.get("url") or f"data:{image['media_type']};base64,{image['data']}"
+        blocks.append({"type": "image_url", "image_url": {"url": url}})
+    return blocks
+
+
+def _call_anthropic(s, system, prompt, images):
     resp = requests.post(
         _endpoint(s["url"], "/v1/messages"),
         headers={
@@ -59,7 +85,7 @@ def _call_anthropic(s, system, prompt):
             "model": s["model"],
             "max_tokens": s["max_tokens"],
             "system": system,
-            "messages": [{"role": "user", "content": prompt}],
+            "messages": [{"role": "user", "content": _anthropic_content(prompt, images)}],
         },
         timeout=s["timeout"],
     )
@@ -69,7 +95,7 @@ def _call_anthropic(s, system, prompt):
     return "".join(block.get("text", "") for block in body.get("content", []) if block.get("type") == "text")
 
 
-def _call_openai(s, system, prompt):
+def _call_openai(s, system, prompt, images):
     resp = requests.post(
         _endpoint(s["url"], "/chat/completions"),
         headers={"Authorization": f"Bearer {s['key']}", "Content-Type": "application/json"},
@@ -78,7 +104,7 @@ def _call_openai(s, system, prompt):
             "max_tokens": s["max_tokens"],
             "messages": [
                 {"role": "system", "content": system},
-                {"role": "user", "content": prompt},
+                {"role": "user", "content": _openai_content(prompt, images)},
             ],
         },
         timeout=s["timeout"],
@@ -92,15 +118,18 @@ def _call_openai(s, system, prompt):
         raise AIError("AI javobi kutilgan formatda emas")
 
 
-def complete(system, prompt):
-    """Matn so'rovi — sozlangan provayderga yuboriladi, javob matni qaytadi."""
+def complete(system, prompt, images=None):
+    """
+    So'rov sozlangan provayderga yuboriladi, javob matni qaytadi.
+    images — rasmlar ro'yxati: {"media_type": "image/png", "data": "<base64>"} yoki {"url": "https://..."}.
+    """
     s = ai_settings()
     if not is_configured():
         raise AIError(".env da AI_URL, AI_KEY, AI_MODEL sozlanmagan")
     try:
         if s["format"] == "anthropic":
-            return _call_anthropic(s, system, prompt)
-        return _call_openai(s, system, prompt)
+            return _call_anthropic(s, system, prompt, images)
+        return _call_openai(s, system, prompt, images)
     except requests.Timeout:
         raise AIError("AI javob berishga ulgurmadi (timeout)")
     except requests.RequestException as exc:

@@ -8,15 +8,21 @@ Admin panel: "AI yechimlar" — savollarni AI yordamida qisqa va batafsil yechis
   GET  /api/v1/management/ai-solutions/topics/<id>/?lang=uz          — mavzu savollari va ularning yechimlari
   POST /api/v1/management/ai-solutions/questions/<id>/solve/         — {lang, force} savolni o'zbekcha yechish
   POST /api/v1/management/ai-solutions/questions/<id>/translate/     — {lang, force} o'zbekcha yechimni rus tiliga o'girish
+  POST /api/v1/management/ai-solutions/questions/<id>/digitize/      — {lang} matndagi base64 rasm-formulalarni LaTeX ga aylantirish
 
 Har bir misol bir marta (o'zbekcha) yechiladi, ruscha yechim — uning tarjimasi: hisob va formulalar bir xil qoladi.
 Yechish bittalab chaqiriladi: admin panel savollarni ketma-ket yuborib, progressni o'zi ko'rsatadi.
+
+Ko'p savollarda misol matn emas, base64 rasm (<img src="data:image/png;base64,...">) bo'lib saqlangan.
+Yechishdan oldin bunday rasmlar AI ga ko'rsatiladi: formula bo'lsa — LaTeX ga aylantirilib bazaga yoziladi
+(asl HTML QuestionImageBackup da qoladi), chizma bo'lsa — rasm joyida qoladi va yechishda AI ga ilova qilinadi.
 """
 import html
 import json
 import re
 
-from django.db.models import Count, Prefetch, Q
+from django.db import transaction
+from django.db.models import BooleanField, Case, Count, Exists, OuterRef, Prefetch, Q, When
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.response import Response
@@ -24,7 +30,7 @@ from rest_framework.views import APIView
 
 from django_app.app_management.permissions import IsTeacherOrSuperAdmin
 from django_app.app_teacher import ai_client
-from django_app.app_teacher.models import Chapter, Question, QuestionAISolution, Topic
+from django_app.app_teacher.models import Chapter, Choice, Question, QuestionAISolution, QuestionImageBackup, Topic
 from django_app.app_user.models import Class, Subject
 
 LANGS = ("uz", "ru")
@@ -48,9 +54,48 @@ def _plain(value):
     return re.sub(r"\n{3,}", "\n\n", value).strip()
 
 
+# ---------------------------------------------------------------- Rasmdagi formulalar
+
+# Matn ichidagi base64 rasm; AI chizma deb topganlari data-ai-figure bilan belgilanadi va qayta so'ralmaydi
+_DATA_IMG = re.compile(r"""<img\b[^>]*?\bsrc\s*=\s*(["'])data:(image/[\w.+-]+);base64,([^"']+)\1[^>]*>""", re.I)
+_SUPPORTED_MEDIA = {"image/png", "image/jpeg", "image/gif", "image/webp"}
+MAX_IMAGES = 8
+
+
+def _media_type(value):
+    value = value.lower()
+    return "image/jpeg" if value in ("image/jpg", "image/pjpeg") else value
+
+
+def _image_data(match):
+    return re.sub(r"\s+", "", match.group(3))
+
+
+def _pending_images(value):
+    """Hali AI ga ko'rsatilmagan (formula yoki chizma ekani noma'lum) base64 rasmlar."""
+    return [
+        m for m in _DATA_IMG.finditer(value or "")
+        if "data-ai-figure" not in m.group(0) and _media_type(m.group(2)) in _SUPPORTED_MEDIA
+    ]
+
+
+def _text_fields(question):
+    """Rasm bo'lishi mumkin bo'lgan matn maydonlari: (obyekt, maydon, zaxiradagi nomi)."""
+    for lang in LANGS:
+        yield question, f"question_text_{lang}", f"question_text_{lang}"
+    for choice in question.choices.all():
+        for lang in LANGS:
+            yield choice, f"text_{lang}", f"choice:{choice.id}:text_{lang}"
+
+
+def _has_pending_images(question):
+    return any(_pending_images(getattr(obj, attr, "")) for obj, attr, _ in _text_fields(question))
+
+
 def _serialize_question(question, lang, solution=None):
     return {
         "id": question.id,
+        "has_images": _has_pending_images(question),
         "level": question.level,
         "type": question.question_type,
         "text": _tr(question, "question_text", lang),
@@ -77,6 +122,99 @@ def _serialize_question(question, lang, solution=None):
 
 
 # ---------------------------------------------------------------- AI so'rovi
+
+DIGITIZE_SYSTEM = (
+    "Sen darslikdagi matematik misollar rasmlarini aniq LaTeX ga ko'chiradigan yordamchisan. "
+    "Rasmdagi hech bir son, belgi yoki qavsni o'zgartirmaysan, qo'shmaysan va tashlab ketmaysan."
+)
+
+DIGITIZE_RULES = """Yuqorida savol matnidagi __COUNT__ ta rasm berilgan (tartib bilan). Savol matni (rasmlar o'rnida [rasm N]):
+__TEXT__
+
+Har bir rasm uchun aniqla:
+- Rasmda faqat matematik ifoda (kasr, son, tenglama, misol, yulduzchali misol, ildiz, daraja va h.k.) bo'lsa —
+  uni LaTeX ga ko'chir: {"kind": "math", "latex": "..."}
+  * kasrlar \\dfrac{...}{...}, ko'paytirish nuqtasi \\cdot, ko'paytirish xochi \\times, bo'lish \\div;
+  * yulduzcha / bo'sh katak — \\ast yoki \\square (rasmdagidek); aralash son 2\\dfrac{1}{3} ko'rinishida;
+  * bir nechta qator bo'lsa — \\begin{array}{l} ... \\\\ ... \\end{array};
+  * \\( \\) yoki $ belgilarisiz, faqat ifodaning o'zi.
+- Rasmda chizma (geometrik shakl, grafik, son o'qi, jadval, rasm-surat) bo'lsa — {"kind": "figure"}.
+
+Javobni FAQAT JSON ko'rinishida qaytar (markdown, ``` va izohlarsiz), rasmlar soni va tartibi aynan bir xil:
+{"images": [{"kind": "math", "latex": "\\dfrac{334 \\cdot 123 + 27}{335 \\cdot 123 - 102}"}, {"kind": "figure"}]}"""
+
+
+def digitize_question(question):
+    """
+    Savol va variantlar matnidagi base64 rasmlarni AI ga ko'rsatadi: formulalar LaTeX ga aylantirilib
+    bazaga yoziladi (asl HTML zaxiraga olinadi), chizmalar data-ai-figure bilan belgilanadi.
+    Bir xil rasm (o'zbekcha va ruscha matnda) bir marta so'raladi. O'zgargan maydonlar soni qaytadi.
+    """
+    fields = list(_text_fields(question))
+    unique = {}  # base64 → media type (tartib — AI ga yuborilish tartibi)
+    for obj, attr, _ in fields:
+        for m in _pending_images(getattr(obj, attr, "")):
+            unique.setdefault(_image_data(m), _media_type(m.group(2)))
+    if not unique:
+        return 0
+
+    numbers = {data: n for n, data in enumerate(unique, 1)}
+    context = _DATA_IMG.sub(lambda m: f" [rasm {numbers.get(_image_data(m), '')}] ", _tr(question, "question_text", "uz"))
+    prompt = DIGITIZE_RULES.replace("__COUNT__", str(len(unique))).replace("__TEXT__", _plain(context))
+    images = [{"media_type": media, "data": data} for data, media in unique.items()]
+    result = ai_client.parse_json(ai_client.complete(DIGITIZE_SYSTEM, prompt, images=images))
+    items = result.get("images") if isinstance(result, dict) else None
+    if not isinstance(items, list) or len(items) != len(unique):
+        raise ai_client.AIError("AI rasmlar sonini noto'g'ri qaytardi")
+
+    replacements = {}  # base64 → formula HTML yoki None (chizma)
+    for data, item in zip(unique, items):
+        latex = str(item.get("latex") or "").strip() if isinstance(item, dict) else ""
+        latex = latex.removeprefix("\\(").removesuffix("\\)").strip("$ \n")
+        if isinstance(item, dict) and item.get("kind") == "math" and latex and len(latex) < 3000:
+            replacements[data] = "\\(\\displaystyle " + html.escape(latex, quote=False) + "\\)"
+        else:
+            replacements[data] = None
+
+    def replace(m):
+        if "data-ai-figure" in m.group(0) or _image_data(m) not in replacements:
+            return m.group(0)
+        new = replacements[_image_data(m)]
+        return new if new is not None else re.sub(r"^<img\b", '<img data-ai-figure="1"', m.group(0), flags=re.I)
+
+    changed = 0
+    with transaction.atomic():
+        for obj, attr, backup_name in fields:
+            old = getattr(obj, attr, None)
+            if not old or not _pending_images(old):
+                continue
+            new = _DATA_IMG.sub(replace, old)
+            if new == old:
+                continue
+            QuestionImageBackup.objects.create(question=question, field=backup_name, original=old)
+            setattr(obj, attr, new)
+            obj.save(update_fields=[attr])
+            changed += 1
+    return changed
+
+
+def _solver_images(question):
+    """Yechishda AI ga ilova qilinadigan rasmlar: matnda qolgan chizmalar va variant rasmlari (http)."""
+    images, seen = [], set()
+    for obj, attr, _ in _text_fields(question):
+        if not attr.endswith("_uz"):
+            continue
+        for m in _DATA_IMG.finditer(getattr(obj, attr, "") or ""):
+            data, media = _image_data(m), _media_type(m.group(2))
+            if media in _SUPPORTED_MEDIA and data not in seen:
+                seen.add(data)
+                images.append({"media_type": media, "data": data})
+    for choice in question.choices.all():
+        url = choice.image_url or ""
+        if url.startswith(("http://", "https://")) and url not in seen:
+            seen.add(url)
+            images.append({"url": url})
+    return images[:MAX_IMAGES]
 
 SYSTEM_PROMPT = (
     "Sen 1–11-sinf o'quvchilariga matematikani tushuntiradigan tajribali o'qituvchisan. "
@@ -115,7 +253,8 @@ Qoidalar:
 - QISQA yechim: kerakli formula (bo'lsa) va 1–4 qatorli hisob — ortiqcha so'zsiz.
 - BATAFSIL yechim: 2–7 qadam. Har qadamda nima qilinayotgani va NIMA UCHUN shunday qilinayotganini tushuntir, oraliq hisoblarni tashlab ketma.
 - Yechim berilgan to'g'ri javobga olib kelishi shart. Variantli savolda "answer" ga to'g'ri variant harfini ham yoz.
-- Savolda [rasm] bo'lsa va ma'lumot yetmasa, matndagi ma'lumot va to'g'ri javobga tayanib yech.
+- Savolda [rasm] bo'lsa — u so'rovga ilova qilingan rasm (chizma); undagi ma'lumotdan foydalan.
+  Rasm ilova qilinmagan yoki ma'lumot yetmasa, matndagi ma'lumot va to'g'ri javobga tayanib yech.
 
 CHIZMA ("detailed.figure") — faqat chizma o'quvchiga tushunishda HAQIQATAN yordam beradigan misollarda
 (funksiya grafigi, geometrik shakl, son o'qi, harakat yoki jarayon sxemasi). Oddiy hisoblash, kasrlar,
@@ -270,7 +409,7 @@ def _normalize(data):
 
 def solve_question(question):
     """Savolni o'zbek tilida yechadi."""
-    raw = ai_client.complete(SYSTEM_PROMPT, _question_prompt(question))
+    raw = ai_client.complete(SYSTEM_PROMPT, _question_prompt(question), images=_solver_images(question))
     return _normalize(ai_client.parse_json(raw))
 
 
@@ -417,6 +556,21 @@ class AISolutionSolveAPIView(APIView):
         return _question_response(pk, lang)
 
 
+class AISolutionDigitizeAPIView(APIView):
+    """Savol matnidagi base64 rasm-formulalarni LaTeX ga aylantirib bazaga yozadi. Javob — so'ralgan tilda."""
+
+    permission_classes = [IsTeacherOrSuperAdmin]
+
+    def post(self, request, pk):
+        lang = _lang(request.data.get("lang"))
+        question = get_object_or_404(Question.objects.prefetch_related("choices"), pk=pk)
+        try:
+            digitize_question(question)
+        except ai_client.AIError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_502_BAD_GATEWAY)
+        return _question_response(pk, lang)
+
+
 class AISolutionTranslateAPIView(APIView):
     """O'zbekcha yechimni rus tiliga o'giradi (o'zbekchasi bo'lmasa — 400)."""
 
@@ -456,10 +610,16 @@ class AISolutionSubjectQueueAPIView(APIView):
         ).values_list("question_id", "lang"):
             solved.setdefault(question_id, set()).add(lang)
 
+        # Matnida base64 rasm bor savollar — yechishdan oldin rasmlar formulaga aylantiriladi
+        choice_image = Choice.objects.filter(question=OuterRef("pk")).filter(
+            Q(text_uz__contains="data:image") | Q(text_ru__contains="data:image")
+        )
+        has_image = Q(question_text_uz__contains="data:image") | Q(question_text_ru__contains="data:image") | Exists(choice_image)
         questions = (
             Question.objects.filter(topic__chapter__subject=subject)
+            .annotate(images=Case(When(has_image, then=True), default=False, output_field=BooleanField()))
             .order_by("topic__chapter__order", "topic__chapter_id", "topic__order", "topic_id", "level", "id")
-            .values("id", "topic_id", "topic__chapter_id")
+            .values("id", "topic_id", "topic__chapter_id", "images")
         )
         return Response([
             {
@@ -468,6 +628,7 @@ class AISolutionSubjectQueueAPIView(APIView):
                 "chapter_id": q["topic__chapter_id"],
                 "uz": "uz" in solved.get(q["id"], ()),
                 "ru": "ru" in solved.get(q["id"], ()),
+                "images": q["images"],
             }
             for q in questions
         ])

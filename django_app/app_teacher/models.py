@@ -383,3 +383,22 @@ class QuestionAISolution(models.Model):
         verbose_name = "AI yechim"
         verbose_name_plural = "AI yechimlar"
         unique_together = ("question", "lang")
+
+
+class QuestionImageBackup(models.Model):
+    """
+    Savol/variant matnidagi base64 rasm AI yordamida LaTeX formulaga aylantirilishidan oldingi asl HTML.
+    Formula noto'g'ri o'qilgan bo'lsa, shu yerdan qaytarib tiklash mumkin.
+    """
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="image_backups")
+    field = models.CharField(max_length=50, verbose_name="Maydon")  # question_text_uz, choice:12:text_ru ...
+    original = models.TextField(verbose_name="Asl matn (HTML)")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Rasm zaxirasi #{self.question_id} ({self.field})"
+
+    class Meta:
+        verbose_name = "Rasm zaxirasi"
+        verbose_name_plural = "Rasm zaxiralari"
+        ordering = ["-created_at"]
