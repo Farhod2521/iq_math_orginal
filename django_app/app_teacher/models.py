@@ -360,3 +360,26 @@ class TeacherFineLog(models.Model):
         verbose_name = "Jarima"
         verbose_name_plural = "Jarimalar"
         ordering = ['-created_at']
+
+
+class QuestionAISolution(models.Model):
+    """
+    Savolning AI tomonidan yozilgan yechimi (admin paneldagi "AI yechimlar").
+    data — tuzilgan JSON: berilgan/topish, qisqa (formula + hisob) va batafsil (qadam-baqadam) yechim.
+    """
+    LANG_CHOICES = [("uz", "O'zbekcha"), ("ru", "Ruscha")]
+
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="ai_solutions")
+    lang = models.CharField(max_length=2, choices=LANG_CHOICES, default="uz")
+    data = models.JSONField(verbose_name="Yechim (JSON)")
+    ai_model = models.CharField(max_length=100, blank=True, default="", verbose_name="AI model")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"AI yechim #{self.question_id} ({self.lang})"
+
+    class Meta:
+        verbose_name = "AI yechim"
+        verbose_name_plural = "AI yechimlar"
+        unique_together = ("question", "lang")

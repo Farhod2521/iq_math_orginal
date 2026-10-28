@@ -228,3 +228,13 @@ class TeacherRewardLogAdmin(admin.ModelAdmin):
     readonly_fields = ('created_at',)
     date_hierarchy = 'created_at'
     ordering = ('-created_at',)
+
+
+from .models import QuestionAISolution
+
+
+@admin.register(QuestionAISolution)
+class QuestionAISolutionAdmin(admin.ModelAdmin):
+    list_display = ("id", "question", "lang", "ai_model", "updated_at")
+    list_filter = ("lang",)
+    raw_id_fields = ("question",)

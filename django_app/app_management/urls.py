@@ -21,6 +21,10 @@ from .VIEW.upload_setting_crud import UploadSettingCRUDAPIView
 from .VIEW.logentry_crud import LogEntryCRUDAPIView
 from .VIEW.site_statistics import SiteVisitTrackAPIView, SiteStatisticsAPIView, SiteRegistrationsListAPIView
 from .VIEW.dashboard_overview import DashboardOverviewAPIView
+from .VIEW.ai_solutions import (
+    AISolutionClassesAPIView, AISolutionConfigAPIView, AISolutionSolveAPIView,
+    AISolutionTopicAPIView, AISolutionTreeAPIView,
+)
 from .VIEW.free_lesson import FreeLessonCreateAPIView, FreeLessonListAPIView
 urlpatterns = [
     # "Bepul darsga yoziling" arizalari: forma (ochiq) va mentor paneli
@@ -32,6 +36,11 @@ urlpatterns = [
     path('products/', ProductListView.as_view(), name='product-list'),
     path('statistics/', FullStatisticsAPIView.as_view(), name='statistics'),
     path('statistics/overview/', DashboardOverviewAPIView.as_view(), name='statistics-overview'),
+    path('ai-solutions/config/', AISolutionConfigAPIView.as_view(), name='ai-solutions-config'),
+    path('ai-solutions/classes/', AISolutionClassesAPIView.as_view(), name='ai-solutions-classes'),
+    path('ai-solutions/tree/', AISolutionTreeAPIView.as_view(), name='ai-solutions-tree'),
+    path('ai-solutions/topics/<int:pk>/', AISolutionTopicAPIView.as_view(), name='ai-solutions-topic'),
+    path('ai-solutions/questions/<int:pk>/solve/', AISolutionSolveAPIView.as_view(), name='ai-solutions-solve'),
     path('site-stats/', SiteStatisticsAPIView.as_view(), name='site-statistics'),
     path('site-stats/track/', SiteVisitTrackAPIView.as_view(), name='site-visit-track'),
     path('site-stats/registrations/', SiteRegistrationsListAPIView.as_view(), name='site-registrations'),
