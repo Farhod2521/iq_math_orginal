@@ -238,3 +238,13 @@ class QuestionAISolutionAdmin(admin.ModelAdmin):
     list_display = ("id", "question", "lang", "ai_model", "updated_at")
     list_filter = ("lang",)
     raw_id_fields = ("question",)
+
+
+from .models import QuestionImageBackup
+
+
+@admin.register(QuestionImageBackup)
+class QuestionImageBackupAdmin(admin.ModelAdmin):
+    list_display = ("id", "question", "field", "created_at")
+    search_fields = ("question__id",)
+    raw_id_fields = ("question",)

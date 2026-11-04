@@ -22,7 +22,7 @@ from .VIEW.logentry_crud import LogEntryCRUDAPIView
 from .VIEW.site_statistics import SiteVisitTrackAPIView, SiteStatisticsAPIView, SiteRegistrationsListAPIView
 from .VIEW.dashboard_overview import DashboardOverviewAPIView
 from .VIEW.ai_solutions import (
-    AISolutionClassesAPIView, AISolutionConfigAPIView, AISolutionSolveAPIView,
+    AISolutionClassesAPIView, AISolutionConfigAPIView, AISolutionDigitizeAPIView, AISolutionSolveAPIView,
     AISolutionSubjectQueueAPIView, AISolutionTopicAPIView, AISolutionTranslateAPIView, AISolutionTreeAPIView,
 )
 from .VIEW.free_lesson import FreeLessonCreateAPIView, FreeLessonListAPIView
@@ -42,6 +42,7 @@ urlpatterns = [
     path('ai-solutions/topics/<int:pk>/', AISolutionTopicAPIView.as_view(), name='ai-solutions-topic'),
     path('ai-solutions/questions/<int:pk>/solve/', AISolutionSolveAPIView.as_view(), name='ai-solutions-solve'),
     path('ai-solutions/questions/<int:pk>/translate/', AISolutionTranslateAPIView.as_view(), name='ai-solutions-translate'),
+    path('ai-solutions/questions/<int:pk>/digitize/', AISolutionDigitizeAPIView.as_view(), name='ai-solutions-digitize'),
     path('ai-solutions/subjects/<int:pk>/queue/', AISolutionSubjectQueueAPIView.as_view(), name='ai-solutions-subject-queue'),
     path('site-stats/', SiteStatisticsAPIView.as_view(), name='site-statistics'),
     path('site-stats/track/', SiteVisitTrackAPIView.as_view(), name='site-visit-track'),
