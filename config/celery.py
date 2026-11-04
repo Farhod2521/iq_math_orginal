@@ -35,6 +35,16 @@ app.conf.beat_schedule = {
         "task": "telegram_bot.notify_new_students",
         "schedule": crontab(minute="*"),
     },
+    # Liga: vaqti tugab, "Yakunlash"ni bosmagan o'quvchilarning natijasini yopish
+    "liga-finalize-expired-attempts-every-minute": {
+        "task": "django_app.app_liga.tasks.finalize_expired_attempts_task",
+        "schedule": crontab(minute="*"),
+    },
+    # Liga: oxirgi hafta testlari tugagan mavsumni yopish va g'oliblarni e'lon qilish
+    "liga-close-finished-seasons-every-minute": {
+        "task": "django_app.app_liga.tasks.close_finished_seasons_task",
+        "schedule": crontab(minute="*"),
+    },
     # Baza va fayllar backupi admin chatiga — har kuni 03:00 (Toshkent)
     "telegram-daily-backup": {
         "task": "telegram_bot.daily_backup",

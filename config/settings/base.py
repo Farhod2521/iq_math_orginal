@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     "django_app.app_chat",
     "django_app.app_book",
     "django_app.app_battle",
+    "django_app.app_liga",
 ]
 
 MIDDLEWARE = [

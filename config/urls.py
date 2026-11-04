@@ -33,6 +33,7 @@ urlpatterns = [
     path('api/v1/universal/', include("django_app.app_unversial_view.urls")),
     path('api/v1/book/', include("django_app.app_book.urls")),
     path('api/v1/battle/', include("django_app.app_battle.urls")),
+    path('api/v1/liga/', include("django_app.app_liga.urls")),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='swagger-docs'),
 ]
 
