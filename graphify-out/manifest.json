@@ -42,10 +42,10 @@
     "semantic_hash": "545ae2e18cb71d68c2443f198dd1b5d5"
   },
   "config/celery.py": {
-    "mtime": 1788341584.4954224,
-    "seen": 1790226083.656789,
-    "ast_hash": "85cce9326d9f0f3cbd9e6f5fccb587d9",
-    "semantic_hash": "85cce9326d9f0f3cbd9e6f5fccb587d9"
+    "mtime": 1793773803.2128117,
+    "seen": 1793880221.5476027,
+    "ast_hash": "c80432e576f1afd0db14b49f36b8140d",
+    "semantic_hash": ""
   },
   "config/routing.py": {
     "mtime": 1788330455.9032838,
@@ -54,10 +54,10 @@
     "semantic_hash": "ce9f3f2642f7f05efed00598b61e2bde"
   },
   "config/settings/base.py": {
-    "mtime": 1788496678.1335096,
-    "seen": 1790226083.65679,
-    "ast_hash": "f9c6ecaed7eb7f4ec0fed4ebae2d3750",
-    "semantic_hash": "f9c6ecaed7eb7f4ec0fed4ebae2d3750"
+    "mtime": 1793771458.8232036,
+    "seen": 1793880221.5476048,
+    "ast_hash": "9d198b93517a56b4499693e8b7b881d5",
+    "semantic_hash": ""
   },
   "config/settings/development.py": {
     "mtime": 1785301014.8773637,
@@ -72,10 +72,10 @@
     "semantic_hash": "9103dd0a1a0c9d35bfdf3c6dafe1250b"
   },
   "config/urls.py": {
-    "mtime": 1788330430.8461583,
-    "seen": 1790226083.656792,
-    "ast_hash": "3142d0b0428cfa45399d92f81c495f1c",
-    "semantic_hash": "3142d0b0428cfa45399d92f81c495f1c"
+    "mtime": 1793771458.8992782,
+    "seen": 1793880221.5476081,
+    "ast_hash": "eed0ac0f355a589313b68e6d04734a7b",
+    "semantic_hash": ""
   },
   "config/wsgi.py": {
     "mtime": 1785301014.8781853,
@@ -180,10 +180,10 @@
     "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
   },
   "django_app/app_battle/models.py": {
-    "mtime": 1788343595.4864154,
-    "seen": 1790226083.6568015,
-    "ast_hash": "8b613373204ae0db43c67380971ed0a4",
-    "semantic_hash": "8b613373204ae0db43c67380971ed0a4"
+    "mtime": 1793012350.0786963,
+    "seen": 1793880221.5476265,
+    "ast_hash": "0a66cd0f71fc8b81b55e49bccf342b1b",
+    "semantic_hash": ""
   },
   "django_app/app_battle/realtime.py": {
     "mtime": 1788330285.6110187,
@@ -222,10 +222,10 @@
     "semantic_hash": "c96d9fb6c379a146e81cd351d098370b"
   },
   "django_app/app_battle/views.py": {
-    "mtime": 1788350600.3007185,
-    "seen": 1790226083.656805,
-    "ast_hash": "d4b74b145d9f9c7ec87ed7a04c03a8a8",
-    "semantic_hash": "d4b74b145d9f9c7ec87ed7a04c03a8a8"
+    "mtime": 1793012350.0796964,
+    "seen": 1793880221.547634,
+    "ast_hash": "8bae13947b0a02e64482e724e8f70434",
+    "semantic_hash": ""
   },
   "django_app/app_book/__init__.py": {
     "mtime": 1785301014.8781853,
@@ -324,10 +324,10 @@
     "semantic_hash": "28f6e3ed7a2a860450161ac3bca61c76"
   },
   "django_app/app_book/views.py": {
-    "mtime": 1785828962.7796545,
-    "seen": 1790226083.6568139,
-    "ast_hash": "4b365e23ed857e07c09046ed52223e4b",
-    "semantic_hash": "4b365e23ed857e07c09046ed52223e4b"
+    "mtime": 1792987925.6823726,
+    "seen": 1793880221.5476515,
+    "ast_hash": "11f4152d31e412cd7618e5f027cad06a",
+    "semantic_hash": ""
   },
   "django_app/app_chat/__init__.py": {
     "mtime": 1785301014.8812525,
@@ -438,10 +438,10 @@
     "semantic_hash": "3a17f2149b97f55b08d172843f6ef5d3"
   },
   "django_app/app_chat/serializers.py": {
-    "mtime": 1785301014.8932023,
-    "seen": 1790226083.6568236,
-    "ast_hash": "5265d9d0a533eac370815029b60a69b6",
-    "semantic_hash": "5265d9d0a533eac370815029b60a69b6"
+    "mtime": 1790743803.6146216,
+    "seen": 1793880221.5476708,
+    "ast_hash": "ee4b156343c8a88ccadf15729ec67987",
+    "semantic_hash": ""
   },
   "django_app/app_chat/services.py": {
     "mtime": 1785301014.8932023,
@@ -468,10 +468,10 @@
     "semantic_hash": "ceaef6fa099f71fef53f59f249c8207c"
   },
   "django_app/app_chat/views.py": {
-    "mtime": 1785301014.8937953,
-    "seen": 1790226083.6568263,
-    "ast_hash": "fb38d030945a06e8e8c6af973e4ee97f",
-    "semantic_hash": "fb38d030945a06e8e8c6af973e4ee97f"
+    "mtime": 1792471134.1935177,
+    "seen": 1793880221.5476758,
+    "ast_hash": "fba75292326d3eb6f0d0c3c8d36388b4",
+    "semantic_hash": ""
   },
   "django_app/app_management/VIEW/andriod_version.py": {
     "mtime": 1785301014.8937953,
@@ -576,10 +576,10 @@
     "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
   },
   "django_app/app_management/admin.py": {
-    "mtime": 1785301014.905722,
-    "seen": 1790226083.6568365,
-    "ast_hash": "73675a30a1d1b66342137fa26827e238",
-    "semantic_hash": "73675a30a1d1b66342137fa26827e238"
+    "mtime": 1792987925.7026126,
+    "seen": 1793880221.547714,
+    "ast_hash": "1f92daf6cb70c8c2bf96c7d517b8cef0",
+    "semantic_hash": ""
   },
   "django_app/app_management/apps.py": {
     "mtime": 1785301014.905722,
@@ -798,10 +798,10 @@
     "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
   },
   "django_app/app_management/models.py": {
-    "mtime": 1785301014.9177723,
-    "seen": 1790226083.6568556,
-    "ast_hash": "1253a5c1688182d27c76ada220b34078",
-    "semantic_hash": "1253a5c1688182d27c76ada220b34078"
+    "mtime": 1792987925.7026126,
+    "seen": 1793880221.5477536,
+    "ast_hash": "2ad4e07b9ebd1531010c6415821d855b",
+    "semantic_hash": ""
   },
   "django_app/app_management/permissions.py": {
     "mtime": 1785301014.9215648,
@@ -834,16 +834,16 @@
     "semantic_hash": "77556f9287c0182bba9fb2ba0a80da7d"
   },
   "django_app/app_management/urls.py": {
-    "mtime": 1785301014.9215648,
-    "seen": 1790226083.656859,
-    "ast_hash": "119bff94c916715cd4304124397936b8",
-    "semantic_hash": "119bff94c916715cd4304124397936b8"
+    "mtime": 1793775089.3744617,
+    "seen": 1793880221.547761,
+    "ast_hash": "a7c0b2c75da34b272e36d88e755e59ef",
+    "semantic_hash": ""
   },
   "django_app/app_management/views.py": {
-    "mtime": 1785301014.9215648,
-    "seen": 1790226083.6568594,
-    "ast_hash": "cf9cd1836b3b1b355913f85f508cd7a4",
-    "semantic_hash": "cf9cd1836b3b1b355913f85f508cd7a4"
+    "mtime": 1792987925.7026126,
+    "seen": 1793880221.547762,
+    "ast_hash": "b5a4b53b39674591161af065bf5b8159",
+    "semantic_hash": ""
   },
   "django_app/app_payments/VIEW/subscription_crud.py": {
     "mtime": 1785301014.9215648,
@@ -852,10 +852,10 @@
     "semantic_hash": "b5bd132d7efb517505495da4e26258a0"
   },
   "django_app/app_payments/VIEW/subscription_setting_crud.py": {
-    "mtime": 1785301014.9225695,
-    "seen": 1790226083.6568604,
-    "ast_hash": "f45643efa78c766c40ba659595e6bdef",
-    "semantic_hash": "f45643efa78c766c40ba659595e6bdef"
+    "mtime": 1792987925.7184289,
+    "seen": 1793880221.547764,
+    "ast_hash": "e28f44dd6307763ff1c978af71973a88",
+    "semantic_hash": ""
   },
   "django_app/app_payments/VIEW/subscriptionplan_serizlizers.py": {
     "mtime": 1785301014.9225695,
@@ -876,10 +876,10 @@
     "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
   },
   "django_app/app_payments/admin.py": {
-    "mtime": 1785301014.9225695,
-    "seen": 1790226083.6568625,
-    "ast_hash": "b93983921c8188971dfe73341a4dc943",
-    "semantic_hash": "b93983921c8188971dfe73341a4dc943"
+    "mtime": 1791266620.4742985,
+    "seen": 1793880221.5477679,
+    "ast_hash": "0eb5dafd0ac5b5d90d05780009f8677b",
+    "semantic_hash": ""
   },
   "django_app/app_payments/apps.py": {
     "mtime": 1785301014.9225695,
@@ -984,16 +984,16 @@
     "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
   },
   "django_app/app_payments/models.py": {
-    "mtime": 1785301014.9283276,
-    "seen": 1790226083.6568723,
-    "ast_hash": "e785d7c701051440d0112a72c858eb9d",
-    "semantic_hash": "e785d7c701051440d0112a72c858eb9d"
+    "mtime": 1791266569.205735,
+    "seen": 1793880221.5477874,
+    "ast_hash": "ceda68d7c806897d7ad895f8a141c610",
+    "semantic_hash": ""
   },
   "django_app/app_payments/serializers.py": {
-    "mtime": 1785301014.9296231,
-    "seen": 1790226083.6568727,
-    "ast_hash": "552c600e7e638e9c381ebf9996f4087b",
-    "semantic_hash": "552c600e7e638e9c381ebf9996f4087b"
+    "mtime": 1791353879.0119474,
+    "seen": 1793880221.5477884,
+    "ast_hash": "a86fda733ee6d75b969dfcb00d83fee6",
+    "semantic_hash": ""
   },
   "django_app/app_payments/tasks.py": {
     "mtime": 1785301014.9296231,
@@ -1020,16 +1020,16 @@
     "semantic_hash": "9ec9da7d1f114f7b14520bc3da4f2b75"
   },
   "django_app/app_payments/utils.py": {
-    "mtime": 1785828962.7806544,
-    "seen": 1790226083.6568756,
-    "ast_hash": "c3891263eee36df49750a22639aa867e",
-    "semantic_hash": "c3891263eee36df49750a22639aa867e"
+    "mtime": 1792987925.7184289,
+    "seen": 1793880221.5477931,
+    "ast_hash": "26de57492b0a4ab7867a48160a488a91",
+    "semantic_hash": ""
   },
   "django_app/app_payments/views.py": {
-    "mtime": 1785301014.9296231,
-    "seen": 1790226083.6568778,
-    "ast_hash": "e48f837c22091db056781628bbe0d5c5",
-    "semantic_hash": "e48f837c22091db056781628bbe0d5c5"
+    "mtime": 1791353879.0119474,
+    "seen": 1793880221.5477939,
+    "ast_hash": "a02583983ce2c99b0d1a3ab039620eed",
+    "semantic_hash": ""
   },
   "django_app/app_student/View/__init__.py": {
     "mtime": 1785301014.9296231,
@@ -1038,9 +1038,9 @@
     "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
   },
   "django_app/app_student/View/app_diagnost.py": {
-    "mtime": 1790581740.9363074,
-    "seen": 1790581856.2494147,
-    "ast_hash": "c42c6a7af7e578d25a31cda38b2dcb77",
+    "mtime": 1790746139.9646873,
+    "seen": 1793880221.5477958,
+    "ast_hash": "df5af3d7090b8595c067b08a2f7f0e35",
     "semantic_hash": ""
   },
   "django_app/app_student/View/certificate_view.py": {
@@ -1080,10 +1080,10 @@
     "semantic_hash": "e07d2a56212e9508576057270f542d9b"
   },
   "django_app/app_student/View/mobile_app.py": {
-    "mtime": 1785301245.030543,
-    "seen": 1790226083.6568828,
-    "ast_hash": "86eec73560889f049a384d702d9c5edf",
-    "semantic_hash": "86eec73560889f049a384d702d9c5edf"
+    "mtime": 1793012350.0796964,
+    "seen": 1793880221.547804,
+    "ast_hash": "d7fcdc6c7a1f4cadb02451f8e583897d",
+    "semantic_hash": ""
   },
   "django_app/app_student/View/product_exchange.py": {
     "mtime": 1785301014.9296231,
@@ -1104,10 +1104,10 @@
     "semantic_hash": "c7dfbc3af103af8ce78e4ed585f3be43"
   },
   "django_app/app_student/View/student_home_dashboard.py": {
-    "mtime": 1786362017.2823038,
-    "seen": 1790226083.6568863,
-    "ast_hash": "90dcda739e83c154ad531657c9ef9972",
-    "semantic_hash": "90dcda739e83c154ad531657c9ef9972"
+    "mtime": 1791350089.8052428,
+    "seen": 1793880221.547809,
+    "ast_hash": "28fe6c9803bc319a6cf93585362c928e",
+    "semantic_hash": ""
   },
   "django_app/app_student/View/student_login_history.py": {
     "mtime": 1785301014.9296231,
@@ -1152,10 +1152,10 @@
     "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
   },
   "django_app/app_student/admin.py": {
-    "mtime": 1785301014.9296231,
-    "seen": 1790226083.6568904,
-    "ast_hash": "ab577fa20233c5a33959ebf31a66e50b",
-    "semantic_hash": "ab577fa20233c5a33959ebf31a66e50b"
+    "mtime": 1791194927.2828107,
+    "seen": 1793880221.547819,
+    "ast_hash": "46d29d14e4e1f8d721846133172bf3b8",
+    "semantic_hash": ""
   },
   "django_app/app_student/apps.py": {
     "mtime": 1785301014.9296231,
@@ -1176,10 +1176,10 @@
     "semantic_hash": "a04aa53fc5eef2196aa7bd9887a3c089"
   },
   "django_app/app_student/math_answer_check.py": {
-    "mtime": 1786423573.1584182,
-    "seen": 1790226083.6568923,
-    "ast_hash": "8fc27eb664ceb4ccc7e19dad81a12fab",
-    "semantic_hash": "8fc27eb664ceb4ccc7e19dad81a12fab"
+    "mtime": 1793012350.0796964,
+    "seen": 1793880221.5478232,
+    "ast_hash": "e5b3325802671f7792c2b19ebbe5cf53",
+    "semantic_hash": ""
   },
   "django_app/app_student/migrations/0001_initial.py": {
     "mtime": 1785301014.9296231,
@@ -1290,10 +1290,10 @@
     "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
   },
   "django_app/app_student/models.py": {
-    "mtime": 1785301014.9401333,
-    "seen": 1790226083.6569018,
-    "ast_hash": "ddf09e77211d2a180a8c1e618c86645d",
-    "semantic_hash": "ddf09e77211d2a180a8c1e618c86645d"
+    "mtime": 1791194934.639227,
+    "seen": 1793880221.547844,
+    "ast_hash": "a13de2de69b5a479f22b50c12077329e",
+    "semantic_hash": ""
   },
   "django_app/app_student/paginations.py": {
     "mtime": 1785301014.9401333,
@@ -1332,15 +1332,15 @@
     "semantic_hash": "3342ca9994744adce70883a8a6267717"
   },
   "django_app/app_student/urls.py": {
-    "mtime": 1786357095.5375206,
-    "seen": 1790226083.6569054,
-    "ast_hash": "d9263d91f19ca531322c85fe4b4c322d",
-    "semantic_hash": "d9263d91f19ca531322c85fe4b4c322d"
+    "mtime": 1792471134.1837645,
+    "seen": 1793880221.5478518,
+    "ast_hash": "226ae455a6f20e6f127b8dc07ef17afe",
+    "semantic_hash": ""
   },
   "django_app/app_student/views.py": {
-    "mtime": 1790574247.615796,
-    "seen": 1790574337.7979531,
-    "ast_hash": "790a87138e68c48d2492ca06cf1da371",
+    "mtime": 1793012350.0796964,
+    "seen": 1793880221.5478525,
+    "ast_hash": "d4c10af4e5a68f06e8cc806ce244a508",
     "semantic_hash": ""
   },
   "django_app/app_teacher/View/coupon.py": {
@@ -1416,10 +1416,10 @@
     "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
   },
   "django_app/app_teacher/admin.py": {
-    "mtime": 1785301014.9477923,
-    "seen": 1790226083.6569123,
-    "ast_hash": "17c32825d782f80bb66e814ce1d4a430",
-    "semantic_hash": "17c32825d782f80bb66e814ce1d4a430"
+    "mtime": 1793775089.3958986,
+    "seen": 1793880221.547866,
+    "ast_hash": "1a24735c2f4a29b87abbec06f2e34ab1",
+    "semantic_hash": ""
   },
   "django_app/app_teacher/apps.py": {
     "mtime": 1785301014.9477923,
@@ -1500,10 +1500,10 @@
     "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
   },
   "django_app/app_teacher/models.py": {
-    "mtime": 1786423573.162742,
-    "seen": 1790226083.6569197,
-    "ast_hash": "5c6ba35b06c661f1821e52ad09d9083d",
-    "semantic_hash": "5c6ba35b06c661f1821e52ad09d9083d"
+    "mtime": 1793775089.3958986,
+    "seen": 1793880221.5478823,
+    "ast_hash": "7e35b9412ff44a5794cc6d780f246c6c",
+    "semantic_hash": ""
   },
   "django_app/app_teacher/serializers.py": {
     "mtime": 1790234539.6447654,
@@ -1722,15 +1722,15 @@
     "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
   },
   "django_app/app_user/admin.py": {
-    "mtime": 1785301014.9794016,
-    "seen": 1790226083.6569388,
-    "ast_hash": "450759016632f7e33b4d4ebd7dac42af",
-    "semantic_hash": "450759016632f7e33b4d4ebd7dac42af"
+    "mtime": 1790767636.4508028,
+    "seen": 1793880221.5479236,
+    "ast_hash": "47dbb2c6b56519a7f2dfde1790bec38d",
+    "semantic_hash": ""
   },
   "django_app/app_user/all_role_listview.py": {
-    "mtime": 1790227791.123182,
-    "seen": 1790234852.1087277,
-    "ast_hash": "afcc5e7061ea8d4efcb07764fbb5c907",
+    "mtime": 1792987925.7343898,
+    "seen": 1793880221.5479243,
+    "ast_hash": "6352a0555c6db77a9573394e5c59f247",
     "semantic_hash": ""
   },
   "django_app/app_user/apps.py": {
@@ -1884,10 +1884,10 @@
     "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
   },
   "django_app/app_user/models.py": {
-    "mtime": 1785301014.9829054,
-    "seen": 1790226083.6569529,
-    "ast_hash": "f2e945e913666a8c3489fc57d1fc0bbd",
-    "semantic_hash": "f2e945e913666a8c3489fc57d1fc0bbd"
+    "mtime": 1792987925.7343898,
+    "seen": 1793880221.547954,
+    "ast_hash": "6bdb26e4575052a4e583e180fc989bf3",
+    "semantic_hash": ""
   },
   "django_app/app_user/notification_service.py": {
     "mtime": 1785301014.9829054,
@@ -1902,10 +1902,10 @@
     "semantic_hash": "fb7b880908df2df5b4ceede46b479f41"
   },
   "django_app/app_user/serializers.py": {
-    "mtime": 1785301014.9919238,
-    "seen": 1790226083.6569555,
-    "ast_hash": "01c3dd367a7e223ac5dbe6a933461477",
-    "semantic_hash": "01c3dd367a7e223ac5dbe6a933461477"
+    "mtime": 1792559323.3530416,
+    "seen": 1793880221.5479574,
+    "ast_hash": "60d538fb937f513bfdb856426be3fad4",
+    "semantic_hash": ""
   },
   "django_app/app_user/sms_service.py": {
     "mtime": 1785301014.9919238,
@@ -1920,10 +1920,10 @@
     "semantic_hash": "e08f0582500f6562bf0a931ef9503b39"
   },
   "django_app/app_user/urls.py": {
-    "mtime": 1785301014.992583,
-    "seen": 1790226083.656957,
-    "ast_hash": "055c827c7386e9c1a189c406e168d61c",
-    "semantic_hash": "055c827c7386e9c1a189c406e168d61c"
+    "mtime": 1792987925.7445662,
+    "seen": 1793880221.547961,
+    "ast_hash": "d928f04ad32db27cc656682d6eb32c96",
+    "semantic_hash": ""
   },
   "django_app/app_user/utils.py": {
     "mtime": 1785301014.992583,
@@ -1932,10 +1932,10 @@
     "semantic_hash": "24b67b44640ef9df48f9b353a5a3e6bc"
   },
   "django_app/app_user/views.py": {
-    "mtime": 1785301014.992583,
-    "seen": 1790226083.6569579,
-    "ast_hash": "902d1cd939535b1f7c3a746f8d2ca030",
-    "semantic_hash": "902d1cd939535b1f7c3a746f8d2ca030"
+    "mtime": 1792987925.7445662,
+    "seen": 1793880221.547963,
+    "ast_hash": "d8ecff68cc95170959397ada7ea38645",
+    "semantic_hash": ""
   },
   "fastapi_app/main.py": {
     "mtime": 1785301015.0077083,
@@ -2002,54 +2002,6 @@
     "seen": 1790226083.6569636,
     "ast_hash": "03cd305620d14c99ae418d3d6be009ac",
     "semantic_hash": "03cd305620d14c99ae418d3d6be009ac"
-  },
-  "graphify-out/converted/5_b5d085dc.md": {
-    "mtime": 1790225397.2347002,
-    "seen": 1790226083.6569643,
-    "ast_hash": "b51b39d41c93b8c41042680d6490b338",
-    "semantic_hash": "b51b39d41c93b8c41042680d6490b338"
-  },
-  "graphify-out/converted/6_2de5165d.md": {
-    "mtime": 1790225397.247657,
-    "seen": 1790226083.6569648,
-    "ast_hash": "150ace8079a4d8863cb4d3b33c5eda21",
-    "semantic_hash": "150ace8079a4d8863cb4d3b33c5eda21"
-  },
-  "graphify-out/converted/9_ed22e19d.md": {
-    "mtime": 1790225396.721278,
-    "seen": 1790226083.6569655,
-    "ast_hash": "2cd25d3f763c06f52403d4c5c851bf41",
-    "semantic_hash": "2cd25d3f763c06f52403d4c5c851bf41"
-  },
-  "graphify-out/converted/api_85223c56.md": {
-    "mtime": 1790225395.684005,
-    "seen": 1790226083.656966,
-    "ast_hash": "4936d38a6c53d3332b7bf4ced668df24",
-    "semantic_hash": "4936d38a6c53d3332b7bf4ced668df24"
-  },
-  "graphify-out/converted/choice_d9f0c1ab.md": {
-    "mtime": 1790225396.4131205,
-    "seen": 1790226083.6569664,
-    "ast_hash": "0b6bb9d92c8277f30b2ab99f3a5ad445",
-    "semantic_hash": "0b6bb9d92c8277f30b2ab99f3a5ad445"
-  },
-  "graphify-out/converted/composite_75d61e85.md": {
-    "mtime": 1790225396.4265587,
-    "seen": 1790226083.656967,
-    "ast_hash": "0f4bf266942c59e795786046c430b256",
-    "semantic_hash": "0f4bf266942c59e795786046c430b256"
-  },
-  "graphify-out/converted/savol_48e1ceed.md": {
-    "mtime": 1790225396.7557817,
-    "seen": 1790226083.6569674,
-    "ast_hash": "86398d282a8675a8800ee5469d68e844",
-    "semantic_hash": "86398d282a8675a8800ee5469d68e844"
-  },
-  "graphify-out/converted/shablon_6a78ad60.md": {
-    "mtime": 1790225397.18209,
-    "seen": 1790226083.6569679,
-    "ast_hash": "9259c8e2795b2fd7844b2004fd5cf30c",
-    "semantic_hash": "9259c8e2795b2fd7844b2004fd5cf30c"
   },
   "index.html": {
     "mtime": 1785301015.0082617,
@@ -3813,6 +3765,528 @@
     "mtime": 1785301015.1891518,
     "seen": 1790234852.10896,
     "ast_hash": "fc9b08ec3c94f05bbce08c32f9a98004",
+    "semantic_hash": ""
+  },
+  ".vite/deps/_metadata.json": {
+    "mtime": 1792754522.631662,
+    "seen": 1793880221.5475826,
+    "ast_hash": "718805e340a8d798a6807830f35a0630",
+    "semantic_hash": ""
+  },
+  ".vite/deps/package.json": {
+    "mtime": 1792754522.6296628,
+    "seen": 1793880221.547588,
+    "ast_hash": "d0707362e90f00edd12435e9d3b9d71c",
+    "semantic_hash": ""
+  },
+  "django_app/app_liga/__init__.py": {
+    "mtime": 1793771439.6957428,
+    "seen": 1793880221.547677,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": ""
+  },
+  "django_app/app_liga/admin.py": {
+    "mtime": 1793773801.9058285,
+    "seen": 1793880221.5476782,
+    "ast_hash": "15c85cb86d96d1f0839d54eafc8a1d43",
+    "semantic_hash": ""
+  },
+  "django_app/app_liga/apps.py": {
+    "mtime": 1793773803.131832,
+    "seen": 1793880221.547679,
+    "ast_hash": "22642704720aed66f5f9b0a671ff2082",
+    "semantic_hash": ""
+  },
+  "django_app/app_liga/migrations/0001_initial.py": {
+    "mtime": 1793771483.1556714,
+    "seen": 1793880221.5476806,
+    "ast_hash": "1beae65a9da902862001ccb41851740d",
+    "semantic_hash": ""
+  },
+  "django_app/app_liga/migrations/0002_weekly_seasons.py": {
+    "mtime": 1793773805.988738,
+    "seen": 1793880221.5476813,
+    "ast_hash": "a1b24cddce9ea2958e44a65085c5572c",
+    "semantic_hash": ""
+  },
+  "django_app/app_liga/migrations/__init__.py": {
+    "mtime": 1793771439.7124646,
+    "seen": 1793880221.5476823,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": ""
+  },
+  "django_app/app_liga/models.py": {
+    "mtime": 1793773797.8658903,
+    "seen": 1793880221.547683,
+    "ast_hash": "0c4603855a1972e8ea0662cdb2f3a5bf",
+    "semantic_hash": ""
+  },
+  "django_app/app_liga/serializers.py": {
+    "mtime": 1793773799.5140693,
+    "seen": 1793880221.5476842,
+    "ast_hash": "bcec668f81771377876f3e1df7d3d354",
+    "semantic_hash": ""
+  },
+  "django_app/app_liga/services.py": {
+    "mtime": 1793773872.1805663,
+    "seen": 1793880221.5476851,
+    "ast_hash": "b7db3ccd47b94d2fd55711d6a254d28e",
+    "semantic_hash": ""
+  },
+  "django_app/app_liga/signals.py": {
+    "mtime": 1793773801.115194,
+    "seen": 1793880221.5476859,
+    "ast_hash": "594abf42dfd79bd50531bcdb3fc37ea4",
+    "semantic_hash": ""
+  },
+  "django_app/app_liga/tasks.py": {
+    "mtime": 1793773803.1719475,
+    "seen": 1793880221.5476868,
+    "ast_hash": "29555eeb03206bb204b01c47251ff6a5",
+    "semantic_hash": ""
+  },
+  "django_app/app_liga/tests.py": {
+    "mtime": 1793879682.6562915,
+    "seen": 1793880221.547688,
+    "ast_hash": "93f2ef08849122af2a204d087f78733d",
+    "semantic_hash": ""
+  },
+  "django_app/app_liga/translation.py": {
+    "mtime": 1793773803.1516666,
+    "seen": 1793880221.5476887,
+    "ast_hash": "ba9ef63efcda2de50bf21f36a6aa2027",
+    "semantic_hash": ""
+  },
+  "django_app/app_liga/urls.py": {
+    "mtime": 1793773803.1915803,
+    "seen": 1793880221.5476894,
+    "ast_hash": "1f22d9c5edb9e14230074556afbfb91d",
+    "semantic_hash": ""
+  },
+  "django_app/app_liga/views.py": {
+    "mtime": 1793879682.6562915,
+    "seen": 1793880221.5476904,
+    "ast_hash": "1b665593f2585aa99a0bba25e8cab804",
+    "semantic_hash": ""
+  },
+  "django_app/app_management/VIEW/ai_solutions.py": {
+    "mtime": 1793775089.3641136,
+    "seen": 1793880221.5476916,
+    "ast_hash": "1675c6bdf03714781648c02c35428261",
+    "semantic_hash": ""
+  },
+  "django_app/app_management/VIEW/dashboard_overview.py": {
+    "mtime": 1792754121.0580056,
+    "seen": 1793880221.547698,
+    "ast_hash": "2cf8b40ed5de918af3a4debe8dd14176",
+    "semantic_hash": ""
+  },
+  "django_app/app_management/VIEW/free_lesson.py": {
+    "mtime": 1792987925.697574,
+    "seen": 1793880221.547701,
+    "ast_hash": "03d9fd8006f81ff1c024ec677816b445",
+    "semantic_hash": ""
+  },
+  "django_app/app_management/VIEW/product_metrics.py": {
+    "mtime": 1792565534.1225097,
+    "seen": 1793880221.547705,
+    "ast_hash": "168ddd879b0e7d5828c218cba7471562",
+    "semantic_hash": ""
+  },
+  "django_app/app_management/VIEW/site_statistics.py": {
+    "mtime": 1792565535.70043,
+    "seen": 1793880221.5477078,
+    "ast_hash": "dffdff0aff1e48a4c9fcd31306e4a62e",
+    "semantic_hash": ""
+  },
+  "django_app/app_management/migrations/0035_sitevisit.py": {
+    "mtime": 1791784158.002256,
+    "seen": 1793880221.5477505,
+    "ast_hash": "56153f65fb87b1015de15ad60493626e",
+    "semantic_hash": ""
+  },
+  "django_app/app_management/migrations/0036_freelessonrequest.py": {
+    "mtime": 1792987925.7026126,
+    "seen": 1793880221.5477514,
+    "ast_hash": "96316e07e8eb4903674ab926d734ad37",
+    "semantic_hash": ""
+  },
+  "django_app/app_management/site_stats.py": {
+    "mtime": 1791785289.1493778,
+    "seen": 1793880221.5477574,
+    "ast_hash": "ecc0ee065d532b5578200ddffa448bf2",
+    "semantic_hash": ""
+  },
+  "django_app/app_management/tasks.py": {
+    "mtime": 1791784252.0571537,
+    "seen": 1793880221.547758,
+    "ast_hash": "5eed54c125c9df6afbb324427014c6d8",
+    "semantic_hash": ""
+  },
+  "django_app/app_payments/migrations/0016_payment_paid_by_parent_card_pan.py": {
+    "mtime": 1791266573.3551078,
+    "seen": 1793880221.5477855,
+    "ast_hash": "1e1f97c4b57b36d80189efd40969f306",
+    "semantic_hash": ""
+  },
+  "django_app/app_student/View/landing_stats.py": {
+    "mtime": 1793167452.0584946,
+    "seen": 1793880221.5478032,
+    "ast_hash": "eb0728b1e73ddb5feba5f8fef508ef2f",
+    "semantic_hash": ""
+  },
+  "django_app/app_student/View/parent_dashboard.py": {
+    "mtime": 1792987925.7184289,
+    "seen": 1793880221.5478048,
+    "ast_hash": "d79f9e2a7fe573771bf37358cb5c20d8",
+    "semantic_hash": ""
+  },
+  "django_app/app_student/View/student_streak.py": {
+    "mtime": 1792383230.7189758,
+    "seen": 1793880221.5478127,
+    "ast_hash": "c89d6b4938baf15a8f852d49c90c1c4a",
+    "semantic_hash": ""
+  },
+  "django_app/app_student/View/teacher_student_overview.py": {
+    "mtime": 1792471242.4499917,
+    "seen": 1793880221.5478144,
+    "ast_hash": "7ad58e49f1a9cb839886ef69b7527ff0",
+    "semantic_hash": ""
+  },
+  "django_app/app_student/achievements.py": {
+    "mtime": 1791194852.2108824,
+    "seen": 1793880221.547818,
+    "ast_hash": "bbc2620a3ff99d664d1dd36029d39204",
+    "semantic_hash": ""
+  },
+  "django_app/app_student/migrations/0018_topicprogress_result.py": {
+    "mtime": 1790747885.4905553,
+    "seen": 1793880221.5478408,
+    "ast_hash": "70aecb989cdddd3bbfd0342b9cefaf44",
+    "semantic_hash": ""
+  },
+  "django_app/app_student/migrations/0019_achievement_studentachievement.py": {
+    "mtime": 1791194813.857747,
+    "seen": 1793880221.547842,
+    "ast_hash": "a84e614c35c1046842e95e5ff524e506",
+    "semantic_hash": ""
+  },
+  "django_app/app_student/privacy.py": {
+    "mtime": 1793012350.0796964,
+    "seen": 1793880221.5478456,
+    "ast_hash": "f862b8403f3b5218d6aea7a520835716",
+    "semantic_hash": ""
+  },
+  "django_app/app_teacher/ai_client.py": {
+    "mtime": 1793775089.3958986,
+    "seen": 1793880221.547867,
+    "ast_hash": "49719bd5b5518db0051a76f7f27e79db",
+    "semantic_hash": ""
+  },
+  "django_app/app_teacher/migrations/0011_questionaisolution.py": {
+    "mtime": 1793179317.1608026,
+    "seen": 1793880221.5478797,
+    "ast_hash": "03e71a76e5a2193071d2aee85957503a",
+    "semantic_hash": ""
+  },
+  "django_app/app_teacher/migrations/0012_questionimagebackup.py": {
+    "mtime": 1793775089.3958986,
+    "seen": 1793880221.5478804,
+    "ast_hash": "bf5d190e11175a67f79da7c725f586c2",
+    "semantic_hash": ""
+  },
+  "django_app/app_user/VIEW/delete_my_account.py": {
+    "mtime": 1792987925.7211711,
+    "seen": 1793880221.547915,
+    "ast_hash": "52db9ada5e364583d997d4c912067241",
+    "semantic_hash": ""
+  },
+  "django_app/app_user/VIEW/devices_view.py": {
+    "mtime": 1790767628.4811733,
+    "seen": 1793880221.547916,
+    "ast_hash": "75eeef13df8162dc3f6c1f162a4df6be",
+    "semantic_hash": ""
+  },
+  "django_app/app_user/VIEW/monthly_report_view.py": {
+    "mtime": 1792987925.7288854,
+    "seen": 1793880221.547917,
+    "ast_hash": "0285b3da1c4f1150c35e8b7ac16c3ea1",
+    "semantic_hash": ""
+  },
+  "django_app/app_user/VIEW/online_ping.py": {
+    "mtime": 1792987925.7288854,
+    "seen": 1793880221.5479178,
+    "ast_hash": "624f55990c530a016f97648b0f557639",
+    "semantic_hash": ""
+  },
+  "django_app/app_user/VIEW/parent_child_account.py": {
+    "mtime": 1791285156.855719,
+    "seen": 1793880221.5479186,
+    "ast_hash": "cdb0023b426373e8eb09d7b8f7da73ea",
+    "semantic_hash": ""
+  },
+  "django_app/app_user/VIEW/parent_qr_link.py": {
+    "mtime": 1791972065.6756146,
+    "seen": 1793880221.5479193,
+    "ast_hash": "50127ca1a5b05aa1e4a2cd8996923030",
+    "semantic_hash": ""
+  },
+  "django_app/app_user/VIEW/user_avatar.py": {
+    "mtime": 1792560835.0855882,
+    "seen": 1793880221.5479214,
+    "ast_hash": "7e5311600263e184c2c6d504d647cd08",
+    "semantic_hash": ""
+  },
+  "django_app/app_user/authentication.py": {
+    "mtime": 1792987925.7343898,
+    "seen": 1793880221.547926,
+    "ast_hash": "4bb703012cfa9c263579c758dccf6cf5",
+    "semantic_hash": ""
+  },
+  "django_app/app_user/device_service.py": {
+    "mtime": 1792987925.7343898,
+    "seen": 1793880221.5479271,
+    "ast_hash": "7cc0a2ccb6722b85d43c91403b0a6f06",
+    "semantic_hash": ""
+  },
+  "django_app/app_user/management/commands/backfill_daily_activity.py": {
+    "mtime": 1792565552.9603465,
+    "seen": 1793880221.5479279,
+    "ast_hash": "adad0208ee8aa4153fec907e5db13162",
+    "semantic_hash": ""
+  },
+  "django_app/app_user/migrations/0022_userdevice.py": {
+    "mtime": 1790767562.2285576,
+    "seen": 1793880221.5479498,
+    "ast_hash": "2bb2bf1c56e07d45cc06a80caa14c679",
+    "semantic_hash": ""
+  },
+  "django_app/app_user/migrations/0023_user_avatar.py": {
+    "mtime": 1792560952.7673275,
+    "seen": 1793880221.5479505,
+    "ast_hash": "0067137872f9d3f7ceabac91f5cebd10",
+    "semantic_hash": ""
+  },
+  "django_app/app_user/migrations/0024_userdailyactivity.py": {
+    "mtime": 1792565354.5682933,
+    "seen": 1793880221.5479517,
+    "ast_hash": "533364f41c212ba921d3ea973d3866cc",
+    "semantic_hash": ""
+  },
+  "django_app/app_user/migrations/0025_useronlinesession.py": {
+    "mtime": 1792987925.7343898,
+    "seen": 1793880221.5479524,
+    "ast_hash": "c9553eab9fbef1869258eb396e03a627",
+    "semantic_hash": ""
+  },
+  "django_app/app_user/online_service.py": {
+    "mtime": 1792987925.7343898,
+    "seen": 1793880221.5479558,
+    "ast_hash": "c4d101457ced9714bc2f3e0d82009678",
+    "semantic_hash": ""
+  },
+  "django_app/app_user/token_refresh.py": {
+    "mtime": 1790769252.484039,
+    "seen": 1793880221.5479603,
+    "ast_hash": "78d3b419eb207b2e1046630c954dccbe",
+    "semantic_hash": ""
+  },
+  "tarif.py": {
+    "mtime": 1792987925.7499743,
+    "seen": 1793880221.54797,
+    "ast_hash": "237f70f96056ea5e46fae9fc99dc8f07",
+    "semantic_hash": ""
+  },
+  "telegram_bot/__init__.py": {
+    "mtime": 1792133863.4197066,
+    "seen": 1793880221.5479767,
+    "ast_hash": "efc1040d2ff139e98959c20badea6556",
+    "semantic_hash": ""
+  },
+  "telegram_bot/__main__.py": {
+    "mtime": 1792987925.7499743,
+    "seen": 1793880221.5479774,
+    "ast_hash": "53db885499da87ca09d87cece3317b2f",
+    "semantic_hash": ""
+  },
+  "telegram_bot/backup.py": {
+    "mtime": 1792133944.4414146,
+    "seen": 1793880221.5479782,
+    "ast_hash": "40d13c53a58ea9298691c03e1f5c1591",
+    "semantic_hash": ""
+  },
+  "telegram_bot/config.py": {
+    "mtime": 1792133864.4795923,
+    "seen": 1793880221.547979,
+    "ast_hash": "29e1ce39ab720d3d6744586cdb050cb6",
+    "semantic_hash": ""
+  },
+  "telegram_bot/marketing.py": {
+    "mtime": 1792987925.754957,
+    "seen": 1793880221.5479798,
+    "ast_hash": "c4a70273394a0831012ffedc5166d0c6",
+    "semantic_hash": ""
+  },
+  "telegram_bot/state.py": {
+    "mtime": 1792133866.7476013,
+    "seen": 1793880221.5479805,
+    "ast_hash": "249c0d45a1b1f953ca3b427fadd9bbed",
+    "semantic_hash": ""
+  },
+  "telegram_bot/tasks.py": {
+    "mtime": 1792987925.754957,
+    "seen": 1793880221.5479813,
+    "ast_hash": "b4e26129254cb434347835567a0349e3",
+    "semantic_hash": ""
+  },
+  "telegram_bot/telegram_api.py": {
+    "mtime": 1792133902.7629094,
+    "seen": 1793880221.547982,
+    "ast_hash": "ec8a6cf02e41374dd210381c71374ea5",
+    "semantic_hash": ""
+  },
+  "achievements/b.png": {
+    "mtime": 1791195688.9277093,
+    "seen": 1793880221.5480692,
+    "ast_hash": "cf4b3103902892798654e9cc2c754e62",
+    "semantic_hash": ""
+  },
+  "achievements/b_3arl3fp.png": {
+    "mtime": 1791202921.0271516,
+    "seen": 1793880221.54807,
+    "ast_hash": "cf4b3103902892798654e9cc2c754e62",
+    "semantic_hash": ""
+  },
+  "achievements/b_CpPEc1S.png": {
+    "mtime": 1791196687.6373608,
+    "seen": 1793880221.548071,
+    "ast_hash": "cf4b3103902892798654e9cc2c754e62",
+    "semantic_hash": ""
+  },
+  "achievements/b_DBrnKBh.png": {
+    "mtime": 1791202921.0231514,
+    "seen": 1793880221.5480714,
+    "ast_hash": "cf4b3103902892798654e9cc2c754e62",
+    "semantic_hash": ""
+  },
+  "achievements/b_DPtFiOz.png": {
+    "mtime": 1791202921.0191503,
+    "seen": 1793880221.548072,
+    "ast_hash": "cf4b3103902892798654e9cc2c754e62",
+    "semantic_hash": ""
+  },
+  "achievements/b_EJIbGNq.png": {
+    "mtime": 1791200254.9371572,
+    "seen": 1793880221.548073,
+    "ast_hash": "cf4b3103902892798654e9cc2c754e62",
+    "semantic_hash": ""
+  },
+  "achievements/b_FqlfFkG.png": {
+    "mtime": 1791195703.9033055,
+    "seen": 1793880221.5480738,
+    "ast_hash": "cf4b3103902892798654e9cc2c754e62",
+    "semantic_hash": ""
+  },
+  "achievements/b_JkStvGe.png": {
+    "mtime": 1791196687.624243,
+    "seen": 1793880221.5480745,
+    "ast_hash": "cf4b3103902892798654e9cc2c754e62",
+    "semantic_hash": ""
+  },
+  "achievements/b_MPGZcJj.png": {
+    "mtime": 1791200254.9301536,
+    "seen": 1793880221.5480752,
+    "ast_hash": "cf4b3103902892798654e9cc2c754e62",
+    "semantic_hash": ""
+  },
+  "achievements/b_Q00GjFD.png": {
+    "mtime": 1791196687.6118357,
+    "seen": 1793880221.5480757,
+    "ast_hash": "cf4b3103902892798654e9cc2c754e62",
+    "semantic_hash": ""
+  },
+  "achievements/b_RjWtf2g.png": {
+    "mtime": 1791199441.167143,
+    "seen": 1793880221.5480769,
+    "ast_hash": "cf4b3103902892798654e9cc2c754e62",
+    "semantic_hash": ""
+  },
+  "achievements/b_Spdekxj.png": {
+    "mtime": 1791195703.884552,
+    "seen": 1793880221.5480773,
+    "ast_hash": "cf4b3103902892798654e9cc2c754e62",
+    "semantic_hash": ""
+  },
+  "achievements/b_VQPEB3k.png": {
+    "mtime": 1791199441.1714356,
+    "seen": 1793880221.548078,
+    "ast_hash": "cf4b3103902892798654e9cc2c754e62",
+    "semantic_hash": ""
+  },
+  "achievements/b_Xpbev9f.png": {
+    "mtime": 1791199441.1631043,
+    "seen": 1793880221.5480788,
+    "ast_hash": "cf4b3103902892798654e9cc2c754e62",
+    "semantic_hash": ""
+  },
+  "achievements/b_Yl2JvPZ.png": {
+    "mtime": 1791195688.9526825,
+    "seen": 1793880221.5480797,
+    "ast_hash": "cf4b3103902892798654e9cc2c754e62",
+    "semantic_hash": ""
+  },
+  "achievements/b_ZdYol10.png": {
+    "mtime": 1791195718.384202,
+    "seen": 1793880221.5480804,
+    "ast_hash": "cf4b3103902892798654e9cc2c754e62",
+    "semantic_hash": ""
+  },
+  "achievements/b_e6jWClw.png": {
+    "mtime": 1791195718.3872044,
+    "seen": 1793880221.5480812,
+    "ast_hash": "cf4b3103902892798654e9cc2c754e62",
+    "semantic_hash": ""
+  },
+  "achievements/b_j5HFqJp.png": {
+    "mtime": 1791200254.9341574,
+    "seen": 1793880221.5480819,
+    "ast_hash": "cf4b3103902892798654e9cc2c754e62",
+    "semantic_hash": ""
+  },
+  "achievements/b_mTWiiU9.png": {
+    "mtime": 1791195688.947863,
+    "seen": 1793880221.5480826,
+    "ast_hash": "cf4b3103902892798654e9cc2c754e62",
+    "semantic_hash": ""
+  },
+  "achievements/b_nBbyWn9.png": {
+    "mtime": 1791198979.1045856,
+    "seen": 1793880221.5480835,
+    "ast_hash": "cf4b3103902892798654e9cc2c754e62",
+    "semantic_hash": ""
+  },
+  "achievements/b_oKldEun.png": {
+    "mtime": 1791195703.8803475,
+    "seen": 1793880221.5480843,
+    "ast_hash": "cf4b3103902892798654e9cc2c754e62",
+    "semantic_hash": ""
+  },
+  "achievements/b_r8uvguB.png": {
+    "mtime": 1791198979.1157248,
+    "seen": 1793880221.5480847,
+    "ast_hash": "cf4b3103902892798654e9cc2c754e62",
+    "semantic_hash": ""
+  },
+  "achievements/b_xaMFl8f.png": {
+    "mtime": 1791198979.128575,
+    "seen": 1793880221.5480855,
+    "ast_hash": "cf4b3103902892798654e9cc2c754e62",
+    "semantic_hash": ""
+  },
+  "achievements/b_z4SxCeW.png": {
+    "mtime": 1791195718.3912945,
+    "seen": 1793880221.5480862,
+    "ast_hash": "cf4b3103902892798654e9cc2c754e62",
     "semantic_hash": ""
   }
 }

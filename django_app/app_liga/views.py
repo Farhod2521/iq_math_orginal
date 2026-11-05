@@ -290,6 +290,69 @@ def _xlsx(filename, sheet_title, header, rows):
     return response
 
 
+def _attempts_of(test):
+    """Testni ishlaganlar: yakunlaganlar o'rni bilan, ortidan hali ishlayotganlar."""
+    services.finalize_expired(test)
+    return services.ranked_attempts(test) + list(
+        test.attempts.filter(status=LigaAttempt.STATUS_IN_PROGRESS)
+        .select_related('student', 'student__user').order_by('started_at')
+    )
+
+
+def _is_found(attempt, search):
+    return search in attempt.student.full_name.lower() or search in (attempt.student.user.phone or '')
+
+
+def _attempt_row(attempt):
+    student = attempt.student
+    return {
+        'attempt_id': attempt.id,
+        'rank': getattr(attempt, 'rank', None),
+        'student_id': student.id,
+        'full_name': student.full_name,
+        'phone': student.user.phone,
+        'region': student.region,
+        'district': student.districts,
+        'school': student.academy_or_school_name,
+        'status': attempt.status,
+        'started_at': attempt.started_at,
+        'finished_at': attempt.finished_at,
+        'duration_seconds': attempt.duration_seconds,
+        'total_questions': attempt.total_questions,
+        'answered_count': attempt.answered_count,
+        'correct_count': attempt.correct_count,
+        'wrong_count': attempt.wrong_count,
+        'score': attempt.score,
+        'max_score': attempt.max_score,
+    }
+
+
+def _attempts_xlsx(filename, rows, with_grade=False):
+    def local(value):
+        return timezone.localtime(value).strftime('%d.%m.%Y %H:%M:%S') if value else ''
+
+    def minutes(seconds):
+        return f"{seconds // 60:02d}:{seconds % 60:02d}" if seconds is not None else ''
+
+    grade_head = ["Sinf"] if with_grade else []
+    return _xlsx(
+        filename, "Natijalar",
+        grade_head + [
+            "O'rin", "F.I.Sh.", "Telefon", "Viloyat", "Tuman", "Maktab", "Holat", "Boshlagan", "Yakunlagan",
+            "Ishlagan vaqti", "Savollar", "Javob berilgan", "To'g'ri", "Noto'g'ri", "Ball", "Maksimal ball",
+        ],
+        [
+            ([row['grade']] if with_grade else []) + [
+                row['rank'], row['full_name'], row['phone'], row['region'], row['district'], row['school'],
+                row['status'], local(row['started_at']), local(row['finished_at']), minutes(row['duration_seconds']),
+                row['total_questions'], row['answered_count'], row['correct_count'], row['wrong_count'],
+                row['score'], row['max_score'],
+            ]
+            for row in rows
+        ],
+    )
+
+
 class ProtectedDestroyMixin:
     def has_results(self, instance):
         raise NotImplementedError
@@ -437,6 +500,32 @@ class AdminSeasonViewSet(ProtectedDestroyMixin, viewsets.ModelViewSet):
         paginator = StandardResultsSetPagination()
         return paginator.get_paginated_response(paginator.paginate_queryset(rows, request, view=self))
 
+    @action(detail=True, methods=['get'])
+    def participants(self, request, pk=None):
+        """Shu hafta testini ishlaganlar, sinflar bo'yicha: ?week=, ?grade=, ?search=, ?export=xlsx"""
+        season = self.get_object()
+        week = request.query_params.get('week') or ''
+        if not week.isdigit():
+            raise ValidationError({'message': "Hafta raqamini ko'rsating"})
+
+        tests = season.tests.filter(week_number=week).select_related('grade').order_by('grade_id')
+        grade_id = request.query_params.get('grade')
+        if grade_id:
+            tests = tests.filter(grade_id=grade_id)
+        search = (request.query_params.get('search') or '').strip().lower()
+
+        data = [
+            {**_attempt_row(attempt), 'grade': test.grade.name}
+            for test in tests
+            for attempt in _attempts_of(test)
+            if not search or _is_found(attempt, search)
+        ]
+        if request.query_params.get('export') == 'xlsx':
+            return _attempts_xlsx(f'liga_{season.number}_{week}_hafta', data, with_grade=True)
+
+        paginator = StandardResultsSetPagination()
+        return paginator.get_paginated_response(paginator.paginate_queryset(data, request, view=self))
+
 
 class AdminTestViewSet(ProtectedDestroyMixin, viewsets.ModelViewSet):
     serializer_class = AdminTestSerializer
@@ -475,83 +564,25 @@ class AdminTestViewSet(ProtectedDestroyMixin, viewsets.ModelViewSet):
             return Response({'message': "Bu hafta testi tanlangan sinflardan birida allaqachon bor"}, status=400)
         return Response({'created': len(tests)}, status=status.HTTP_201_CREATED)
 
-    @staticmethod
-    def _participant_row(attempt):
-        student = attempt.student
-        return {
-            'attempt_id': attempt.id,
-            'rank': getattr(attempt, 'rank', None),
-            'student_id': student.id,
-            'full_name': student.full_name,
-            'phone': student.user.phone,
-            'region': student.region,
-            'district': student.districts,
-            'school': student.academy_or_school_name,
-            'status': attempt.status,
-            'started_at': attempt.started_at,
-            'finished_at': attempt.finished_at,
-            'duration_seconds': attempt.duration_seconds,
-            'total_questions': attempt.total_questions,
-            'answered_count': attempt.answered_count,
-            'correct_count': attempt.correct_count,
-            'wrong_count': attempt.wrong_count,
-            'score': attempt.score,
-            'max_score': attempt.max_score,
-        }
-
     @action(detail=True, methods=['get'])
     def participants(self, request, pk=None):
         """Testni ishlaganlar: o'rni, vaqti va natijasi. ?search=, ?status=, ?export=xlsx"""
         test = self.get_object()
-        services.finalize_expired(test)
-
-        rows = services.ranked_attempts(test)
-        rows += list(
-            test.attempts.filter(status=LigaAttempt.STATUS_IN_PROGRESS)
-            .select_related('student', 'student__user').order_by('started_at')
-        )
+        rows = _attempts_of(test)
 
         status_filter = request.query_params.get('status')
         if status_filter:
             rows = [item for item in rows if item.status == status_filter]
         search = (request.query_params.get('search') or '').strip().lower()
         if search:
-            rows = [
-                item for item in rows
-                if search in item.student.full_name.lower() or search in (item.student.user.phone or '')
-            ]
+            rows = [item for item in rows if _is_found(item, search)]
 
-        data = [self._participant_row(item) for item in rows]
+        data = [_attempt_row(item) for item in rows]
         if request.query_params.get('export') == 'xlsx':
-            return self._export(test, data)
+            return _attempts_xlsx(f'liga_test_{test.id}', data)
 
         paginator = StandardResultsSetPagination()
         return paginator.get_paginated_response(paginator.paginate_queryset(data, request, view=self))
-
-    @staticmethod
-    def _export(test, rows):
-        def local(value):
-            return timezone.localtime(value).strftime('%d.%m.%Y %H:%M:%S') if value else ''
-
-        def minutes(seconds):
-            return f"{seconds // 60:02d}:{seconds % 60:02d}" if seconds is not None else ''
-
-        return _xlsx(
-            f'liga_test_{test.id}', "Natijalar",
-            [
-                "O'rin", "F.I.Sh.", "Telefon", "Viloyat", "Tuman", "Maktab", "Holat", "Boshlagan", "Yakunlagan",
-                "Ishlagan vaqti", "Savollar", "Javob berilgan", "To'g'ri", "Noto'g'ri", "Ball", "Maksimal ball",
-            ],
-            [
-                [
-                    row['rank'], row['full_name'], row['phone'], row['region'], row['district'], row['school'],
-                    row['status'], local(row['started_at']), local(row['finished_at']), minutes(row['duration_seconds']),
-                    row['total_questions'], row['answered_count'], row['correct_count'], row['wrong_count'],
-                    row['score'], row['max_score'],
-                ]
-                for row in rows
-            ],
-        )
 
 
 class AdminQuestionViewSet(ProtectedDestroyMixin, viewsets.ModelViewSet):

@@ -1,37 +1,37 @@
-# Graph Report - iq_math_orginal  (2026-09-28)
+# Graph Report - iq_math_orginal  (2026-11-05)
 
 ## Corpus Check
-- 343 files · ~1,575,932 words
+- 398 files · ~1,600,949 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 3 file(s) not represented in the graph (top: (none) 2, .tex 1)
 
 ## Summary
-- 2634 nodes · 6577 edges · 212 communities (122 shown, 90 thin omitted)
-- Extraction: 84% EXTRACTED · 16% INFERRED · 0% AMBIGUOUS · INFERRED: 1044 edges (avg confidence: 0.95)
+- 3677 nodes · 9081 edges · 249 communities (135 shown, 114 thin omitted)
+- Extraction: 85% EXTRACTED · 15% INFERRED · 0% AMBIGUOUS · INFERRED: 1340 edges (avg confidence: 0.95)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `4e380f20`
+- Built from commit: `428e2686`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
-- app_student/views.py
+- achievements.py
 - django_db_models_deletion
 - django_db
-- django_utils
-- app_student/serializers.py
+- UniversalCouponAPIView
+- StudentScore
 - app_user/admin.py
 - app_teacher/urls.py
-- app_management/models.py
+- AndroidVersionAPIView
 - SomTransferLog
-- app_user/urls.py
+- app_user/views.py
 - app_management/admin.py
 - TutorGroup
 - invitation_views.py
 - app_payments/views.py
-- .update_user_profile
-- StudyStatsByDateRangeAPIView
+- UserSMSAttempt
+- app_liga/tests.py
 - engine.py
 - TopicHelpRequestIndependent
 - app_battle/views.py
@@ -40,63 +40,63 @@
 - app_battle/models.py
 - app_management/views.py
 - app_tutor/views.py
-- TopicProgress
-- app_user/views.py
+- site_stats.py
+- device_service.py
 - django_apps
-- rest_framework
-- UnsolvedQuestionCreateView
+- app_user/models.py
+- LigaFixtureMixin
 - gruop_student.py
 - math_answer_check.py
 - app_battle/tests.py
 - app_management/signals.py
 - django_urls
-- app_payments/models.py
+- subscriptionplancrud.py
 - results_views.py
 - teacher_groups.py
 - Teacher
 - ckeditor_fields
 - gen_doc.py
-- app_chat/urls.py
+- app_chat/views.py
 - StudentSerializer
 - SubscriptionPlan
 - matchmaking.py
 - MessageSerializer
 - django_conf
-- SystemSettingsCRUDAPIView
-- Access Token (JWT Bearer Auth)
-- helped_bot.py
+- marketing.py
+- WS Chat Test Page (2-Token WebSocket Tester)
+- requests
 - app_book/translation.py
 - app_chat/serializers.py
 - TeacherLoginHistory
 - bot_telegram/main.py
-- app_book/urls.py
+- BookListForUserAPIView
 - All_Role_ListView
-- app_student/View/independentView.py
-- Subject
-- helpers.py
+- ConversationParticipant
+- Student
+- TutorRatingAPIView
 - Product
 - ConversionHistoryCRUDAPIView
 - StudentScoreLogAPIView
 - BattleConsumer
-- bot_telegram/helped_bot.py
+- LigaAttempt
 - app_chat/views.py
-- mathematiciancrud.py
+- Mathematician
 - iq_math_orginal/django_app/app_payments/admin.py
 - StudentCouponAPIView
 - WithdrawalLimitSettingsCRUDAPIView
-- Student
-- certificate_view.py
+- Tutor
+- io
 - StudentSerializerParent
 - TagCRUDAPIView
 - app_management/translation.py
-- MotivationCRUDAPIView
+- Motivation
 - solution_status_crud.py
-- app_student/urls.py
+- app_teacher/serializers.py
 - app_teacher/translation.py
 - BotManager
 - sms_service.py
 - ConversionRateCRUDAPIView
-- IX Sinf (Grade 9) Math Multiple-Choice Test Bank
+- app_liga/services.py
 - SystemSettingsCRUDAPITestCase
 - UploadSetting
 - SubscriptionSetting
@@ -105,653 +105,731 @@
 - redis_client.py
 - Banner
 - expire_pending_payments
-- app_battle/consumers.py
-- UniversalRegisterSerializer
+- backup.py
+- app_user/urls.py
 - elo.py
-- BattleRating
+- app_battle/models.py
 - BookPurchaseAPIView
 - app_book/views.py
 - TeacherFineAPIView
-- TopicSerializer
-- User
-- EloFormulaTests
-- APIView
+- SeasonCloseTests
+- app_user/serializers.py
+- build_child_overview
+- parent_dashboard.py
 - os
-- send_sms
+- online_service.py
 - app_tutor/admin.py
-- MyTopicAddSerializer
-- AdminOfflineOrderAPIView
+- TeacherHelpRequestNotificationAPIView
+- OfflineBookOrder
 - SubjectSerializer
-- SuperAdminDeleteUserAPIView
+- AdminQuestionSerializer
 - app_student/admin.py
-- BookPayment
-- django_test
+- app_book/urls.py
 - LogEntryCRUDAPIView
-- IsSuperAdmin
+- IsSuperAdminOrMentor
 - ReferralCouponSettingsCRUDAPIView
 - IsSuperAdminOrAdmin
 - django_app/app_payments/admin.py
 - TutorStudentBriefSerializer
 - TeacherRegisterSerializer
 - kod_flask.py
-- SubscriptionPlanSerializer
-- 1-daraja (Level 1) Fraction Arithmetic Worksheet
+- LigaQuestionAdmin
+- 1-daraja Worksheet (savol_uz labeled, LaTeX)
 - app_payments/translation.py
 - IsSuperAdmin
-- .post
+- Referral_Tutor_Student
 - MyChapterListView
-- django_contrib
 - UserManager
 - IsTeacherOrSuperAdmin
-- import_questions_from_word.py
-- IsSuperAdminOrAdmin
+- product_metrics.py
+- student_achievements
 - IsSuperAdmin
 - StudentScoreLogAdmin
 - QuickMathQuestionAPIView
 - UserAdmin
-- StudentRatingAPIView
-- app_teacher/serializers.py
-- StudentDailyCoinLog
+- app_liga/views.py
+- TeacherRewardLog
+- Command
 - 0002_book_cover_image_book_file.py
 - 0004_book_description_ru_book_description_uz_and_more.py
-- 0002_message_url.py
-- 0003_message_independent.py
+- AdminApiTests
+- ProductExchange
 - 0003_referralandcouponsettings_coupon_student_cashback_percent_and_more.py
-- 0005_referralandcouponsettings_coupon_student_cashback_percent_and_more.py
+- UserDevice
 - 0006_delete_couponusage.py
-- 0009_referralandcouponsettings_referral_valid_days.py
-- 0012_alter_referralandcouponsettings_student_referral_bonus_points_and_more.py
+- DailyCoinSettings
+- Tag
 - 0013_remove_referralandcouponsettings_referral_bonus_coin.py
 - 0017_uploadedfile.py
 - 0018_referralandcouponsettings_coupon_discount_percent_teacher_and_more.py
-- 0019_alter_referralandcouponsettings_coupon_discount_percent_and_more.py
+- StudentLoginHistory
 - 0020_delete_systemcoupon.py
-- 0025_androidversion.py
-- 0027_alter_faq_url.py
+- TutorCouponViewSet
+- SubscriptionCategoryCRUDAPIView
 - IsSuperAdmin
 - 0030_alter_elon_video.py
 - 0034_certificatesettings.py
-- 0004_alter_userpayment_created_at.py
+- Choice
 - 0006_delete_monthlypayment.py
-- 0007_remove_payment_student_cashback_amount.py
+- ._trends
 - category_supermentor_crud.py
 - 0009_subscriptionplan_name.py
 - 0010_alter_subscriptionplan_name.py
 - IsSuperAdminOrAdmin
 - IsSuperAdminOrAdmin
 - app_student/migrations/0001_initial.py
-- 0006_remove_studentreferraltransaction_referral.py
+- SubjectSerializer
 - IsSuperAdminOrAdmin
 - 0003_book_is_offline_book_quantity.py
-- 0016_studentscorelog_award_type.py
+- login_lock_remaining
 - 0022_elon_news_status_elon_notification_status.py
-- 0032_dailycoinsettings.py
+- SubscriptionCategory
 - 0013_subscriptionbenefit_description_ru_and_more.py
 - 0015_alter_subscription_is_paid_and_more.py
 - 0006_alter_parent_identification.py
-- 0007_student_lang.py
-- 0008_alter_student_lang.py
-- 0009_subject_category_name_ru_subject_category_name_uz.py
+- BasePermission
+- _diagnost_summary
+- ProductExchangeView
 - 0010_alter_user_role.py
 - 0012_teacher_support.py
 - 0014_user_device.py
-- 0015_alter_user_role.py
-- 0016_alter_tutor_options_parent_lang_teacher_lang_and_more.py
-- 0018_user_lang.py
+- ReorderChapterAPIView
+- CreateTeacherCouponAPIView
+- DeleteMyAccountAPIView
 - 0004_rename_student_cashback_amount_studentcoupontransaction_cashback_amount_and_more.py
+- ai_solutions.py
 - Celery
 - 0012_remove_productexchange_status_and_more.py
 - 0006_remove_choice_image_choice_image_url.py
 - 0002_alter_teacher_options_alter_tutor_options.py
 - IsSuperAdminOnly
 - 0007_solutionstatus.py
+- AchievementAdmin
 - 0005_parent_identification.py
+- LandingStatsAPIView
+- ChangeStudentPasswordAPIView
+- ParentCreateSerializer
+- IsLigaAdmin
+- set_group_students
+- Class_Serializer
+- IsSuperAdmin
+- IsSuperAdmin
+- IsSuperAdmin
+- IsSuperAdmin
+- StudentSubjectAccess
+- 0004_remove_referralandcouponsettings_coupon_student_cashback_percent_and_more.py
+- 0010_referralandcouponsettings_referral_bonus_coin.py
+- 0011_product_count.py
+- 0028_mathematician.py
+- 0008_payment_student_cashback_amount.py
+- 0014_subscriptionplan_name_ru_subscriptionplan_name_uz.py
+- 0010_alter_conversionhistory_options_and_more.py
+- 0018_topicprogress_result.py
+- 0008_teachercoupontransaction_payment_amount.py
+- app_tutor/migrations/0001_initial.py
+- 0002_remove_tutorcoupontransaction_student_cashback_amount_and_more.py
+- 0005_remove_tutorreferraltransaction_referral.py
+- 0003_alter_tutor_options_tutor_identification.py
+- 0011_teacherloginhistory.py
+- 0019_user_fcm_token.py
+- 0020_user_is_blocked.py
+- 0021_alter_parentstudentrelation_options_and_more.py
+- 0023_user_avatar.py
+- Django
+- package.json
+- Django REST Framework (djangorestframework)
+- djangorestframework_simplejwt
+- Telethon
+- Kasrlarni bo'lish (Dividing Fractions) - Clean LaTeX
 
 ## God Nodes (most connected - your core abstractions)
-1. `Student` - 153 edges
-2. `Teacher` - 64 edges
-3. `Subject` - 58 edges
-4. `Topic` - 52 edges
-5. `Question` - 48 edges
-6. `TopicProgress` - 45 edges
-7. `Chapter` - 39 edges
-8. `StudentScore` - 38 edges
-9. `User` - 35 edges
-10. `Tutor` - 35 edges
+1. `Student` - 186 edges
+2. `Subject` - 81 edges
+3. `Teacher` - 66 edges
+4. `Topic` - 63 edges
+5. `User` - 60 edges
+6. `TopicProgress` - 57 edges
+7. `Question` - 57 edges
+8. `Payment` - 51 edges
+9. `StudentScore` - 47 edges
+10. `Diagnost_Student` - 44 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `get_logs()` --uses--> `HelpRequestMessageLog`  [INFERRED]
-  helped_bot.py → django_app/app_student/models.py
-- `send_question_to_telegram()` --uses--> `HelpRequestMessageLog`  [INFERRED]
-  helped_bot.py → django_app/app_student/models.py
-- `update_message_log()` --uses--> `HelpRequestMessageLog`  [INFERRED]
-  helped_bot.py → django_app/app_student/models.py
-- `update_chapter_orders()` --uses--> `Subject`  [INFERRED]
-  orderindex.py → django_app/app_user/models.py
-- `channels (Django Channels, WebSocket)` --conceptually_related_to--> `WS Chat Test Page (2-Token WebSocket Tester)`  [INFERRED]
-  requirements.txt → index.html
+- `notify_new_payments()` --uses--> `Payment`  [INFERRED]
+  telegram_bot/marketing.py → django_app/app_payments/models.py
+- `stats_footer()` --uses--> `Payment`  [INFERRED]
+  telegram_bot/marketing.py → django_app/app_payments/models.py
+- `main()` --uses--> `SubscriptionBenefit`  [INFERRED]
+  tarif.py → django_app/app_payments/models.py
+- `main()` --uses--> `SubscriptionPlan`  [INFERRED]
+  tarif.py → django_app/app_payments/models.py
+- `_referral()` --uses--> `StudentReferralTransaction`  [INFERRED]
+  telegram_bot/marketing.py → django_app/app_student/models.py
 
 ## Import Cycles
 - None detected.
 
-## Hyperedges (group relationships)
-- **IQMath Chat Frontend Authentication Flow** — graphify_out_converted_api_85223c56_access_token, student_chat_student_chat_ui, teacher_chat_teacher_chat_ui, shablon_teacher_chat_template [INFERRED 0.75]
-- **IQMath Question Bank Schema Family** — graphify_out_converted_choice_d9f0c1ab_choice_question_schema, graphify_out_converted_shablon_6a78ad60_shablon_template, graphify_out_converted_composite_75d61e85_composite_question_schema, graphify_out_converted_savol_48e1ceed_savol_question_data [INFERRED 0.75]
-- **1-daraja Worksheet Content Across Formats** — graphify_out_converted_6_2de5165d_1_daraja_worksheet, savol_1_daraja_worksheet, testdoc_out_1_daraja_worksheet, testdoc_savol_1_daraja_worksheet [INFERRED 0.85]
+## Communities (249 total, 114 thin omitted)
 
-## Communities (212 total, 90 thin omitted)
-
-### Community 0 - "app_student/views.py"
-Cohesion: 0.14
-Nodes (14): get_daily_coin_limit(), get_or_create_daily_log(), get_today_coin_count(), StudentScoreLog orqali bugungi yig'ilgan tanga sonini olish (mahalliy vaqt…, Bugungi StudentDailyCoinLog ni olish yoki yangi yaratish (mahalliy vaqt…, Kunlik tanga chegrasini admin sozlamasidan olish. Yo'q bo'lsa 10 qaytaradi., StudentScoreLog, CheckAnswersSerializer (+6 more)
+### Community 0 - "achievements.py"
+Cohesion: 0.15
+Nodes (10): activity_dates(), compute_metrics(), _diagnostic_score(), _local_date(), streak_from_dates(), subject_mastery_map(), StudentScoreLog, Meta (+2 more)
 
 ### Community 1 - "django_db_models_deletion"
 Cohesion: 0.03
-Nodes (30): Migration, Migration, Migration, Migration, Migration, Migration, Migration, Migration (+22 more)
+Nodes (32): Migration, Migration, Migration, Migration, Migration, Migration, Migration, Migration (+24 more)
 
 ### Community 2 - "django_db"
 Cohesion: 0.03
-Nodes (30): Migration, Migration, Migration, Migration, Migration, Migration, Migration, Migration (+22 more)
+Nodes (34): Migration, Migration, Migration, Migration, Migration, Migration, Migration, Migration (+26 more)
 
-### Community 3 - "django_utils"
-Cohesion: 0.09
-Nodes (19): datetime, Coupon, ReferralAndCouponSettings, TeacherCouponTransaction, CreateTeacherCouponAPIView, APIView, O"qituvchining promokodini ishlatgan o'quvchilar ro'yxati" GET…, TeacherCouponStudentsAPIView (+11 more)
+### Community 3 - "UniversalCouponAPIView"
+Cohesion: 0.23
+Nodes (5): CouponCreateSerializer, Meta, CouponSerializer, Meta, UniversalCouponAPIView
 
-### Community 4 - "app_student/serializers.py"
-Cohesion: 0.12
-Nodes (16): Chapter_STUDENT_ID_Serializer, CheckChoiceAnswerSerializer, CheckCompositeAnswerSerializer, CheckTextAnswerSerializer, ChoiceSerializer, CompositeSubQuestionSerializer, Meta, MyTopicHelpRequestIndependentSerializer (+8 more)
+### Community 4 - "StudentScore"
+Cohesion: 0.07
+Nodes (17): ConversionHistory, Meta, StudentScore, Meta, SubjectCategoryDetailSerializer, Meta, SubjectStatsMobileAppSerializer, Meta (+9 more)
 
 ### Community 5 - "app_user/admin.py"
-Cohesion: 0.19
-Nodes (8): LogEntryAdmin, ParentAdmin, register, ReferralAdmin, StudentAdmin, TeacherAdmin, TutorAdmin, django_contrib_admin_models
+Cohesion: 0.17
+Nodes (7): LogEntryAdmin, ParentAdmin, ReferralAdmin, StudentAdmin, TeacherAdmin, TutorAdmin, UserDeviceAdmin
 
 ### Community 6 - "app_teacher/urls.py"
-Cohesion: 0.06
-Nodes (35): base64, bs4, Question, ChoiceSerializer, CompositeSubQuestionSerializer, QuestionSerializer, SubjectSerializer, ChangeStudentPasswordAPIView (+27 more)
-
-### Community 7 - "app_management/models.py"
 Cohesion: 0.07
-Nodes (24): AndroidVersion, Category, CertificateSettings, DailyCoinSettings, Elon, Meta, Motivation, SolutionStatus (+16 more)
+Nodes (30): Question, Meta, ChoiceSerializer, Meta, CompositeSubQuestionSerializer, Meta, MyTopicAddSerializer, Meta (+22 more)
+
+### Community 7 - "AndroidVersionAPIView"
+Cohesion: 0.29
+Nodes (4): AndroidVersion, AndroidVersionSerializer, Meta, AndroidVersionAPIView
 
 ### Community 8 - "SomTransferLog"
-Cohesion: 0.14
-Nodes (11): Student ↔ Student so"m o'tkazish logi." - is_confirmed=False → OTP kutilmoqda…, SomTransferLog, APIView, 2-qadam: OTP kodni tasdiqlash va so"mni o'tkazish." POST /student/som-…, GET /student/by-identification/<identification>/ Identification raqami bo'yicha…, Studentning so"m o'tkazish tarixi (yuborgan va qabul qilgan)." GET…, 1-qadam: So"m o'tkazish so'rovi." Qabul qiluvchi identification raqami va…, SomTransferConfirmAPIView (+3 more)
+Cohesion: 0.12
+Nodes (6): SomTransferLog, Meta, SomTransferConfirmAPIView, SomTransferHistoryAPIView, SomTransferRequestAPIView, StudentByIdentificationAPIView
 
-### Community 9 - "app_user/urls.py"
-Cohesion: 0.06
-Nodes (32): UserSMSAttempt, ChangePasswordView, APIView, UniversalUpdateView, VerifyPhoneChangeView, AddAccountAPIView, AdminResetUserPasswordAPIView, BlockUserAPIView (+24 more)
+### Community 9 - "app_user/views.py"
+Cohesion: 0.05
+Nodes (24): Device, UserSession, AddAccountSerializer, SessionListSerializer, Meta, create_user_tokens(), AddAccountAPIView, AddChildRequestAPIView (+16 more)
 
 ### Community 10 - "app_management/admin.py"
-Cohesion: 0.08
-Nodes (25): BannerAdmin, CategoryAdmin, CertificateSettingsAdmin, ConversionRateAdmin, Coupon_Tutor_StudentAdmin, DailyCoinSettingsAdmin, ElonAdmin, FAQAdmin (+17 more)
+Cohesion: 0.07
+Nodes (22): BannerAdmin, CategoryAdmin, CertificateSettingsAdmin, ConversionRateAdmin, Coupon_Tutor_StudentAdmin, DailyCoinSettingsAdmin, ElonAdmin, FAQAdmin (+14 more)
 
 ### Community 11 - "TutorGroup"
-Cohesion: 0.08
-Nodes (33): _detail_context(), APIView, O'qituvchi (tutor) guruhlari: yaratish, ro'yxat, tahrirlash, o'chirish va…, POST /api/v1/tutor/tutor/groups/<pk>/students/ - {student_ids: []} guruhga…, GET /api/v1/tutor/tutor/my-students/ - tutor promo/kupon orqali qo'shgan…, group_id/group_name ni ortiqcha so'rovsiz olish uchun tutor guruhlarini…, Guruh queryset'i — o'quvchilari va ularning guruh nomlari bilan birga., TutorGroupDetailSerializer uchun kontekst (tutor + o'rtacha ball). (+25 more)
+Cohesion: 0.09
+Nodes (15): _detail_context(), _students_with_groups(), _tutor_groups(), TutorGroupDetailAPIView, TutorGroupListCreateAPIView, TutorGroupStudentsAPIView, TutorStudentListAPIView, get_group_average_map() (+7 more)
 
 ### Community 12 - "invitation_views.py"
-Cohesion: 0.09
-Nodes (26): get_student(), IsStudent, BasePermission, Faqat o'quvchi profiliga ega foydalanuvchi., Request egasining o'quvchi profili yoki None., _class_uz(), _current_group(), _invitation_payload() (+18 more)
+Cohesion: 0.08
+Nodes (15): get_student(), IsStudent, IsTutor, _class_uz(), _current_group(), _invitation_payload(), _mask_phone(), _student_payload() (+7 more)
 
 ### Community 13 - "app_payments/views.py"
-Cohesion: 0.14
-Nodes (19): dateutil_relativedelta, Payment, PaymentSerializer, PaymentSuperAdminSerializer, PaymentTeacherSerializer, get_multicard_token(), CheckCouponAPIView, InitiatePaymentAPIView (+11 more)
+Cohesion: 0.04
+Nodes (44): Coupon_Tutor_Student, Meta, FullStatisticsAPIView, Payment, Meta, Subscription, Meta, SubscriptionPlan (+36 more)
 
-### Community 14 - ".update_user_profile"
-Cohesion: 0.25
-Nodes (4): Foydalanuvchi profilini yangilash (telefon raqamisiz), Rolega xos fieldlarni modelga saqlashdan oldin normalize qilish., Role bo"yicha profil ma'lumotlarini tayyorlash", Role profilini yangilash
+### Community 14 - "UserSMSAttempt"
+Cohesion: 0.11
+Nodes (7): UserSMSAttempt, send_sms_resend(), ChangePasswordView, UniversalUpdateView, VerifyPhoneChangeView, ForgotPasswordView, ResendSMSCodeView
 
-### Community 15 - "StudyStatsByDateRangeAPIView"
-Cohesion: 0.18
-Nodes (7): APIView, Oy ichidagi hafta raqamini hisoblaydi, Boshqa loyihadagi API'lar bilan bir xil pagination pattern…, StudentTopAPIView, StudyStatsByDateRangeAPIView, SubjectProgressAPIView, WeeklyStudyStatsAPIView
+### Community 15 - "app_liga/tests.py"
+Cohesion: 0.05
+Nodes (31): LigaChoiceInline, LigaChoice, Meta, LigaQuestion, Meta, LigaSeason, Meta, LigaTest (+23 more)
 
 ### Community 16 - "engine.py"
 Cohesion: 0.11
-Nodes (33): bot_elo_before(), bot_elo_for_match(), pick_bot_difficulty(), pick_bot_identity(), Bot identity/difficulty selection — kept separate from engine.py so the "which…, advance_to_next_question(), _arm_question_timers(), _avg_seconds_on_correct() (+25 more)
+Nodes (31): bot_elo_before(), bot_elo_for_match(), pick_bot_difficulty(), pick_bot_identity(), advance_to_next_question(), _arm_question_timers(), _avg_seconds_on_correct(), _award_battle_win_reward() (+23 more)
 
 ### Community 17 - "TopicHelpRequestIndependent"
-Cohesion: 0.08
-Nodes (19): TopicHelpRequestIndependent, TopicHelpRequestIndependentDetailSerializer, AssignTeacherAPIView, GetTelegramIdFromTopicHelpAPIView, APIView, StudentTopicHelpRequestListView, TopicHelpRequestIndependentDetailAPIView, GetTelegramIDFromHelpRequestAPIView (+11 more)
+Cohesion: 0.09
+Nodes (16): Conversation, Meta, TypingIndicator, Meta, TopicHelpRequestIndependent, MyTopicHelpRequestIndependentSerializer, Meta, TopicHelpRequestIndependentDetailSerializer (+8 more)
 
 ### Community 18 - "app_battle/views.py"
-Cohesion: 0.14
-Nodes (21): collections, level_for_elo(), level_progress(), (floor, ceiling, elo_into_band, band_width, pct_to_next) for the level-progress…, Never emit anything that reveals bot-ness — name/elo/level must be…, RoomCreateSerializer, RoomJoinSerializer, serialize_participant() (+13 more)
+Cohesion: 0.16
+Nodes (15): BattleEloLog, Meta, RoomCreateSerializer, RoomJoinSerializer, serialize_room_snapshot(), CancelRoomAPIView, CreateRoomAPIView, EloHistoryAPIView (+7 more)
 
 ### Community 19 - "app_teacher/models.py"
 Cohesion: 0.05
-Nodes (40): ChapterAdmin, ChoiceAdmin, ChoiceInline, CompositeSubQuestionAdmin, CompositeSubQuestionInline, GeneratedChoiceOpenAiAdmin, GeneratedChoiceOpenAiInline, GeneratedQuestionOpenAiAdmin (+32 more)
+Nodes (32): UnsolvedQuestionCreateView, UnsolvedQuestionReportListView, ChapterAdmin, ChoiceAdmin, ChoiceInline, CompositeSubQuestionAdmin, CompositeSubQuestionInline, GeneratedChoiceOpenAiAdmin (+24 more)
 
 ### Community 20 - "SubscriptionReadSerializer"
-Cohesion: 0.29
-Nodes (6): Meta, SubscriptionCreateUpdateSerializer, SubscriptionReadSerializer, MySubscriptionAPIView, APIView, SubscriptionCRUDAPIView
+Cohesion: 0.24
+Nodes (6): SubscriptionCreateUpdateSerializer, Meta, SubscriptionReadSerializer, Meta, MySubscriptionAPIView, SubscriptionCRUDAPIView
 
 ### Community 21 - "app_battle/models.py"
-Cohesion: 0.13
-Nodes (14): BattleBotDifficultyAdmin, BattleBotIdentityAdmin, BattleEloLogAdmin, BattleParticipantInline, BattleRatingAdmin, BattleRoomAdmin, register, Command (+6 more)
+Cohesion: 0.11
+Nodes (13): BattleBotDifficultyAdmin, BattleBotIdentityAdmin, BattleEloLogAdmin, BattleParticipantInline, BattleRatingAdmin, BattleRoomAdmin, Command, BattleBotDifficulty (+5 more)
 
 ### Community 22 - "app_management/views.py"
 Cohesion: 0.08
-Nodes (26): Mathematician, UploadedFile, ElonSerializer, MathematicianDetailSerializer, MathematicianListSerializer, ElonCRUDAPIView, IsSuperAdmin, APIView (+18 more)
+Nodes (18): Elon, Meta, UploadedFile, Meta, ElonSerializer, Meta, ElonCRUDAPIView, IsSuperAdmin (+10 more)
 
 ### Community 23 - "app_tutor/views.py"
-Cohesion: 0.08
-Nodes (31): Coupon_Tutor_Student, Referral_Tutor_Student, Meta, TutorCouponTransaction, TutorReferralTransaction, TutorWithdrawal, WithdrawalLimitSettings, GET /api/v1/tutor/tutor/results/overview/?period=30 - tutor paneli uchun umumiy… (+23 more)
+Cohesion: 0.09
+Nodes (25): CouponUsage_Tutor_Student, Meta, get_tutor_student_ids(), TutorCouponTransaction, Meta, TutorReferralTransaction, Meta, TutorWithdrawal (+17 more)
 
-### Community 24 - "TopicProgress"
-Cohesion: 0.14
-Nodes (15): Subscription, StudentReferral, StudentReferralTransaction, TopicProgress, DiagnostSubjectSerializer, ReferredStudentSerializer, ChapterTopicProgressAPIView, DiagnostChapterTopicProgressAPIView (+7 more)
-
-### Community 25 - "app_user/views.py"
+### Community 24 - "site_stats.py"
 Cohesion: 0.06
-Nodes (41): Device, ParentLoginHistory, StudentLoginHistory, TutorLoginHistory, UserSession, AddAccountSerializer, check_login_attempts(), Class_Serializer (+33 more)
+Nodes (20): SiteVisit, Meta, cached_geo(), detect_source(), _host_matches(), is_public_ip(), _lookup_ip_api(), _lookup_ip_api_single() (+12 more)
+
+### Community 25 - "device_service.py"
+Cohesion: 0.08
+Nodes (19): attach_device_claim(), client_ip(), deactivate_device(), device_info_from_request(), device_limit_response_data(), DeviceLimitReached, _forget_cache(), _parse_user_agent() (+11 more)
 
 ### Community 26 - "django_apps"
-Cohesion: 0.07
-Nodes (19): AppBattleConfig, AppConfig, AppBookConfig, AppConfig, AppChatConfig, AppConfig, AppManagementConfig, AppConfig (+11 more)
+Cohesion: 0.06
+Nodes (10): AppBattleConfig, AppBookConfig, AppChatConfig, AppLigaConfig, AppManagementConfig, AppPaymentsConfig, AppStudentConfig, AppTeacherConfig (+2 more)
 
-### Community 27 - "rest_framework"
+### Community 27 - "app_user/models.py"
 Cohesion: 0.09
-Nodes (25): ConversionRate, ChapterProgress, ConversionHistory, Meta, ProductExchange, StudentScore, ConvertView, APIView (+17 more)
+Nodes (8): Product, Meta, ReferralAndCouponSettings, Meta, IsTeacherOrSuperAdmin, TeacherProductExchange, Meta, CouponTransactionSerializer
 
-### Community 28 - "UnsolvedQuestionCreateView"
-Cohesion: 0.40
-Nodes (3): APIView, UnsolvedQuestionCreateView, UnsolvedQuestionReportListView
+### Community 28 - "LigaFixtureMixin"
+Cohesion: 0.09
+Nodes (9): is_subscription_active(), join_season(), start_attempt(), student_grade_id(), AnswerTests, JoinTests, LigaFixtureMixin, PointsTests (+1 more)
 
 ### Community 29 - "gruop_student.py"
-Cohesion: 0.14
-Nodes (12): Group, GroupSerializer, AddStudentsToGroupAPIView, GroupCreateAPIView, GroupListAPIView, _is_superadmin(), IsSuperAdmin, IsTeacherOrSuperAdmin (+4 more)
+Cohesion: 0.11
+Nodes (14): Group, Meta, GroupSerializer, GroupSerializer_DETAIL, Meta, Meta, AddStudentsToGroupAPIView, GroupCreateAPIView (+6 more)
 
 ### Community 30 - "math_answer_check.py"
-Cohesion: 0.11
-Nodes (24): advanced_math_check(), clean_latex(), clean_student_answers_list(), compare_answers(), decimal_comma_to_dot(), detect_variables(), html_to_math_text(), insert_multiplication() (+16 more)
+Cohesion: 0.06
+Nodes (22): _client_ip(), _extra_note(), FreeLessonCreateAPIView, FreeLessonListAPIView, _normalize_phone(), serialize(), get_daily_coin_limit(), get_or_create_daily_log() (+14 more)
 
 ### Community 31 - "app_battle/tests.py"
 Cohesion: 0.14
-Nodes (10): BattleFixtureMixin, EngineFullMatchTests, GradingTests, MatchmakingTests, PlacementEloRevealTests, Covers the product spec directly: no visible ELO during the first 10 matches,…, Class, patch (+2 more)
+Nodes (6): create_participant_for_student(), BattleFixtureMixin, EngineFullMatchTests, GradingTests, MatchmakingTests, PlacementEloRevealTests
 
 ### Community 32 - "app_management/signals.py"
-Cohesion: 0.15
-Nodes (18): book_created_notification(), receiver, auto_delete_banner_image_on_change(), auto_delete_banner_image_on_delete(), auto_delete_system_file_on_change(), auto_delete_system_file_on_delete(), elon_send_notification(), elon_track_notification_status() (+10 more)
+Cohesion: 0.07
+Nodes (18): book_created_notification(), award_daily_login(), award_subject_work(), SystemSettings, Meta, SystemSettingsSerializer, Meta, auto_delete_banner_image_on_change() (+10 more)
 
 ### Community 33 - "django_urls"
-Cohesion: 0.16
-Nodes (10): channels_routing, ASGI config for config project. It exposes the ASGI callable as a module-level…, django, JwtAuthMiddleware, JwtAuthMiddlewareStack(), django_contrib_auth_models, django_core_asgi, django_urls (+2 more)
+Cohesion: 0.11
+Nodes (3): ChatConsumer, JwtAuthMiddleware, JwtAuthMiddlewareStack()
 
-### Community 34 - "app_payments/models.py"
-Cohesion: 0.20
-Nodes (11): Meta, SubscriptionBenefit, SubscriptionCategory, SubscriptionBenefitStatusSerializer, Meta, SubscriptionBenefitCreateSerializer, SubscriptionBenefitReadSerializer, SubscriptionCategoryCreateSerializer (+3 more)
+### Community 34 - "subscriptionplancrud.py"
+Cohesion: 0.23
+Nodes (9): SubscriptionBenefit, Meta, SubscriptionBenefitStatusSerializer, Meta, SubscriptionBenefitCreateSerializer, Meta, SubscriptionBenefitReadSerializer, Meta (+1 more)
 
 ### Community 35 - "results_views.py"
-Cohesion: 0.14
-Nodes (21): IsTutor, Faqat tutor profiliga ega foydalanuvchi (admin/superadmin ham ko'ra oladi)., _build_student_rows(), _group_map(), _percent(), APIView, O'qituvchi (tutor) o'z o'quvchilarining natijalarini ko'rishi uchun API'lar.…, student_id -> {id, name} (tutorning qaysi guruhida ekanligi). (+13 more)
+Cohesion: 0.11
+Nodes (15): get_tutor_students(), TutorGroup, Meta, _build_student_rows(), _group_map(), _percent(), _round(), _score_map() (+7 more)
 
 ### Community 36 - "teacher_groups.py"
-Cohesion: 0.11
-Nodes (23): Tutor o'quvchi serializeridan meros: sinf nomlari o'sha yerda hisoblanadi.…, TeacherGroupStudentSerializer, TeacherGroupWriteSerializer, _average_map(), _detail_response(), _get_teacher(), IsTeacher, APIView (+15 more)
+Cohesion: 0.09
+Nodes (18): TeacherGroupDetailSerializer, Meta, TeacherGroupListSerializer, Meta, TeacherGroupStudentSerializer, TeacherGroupWriteSerializer, Meta, _average_map() (+10 more)
 
 ### Community 37 - "Teacher"
-Cohesion: 0.33
-Nodes (5): ConversationAssignment, ConversationTransferSerializer, TeacherListSerializer, ConversationTransferAPIView, Teacher
+Cohesion: 0.14
+Nodes (10): ConversationAssignment, IsTeacher, ConversationTransferSerializer, TeacherListSerializer, Meta, ConversationTransferAPIView, TeacherScore, Meta (+2 more)
 
 ### Community 38 - "ckeditor_fields"
-Cohesion: 0.09
-Nodes (12): ckeditor_fields, Migration, Migration, Migration, Migration, Migration, Migration, Migration (+4 more)
+Cohesion: 0.08
+Nodes (12): Migration, Migration, Migration, Migration, Migration, Migration, Migration, Migration (+4 more)
 
 ### Community 39 - "gen_doc.py"
-Cohesion: 0.16
-Nodes (9): docx_enum_text, docx_oxml, docx_oxml_ns, docx_shared, box_title(), endpoint_line(), shade_cell(), shade_run() (+1 more)
+Cohesion: 0.07
+Nodes (8): Command, _avatar_url(), UserAvatarAPIView, box_title(), endpoint_line(), shade_cell(), shade_run(), tbl()
 
-### Community 40 - "app_chat/urls.py"
-Cohesion: 0.14
-Nodes (8): APIView, POST { "teacher_id": 5 } → shu teacher qancha chatga javob bergan…, ReadMessageAPIView, SendMessageAPIView, SuperAdminTeachersClosedChatsStatsAPIView, TeacherClosedChatsStatsAPIView, TeacherStatsByIdAPIView, TotalUnreadChatsAPIView
+### Community 40 - "app_chat/views.py"
+Cohesion: 0.12
+Nodes (17): ConversationRating, Meta, ConfirmCloseAndRateSerializer, ConversationSerializer, Meta, broadcast_chat_message(), ConfirmCloseAndRateAPIView, ConversationMessagesAPIView (+9 more)
 
 ### Community 41 - "StudentSerializer"
 Cohesion: 0.14
-Nodes (4): StudentsWithoutGroupAPIView, StudentSerializer, POST: { "phone": 998911234567, "telegram_id": 454465465 } phone bo"lsa…, UpdateTelegramIDAPIView
+Nodes (6): StudentSerializer, Meta, TeacherSerializer, Meta, TelegramIDCheckAPIView, UpdateTelegramIDAPIView
 
 ### Community 42 - "SubscriptionPlan"
-Cohesion: 0.17
-Nodes (7): SubscriptionPlan, SubscriptionPlanCREATESerializer, SubscriptionREADPlanSerializer, IsSuperAdmin, APIView, BasePermission, SubscriptionPlanCRUDAPIView
+Cohesion: 0.24
+Nodes (5): SubscriptionPlanCREATESerializer, Meta, SubscriptionREADPlanSerializer, Meta, SubscriptionPlanCRUDAPIView
 
 ### Community 43 - "matchmaking.py"
 Cohesion: 0.22
-Nodes (15): _advisory_lock_key(), cancel_room(), create_participant_for_student(), find_or_create_room(), join_room_by_code(), _new_room(), _random_bot_delay(), Room creation / matchmaking. The only place that decides *whether* two students… (+7 more)
+Nodes (10): _advisory_lock_key(), cancel_room(), find_or_create_room(), join_room_by_code(), _new_room(), _random_bot_delay(), RoomFull, RoomNotJoinable (+2 more)
 
 ### Community 44 - "MessageSerializer"
-Cohesion: 0.21
-Nodes (4): MessageReceipt, MessageSerializer, ConversationMessagesAPIView, RequestCloseConversationAPIView
+Cohesion: 0.25
+Nodes (3): MessageSerializer, Meta, SendMessageAPIView
 
 ### Community 45 - "django_conf"
-Cohesion: 0.09
-Nodes (12): Migration, Migration, Migration, Migration, Migration, Migration, Migration, Migration (+4 more)
+Cohesion: 0.06
+Nodes (15): Migration, Migration, Migration, Migration, Migration, Migration, Migration, Migration (+7 more)
 
-### Community 46 - "SystemSettingsCRUDAPIView"
-Cohesion: 0.18
-Nodes (7): IsTeacherOrSuperAdmin, BasePermission, Teacher va SuperAdmin rollari kira oladi, SystemSettingsSerializer, APIView, Singleton model - tizimda faqat 1 ta SystemSettings yozuvi bo'ladi. GET…, SystemSettingsCRUDAPIView
+### Community 46 - "marketing.py"
+Cohesion: 0.10
+Nodes (20): FreeLessonRequest, Meta, is_virtual_phone(), run_backup(), main(), _esc(), format_lead(), format_payment() (+12 more)
 
-### Community 47 - "Access Token (JWT Bearer Auth)"
-Cohesion: 0.18
-Nodes (19): Access Token (JWT Bearer Auth), POST /user/auth/add-account/ Endpoint, IQMath API Base URL (api.iqmath.uz), Multi-Akkount API (Telegram-style Multi-Account API), Parent-Child Linking via SMS Verification, POST /user/auth/remove-account/ Endpoint, GET /user/auth/sessions/ Endpoint, POST /user/auth/switch-account/ Endpoint (+11 more)
+### Community 47 - "WS Chat Test Page (2-Token WebSocket Tester)"
+Cohesion: 0.50
+Nodes (5): WS Chat Test Page (2-Token WebSocket Tester), channels (Django Channels, WebSocket), Teacher Chat Template (Basic), O'quvchi Chat (Student Chat UI), O'qituvchi Chat (Teacher Chat UI)
 
-### Community 48 - "helped_bot.py"
-Cohesion: 0.20
-Nodes (18): ask_for_phone(), get_logs(), get_student_telegram_id(), handle_callback(), handle_contact(), handle_message(), main(), DEFAULT_TYPE (+10 more)
+### Community 48 - "requests"
+Cohesion: 0.12
+Nodes (19): get_logs(), get_student_telegram_id(), handle_callback(), handle_message(), main(), send_question_to_telegram(), update_message_log(), HelpRequestMessageLog (+11 more)
 
 ### Community 49 - "app_book/translation.py"
-Cohesion: 0.28
-Nodes (7): BookTranslationOptions, CategoryTranslationOptions, TranslationOptions, TagTranslationOptions, TranslationOptions, TopicHelpRequestIndependentTranslationOptions, modeltranslation_translator
+Cohesion: 0.60
+Nodes (3): BookTranslationOptions, CategoryTranslationOptions, TagTranslationOptions
 
 ### Community 50 - "app_chat/serializers.py"
-Cohesion: 0.23
-Nodes (8): ConversationRating, ConfirmCloseAndRateSerializer, ConversationMetaMixin, ConversationRatingSerializer, ConversationSerializer, get_user_display_name(), Meta, ConfirmCloseAndRateAPIView
+Cohesion: 0.21
+Nodes (6): MessageReceipt, Meta, ConversationMetaMixin, ConversationRatingSerializer, Meta, get_user_display_name()
 
 ### Community 51 - "TeacherLoginHistory"
-Cohesion: 0.11
-Nodes (14): PageNumberPagination, StandardResultsSetPagination, ListAPIView, StudentLoginHistoryListAPIView, APIView, _serialize_diagnost(), SuperAdminDiagnostCRUDAPIView, APIView (+6 more)
+Cohesion: 0.08
+Nodes (12): StandardResultsSetPagination, StudentLoginHistorySerializer, Meta, StudyStatsByDateRangeAPIView, StudentLoginHistoryListAPIView, _serialize_diagnost(), SuperAdminDiagnostCRUDAPIView, TeacherLoginHistorySerializer (+4 more)
 
 ### Community 52 - "bot_telegram/main.py"
-Cohesion: 0.24
-Nodes (12): asyncio, answer_help_request(), handle_media_answer(), handle_teacher_callback(), DEFAULT_TYPE, Update, receive_answer_text(), setup_handlers() (+4 more)
-
-### Community 53 - "app_book/urls.py"
-Cohesion: 0.16
-Nodes (9): BookInitiatePaymentAPIView, BookListForUserAPIView, MyBookPaymentsAPIView, MyPurchasedBooksAPIView, APIView, GET /book/my-payments/ → o'z kitob to'lovlari ro'yxati GET /book/my-…, GET /book/my-books/ GET /book/my-books/<pk>/ Role asosida filtrlaydi: - student…, GET /book/my-purchases/ → barcha sotib olingan kitoblar GET /book/my-… (+1 more)
+Cohesion: 0.29
+Nodes (7): get_teacher_chat_ids(), answer_help_request(), handle_media_answer(), handle_teacher_callback(), receive_answer_text(), setup_handlers(), teacher_menu()
 
 ### Community 54 - "All_Role_ListView"
-Cohesion: 0.19
-Nodes (8): All_Role_ListView, escape_uri_path(), Fayl nomini URLga moslashtirish, {profile_id: oxirgi login_time} — bitta GROUP BY so'rov bilan, Berilgan userlar uchun login/to'lov/diagnostika ma'lumotlarini oldindan yig'ish, Foydalanuvchi roliga qarab profil ma'lumotlarini olish, Rolni ko'rinishli qilib qaytarish, StudentsListView
+Cohesion: 0.07
+Nodes (11): All_Role_ListView, DeleteStudentProfileAPIView, escape_uri_path(), ParentDetailAPIView, IsSuperAdminOnly, SuperAdminDeleteUserAPIView, IsSuperAdminOrAdmin, _device_group() (+3 more)
 
-### Community 55 - "app_student/View/independentView.py"
-Cohesion: 0.14
-Nodes (14): CreateAPIView, Conversation, ConversationParticipant, Message, Meta, TypingIndicator, create_message(), user_in_conversation() (+6 more)
+### Community 55 - "ConversationParticipant"
+Cohesion: 0.18
+Nodes (8): ConversationParticipant, Meta, Message, Meta, create_message(), user_in_conversation(), increase_unread_count(), StudentSupportChatMessageAPIView
 
-### Community 56 - "Subject"
-Cohesion: 0.12
-Nodes (18): _build_response(), get_next_topic_for_student(), Studentning keyingi o'rganishi kerak bo'lgan mavzusini qaytaradi. `subject`…, ChapterSerializer, TopicHelpRequestIndependentSerializer, TopicSerializer1, _class_sort_key(), APIView (+10 more)
+### Community 56 - "Student"
+Cohesion: 0.03
+Nodes (73): AISolutionTreeAPIView, get_today_coin_count(), _build_response(), get_next_topic_for_student(), ChapterProgress, Meta, Diagnost_Student, StudentReferral (+65 more)
 
-### Community 57 - "helpers.py"
-Cohesion: 0.19
-Nodes (11): O'qituvchi (tutor) modullari uchun umumiy yordamchi funksiyalar., _collect_student_sets(), _parse_period(), _period_start(), APIView, O'qituvchilar (tutorlar) reytingi. Reyting o'qituvchi promo kodi yoki referal…, period: 'all' yoki kunlar soni., {tutor_id: {"referral": set(student_id), "coupon": set(student_id)}} Uch manba… (+3 more)
+### Community 57 - "TutorRatingAPIView"
+Cohesion: 0.29
+Nodes (3): _parse_period(), _period_start(), TutorRatingAPIView
 
 ### Community 58 - "Product"
-Cohesion: 0.17
-Nodes (9): Product, ProductSerializer, IsSuperAdmin, Meta, ProductCRUDAPIView, ProductWriteSerializer, APIView, BasePermission (+1 more)
+Cohesion: 0.21
+Nodes (5): ProductSerializer, Meta, ProductCRUDAPIView, ProductWriteSerializer, Meta
 
 ### Community 59 - "ConversionHistoryCRUDAPIView"
 Cohesion: 0.27
-Nodes (6): _build_qs(), ConversionHistoryCRUDAPIView, ConversionHistoryPagination, APIView, PageNumberPagination, _serialize_conversion()
+Nodes (4): _build_qs(), ConversionHistoryCRUDAPIView, ConversionHistoryPagination, _serialize_conversion()
 
 ### Community 60 - "StudentScoreLogAPIView"
 Cohesion: 0.15
-Nodes (11): _build_qs(), IsSuperAdmin, MyScoreLogAPIView, APIView, BasePermission, PageNumberPagination, GET /student/my-score-log/ → o'zining loglari GET /student/my-score-…, GET /student/score-log/ → barcha loglar (superadmin/admin) GET /student/score-… (+3 more)
+Nodes (6): _build_qs(), IsSuperAdmin, MyScoreLogAPIView, ScoreLogPagination, _serialize_log(), StudentScoreLogAPIView
 
-### Community 61 - "BattleConsumer"
-Cohesion: 0.13
-Nodes (5): asgiref_sync, channels_layers, BattleConsumer, AsyncWebsocketConsumer, group_name()
-
-### Community 62 - "bot_telegram/helped_bot.py"
-Cohesion: 0.24
-Nodes (14): get_logs(), get_student_telegram_id(), handle_callback(), handle_message(), main(), DEFAULT_TYPE, sync_to_async, Update (+6 more)
+### Community 62 - "LigaAttempt"
+Cohesion: 0.09
+Nodes (10): LigaAttempt, Meta, ranked_attempts(), standings(), AdminSeasonViewSet, _attempt_row(), _attempts_of(), _attempts_xlsx() (+2 more)
 
 ### Community 63 - "app_chat/views.py"
-Cohesion: 0.18
-Nodes (10): IsTeacher, BasePermission, ConversationListSerializer, broadcast_chat_message(), create_system_message(), get_chat_queryset(), get_chat_queryset_for_user(), get_user_display_name() (+2 more)
+Cohesion: 0.21
+Nodes (6): ConversationListSerializer, Meta, get_chat_queryset(), get_chat_queryset_for_user(), LatestConversationAPIView, UniversalChatsAPIView
 
-### Community 64 - "mathematiciancrud.py"
-Cohesion: 0.23
-Nodes (7): IsSuperAdmin, MathematicianCRUDAPIView, MathematicianReadSerializer, MathematicianWriteSerializer, Meta, APIView, BasePermission
+### Community 64 - "Mathematician"
+Cohesion: 0.11
+Nodes (16): Mathematician, Meta, MathematicianDetailSerializer, Meta, ElonTranslationOptions, FAQTranslationOptions, MathematicianTranslationOptions, MotivationTranslationOptions (+8 more)
 
 ### Community 65 - "iq_math_orginal/django_app/app_payments/admin.py"
 Cohesion: 0.23
-Nodes (7): d_ishxona_iq_math_orginal_iq_math_orginal_django_app_app_payments_models_py, MonthlyPaymentAdmin, PaymentAdmin, register, SubscriptionAdmin, SubscriptionPlanAdmin, SubscriptionSettingAdmin
+Nodes (5): MonthlyPaymentAdmin, PaymentAdmin, SubscriptionAdmin, SubscriptionPlanAdmin, SubscriptionSettingAdmin
 
 ### Community 66 - "StudentCouponAPIView"
-Cohesion: 0.23
-Nodes (7): CouponSerializer, StudentCouponCreateSerializer, APIView, A-Z va 0-9 dan iborat unikal kupon kodi yaratish., 🔹 Foydalanuvchining mavjud kuponini qaytaradi, 🔹 Student uchun yangi kupon yaratadi (agar allaqachon bo'lmasa), StudentCouponAPIView
+Cohesion: 0.19
+Nodes (5): CouponSerializer, Meta, StudentCouponCreateSerializer, Meta, StudentCouponAPIView
 
 ### Community 67 - "WithdrawalLimitSettingsCRUDAPIView"
-Cohesion: 0.36
-Nodes (4): APIView, _serialize(), _validate_amounts(), WithdrawalLimitSettingsCRUDAPIView
+Cohesion: 0.24
+Nodes (4): IsSuperAdminOrAdmin, _serialize(), _validate_amounts(), WithdrawalLimitSettingsCRUDAPIView
 
-### Community 68 - "Student"
-Cohesion: 0.07
-Nodes (29): CouponUsage_Tutor_Student, _parent_data(), APIView, Ota-ona uchun profil + biriktirilgan farzandlar., Tutor uchun profil + kupon/referal o'quvchilar., POST /api/v1/universal/statistics/<pk>/ Body: { "role": "student" | "parent" |…, _tutor_data(), UniversalStatisticsAPIView (+21 more)
+### Community 68 - "Tutor"
+Cohesion: 0.13
+Nodes (7): Coupon, Meta, DashboardOverviewAPIView, Command, Command, Tutor, Meta
 
-### Community 69 - "certificate_view.py"
-Cohesion: 0.18
-Nodes (12): _build_overlay(), CertificateDownloadAPIView, _draw_certificate(), _fit_font_size(), APIView, Matn berilgan kenglikka sig'maguncha shrift hajmini kichraytiradi., Shablon ustiga yoziladigan matnlarni o'z ichiga olgan shaffof PDF qatlam…, Tayyor shablon (Media/certificate/certificate_template.pdf) ustiga student… (+4 more)
+### Community 69 - "io"
+Cohesion: 0.29
+Nodes (3): _build_overlay(), _draw_certificate(), _fit_font_size()
 
 ### Community 70 - "StudentSerializerParent"
-Cohesion: 0.15
-Nodes (3): StudentSerializerParent, ParentChildrenListAPIView, Ota-ona qo"shgan va tasdiqlangan farzandlar ro'yxati"
+Cohesion: 0.13
+Nodes (3): StudentSerializerParent, Meta, ParentChildrenListAPIView
 
 ### Community 71 - "TagCRUDAPIView"
-Cohesion: 0.19
-Nodes (5): TagSerializer, IsSuperAdmin, BasePermission, GET /book/tags/ → list POST /book/tags/ → create (superadmin) GET…, TagCRUDAPIView
+Cohesion: 0.18
+Nodes (4): TagSerializer, Meta, IsSuperAdmin, TagCRUDAPIView
 
 ### Community 72 - "app_management/translation.py"
-Cohesion: 0.15
-Nodes (13): FAQ, FAQSerializer, ElonTranslationOptions, FAQTranslationOptions, MathematicianTranslationOptions, MotivationTranslationOptions, ProductTranslationOptions, TranslationOptions (+5 more)
+Cohesion: 0.19
+Nodes (6): FAQ, Meta, FAQSerializer, Meta, FAQCRUDAPIView, IsSuperAdmin
 
-### Community 73 - "MotivationCRUDAPIView"
-Cohesion: 0.27
-Nodes (5): MotivationSerializer, IsSuperAdmin, MotivationCRUDAPIView, APIView, BasePermission
+### Community 73 - "Motivation"
+Cohesion: 0.15
+Nodes (7): Motivation, Meta, MotivationSerializer, Meta, MotivationCRUDAPIView, IsSuperAdmin, MotivationAPIView
 
 ### Community 74 - "solution_status_crud.py"
-Cohesion: 0.25
-Nodes (5): SolutionStatusSerializer, IsTeacherOrSuperAdmin, APIView, BasePermission, SolutionStatusCRUDAPIView
+Cohesion: 0.19
+Nodes (6): SolutionStatus, Meta, SolutionStatusSerializer, Meta, IsTeacherOrSuperAdmin, SolutionStatusCRUDAPIView
 
-### Community 75 - "app_student/urls.py"
-Cohesion: 0.13
-Nodes (13): Diagnost_Student, ChapterTopicsAPIView, ParentStudentDiagnosticHistoryAPIView, APIView, GET /api/v1/func_student/my-diagnost-subjects/ Har bir fan: oxirgi diagnostika…, StudentDiagnosticHistoryAPIView, StudentDiagnostSubjectsAPIView, SubjectChaptersAPIView (+5 more)
+### Community 75 - "app_teacher/serializers.py"
+Cohesion: 0.07
+Nodes (24): CompositeSubQuestionSerializer, Meta, CompositeSubQuestion, Meta, GeneratedQuestionOpenAi, Meta, GeneratedChoiceOpenAiSerializer, Meta (+16 more)
 
 ### Community 76 - "app_teacher/translation.py"
 Cohesion: 0.39
-Nodes (8): ChapterTranslationOptions, ChoiceTranslationOptions, CompositeSubQuestionTranslationOptions, TranslationOptions, QuestionTranslationOptions, Subject_CategoryTranslationOptions, SubjectTranslationOptions, TopicTranslationOptions
-
-### Community 77 - "BotManager"
-Cohesion: 0.24
-Nodes (5): BotManager, main(), DEFAULT_TYPE, Update, O'qituvchilarga savolni yuborish funksiyasi
+Nodes (7): ChapterTranslationOptions, ChoiceTranslationOptions, CompositeSubQuestionTranslationOptions, QuestionTranslationOptions, Subject_CategoryTranslationOptions, SubjectTranslationOptions, TopicTranslationOptions
 
 ### Community 78 - "sms_service.py"
-Cohesion: 0.18
-Nodes (8): TeacherVerifySmsCodeSerializer, send_login_parol_email(), send_login_parol_resend_email(), Foydalanuvchi yangi parolni o'rnatadi., ResetPasswordView, TeacherVerifySmsCodeAPIView, django_core_mail, threading
+Cohesion: 0.21
+Nodes (6): TeacherVerifySmsCodeSerializer, send_login_parol_email(), send_login_parol_resend_email(), send_verification_email(), ResetPasswordView, TeacherVerifySmsCodeAPIView
 
 ### Community 79 - "ConversionRateCRUDAPIView"
-Cohesion: 0.32
-Nodes (5): ConversionRateCRUDAPIView, ConversionRateSerializer, Meta, APIView, Singleton model — tizimda faqat 1 ta yozuv bo'ladi. GET…
+Cohesion: 0.24
+Nodes (5): ConversionRate, Meta, ConversionRateCRUDAPIView, ConversionRateSerializer, Meta
 
-### Community 80 - "IX Sinf (Grade 9) Math Multiple-Choice Test Bank"
-Cohesion: 0.18
-Nodes (12): Arifmetik progressiya (Arithmetic Progression), f(x)=x^2-3x+1=1 Equation Question, f(x)=x^2-x+1, f(0) Question, Geometrik progressiya (Geometric Progression), IX Sinf (Grade 9) Math Multiple-Choice Test Bank, Logarifmik tenglama va tengsizliklar (Logarithmic Equations/Inequalities), Murakkab va teskari funksiya (Composite & Inverse Function), Trigonometrik ayniyatlar (Trigonometric Identities) (+4 more)
+### Community 80 - "app_liga/services.py"
+Cohesion: 0.13
+Nodes (15): LigaAnswer, Meta, LigaParticipant, Meta, LigaPointLog, Meta, award_daily_login(), award_points() (+7 more)
 
 ### Community 82 - "UploadSetting"
-Cohesion: 0.19
-Nodes (7): Maksimal hajm (baytlarda), UploadSetting, UploadSettingSerializer, IsTeacherOrSuperAdmin, APIView, BasePermission, UploadSettingCRUDAPIView
+Cohesion: 0.16
+Nodes (6): UploadSetting, Meta, UploadSettingSerializer, Meta, IsTeacherOrSuperAdmin, UploadSettingCRUDAPIView
 
 ### Community 83 - "SubscriptionSetting"
-Cohesion: 0.27
-Nodes (5): SubscriptionSetting, Meta, APIView, SubscriptionSettingCRUDAPIView, SubscriptionSettingSerializer
+Cohesion: 0.32
+Nodes (3): SubscriptionSettingCRUDAPIView, SubscriptionSettingSerializer, Meta
 
 ### Community 84 - "CategoryCRUDAPIView"
-Cohesion: 0.33
-Nodes (4): Category, CategorySerializer, CategoryCRUDAPIView, GET /book/categories/ → list POST /book/categories/ → create (superadmin) GET…
+Cohesion: 0.25
+Nodes (5): Category, Meta, CategorySerializer, Meta, CategoryCRUDAPIView
 
 ### Community 85 - "app_book/admin.py"
 Cohesion: 0.31
-Nodes (7): BookAdmin, BookPaymentAdmin, BookPurchaseAdmin, CategoryAdmin, OfflineBookOrderAdmin, register, TagAdmin
+Nodes (6): BookAdmin, BookPaymentAdmin, BookPurchaseAdmin, CategoryAdmin, OfflineBookOrderAdmin, TagAdmin
 
 ### Community 86 - "redis_client.py"
-Cohesion: 0.23
-Nodes (11): delete_pending_registration(), _get_client(), get_pending_registration(), _key(), Ro"yxatdan o'tish jarayoni uchun Redis yordamchi moduli." Celery (db=0) va…, Ro"yxatdan o'tish ma'lumotlarini Redisga saqlaydi." TTL: REGISTRATION_REDIS_TTL…, Redisdan ro'yxatdan o'tish ma'lumotlarini oladi. Topilmasa None qaytaradi., Redis kalitini o'chiradi (SMS tasdiqlangandan keyin). (+3 more)
+Cohesion: 0.18
+Nodes (6): delete_pending_registration(), _get_client(), get_pending_registration(), _key(), save_pending_registration(), UniversalRegisterSerializer
 
 ### Community 87 - "Banner"
-Cohesion: 0.26
-Nodes (6): Banner, BannerSerializer, BannerCRUDAPIView, IsSuperAdmin, APIView, BasePermission
+Cohesion: 0.29
+Nodes (5): Banner, Meta, BannerSerializer, Meta, BannerCRUDAPIView
 
 ### Community 88 - "expire_pending_payments"
-Cohesion: 0.33
-Nodes (7): expire_pending_payments_task(), shared_task, Har ishga tushganda timeoutdan oshgan pending paymentlarni failed qiladi., expire_pending_payments(), get_payment_pending_timeout_minutes(), Pending payment uchun timeout qiymatini qaytaradi., Timeoutdan oshgan pending paymentlarni failed holatiga o'tkazadi. `student`…
+Cohesion: 0.15
+Nodes (3): expire_pending_payments_task(), expire_pending_payments(), get_payment_pending_timeout_minutes()
 
-### Community 89 - "app_battle/consumers.py"
-Cohesion: 0.24
-Nodes (6): channels_db, channels_generic_websocket, ChatConsumer, AsyncWebsocketConsumer, json, logging
+### Community 89 - "backup.py"
+Cohesion: 0.11
+Nodes (12): _acquire_lock(), archive_media(), dump_database(), _human(), _iter_media_files(), send_file_in_parts(), _sha256(), _call() (+4 more)
+
+### Community 90 - "app_user/urls.py"
+Cohesion: 0.11
+Nodes (6): DeviceJWTAuthentication, is_device_active(), mark_user_active(), DeviceTokenRefreshSerializer, DeviceTokenRefreshView, OnlinePingAPIView
 
 ### Community 91 - "elo.py"
-Cohesion: 0.25
-Nodes (8): compute_elo_delta(), expected_score(), match_outcome(), performance_score(), Faceit-style ELO with a performance multiplier. Pure functions only (no DB…, Blends accuracy (0.7) and speed-on-correct-answers only (0.3), so fast wrong…, More correct answers wins; ties broken by lower total answer time; still tied =…, `result` is 'win'/'loss'/'draw' from self's perspective. A true coin-flip draw…
+Cohesion: 0.15
+Nodes (5): compute_elo_delta(), expected_score(), match_outcome(), performance_score(), EloFormulaTests
 
-### Community 92 - "BattleRating"
-Cohesion: 0.25
-Nodes (3): BattleRating, Placement matches (the student's first 10) never move a visible ELO number —…, Post-placement matches only — normal incremental ELO.
+### Community 92 - "app_battle/models.py"
+Cohesion: 0.17
+Nodes (6): BattleRating, Meta, generate_room_code(), level_for_elo(), level_progress(), serialize_participant()
 
 ### Community 93 - "BookPurchaseAPIView"
-Cohesion: 0.22
-Nodes (6): BookPurchase, Meta, OfflineBookOrder, Oflayn kitob buyurtmasi — yetkazib berish holati shu yerda saqlanadi., BookPurchaseAPIView, POST /book/purchase/ Body: { "book_id": 1, "payment_method": "coin" }…
+Cohesion: 0.19
+Nodes (4): BookPurchase, Meta, BookPurchaseAPIView, MyPurchasedBooksAPIView
 
 ### Community 94 - "app_book/views.py"
-Cohesion: 0.22
-Nodes (10): Book, Tag, BookReadSerializer, BookWriteSerializer, Meta, BookCRUDAPIView, calc_book_prices(), GET /book/books/ → list (filter: ?category=<id>, ?status=active, ?tag=<id>)… (+2 more)
+Cohesion: 0.17
+Nodes (10): Book, Meta, Tag, Meta, BookReadSerializer, Meta, BookWriteSerializer, Meta (+2 more)
 
 ### Community 95 - "TeacherFineAPIView"
-Cohesion: 0.29
-Nodes (5): _get_full_name(), APIView, POST /api/v1/teacher/fine/ Teacher yoki superadmin studentga jarima qo'yadi.…, _serialize_fine(), TeacherFineAPIView
+Cohesion: 0.20
+Nodes (5): TeacherFineLog, Meta, _get_full_name(), _serialize_fine(), TeacherFineAPIView
 
-### Community 96 - "TopicSerializer"
-Cohesion: 0.19
-Nodes (5): Topic_STUDENT_ID_Serializer, TopicSerializer, Teacher/Admin -> student_id talab qilinmaydi Student -> student_id yuborishi…, TopicListByChapter_STUDENT_ID_APIView, TopicListByChapterAPIView
+### Community 96 - "SeasonCloseTests"
+Cohesion: 0.15
+Nodes (6): close_finished_seasons(), close_season(), finalize_expired(), close_finished_seasons_task(), finalize_expired_attempts_task(), SeasonCloseTests
 
-### Community 97 - "User"
-Cohesion: 0.31
-Nodes (8): AbstractUser, shared_task, send_daily_topic_notifications(), User, _initialize_firebase(), send_push_notification(), _send_to_all_students_task(), firebase_admin
+### Community 97 - "app_user/serializers.py"
+Cohesion: 0.04
+Nodes (39): SubscriptionSetting, Meta, SuperAdminChangeUserRoleAPIView, Parent, Meta, ParentLoginHistory, Meta, ParentStudentRelation (+31 more)
 
-### Community 98 - "EloFormulaTests"
-Cohesion: 0.25
-Nodes (3): EloFormulaTests, Covers exactly the cases called out in the implementation plan's verification…, SimpleTestCase
+### Community 98 - "build_child_overview"
+Cohesion: 0.11
+Nodes (13): check_achievements_safe(), build_child_overview(), _class_name(), _diag_score(), _duration_seconds(), _is_active(), _parent_children(), _percent() (+5 more)
 
-### Community 99 - "APIView"
-Cohesion: 0.24
-Nodes (6): CustomQuestionSerializer, GenerateTestAPIView, APIView, QuestionListByTopicAPIView, StudentScoreAPIView, SubjectNameListAPIView
+### Community 99 - "parent_dashboard.py"
+Cohesion: 0.15
+Nodes (10): _gateway_label(), _month_starts(), _months_param(), ParentChildDeviceAPIView, ParentChildOverviewAPIView, ParentChildPaymentsAPIView, ParentDashboardAPIView, _payments_payload() (+2 more)
 
-### Community 100 - "os"
-Cohesion: 0.12
-Nodes (11): celery_schedules, advanced_math_check ni Django'siz sinash., django_core_management, django_core_wsgi, dotenv, importlib_util, io, os (+3 more)
-
-### Community 101 - "send_sms"
-Cohesion: 0.13
-Nodes (10): Ushbu metod foydalanuvchi yana SMS kod olishi mumkinligini tekshiradi. Agar SMS…, Foydalanuvchiga SMS yuborishdan oldin ushbu metod orqali urinishni ro'yxatga…, send_sms(), send_sms_resend(), Yangi telefon raqamini tasdiqlash, Foydalanuvchi ma'lumotlarini yangilash. Agar telefon raqami o'zgartirilsa,…, AddChildRequestAPIView, Ota-ona farzand qo'shishni boshlaydi (SMS yuboriladi) (+2 more)
+### Community 101 - "online_service.py"
+Cohesion: 0.14
+Nodes (10): UserOnlineSession, Meta, close_online(), _is_active(), online_stats(), _overlap(), _session_end(), _split_by_day_and_hour() (+2 more)
 
 ### Community 102 - "app_tutor/admin.py"
 Cohesion: 0.36
-Nodes (6): display, register, TutorCouponTransactionAdmin, TutorGroupAdmin, TutorGroupInvitationAdmin, WithdrawalLimitSettingsAdmin
+Nodes (4): TutorCouponTransactionAdmin, TutorGroupAdmin, TutorGroupInvitationAdmin, WithdrawalLimitSettingsAdmin
 
-### Community 103 - "MyTopicAddSerializer"
-Cohesion: 0.36
-Nodes (3): MyTopicAddSerializer, MyTopicAddCreateView, MyTopicListView
+### Community 103 - "TeacherHelpRequestNotificationAPIView"
+Cohesion: 0.13
+Nodes (8): GetTelegramIDFromHelpRequestAPIView, TeacherCommitToHelpRequestAPIView, TeacherHelpRequestNotificationAPIView, TeacherTopicHelpRequestDeleteAPIView, TeacherTopicHelpRequestFromTelegramAPIView, StandardResultsSetPagination, TeacherTopicHelpRequestListAPIView, StandardResultsSetPagination
 
-### Community 105 - "SubjectSerializer"
-Cohesion: 0.20
-Nodes (3): Tugatilgan mavzular foizi (0-100). completed_topics view'da bitta so'rovda…, SubjectSerializer, StudentSubjectListAPIView
+### Community 104 - "OfflineBookOrder"
+Cohesion: 0.27
+Nodes (3): OfflineBookOrder, Meta, AdminOfflineOrderAPIView
 
-### Community 106 - "SuperAdminDeleteUserAPIView"
-Cohesion: 0.25
-Nodes (5): IsSuperAdminOnly, IsSuperAdminOrAdmin, DELETE /api/v1/auth/superadmin/delete-user/<user_id>/ Superadmin yoki admin…, SuperAdminDeleteUserAPIView, IsAuthenticated
+### Community 106 - "AdminQuestionSerializer"
+Cohesion: 0.16
+Nodes (4): AdminQuestionSerializer, Meta, AdminQuestionViewSet, ProtectedDestroyMixin
 
 ### Community 107 - "app_student/admin.py"
-Cohesion: 0.36
-Nodes (8): ChapterProgressAdmin, ConversionHistoryAdmin, register, TranslationAdmin, StudentDailyCoinLogAdmin, StudentScoreAdmin, TopicHelpRequestIndependentAdmin, TopicProgressAdmin
+Cohesion: 0.29
+Nodes (7): ChapterProgressAdmin, ConversionHistoryAdmin, StudentAchievementAdmin, StudentDailyCoinLogAdmin, StudentScoreAdmin, TopicHelpRequestIndependentAdmin, TopicProgressAdmin
 
-### Community 108 - "BookPayment"
-Cohesion: 0.24
-Nodes (6): BookPayment, Kitob uchun onlayn (Multicard) to'lov. Foydalanuvchining tanga/ball/so'm…, BookPaymentCallbackAPIView, expire_pending_book_payments(), Muddati o'tgan pending kitob to'lovlarini failed holatiga o'tkazadi., POST /book/payment-callback/ — Multicard callback. Imzo to'g'ri bo'lsa:…
-
-### Community 110 - "LogEntryCRUDAPIView"
-Cohesion: 0.33
-Nodes (3): LogEntryCRUDAPIView, APIView, _serialize()
+### Community 108 - "app_book/urls.py"
+Cohesion: 0.15
+Nodes (7): BookPayment, Meta, BookInitiatePaymentAPIView, BookPaymentCallbackAPIView, expire_pending_book_payments(), MyBookPaymentsAPIView, get_multicard_token()
 
 ### Community 112 - "ReferralCouponSettingsCRUDAPIView"
 Cohesion: 0.32
-Nodes (5): Meta, APIView, Singleton model — tizimda faqat 1 ta yozuv bo'ladi. GET…, ReferralAndCouponSettingsSerializer, ReferralCouponSettingsCRUDAPIView
+Nodes (3): ReferralAndCouponSettingsSerializer, Meta, ReferralCouponSettingsCRUDAPIView
 
 ### Community 114 - "django_app/app_payments/admin.py"
-Cohesion: 0.36
-Nodes (9): PaymentAdmin, register, TranslationAdmin, SubscriptionAdmin, SubscriptionBenefitAdmin, SubscriptionCategoryAdmin, SubscriptionPlanAdmin, SubscriptionSettingAdmin (+1 more)
+Cohesion: 0.42
+Nodes (6): PaymentAdmin, SubscriptionAdmin, SubscriptionBenefitAdmin, SubscriptionCategoryAdmin, SubscriptionPlanAdmin, SubscriptionSettingAdmin
 
-### Community 116 - "TeacherRegisterSerializer"
-Cohesion: 0.38
-Nodes (4): Barcha tekshiruvlarni yagona joyda bajarish, Foydalanuvchi ma'lumotlarini tekshirish, TeacherRegisterSerializer, RegisterTeacherAPIView
+### Community 118 - "LigaQuestionAdmin"
+Cohesion: 0.15
+Nodes (6): LigaAttemptAdmin, LigaParticipantAdmin, LigaQuestionAdmin, LigaSeasonAdmin, LigaTestAdmin, LigaWinnerAdmin
 
-### Community 117 - "kod_flask.py"
-Cohesion: 0.40
-Nodes (5): flask, openai, route, index(), process_text()
-
-### Community 119 - "1-daraja (Level 1) Fraction Arithmetic Worksheet"
-Cohesion: 0.47
-Nodes (6): Kasrlarni bo'lish (Dividing Fractions) Question Bank, 1-daraja (Level 1) Fraction Arithmetic Worksheet, 1-daraja Worksheet (savol_uz/javob_uz labeled), Kasrlarni bo'lish (Dividing Fractions) - Clean LaTeX, 1-daraja Worksheet (LaTeX minipage table), 1-daraja Worksheet (savol_uz labeled, LaTeX)
+### Community 119 - "1-daraja Worksheet (savol_uz labeled, LaTeX)"
+Cohesion: 0.67
+Nodes (3): 1-daraja Worksheet (savol_uz/javob_uz labeled), 1-daraja Worksheet (LaTeX minipage table), 1-daraja Worksheet (savol_uz labeled, LaTeX)
 
 ### Community 120 - "app_payments/translation.py"
-Cohesion: 0.60
-Nodes (4): TranslationOptions, SubscriptionBenefitTranslationOptions, SubscriptionCategoryTranslationOptions, SubscriptionPlanTranslationOptions
+Cohesion: 0.28
+Nodes (4): SubscriptionBenefitTranslationOptions, SubscriptionCategoryTranslationOptions, SubscriptionPlanTranslationOptions, TopicHelpRequestIndependentTranslationOptions
 
-### Community 122 - ".post"
-Cohesion: 0.25
-Nodes (4): MD5 signature yaratish, Multicard dan kelgan to'lov callback ni qayta ishlash, Keshbeklarni taqsimlash, Subscriptionni yangilash/yaratish
+### Community 122 - "Referral_Tutor_Student"
+Cohesion: 0.18
+Nodes (7): Referral_Tutor_Student, Meta, ReferralCreateSerializer, Meta, ReferralSerializer, Meta, TutorReferralViewSet
 
 ### Community 123 - "MyChapterListView"
-Cohesion: 0.36
-Nodes (4): MyChapterAddSerializer, MyChapterAddCreateView, MyChapterListView, Tizimga kirgan o'qituvchining barcha bo'limlarini olish
+Cohesion: 0.31
+Nodes (4): MyChapterAddSerializer, Meta, MyChapterAddCreateView, MyChapterListView
 
-### Community 124 - "django_contrib"
-Cohesion: 0.40
-Nodes (4): django_conf_urls_static, django_contrib, drf_yasg, drf_yasg_views
+### Community 127 - "product_metrics.py"
+Cohesion: 0.26
+Nodes (10): _active_students(), _aware(), build_product_metrics(), _conversion(), _pct(), _retention(), _retention_point(), _student_status() (+2 more)
 
-### Community 126 - "IsTeacherOrSuperAdmin"
-Cohesion: 0.50
-Nodes (3): IsTeacherOrSuperAdmin, BasePermission, Faqat teacher va superadmin rollari kirishi mumkin
+### Community 128 - "student_achievements"
+Cohesion: 0.16
+Nodes (8): achievement_payload(), check_achievements(), metric_value(), student_achievements(), Achievement, Meta, StudentAchievement, Meta
 
-### Community 127 - "import_questions_from_word.py"
-Cohesion: 0.29
-Nodes (4): Command, BaseCommand, docx, pil
+### Community 133 - "app_liga/views.py"
+Cohesion: 0.07
+Nodes (26): AnswerInputSerializer, StudentQuestionSerializer, Meta, finalize_if_expired(), AdminMetaAPIView, AdminWinnerViewSet, _attempt_payload(), _attempt_summary() (+18 more)
 
-### Community 131 - "QuickMathQuestionAPIView"
-Cohesion: 0.40
-Nodes (3): APIView, QuickMathQuestionAPIView, SubmitQuickMathAnswerAPIView
+### Community 134 - "TeacherRewardLog"
+Cohesion: 0.18
+Nodes (10): TeacherRewardLog, Meta, TeacherRewardLogDetailSerializer, Meta, TeacherRewardLogSerializer, Meta, TeacherRewardSerializer, TeacherRewardAPIView (+2 more)
 
-### Community 132 - "UserAdmin"
-Cohesion: 0.40
-Nodes (3): Profilning tasdiqlangan yoki tasdiqlanmagan holati, SMS kod tozalanganmi — ya'ni tasdiqlangan, UserAdmin
+### Community 135 - "Command"
+Cohesion: 0.22
+Nodes (3): StudentDailyCoinLog, Meta, Command
 
-### Community 134 - "app_teacher/serializers.py"
-Cohesion: 0.11
-Nodes (24): TeacherRewardLog, GeneratedChoiceOpenAiSerializer, GeneratedQuestionOpenAiSerializer, GeneratedSubQuestionOpenAiSerializer, GroupSerializer_DETAIL, Meta, OpenAIChoiceSerializer, OpenAICompositeSubQuestionSerializer (+16 more)
+### Community 139 - "ProductExchange"
+Cohesion: 0.18
+Nodes (6): ProductExchange, Meta, ProductExchangeSerializer, Meta, TeacherProductExchangeListAPIView, TeacherUpdateProductExchangeStatusAPIView
+
+### Community 141 - "UserDevice"
+Cohesion: 0.20
+Nodes (5): UserDevice, Meta, _current_device_id(), MyDeviceDetailAPIView, MyDevicesAPIView
+
+### Community 143 - "DailyCoinSettings"
+Cohesion: 0.25
+Nodes (5): DailyCoinSettings, Meta, DailyCoinSettingsSerializer, Meta, DailyCoinSettingsCRUDAPIView
+
+### Community 144 - "Tag"
+Cohesion: 0.25
+Nodes (5): Tag, Meta, TagSerializer, Meta, TagCRUDAPIView
+
+### Community 148 - "StudentLoginHistory"
+Cohesion: 0.27
+Nodes (5): _best_streak(), _current_streak(), StudentStreakAPIView, _visit_dates(), StudentLoginHistory
+
+### Community 150 - "TutorCouponViewSet"
+Cohesion: 0.24
+Nodes (5): CouponCreateSerializer, Meta, CouponSerializer, Meta, TutorCouponViewSet
+
+### Community 151 - "SubscriptionCategoryCRUDAPIView"
+Cohesion: 0.31
+Nodes (5): SubscriptionCategoryCreateSerializer, Meta, SubscriptionCategoryReadSerializer, Meta, SubscriptionCategoryCRUDAPIView
+
+### Community 155 - "Choice"
+Cohesion: 0.25
+Nodes (5): check_answer(), ChoiceSerializer, Meta, Choice, Meta
+
+### Community 157 - "._trends"
+Cohesion: 0.28
+Nodes (3): money(), people(), _pct_change()
 
 ### Community 158 - "category_supermentor_crud.py"
-Cohesion: 0.25
-Nodes (5): CategorySerializer, CategoryCRUDAPIView, IsSuperAdmin, APIView, BasePermission
+Cohesion: 0.16
+Nodes (8): Category, Meta, CategorySerializer, Meta, MathematicianListSerializer, Meta, CategoryCRUDAPIView, IsSuperAdmin
 
-## Ambiguous Edges - Review These
-- `Telethon` → `Telegram-style Multi-Account Switching Design`  [AMBIGUOUS]
-  requirements.txt · relation: conceptually_related_to
+### Community 164 - "SubjectSerializer"
+Cohesion: 0.28
+Nodes (3): SubjectSerializer, Meta, TeacherSubjectsAPIView
+
+### Community 167 - "login_lock_remaining"
+Cohesion: 0.28
+Nodes (5): _login_keys(), login_lock_remaining(), login_locked_message(), register_failed_login(), reset_login_attempts()
+
+### Community 169 - "SubscriptionCategory"
+Cohesion: 0.32
+Nodes (4): SubscriptionCategory, Meta, main(), som()
+
+### Community 173 - "BasePermission"
+Cohesion: 0.29
+Nodes (3): IsSuperAdmin, IsSuperAdmin, IsSuperAdmin
+
+### Community 174 - "_diagnost_summary"
+Cohesion: 0.38
+Nodes (3): _diagnost_summary(), _is_answered(), _subject_payload()
+
+### Community 175 - "ProductExchangeView"
+Cohesion: 0.29
+Nodes (3): ProductExchangeConfirmAPIView, ProductExchangeListView, ProductExchangeView
+
+### Community 179 - "ReorderChapterAPIView"
+Cohesion: 0.29
+Nodes (3): ReorderChapterAPIView, ReorderSubjectAPIView, ReorderTopicAPIView
+
+### Community 198 - "ai_solutions.py"
+Cohesion: 0.05
+Nodes (43): AISolutionClassesAPIView, AISolutionConfigAPIView, AISolutionDigitizeAPIView, AISolutionSolveAPIView, AISolutionSubjectQueueAPIView, AISolutionTopicAPIView, AISolutionTranslateAPIView, _as_list() (+35 more)
+
+### Community 215 - "ParentCreateSerializer"
+Cohesion: 0.50
+Nodes (3): ParentCreateSerializer, Meta, ParentCreateAPIView
+
+### Community 218 - "Class_Serializer"
+Cohesion: 0.50
+Nodes (3): Class_Serializer, Meta, ClassListView
 
 ## Knowledge Gaps
-- **150 isolated node(s):** `Migration`, `Migration`, `Migration`, `Migration`, `Migration` (+145 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 977 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **90 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **11 isolated node(s):** `1-daraja Worksheet (savol_uz/javob_uz labeled)`, `Kasrlarni bo'lish (Dividing Fractions) - Clean LaTeX`, `1-daraja Worksheet (LaTeX minipage table)`, `Celery`, `channels (Django Channels, WebSocket)` (+6 more)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 1454 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **114 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **What is the exact relationship between `Telethon` and `Telegram-style Multi-Account Switching Design`?**
-  _Edge tagged AMBIGUOUS (relation: conceptually_related_to) - confidence is low._
-- **Why does `Student` connect `Student` to `app_student/views.py`, `django_utils`, `app_student/serializers.py`, `app_user/admin.py`, `app_teacher/serializers.py`, `app_management/models.py`, `SomTransferLog`, `StudentDailyCoinLog`, `app_teacher/urls.py`, `TutorGroup`, `invitation_views.py`, `app_payments/views.py`, `app_user/urls.py`, `StudyStatsByDateRangeAPIView`, `engine.py`, `TopicHelpRequestIndependent`, `app_battle/views.py`, `app_teacher/models.py`, `app_battle/models.py`, `app_management/views.py`, `app_tutor/views.py`, `TopicProgress`, `app_user/views.py`, `rest_framework`, `gruop_student.py`, `app_battle/tests.py`, `app_payments/models.py`, `teacher_groups.py`, `StudentSerializer`, `TeacherLoginHistory`, `All_Role_ListView`, `app_student/View/independentView.py`, `Subject`, `helpers.py`, `ConversionHistoryCRUDAPIView`, `BattleConsumer`, `app_chat/views.py`, `certificate_view.py`, `StudentSerializerParent`, `app_student/urls.py`, `app_battle/consumers.py`, `BattleRating`, `TeacherFineAPIView`, `TopicSerializer`, `APIView`, `SubjectSerializer`, `TutorStudentBriefSerializer`?**
-  _High betweenness centrality (0.142) - this node is a cross-community bridge._
-- **Why does `Teacher` connect `Teacher` to `django_utils`, `app_user/admin.py`, `app_teacher/serializers.py`, `app_management/models.py`, `app_user/urls.py`, `TopicHelpRequestIndependent`, `app_teacher/models.py`, `app_management/views.py`, `app_tutor/views.py`, `app_user/views.py`, `rest_framework`, `gruop_student.py`, `teacher_groups.py`, `app_chat/urls.py`, `StudentSerializer`, `app_chat/serializers.py`, `TeacherLoginHistory`, `app_student/View/independentView.py`, `app_chat/views.py`, `Student`, `sms_service.py`, `TeacherRegisterSerializer`?**
-  _High betweenness centrality (0.027) - this node is a cross-community bridge._
-- **Why does `Coupon_Tutor_Student` connect `app_tutor/views.py` to `app_payments/models.py`, `StudentCouponAPIView`, `Student`, `Teacher`, `app_student/serializers.py`, `app_management/models.py`, `django_utils`, `app_management/admin.py`, `app_payments/views.py`, `app_teacher/models.py`, `rest_framework`?**
-  _High betweenness centrality (0.025) - this node is a cross-community bridge._
-- **Are the 108 inferred relationships involving `Student` (e.g. with `BattleConsumer` and `BattleEloLog`) actually correct?**
-  _`Student` has 108 INFERRED edges - model-reasoned connections that need verification._
-- **Are the 41 inferred relationships involving `Teacher` (e.g. with `ConversationAssignment` and `TeacherListSerializer`) actually correct?**
-  _`Teacher` has 41 INFERRED edges - model-reasoned connections that need verification._
-- **What connects `Migration`, `Migration`, `Migration` to the rest of the system?**
-  _150 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Why does `Student` connect `Student` to `student_achievements`, `StudentScore`, `app_liga/views.py`, `TeacherRewardLog`, `Command`, `SomTransferLog`, `app_user/admin.py`, `app_user/views.py`, `ProductExchange`, `TutorGroup`, `app_payments/views.py`, `invitation_views.py`, `app_liga/tests.py`, `engine.py`, `TopicHelpRequestIndependent`, `app_battle/views.py`, `app_teacher/models.py`, `StudentLoginHistory`, `app_tutor/views.py`, `device_service.py`, `app_user/models.py`, `LigaFixtureMixin`, `gruop_student.py`, `app_battle/tests.py`, `results_views.py`, `teacher_groups.py`, `app_chat/views.py`, `StudentSerializer`, `marketing.py`, `ProductExchangeView`, `TeacherLoginHistory`, `All_Role_ListView`, `ConversionHistoryCRUDAPIView`, `BattleConsumer`, `LigaAttempt`, `Tutor`, `StudentSerializerParent`, `app_teacher/serializers.py`, `app_liga/services.py`, `LandingStatsAPIView`, `ChangeStudentPasswordAPIView`, `ParentCreateSerializer`, `set_group_students`, `app_battle/models.py`, `TeacherFineAPIView`, `app_user/serializers.py`, `build_child_overview`, `parent_dashboard.py`, `online_service.py`, `TutorStudentBriefSerializer`, `Referral_Tutor_Student`, `product_metrics.py`?**
+  _High betweenness centrality (0.137) - this node is a cross-community bridge._
+- **Are the 129 inferred relationships involving `Student` (e.g. with `BattleConsumer` and `BattleEloLog`) actually correct?**
+  _`Student` has 129 INFERRED edges - model-reasoned connections that need verification._
+- **What connects `1-daraja Worksheet (savol_uz/javob_uz labeled)`, `Kasrlarni bo'lish (Dividing Fractions) - Clean LaTeX`, `1-daraja Worksheet (LaTeX minipage table)` to the rest of the system?**
+  _11 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Should `django_db_models_deletion` be split into smaller, more focused modules?**
+  _Cohesion score 0.03076923076923077 - nodes in this community are weakly interconnected._
+- **Why does `Subject` connect `Student` to `student_achievements`, `StudentScore`, `app_liga/views.py`, `app_teacher/urls.py`, `AdminApiTests`, `UserSMSAttempt`, `app_liga/tests.py`, `engine.py`, `TopicHelpRequestIndependent`, `app_battle/views.py`, `app_teacher/models.py`, `app_user/models.py`, `LigaFixtureMixin`, `app_battle/tests.py`, `SubjectSerializer`, `ReorderChapterAPIView`, `ai_solutions.py`, `app_teacher/serializers.py`, `redis_client.py`, `app_battle/models.py`, `app_user/serializers.py`, `build_child_overview`, `parent_dashboard.py`, `SubjectSerializer`, `MyChapterListView`?**
+  _High betweenness centrality (0.030) - this node is a cross-community bridge._
+- **Are the 53 inferred relationships involving `Subject` (e.g. with `BattleRoom` and `BattleFixtureMixin`) actually correct?**
+  _`Subject` has 53 INFERRED edges - model-reasoned connections that need verification._
+- **Should `django_db` be split into smaller, more focused modules?**
+  _Cohesion score 0.028985507246376812 - nodes in this community are weakly interconnected._

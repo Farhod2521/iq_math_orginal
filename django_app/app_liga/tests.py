@@ -402,6 +402,38 @@ class AdminApiTests(LigaFixtureMixin, TestCase):
         self.assertIsNotNone(row['duration_seconds'])
         self.assertIn('spreadsheetml', self.mentor.get(url, {'export': 'xlsx'})['Content-Type'])
 
+    def test_week_participants_cover_every_grade_of_that_week_only(self):
+        other_class = Class.objects.create(name='9')
+        other_subject = Subject.objects.create(
+            name='Geometriya', classes=other_class, category=self.subject.category,
+        )
+        other_test = self._test(week=1, klass=other_class)
+        self._question('4+4', test=other_test)
+        next_week = self._test(week=2)
+        self._question('5+5', test=next_week)
+        other_student = self._student('+998900000002', name='Malika Karimova', subject=other_subject)
+        services.join_season(self.season, other_student)
+
+        attempt = services.start_attempt(self.test, self.student)
+        services.finish_attempt(attempt.id)
+        services.start_attempt(other_test, other_student)
+        services.start_attempt(next_week, self.student)
+        url = f'/api/v1/liga/admin/seasons/{self.season.id}/participants/'
+
+        rows = self.mentor.get(url, {'week': 1}).data['results']
+        self.assertEqual([row['grade'] for row in rows], ['8', '9'])
+        self.assertEqual(rows[0]['rank'], 1)
+        self.assertEqual(rows[1]['status'], LigaAttempt.STATUS_IN_PROGRESS)
+
+        self.assertEqual(self.mentor.get(url, {'week': 1, 'grade': other_class.id}).data['count'], 1)
+        self.assertEqual(self.mentor.get(url, {'week': 1, 'search': 'malika'}).data['count'], 1)
+        self.assertEqual(self.mentor.get(url, {'week': 2}).data['count'], 1)
+        self.assertIn('spreadsheetml', self.mentor.get(url, {'week': 1, 'export': 'xlsx'})['Content-Type'])
+
+    def test_week_participants_need_a_week(self):
+        url = f'/api/v1/liga/admin/seasons/{self.season.id}/participants/'
+        self.assertEqual(self.mentor.get(url).status_code, 400)
+
     def test_dashboard_and_standings(self):
         attempt = services.start_attempt(self.test, self.student)
         services.save_answer(attempt.id, self.q1.id, self._correct(self.q1).id)
