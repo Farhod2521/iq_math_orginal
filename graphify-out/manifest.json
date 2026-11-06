@@ -4294,5 +4294,17 @@
     "seen": 1793949586.5277321,
     "ast_hash": "1c787b90d04dc854e55b73b0a12bc5af",
     "semantic_hash": ""
+  },
+  "test_add.json": {
+    "mtime": 1793964547.5907333,
+    "seen": 1793964601.535018,
+    "ast_hash": "9f0dc0ee8fa0741db20cd2ed82fb5802",
+    "semantic_hash": ""
+  },
+  "test_add.py": {
+    "mtime": 1793964548.3956473,
+    "seen": 1793964601.5350196,
+    "ast_hash": "edada8b06fae98ddaba15c6266316c5b",
+    "semantic_hash": ""
   }
 }

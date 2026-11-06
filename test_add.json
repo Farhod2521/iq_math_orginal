@@ -1,0 +1,133 @@
+{
+  "season": 1,
+  "week": 1,
+  "grade": "7",
+  "subject": null,
+  "questions": [
+    {
+      "text": "Hisoblang: \\( \\frac{3}{4}+\\frac{5}{6} \\)",
+      "choices": { "A": "\\( \\frac{8}{10} \\)", "B": "\\( \\frac{19}{12} \\)", "C": "\\( \\frac{15}{24} \\)", "D": "\\( \\frac{4}{3} \\)" },
+      "correct": "B"
+    },
+    {
+      "text": "Hisoblang: \\( (-3)^3+2^4 \\)",
+      "choices": { "A": "\\( -11 \\)", "B": "\\( 43 \\)", "C": "\\( 11 \\)", "D": "\\( -43 \\)" },
+      "correct": "A"
+    },
+    {
+      "text": "Ifodani soddalashtiring: \\( 3a-2(a-4) \\)",
+      "choices": { "A": "\\( a-8 \\)", "B": "\\( 5a-8 \\)", "C": "\\( a+8 \\)", "D": "\\( a+4 \\)" },
+      "correct": "C"
+    },
+    {
+      "text": "Tenglamani yeching: \\( 3x-7=11 \\)",
+      "choices": { "A": "\\( 4 \\)", "B": "\\( 5 \\)", "C": "\\( 18 \\)", "D": "\\( 6 \\)" },
+      "correct": "D"
+    },
+    {
+      "text": "Ifodani daraja ko'rinishida yozing: \\( a^3\\cdot a^5 \\)",
+      "choices": { "A": "\\( a^{15} \\)", "B": "\\( a^8 \\)", "C": "\\( a^2 \\)", "D": "\\( 2a^8 \\)" },
+      "correct": "B"
+    },
+    {
+      "text": "Ifodani soddalashtiring: \\( \\frac{x^7}{x^3} \\)",
+      "choices": { "A": "\\( x^{10} \\)", "B": "\\( x^{21} \\)", "C": "\\( x^4 \\)", "D": "\\( 4x \\)" },
+      "correct": "C"
+    },
+    {
+      "text": "Qisqa ko'paytirish formulasidan foydalanib, qavslarni oching: \\( (x+3)^2 \\)",
+      "choices": { "A": "\\( x^2+6x+9 \\)", "B": "\\( x^2+9 \\)", "C": "\\( x^2+3x+9 \\)", "D": "\\( x^2+6x+3 \\)" },
+      "correct": "A"
+    },
+    {
+      "text": "Ko'paytuvchilarga ajrating: \\( x^2-25 \\)",
+      "choices": { "A": "\\( (x-5)^2 \\)", "B": "\\( (x+5)^2 \\)", "C": "\\( x(x-25) \\)", "D": "\\( (x-5)(x+5) \\)" },
+      "correct": "D"
+    },
+    {
+      "text": "Birhadlarni ko'paytiring: \\( 2x^2\\cdot(-3x^3) \\)",
+      "choices": { "A": "\\( -6x^6 \\)", "B": "\\( -6x^5 \\)", "C": "\\( 6x^5 \\)", "D": "\\( -x^5 \\)" },
+      "correct": "B"
+    },
+    {
+      "text": "\\( f(x)=2x-3 \\) funksiya berilgan. \\( f(4) \\) ni toping.",
+      "choices": { "A": "\\( 11 \\)", "B": "\\( 3 \\)", "C": "\\( 5 \\)", "D": "\\( 8 \\)" },
+      "correct": "C"
+    },
+    {
+      "text": "Proporsiyadan \\( x \\) ni toping: \\( \\frac{x}{6}=\\frac{5}{3} \\)",
+      "choices": { "A": "\\( 10 \\)", "B": "\\( 8 \\)", "C": "\\( 15 \\)", "D": "\\( 2{,}5 \\)" },
+      "correct": "A"
+    },
+    {
+      "text": "240 sonining 15% ini toping.",
+      "choices": { "A": "24", "B": "16", "C": "30", "D": "36" },
+      "correct": "D"
+    },
+    {
+      "text": "Narxi 80 000 so'm bo'lgan mahsulot 25% arzonlashdi. Mahsulotning yangi narxi qancha?",
+      "choices": { "A": "55 000 so'm", "B": "60 000 so'm", "C": "20 000 so'm", "D": "75 000 so'm" },
+      "correct": "B"
+    },
+    {
+      "text": "\\( x+y=7 \\) va \\( x-y=3 \\) bo'lsa, \\( x \\) ni toping.",
+      "choices": { "A": "\\( 2 \\)", "B": "\\( 4 \\)", "C": "\\( 5 \\)", "D": "\\( 10 \\)" },
+      "correct": "C"
+    },
+    {
+      "text": "Uchburchakning ikki burchagi \\( 50^{\\circ} \\) va \\( 70^{\\circ} \\) ga teng. Uchinchi burchagini toping.",
+      "choices": { "A": "\\( 60^{\\circ} \\)", "B": "\\( 70^{\\circ} \\)", "C": "\\( 120^{\\circ} \\)", "D": "\\( 240^{\\circ} \\)" },
+      "correct": "A"
+    },
+    {
+      "text": "Qo'shni burchaklardan biri \\( 35^{\\circ} \\) ga teng. Ikkinchisini toping.",
+      "choices": { "A": "\\( 55^{\\circ} \\)", "B": "\\( 35^{\\circ} \\)", "C": "\\( 325^{\\circ} \\)", "D": "\\( 145^{\\circ} \\)" },
+      "correct": "D"
+    },
+    {
+      "text": "Teng yonli uchburchakning uchidagi burchagi \\( 40^{\\circ} \\) ga teng. Asosidagi burchagini toping.",
+      "choices": { "A": "\\( 40^{\\circ} \\)", "B": "\\( 70^{\\circ} \\)", "C": "\\( 140^{\\circ} \\)", "D": "\\( 80^{\\circ} \\)" },
+      "correct": "B"
+    },
+    {
+      "text": "Ikki parallel to'g'ri chiziqni kesuvchi kesib o'tganda hosil bo'lgan ichki almashinuvchi burchaklardan biri \\( 65^{\\circ} \\) ga teng. Ikkinchisini toping.",
+      "choices": { "A": "\\( 65^{\\circ} \\)", "B": "\\( 115^{\\circ} \\)", "C": "\\( 25^{\\circ} \\)", "D": "\\( 130^{\\circ} \\)" },
+      "correct": "A"
+    },
+    {
+      "text": "Teng yonli uchburchakning asosi 6 sm, yon tomoni 8 sm. Uning perimetrini toping.",
+      "choices": { "A": "14 sm", "B": "20 sm", "C": "48 sm", "D": "22 sm" },
+      "correct": "D"
+    },
+    {
+      "text": "Hisoblang: \\( \\frac{1+\\frac{1}{2}}{1-\\frac{1}{4}} \\)",
+      "choices": { "A": "\\( \\frac{1}{2} \\)", "B": "\\( 2 \\)", "C": "\\( \\frac{9}{8} \\)", "D": "\\( 3 \\)" },
+      "correct": "B"
+    },
+    {
+      "text": "Hisoblang: \\( \\frac{2^5\\cdot 2^3}{2^6} \\)",
+      "choices": { "A": "\\( 2 \\)", "B": "\\( 8 \\)", "C": "\\( 4 \\)", "D": "\\( 16 \\)" },
+      "correct": "C"
+    },
+    {
+      "text": "\\( a=-2 \\) bo'lganda \\( a^2-3a+1 \\) ifodaning qiymatini toping.",
+      "choices": { "A": "\\( 11 \\)", "B": "\\( -1 \\)", "C": "\\( 3 \\)", "D": "\\( -9 \\)" },
+      "correct": "A"
+    },
+    {
+      "text": "Qulay usul bilan hisoblang: \\( 98^2-2^2 \\)",
+      "choices": { "A": "\\( 9200 \\)", "B": "\\( 9604 \\)", "C": "\\( 9800 \\)", "D": "\\( 9600 \\)" },
+      "correct": "D"
+    },
+    {
+      "text": "Avtomobil 3 soatda 210 km yo'l bosdi. Shu tezlikda 5 soatda necha km yo'l bosadi?",
+      "choices": { "A": "300 km", "B": "350 km", "C": "420 km", "D": "1050 km" },
+      "correct": "B"
+    },
+    {
+      "text": "\\( y=-2x+4 \\) funksiya grafigi \\( Ox \\) o'qini qaysi nuqtada kesib o'tadi?",
+      "choices": { "A": "\\( (0;4) \\)", "B": "\\( (-2;0) \\)", "C": "\\( (2;0) \\)", "D": "\\( (4;0) \\)" },
+      "correct": "C"
+    }
+  ]
+}
