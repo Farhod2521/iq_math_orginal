@@ -4,6 +4,7 @@
     DJANGO_ENV=production python test_add.py   (serverda)
 
 Qayta ishga tushirilsa, testda bor savollar ikkinchi marta qo'shilmaydi.
+Fan JSON boshidagi "subject" dan olinadi, savolning o'z "subject" i bo'lsa o'sha ishlatiladi.
 Fayl nomi "test" bilan boshlangani uchun Django testlari uni import qilishi mumkin:
 shu sababli baza bilan ishlash faqat main() ichida.
 """
@@ -71,7 +72,7 @@ def add_questions(data):
         if test.attempts.exists():
             sys.exit("O'quvchilar bu testni boshlagan: savol qo'shib bo'lmaydi.")
 
-        subject = find_subject(grade, data.get('subject'))
+        subjects = {}
         existing = set(test.questions.values_list('question_text_uz', flat=True))
         order = test.questions.count()
         added = 0
@@ -80,10 +81,13 @@ def add_questions(data):
             text = to_html(item['text'])
             if text in existing:
                 continue
+            name = item.get('subject') or data.get('subject')
+            if name not in subjects:
+                subjects[name] = find_subject(grade, name)
             order += 1
             serializer = AdminQuestionSerializer(data={
                 'test': test.id,
-                'subject': subject.id,
+                'subject': subjects[name].id,
                 'question_text_uz': text,
                 'question_type': 'choice',
                 'score': item.get('score', 1),
@@ -100,7 +104,7 @@ def add_questions(data):
             serializer.save()
             added += 1
 
-    return test, subject, added, len(data['questions']) - added
+    return test, added, len(data['questions']) - added
 
 
 def main():
@@ -111,12 +115,15 @@ def main():
     import django
     django.setup()
     from django.conf import settings
+    from django.db.models import Count
 
     data = json.loads(DATA_FILE.read_text(encoding='utf-8'))
     print(f"Muhit: {env}, baza: {settings.DATABASES['default']['NAME']}")
 
-    test, subject, added, skipped = add_questions(data)
-    print(f"{test}, fan: {subject.name}")
+    test, added, skipped = add_questions(data)
+    print(test)
+    for row in test.questions.values('subject__name').annotate(total=Count('id')).order_by('subject__name'):
+        print(f"{row['subject__name']}: {row['total']} ta savol")
     print(f"Qo'shildi: {added}, oldin bor edi: {skipped}, testda jami: {test.questions.count()} / {test.question_count}")
 
 

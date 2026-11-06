@@ -2,7 +2,7 @@
   "season": 1,
   "week": 1,
   "grade": "7",
-  "subject": null,
+  "subject": "Algebra",
   "questions": [
     {
       "text": "Hisoblang: \\( \\frac{3}{4}+\\frac{5}{6} \\)",
@@ -75,26 +75,31 @@
       "correct": "C"
     },
     {
+      "subject": "Geometriya",
       "text": "Uchburchakning ikki burchagi \\( 50^{\\circ} \\) va \\( 70^{\\circ} \\) ga teng. Uchinchi burchagini toping.",
       "choices": { "A": "\\( 60^{\\circ} \\)", "B": "\\( 70^{\\circ} \\)", "C": "\\( 120^{\\circ} \\)", "D": "\\( 240^{\\circ} \\)" },
       "correct": "A"
     },
     {
+      "subject": "Geometriya",
       "text": "Qo'shni burchaklardan biri \\( 35^{\\circ} \\) ga teng. Ikkinchisini toping.",
       "choices": { "A": "\\( 55^{\\circ} \\)", "B": "\\( 35^{\\circ} \\)", "C": "\\( 325^{\\circ} \\)", "D": "\\( 145^{\\circ} \\)" },
       "correct": "D"
     },
     {
+      "subject": "Geometriya",
       "text": "Teng yonli uchburchakning uchidagi burchagi \\( 40^{\\circ} \\) ga teng. Asosidagi burchagini toping.",
       "choices": { "A": "\\( 40^{\\circ} \\)", "B": "\\( 70^{\\circ} \\)", "C": "\\( 140^{\\circ} \\)", "D": "\\( 80^{\\circ} \\)" },
       "correct": "B"
     },
     {
+      "subject": "Geometriya",
       "text": "Ikki parallel to'g'ri chiziqni kesuvchi kesib o'tganda hosil bo'lgan ichki almashinuvchi burchaklardan biri \\( 65^{\\circ} \\) ga teng. Ikkinchisini toping.",
       "choices": { "A": "\\( 65^{\\circ} \\)", "B": "\\( 115^{\\circ} \\)", "C": "\\( 25^{\\circ} \\)", "D": "\\( 130^{\\circ} \\)" },
       "correct": "A"
     },
     {
+      "subject": "Geometriya",
       "text": "Teng yonli uchburchakning asosi 6 sm, yon tomoni 8 sm. Uning perimetrini toping.",
       "choices": { "A": "14 sm", "B": "20 sm", "C": "48 sm", "D": "22 sm" },
       "correct": "D"
