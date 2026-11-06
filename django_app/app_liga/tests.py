@@ -1,8 +1,12 @@
 # -*- coding: utf-8 -*-
+import io
+import tempfile
 from datetime import timedelta
 
-from django.test import TestCase
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import TestCase, override_settings
 from django.utils import timezone
+from PIL import Image
 from rest_framework.test import APIClient
 
 from django_app.app_payments.models import Subscription
@@ -327,6 +331,62 @@ class SeasonCloseTests(LigaFixtureMixin, TestCase):
         self.assertEqual(data['rank'], 2)
 
 
+def _png(name='q.png'):
+    buffer = io.BytesIO()
+    Image.new('RGB', (2, 2), 'white').save(buffer, 'PNG')
+    return SimpleUploadedFile(name, buffer.getvalue(), content_type='image/png')
+
+
+class QuestionImageTests(LigaFixtureMixin, TestCase):
+    def setUp(self):
+        super().setUp()
+        media = tempfile.TemporaryDirectory()
+        self.addCleanup(media.cleanup)
+        override = override_settings(MEDIA_ROOT=media.name)
+        override.enable()
+        self.addCleanup(override.disable)
+
+        self.mentor = self._client(User.objects.create_user(phone='+998900000098', password='pass12345', role='teacher'))
+
+    def _form(self, **extra):
+        data = {
+            'test': self.test.id,
+            'subject': self.subject.id,
+            'question_text_uz': 'Rasmga qarang',
+            'question_type': 'choice',
+            'score': 1,
+            'choices[0]letter': 'A',
+            'choices[0]text_uz': 'Bir',
+            'choices[0]is_correct': 'true',
+            'choices[1]letter': 'B',
+            'choices[1]image': _png('b.png'),
+            'choices[1]is_correct': 'false',
+        }
+        data.update(extra)
+        return data
+
+    def test_question_and_choice_images_saved_from_form_data(self):
+        response = self.mentor.post('/api/v1/liga/admin/questions/', self._form(image=_png()), format='multipart')
+        self.assertEqual(response.status_code, 201, response.data)
+        question = LigaQuestion.objects.get(pk=response.data['id'])
+        self.assertTrue(question.image)
+        self.assertEqual(question.choices.count(), 2)
+        self.assertTrue(question.choices.get(letter='B').image)
+        self.assertFalse(question.choices.get(letter='A').image)
+        self.assertTrue(response.data['choices'][1]['image'].startswith('http'))
+
+    def test_choice_needs_text_or_image(self):
+        data = self._form()
+        del data['choices[1]image']
+        response = self.mentor.post('/api/v1/liga/admin/questions/', data, format='multipart')
+        self.assertEqual(response.status_code, 400)
+
+    def test_not_an_image_rejected(self):
+        fake = SimpleUploadedFile('q.png', b'not image', content_type='image/png')
+        response = self.mentor.post('/api/v1/liga/admin/questions/', self._form(image=fake), format='multipart')
+        self.assertEqual(response.status_code, 400)
+
+
 class AdminApiTests(LigaFixtureMixin, TestCase):
     def setUp(self):
         super().setUp()
@@ -389,6 +449,85 @@ class AdminApiTests(LigaFixtureMixin, TestCase):
         self.assertEqual(LigaTest.objects.filter(week_number=2).count(), 2)
         repeat = self.mentor.post('/api/v1/liga/admin/tests/bulk-create/', body, format='json')
         self.assertEqual(repeat.status_code, 400)
+
+    def test_season_edit_keeps_existing_weeks(self):
+        self._test(week=2)
+        url = f'/api/v1/liga/admin/seasons/{self.season.id}/'
+        self.assertEqual(self.mentor.patch(url, {'weeks_count': 1}, format='json').status_code, 400)
+        response = self.mentor.patch(url, {'number': 7, 'weeks_count': 3, 'prize_1_uz': 'Noutbuk'}, format='json')
+        self.assertEqual(response.status_code, 200, response.data)
+        self.season.refresh_from_db()
+        self.assertEqual((self.season.number, self.season.weeks_count, self.season.prize_1_uz), (7, 3, 'Noutbuk'))
+
+    def test_season_number_must_be_unique(self):
+        LigaSeason.objects.create(number=2)
+        url = f'/api/v1/liga/admin/seasons/{self.season.id}/'
+        response = self.mentor.patch(url, {'number': 2}, format='json')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('allaqachon', str(response.data))
+
+    def test_closed_season_is_not_editable(self):
+        services.close_season(self.season.id)
+        url = f'/api/v1/liga/admin/seasons/{self.season.id}/'
+        self.assertEqual(self.mentor.patch(url, {'weeks_count': 5}, format='json').status_code, 400)
+
+    def test_season_delete(self):
+        url = f'/api/v1/liga/admin/seasons/{self.season.id}/'
+        self.assertEqual(self.mentor.delete(url).status_code, 400)  # ishtirokchisi bor
+        self.participant.delete()
+        self.assertEqual(self.mentor.delete(url).status_code, 204)
+        self.assertFalse(LigaTest.objects.filter(pk=self.test.pk).exists())
+
+    def test_week_update_changes_only_sent_fields_in_all_grades(self):
+        other = self._test(week=1, klass=Class.objects.create(name='9'), duration_minutes=45)
+        url = f'/api/v1/liga/admin/tests/week/?season={self.season.id}&week_number=1'
+        response = self.mentor.patch(url, {'week_number': 2, 'question_count': 10}, format='json')
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(response.data['updated'], 2)
+        other.refresh_from_db()
+        self.assertEqual((other.week_number, other.question_count, other.duration_minutes), (2, 10, 45))
+
+    def test_week_update_rolls_back_on_conflict(self):
+        ninth = Class.objects.create(name='9')
+        self._test(week=1, klass=ninth)
+        self._test(week=2, klass=ninth)
+        url = f'/api/v1/liga/admin/tests/week/?season={self.season.id}&week_number=1'
+        response = self.mentor.patch(url, {'week_number': 2}, format='json')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('allaqachon', str(response.data))
+        self.assertEqual(self.season.tests.filter(week_number=1).count(), 2)
+
+    def test_week_cannot_pass_season_length(self):
+        url = f'/api/v1/liga/admin/tests/week/?season={self.season.id}&week_number=1'
+        self.assertEqual(self.mentor.patch(url, {'week_number': 3}, format='json').status_code, 400)
+
+    def test_started_week_allows_only_end_time(self):
+        services.start_attempt(self.test, self.student)
+        url = f'/api/v1/liga/admin/tests/week/?season={self.season.id}&week_number=1'
+        later = (timezone.now() + timedelta(hours=5)).isoformat()
+        self.assertEqual(self.mentor.patch(url, {'duration_minutes': 10}, format='json').status_code, 400)
+        self.assertEqual(self.mentor.patch(url, {'end_at': later}, format='json').status_code, 200)
+
+    def test_week_delete(self):
+        other_season = LigaSeason.objects.create(number=2)
+        kept = LigaTest.objects.create(
+            season=other_season, grade=self.klass, week_number=1,
+            start_at=self.test.start_at, end_at=self.test.end_at,
+        )
+        response = self.mentor.delete(f'/api/v1/liga/admin/tests/week/?season={self.season.id}&week_number=1')
+        self.assertEqual(response.status_code, 204)
+        self.assertFalse(LigaTest.objects.filter(pk=self.test.pk).exists())
+        self.assertTrue(LigaTest.objects.filter(pk=kept.pk).exists())
+
+    def test_week_with_results_is_not_deleted(self):
+        services.start_attempt(self.test, self.student)
+        url = f'/api/v1/liga/admin/tests/week/?season={self.season.id}&week_number=1'
+        self.assertEqual(self.mentor.delete(url).status_code, 400)
+        self.assertTrue(LigaTest.objects.filter(pk=self.test.pk).exists())
+
+    def test_week_request_needs_season_and_week(self):
+        self.assertEqual(self.mentor.delete('/api/v1/liga/admin/tests/week/').status_code, 400)
+        self.assertEqual(LigaTest.objects.count(), 1)
 
     def test_participants_list_and_excel(self):
         attempt = services.start_attempt(self.test, self.student)

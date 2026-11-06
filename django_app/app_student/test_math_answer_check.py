@@ -65,6 +65,13 @@ CASES = [
     ("18", "-18", False, "ishora boshqa"),
     ("1,5", "15", False, "vergul yo'qolishi"),
     ("2^3", "6", False, "daraja ko'paytirish emas"),
+    ("sqrt(3)/2", r"\frac{\sqrt{3}}{2}", True, "ichma-ich: kasr ichida ildiz"),
+    (r"\frac{x^{2}}{2}", "x^2/2", True, "MathQuill: kasr ichida daraja"),
+    (r"x^{2}", "x^2", True, "MathQuill: daraja qavsda"),
+    (r"\frac{\sqrt{3}}{2}", r"\frac{\sqrt{2}}{2}", False, "ichma-ich: boshqa son"),
+    (r"\operatorname{tg}x", r"\tan x", True, "tg = tan"),
+    (r"\operatorname{ctg}x", r"\cot x", True, "ctg = cot"),
+    (r"2\cdot3", "6", True, "MathQuill: ko'paytirish nuqtasi"),
 ]
 
 ok = fail = 0

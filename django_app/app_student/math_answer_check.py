@@ -135,8 +135,19 @@ def clean_latex(expr):
     # Probellar olib tashlanishidan OLDIN bajariladi, aks holda "35/6" bo'lardi.
     expr = re.sub(r'(\d+)\s+(\d+)\s*/\s*(\d+)', r'(\1+(\2)/(\3))', expr)
 
-    expr = re.sub(r'\\frac\{([^}]+)\}\{([^}]+)\}', r'(\1)/(\2)', expr)
-    expr = re.sub(r'\\sqrt\{([^}]+)\}', r'sqrt(\1)', expr)
+    # MathQuill ichma-ich kod beradi: "\frac{\sqrt{3}}{2}", "\sqrt{\frac{1}{2}}", "\frac{x^{2}}{3}".
+    # Eng ichki qavsdan boshlab ochamiz, aks holda \frac tashqi qavsni topa olmaydi.
+    previous = None
+    while expr != previous:
+        previous = expr
+        expr = re.sub(r'\^\{([^{}]+)\}', r'^(\1)', expr)
+        expr = re.sub(r'\\sqrt\{([^{}]+)\}', r'sqrt(\1)', expr)
+        expr = re.sub(r'\\frac\{([^{}]+)\}\{([^{}]+)\}', r'(\1)/(\2)', expr)
+
+    # Maktab yozuvi: tg = tan, ctg = cot
+    expr = expr.replace(r'\operatorname{ctg}', 'cot').replace(r'\operatorname{tg}', 'tan')
+    expr = re.sub(r'\\operatorname\{(\w+)\}', r'\1', expr)
+    expr = expr.replace(r'\cdot', '*')
     expr = expr.replace(r'\le', '<=')
     expr = expr.replace(r'\ge', '>=')
     expr = expr.replace(r'\lt', '<')

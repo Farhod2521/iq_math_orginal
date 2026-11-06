@@ -118,7 +118,8 @@ class LigaQuestion(models.Model):
 class LigaChoice(models.Model):
     question = models.ForeignKey(LigaQuestion, on_delete=models.CASCADE, related_name='choices')
     letter = models.CharField(max_length=1, verbose_name="Harf")  # A, B, C...
-    text = RichTextField(verbose_name="Variant matni")
+    text = RichTextField(blank=True, verbose_name="Variant matni")
+    image = models.ImageField(upload_to="FILES/Liga", blank=True, null=True, verbose_name="Rasm")
     is_correct = models.BooleanField(default=False, verbose_name="To'g'ri variant")
 
     class Meta:

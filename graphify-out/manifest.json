@@ -1176,9 +1176,9 @@
     "semantic_hash": "a04aa53fc5eef2196aa7bd9887a3c089"
   },
   "django_app/app_student/math_answer_check.py": {
-    "mtime": 1793012350.0796964,
-    "seen": 1793880221.5478232,
-    "ast_hash": "e5b3325802671f7792c2b19ebbe5cf53",
+    "mtime": 1793947551.3185675,
+    "seen": 1793947663.663199,
+    "ast_hash": "a63570bd36f8152de0eb96909c5e467e",
     "semantic_hash": ""
   },
   "django_app/app_student/migrations/0001_initial.py": {
@@ -1314,10 +1314,10 @@
     "semantic_hash": "157cd070be5b7b2cdff2bbc5e17bd0f5"
   },
   "django_app/app_student/test_math_answer_check.py": {
-    "mtime": 1786423573.1607366,
-    "seen": 1790226083.656904,
-    "ast_hash": "73c4345f3872bb178399fae635a0ff8b",
-    "semantic_hash": "73c4345f3872bb178399fae635a0ff8b"
+    "mtime": 1793947592.1197698,
+    "seen": 1793947663.6632252,
+    "ast_hash": "1491a4ac613c8160e66ad97d2cbcbb1a",
+    "semantic_hash": ""
   },
   "django_app/app_student/tests.py": {
     "mtime": 1785301014.9401333,
@@ -3816,15 +3816,15 @@
     "semantic_hash": ""
   },
   "django_app/app_liga/models.py": {
-    "mtime": 1793773797.8658903,
-    "seen": 1793880221.547683,
-    "ast_hash": "0c4603855a1972e8ea0662cdb2f3a5bf",
+    "mtime": 1793948900.5416653,
+    "seen": 1793949586.5277421,
+    "ast_hash": "32b6db7536a409e3b9af96c65cb678f4",
     "semantic_hash": ""
   },
   "django_app/app_liga/serializers.py": {
-    "mtime": 1793773799.5140693,
-    "seen": 1793880221.5476842,
-    "ast_hash": "bcec668f81771377876f3e1df7d3d354",
+    "mtime": 1793960471.3139334,
+    "seen": 1793961885.392204,
+    "ast_hash": "080fde0099cd0315f947ea426d6aaac1",
     "semantic_hash": ""
   },
   "django_app/app_liga/services.py": {
@@ -3846,9 +3846,9 @@
     "semantic_hash": ""
   },
   "django_app/app_liga/tests.py": {
-    "mtime": 1793879682.6562915,
-    "seen": 1793880221.547688,
-    "ast_hash": "93f2ef08849122af2a204d087f78733d",
+    "mtime": 1793960339.6111197,
+    "seen": 1793961885.3922102,
+    "ast_hash": "7358e670be085b9e8a249addc618d8a9",
     "semantic_hash": ""
   },
   "django_app/app_liga/translation.py": {
@@ -3864,9 +3864,9 @@
     "semantic_hash": ""
   },
   "django_app/app_liga/views.py": {
-    "mtime": 1793879682.6562915,
-    "seen": 1793880221.5476904,
-    "ast_hash": "1b665593f2585aa99a0bba25e8cab804",
+    "mtime": 1793960398.651892,
+    "seen": 1793961885.3922138,
+    "ast_hash": "776681edf7e4271f48c456697dd1012e",
     "semantic_hash": ""
   },
   "django_app/app_management/VIEW/ai_solutions.py": {
@@ -4287,6 +4287,12 @@
     "mtime": 1791195718.3912945,
     "seen": 1793880221.5480862,
     "ast_hash": "cf4b3103902892798654e9cc2c754e62",
+    "semantic_hash": ""
+  },
+  "django_app/app_liga/migrations/0003_choice_image.py": {
+    "mtime": 1793948903.2322247,
+    "seen": 1793949586.5277321,
+    "ast_hash": "1c787b90d04dc854e55b73b0a12bc5af",
     "semantic_hash": ""
   }
 }

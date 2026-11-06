@@ -1,5 +1,7 @@
 from django.db import transaction
+from django.db.models import Max
 from rest_framework import serializers
+from rest_framework.validators import UniqueTogetherValidator, UniqueValidator
 
 from .models import LigaChoice, LigaQuestion, LigaSeason, LigaTest, LigaWinner
 
@@ -9,7 +11,7 @@ from .models import LigaChoice, LigaQuestion, LigaSeason, LigaTest, LigaWinner
 class StudentChoiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = LigaChoice
-        fields = ('id', 'letter', 'text_uz', 'text_ru')
+        fields = ('id', 'letter', 'text_uz', 'text_ru', 'image')
 
 
 class StudentQuestionSerializer(serializers.ModelSerializer):
@@ -56,6 +58,31 @@ class AdminSeasonSerializer(serializers.ModelSerializer):
             'is_published', 'is_closed', 'closed_at', 'tests_count', 'participants_count', 'created_at',
         )
         read_only_fields = ('closed_at', 'created_at')
+        extra_kwargs = {
+            'number': {
+                'min_value': 1,
+                'validators': [UniqueValidator(LigaSeason.objects.all(), message="Bu raqamli mavsum allaqachon bor.")],
+            },
+            'weeks_count': {'min_value': 1},
+        }
+
+    def validate_weeks_count(self, value):
+        if self.instance and value != self.instance.weeks_count:
+            last_week = self.instance.tests.aggregate(last=Max('week_number'))['last'] or 0
+            if value < last_week:
+                raise serializers.ValidationError(f"Mavsumda {last_week}-hafta testi bor: haftalar soni undan kam bo'lmasin.")
+        return value
+
+    def validate(self, attrs):
+        if self.instance and self.instance.is_closed and set(attrs) - {'is_published'}:
+            raise serializers.ValidationError("Yopilgan mavsumni tahrirlab bo'lmaydi.")
+        return attrs
+
+
+def validate_week_limit(season, week):
+    """Oxirgi hafta weeks_count bo'yicha aniqlanadi: undan katta hafta qo'shib bo'lmaydi."""
+    if week > season.weeks_count:
+        raise serializers.ValidationError(f"Bu mavsumda {season.weeks_count} ta hafta bor.")
 
 
 def validate_test_window(start, end, duration):
@@ -78,13 +105,26 @@ class AdminTestSerializer(serializers.ModelSerializer):
             'question_count', 'is_published', 'status', 'questions_total', 'attempts_count', 'created_at',
         )
         read_only_fields = ('created_at',)
+        extra_kwargs = {
+            'week_number': {'min_value': 1},
+            'duration_minutes': {'min_value': 1},
+            'question_count': {'min_value': 1},
+        }
+        validators = [
+            UniqueTogetherValidator(
+                LigaTest.objects.all(), ('season', 'grade', 'week_number'),
+                message="Bu haftada shu sinf testi allaqachon bor.",
+            ),
+        ]
 
     def validate(self, attrs):
         def value(name, default=None):
             return attrs.get(name, getattr(self.instance, name, default))
 
         validate_test_window(value('start_at'), value('end_at'), value('duration_minutes', 60))
-        if value('is_published') and not (self.instance and self.instance.questions.exists()):
+        if 'week_number' in attrs and attrs['week_number'] != getattr(self.instance, 'week_number', None):
+            validate_week_limit(value('season'), attrs['week_number'])
+        if attrs.get('is_published') and not (self.instance and self.instance.questions.exists()):
             raise serializers.ValidationError("Savollarsiz testni e'lon qilib bo'lmaydi.")
 
         if self.instance and self.instance.attempts.exists():
@@ -106,13 +146,24 @@ class BulkTestSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         validate_test_window(attrs['start_at'], attrs['end_at'], attrs['duration_minutes'])
+        validate_week_limit(attrs['season'], attrs['week_number'])
         return attrs
+
+
+class WeekSerializer(serializers.Serializer):
+    """Hafta alohida yozuv emas: mavsumdagi bir xil raqamli sinf testlari."""
+    season = serializers.PrimaryKeyRelatedField(queryset=LigaSeason.objects.all())
+    week_number = serializers.IntegerField(min_value=1)
 
 
 class AdminChoiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = LigaChoice
-        fields = ('id', 'letter', 'text_uz', 'text_ru', 'is_correct')
+        fields = ('id', 'letter', 'text_uz', 'text_ru', 'image', 'is_correct')
+        extra_kwargs = {
+            'text_uz': {'required': False, 'allow_blank': True},
+            'text_ru': {'required': False, 'allow_blank': True},
+        }
 
 
 class AdminQuestionSerializer(serializers.ModelSerializer):
@@ -144,6 +195,8 @@ class AdminQuestionSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError("Kamida 2 ta variant kerak.")
             if sum(1 for choice in choices if choice.get('is_correct')) != 1:
                 raise serializers.ValidationError("Aynan bitta to'g'ri variant bo'lishi kerak.")
+            if any(not choice.get('text_uz') and not choice.get('image') for choice in choices):
+                raise serializers.ValidationError("Variantda matn yoki rasm bo'lishi kerak.")
         return attrs
 
     def _save_choices(self, question, choices):

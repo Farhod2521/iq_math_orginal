@@ -20,7 +20,7 @@ from . import services
 from .models import LigaAttempt, LigaParticipant, LigaPointLog, LigaQuestion, LigaSeason, LigaTest, LigaWinner
 from .serializers import (
     AdminQuestionSerializer, AdminSeasonSerializer, AdminTestSerializer, AdminWinnerSerializer,
-    AnswerInputSerializer, BulkTestSerializer, PublicSeasonSerializer, StudentQuestionSerializer,
+    AnswerInputSerializer, BulkTestSerializer, PublicSeasonSerializer, StudentQuestionSerializer, WeekSerializer,
 )
 
 TOP_SIZE = 10
@@ -527,6 +527,9 @@ class AdminSeasonViewSet(ProtectedDestroyMixin, viewsets.ModelViewSet):
         return paginator.get_paginated_response(paginator.paginate_queryset(data, request, view=self))
 
 
+WEEK_FIELDS = ('week_number', 'start_at', 'end_at', 'duration_minutes', 'question_count')
+
+
 class AdminTestViewSet(ProtectedDestroyMixin, viewsets.ModelViewSet):
     serializer_class = AdminTestSerializer
     permission_classes = [IsLigaAdmin]
@@ -563,6 +566,29 @@ class AdminTestViewSet(ProtectedDestroyMixin, viewsets.ModelViewSet):
         except IntegrityError:
             return Response({'message': "Bu hafta testi tanlangan sinflardan birida allaqachon bor"}, status=400)
         return Response({'created': len(tests)}, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=['patch', 'delete'])
+    def week(self, request):
+        """Haftaning hamma sinflardagi testlari birga: ?season=1&week_number=2"""
+        params = WeekSerializer(data=request.query_params)
+        params.is_valid(raise_exception=True)
+        tests = LigaTest.objects.filter(**params.validated_data)
+        if not tests.exists():
+            return Response({'message': "Bu haftada testlar yo'q"}, status=404)
+
+        if request.method == 'DELETE':
+            if LigaAttempt.objects.filter(test__in=tests).exists():
+                return Response({'message': "Natijalari bor haftani o'chirib bo'lmaydi"}, status=400)
+            tests.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+        changes = {name: request.data[name] for name in WEEK_FIELDS if name in request.data}
+        with transaction.atomic():
+            for test in tests:
+                serializer = AdminTestSerializer(test, data=changes, partial=True)
+                serializer.is_valid(raise_exception=True)
+                serializer.save()
+        return Response({'updated': len(tests)})
 
     @action(detail=True, methods=['get'])
     def participants(self, request, pk=None):
