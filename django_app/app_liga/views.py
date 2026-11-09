@@ -77,14 +77,24 @@ def _standing_row(participant):
 
 
 def _subject_stats(attempt):
-    rows = (
-        attempt.answers.values('question__subject__name')
-        .annotate(answered=Count('id'), correct=Count('id', filter=Q(is_correct=True)))
-        .order_by('question__subject__name')
+    """Fanlar bo'yicha: tushgan savollar, javob berilgani va to'g'risi."""
+    totals = (
+        LigaQuestion.objects.filter(id__in=attempt.question_order)
+        .values('subject__name').annotate(total=Count('id')).order_by('subject__name')
     )
+    answers = {
+        row['question__subject__name']: row
+        for row in attempt.answers.values('question__subject__name')
+        .annotate(answered=Count('id'), correct=Count('id', filter=Q(is_correct=True)))
+    }
     return [
-        {'subject': row['question__subject__name'], 'answered': row['answered'], 'correct': row['correct']}
-        for row in rows
+        {
+            'subject': row['subject__name'],
+            'total': row['total'],
+            'answered': answers.get(row['subject__name'], {}).get('answered', 0),
+            'correct': answers.get(row['subject__name'], {}).get('correct', 0),
+        }
+        for row in totals
     ]
 
 
@@ -113,6 +123,7 @@ def _attempt_summary(attempt):
 
 def _attempt_payload(attempt, request):
     data = _attempt_summary(attempt)
+    data.update({'week_number': attempt.test.week_number, 'grade_name': attempt.test.grade.name})
     if attempt.status != LigaAttempt.STATUS_IN_PROGRESS:
         return data
 
@@ -121,7 +132,6 @@ def _attempt_payload(attempt, request):
     ordered = [by_id[pk] for pk in attempt.question_order if pk in by_id]
     data.update({
         'viewer': _viewer(attempt.student),
-        'week_number': attempt.test.week_number,
         'remaining_seconds': max(0, int((attempt.deadline_at - timezone.now()).total_seconds())),
         'questions': StudentQuestionSerializer(ordered, many=True, context={'request': request}).data,
         'answers': [

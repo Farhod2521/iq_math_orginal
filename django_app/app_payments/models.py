@@ -3,10 +3,24 @@ from django_app.app_user.models import Student
 from django_app.app_management.models import Coupon_Tutor_Student
 
 class SubscriptionSetting(models.Model):
+    TARIFF_START = "start"
+    TARIFF_START_PRO = "start_pro"
+    TARIFF_CHOICES = (
+        (TARIFF_START, "Start"),
+        (TARIFF_START_PRO, "Start Pro"),
+    )
+
     free_trial_days = models.PositiveIntegerField(default=7, verbose_name="Tekin muddat (kun)")
+    # Sinov muddatidagi (hali to'lov qilmagan) o'quvchiga qaysi tarif imkoniyatlari ochiladi
+    default_tariff = models.CharField(
+        max_length=20,
+        choices=TARIFF_CHOICES,
+        default=TARIFF_START_PRO,
+        verbose_name="Sinov muddatidagi tarif (default)",
+    )
 
     def __str__(self):
-        return f"Tekin muddat: {self.free_trial_days} kun"
+        return f"Tekin muddat: {self.free_trial_days} kun ({self.get_default_tariff_display()})"
     
     class Meta:
         verbose_name = "Obuna sozlamasi"
@@ -64,6 +78,11 @@ class Payment(models.Model):
     ], null=True, blank=True, verbose_name="Kupon turi")
     discount_percent = models.PositiveIntegerField(default=0, verbose_name="Chegirma foizi")
     subscription_months = models.PositiveIntegerField(default=1, verbose_name="Obuna muddati (oy)")
+    # Qaysi tarif (Start / Start Pro) uchun to'langan — bir muddatda bir nechta tarif bo'lgani uchun
+    plan = models.ForeignKey(
+        "SubscriptionPlan", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="payments", verbose_name="Tarif"
+    )
     
     # Cashback fields
     student_cashback_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Studentga keshbek")

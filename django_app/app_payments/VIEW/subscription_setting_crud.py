@@ -9,7 +9,7 @@ from django_app.app_payments.models import SubscriptionSetting
 class SubscriptionSettingSerializer(serializers.ModelSerializer):
     class Meta:
         model = SubscriptionSetting
-        fields = ['id', 'free_trial_days']
+        fields = ['id', 'free_trial_days', 'default_tariff']
 
 
 class IsSuperAdminOrMentor(BasePermission):

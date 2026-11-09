@@ -19,9 +19,9 @@ class SubscriptionBenefitAdmin(TranslationAdmin):
 
 @admin.register(SubscriptionSetting)
 class SubscriptionSettingAdmin(admin.ModelAdmin):
-    list_display = ("id", "free_trial_days",)
+    list_display = ("id", "free_trial_days", "default_tariff")
     list_display_links = ("id",)  # bu yerda id ni link qilib belgilaymiz
-    list_editable = ("free_trial_days",)
+    list_editable = ("free_trial_days", "default_tariff")
 
 @admin.register(Subscription)
 class SubscriptionAdmin(admin.ModelAdmin):

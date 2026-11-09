@@ -1,7 +1,7 @@
 # Graph Report - iq_math_orginal  (2026-11-06)
 
 ## Corpus Check
-- 401 files · ~1,602,913 words
+- 401 files · ~1,602,957 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 3 file(s) not represented in the graph (top: (none) 2, .tex 1)
 
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `d5aafa13`
+- Built from commit: `fd381ae5`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -809,7 +809,7 @@ _Questions this graph is uniquely positioned to answer:_
 - **Should `app_management/signals.py` be split into smaller, more focused modules?**
   _Cohesion score 0.11076923076923077 - nodes in this community are weakly interconnected._
 - **Why does `Subject` connect `Subject` to `TopicProgress`, `Question`, `StudentScore`, `app_liga/views.py`, `app_teacher/urls.py`, `app_student/views.py`, `AdminApiTests`, `UserSMSAttempt`, `LigaQuestion`, `engine.py`, `app_student/serializers.py`, `app_battle/views.py`, `app_teacher/models.py`, `app_battle/models.py`, `app_tutor/views.py`, `app_user/models.py`, `LigaFixtureMixin`, `SubjectSerializer`, `ai_solutions.py`, `Parent`, `Topic`, `TopicHelpRequestIndependent`, `app_teacher/serializers.py`, `SuperAdminChangeUserRoleAPIView`, `os`, `app_liga/services.py`, `ReorderChapterAPIView`, `app_user/serializers.py`, `app_user/serializers.py`, `parent_dashboard.py`, `SubjectSerializer`, `app_battle/tests.py`?**
-  _High betweenness centrality (0.034) - this node is a cross-community bridge._
+  _High betweenness centrality (0.035) - this node is a cross-community bridge._
 - **Are the 54 inferred relationships involving `Subject` (e.g. with `BattleRoom` and `BattleFixtureMixin`) actually correct?**
   _`Subject` has 54 INFERRED edges - model-reasoned connections that need verification._
 - **Should `django_db_models_deletion` be split into smaller, more focused modules?**

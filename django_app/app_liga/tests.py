@@ -529,6 +529,15 @@ class AdminApiTests(LigaFixtureMixin, TestCase):
         self.assertEqual(self.mentor.delete('/api/v1/liga/admin/tests/week/').status_code, 400)
         self.assertEqual(LigaTest.objects.count(), 1)
 
+    def test_finished_attempt_shows_subject_totals(self):
+        attempt = services.start_attempt(self.test, self.student)
+        services.save_answer(attempt.id, self.q1.id, self._correct(self.q1).id)
+        services.finish_attempt(attempt.id)
+        data = self._client(self.student.user).get(f'/api/v1/liga/attempts/{attempt.id}/').data
+        self.assertEqual((data['week_number'], data['grade_name']), (1, '8'))
+        self.assertEqual(data['by_subject'], [{'subject': 'Algebra', 'total': 2, 'answered': 1, 'correct': 1}])
+        self.assertNotIn('questions', data)
+
     def test_participants_list_and_excel(self):
         attempt = services.start_attempt(self.test, self.student)
         services.save_answer(attempt.id, self.q1.id, self._correct(self.q1).id)

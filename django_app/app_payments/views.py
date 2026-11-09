@@ -205,7 +205,8 @@ class InitiatePaymentAPIView(APIView):
             discount_percent=discount_percent,
             student_cashback_amount=student_cashback_amount,
             teacher_cashback_amount=teacher_cashback_amount,
-            subscription_months=plan.months
+            subscription_months=plan.months,
+            plan=plan,
         )
 
         # Agar kupon ishlatilgan bo'lsa, foydalanish tarixini yozish
@@ -674,11 +675,20 @@ class SubscriptionTrialDaysAPIView(APIView):
         )
 
         current_plan_info = None
+        tariff_info = None
         if last_payment:
-            # To'lovdan obuna muddatiga qarab tarifni aniqlaymiz
-            plan = SubscriptionPlan.objects.filter(
-                months=last_payment.subscription_months
-            ).first()
+            plan = _payment_plan(last_payment)
+            if plan:
+                name_uz = plan.name_uz or plan.name or ""
+                tariff_info = {
+                    "id": plan.id,
+                    "name": plan.name or name_uz,
+                    "name_uz": name_uz,
+                    "name_ru": plan.name_ru or name_uz,
+                    "months": plan.months,
+                    # Start Pro — nomida "pro" bor tarif (ota-ona va chat bo'limlari faqat shunda)
+                    "is_pro": "pro" in name_uz.lower(),
+                }
             if plan:
                 current_plan_info = {
                     "plan_name": plan.get_months_display(),
@@ -692,16 +702,40 @@ class SubscriptionTrialDaysAPIView(APIView):
                     "total_price": float(last_payment.amount),
                 }
 
+        # Sinov muddatidagi tarif (Start / Start Pro) — admin sozlamasidan
+        default_tariff = getattr(trial_days_setting, "default_tariff", None) or SubscriptionSetting.TARIFF_START_PRO
+        trial_tariff = {
+            "key": default_tariff,
+            "name": dict(SubscriptionSetting.TARIFF_CHOICES).get(default_tariff, "Start Pro"),
+            "is_pro": default_tariff == SubscriptionSetting.TARIFF_START_PRO,
+        }
+
         return Response(
             {
                 "days_until_next_payment": remaining_days,
+                "trial_tariff": trial_tariff,
                 "end_date": subscription.end_date.strftime("%d/%m/%Y"),
                 "payment_amount": payment_amount,
                 "is_paid": is_paid,
                 "current_plan": current_plan_info,  # 🆕 tarif haqida ma'lumot
+                # Joriy tarif (Start / Start Pro); to'lov qilinmagan (sinov) bo'lsa — null
+                "tariff": tariff_info,
             },
             status=status.HTTP_200_OK
         )
+
+
+def _payment_plan(payment):
+    """To'lov qaysi tarif uchun bo'lgani. Yangi to'lovlarda `plan` yozilgan; eskilarida —
+    muddat bo'yicha, bir muddatda bir nechta tarif (Start, Start Pro) bo'lsa — narxi
+    to'lovning chegirmasiz summasiga eng yaqin tarif."""
+    if payment.plan_id:
+        return payment.plan
+    plans = list(SubscriptionPlan.objects.filter(months=payment.subscription_months).order_by("price_per_month"))
+    if len(plans) <= 1 or payment.original_amount is None:
+        return plans[0] if plans else None
+    paid = float(payment.original_amount)
+    return min(plans, key=lambda p: abs(plan_base_price(p) - paid))
 
 
 
