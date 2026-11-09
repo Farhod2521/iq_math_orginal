@@ -1,4 +1,4 @@
-﻿from django.contrib import admin
+from django.contrib import admin
 from .models import Diagnost_Student, TopicProgress, StudentScore, StudentScoreLog, ChapterProgress, ProductExchange, TopicHelpRequestIndependent, StudentDailyCoinLog, ConversionHistory, StudentPointLog
 from modeltranslation.admin import TranslationAdmin
 
@@ -31,7 +31,7 @@ class TopicProgressAdmin(admin.ModelAdmin):
 
 @admin.register(StudentScore)
 class StudentScoreAdmin(admin.ModelAdmin):
-    list_display = ('student', 'score', 'created_at')
+    list_display = ('student', 'score', 'gol', 'created_at')
     search_fields = ('student__user__username',)
     ordering = ('-score',)
     verbose_name = "Talaba bali"
@@ -155,11 +155,11 @@ class StudentAchievementAdmin(admin.ModelAdmin):
 
 @admin.register(StudentPointLog)
 class StudentPointLogAdmin(admin.ModelAdmin):
-    """Bonus ballar tarixi: kim, qayerdan (manba), qachon va necha ball olgan."""
-    list_display = ("student", "source", "points", "streak_day", "score_after", "date", "created_at")
+    """Gol tarixi: kim, qayerdan (manba), qachon va necha gol olgan."""
+    list_display = ("student", "source", "gol", "streak_day", "ref", "gol_after", "date", "created_at")
     list_filter = ("source", "date")
     search_fields = ("student__full_name", "student__user__username", "student__user__phone")
     date_hierarchy = "date"
     ordering = ("-created_at",)
     list_select_related = ("student",)
-    readonly_fields = ("student", "source", "points", "date", "streak_day", "score_after", "comment", "created_at")
+    readonly_fields = ("student", "source", "gol", "date", "ref", "streak_day", "gol_after", "comment", "created_at")

@@ -28,7 +28,7 @@ from .View.certificate_view import CertificateDownloadAPIView
 from .View.student_home_dashboard import StudentHomeDashboardAPIView
 from .View.landing_stats import LandingStatsAPIView
 from .View.student_streak import StudentStreakAPIView
-from .View.daily_login_reward import DailyLoginRewardAPIView, DailyLoginRewardClaimAPIView
+from .View.daily_login_reward import DailyLoginRewardAPIView, DailyLoginRewardClaimAPIView, MyGolLogAPIView
 
 urlpatterns = [
     path('landing-stats/', LandingStatsAPIView.as_view(), name='landing-stats'),
@@ -73,6 +73,7 @@ urlpatterns = [
     path('achievements/', StudentAchievementsAPIView.as_view(), name='student-achievements'),
     path('daily-reward/', DailyLoginRewardAPIView.as_view(), name='daily-reward'),
     path('daily-reward/claim/', DailyLoginRewardClaimAPIView.as_view(), name='daily-reward-claim'),
+    path('my-gol-log/', MyGolLogAPIView.as_view(), name='my-gol-log'),
     path('my-diagnost/subjects/<int:subject_id>/attempts/', StudentDiagnostAttemptsAPIView.as_view()),
     path('my-diagnost/<int:diagnost_id>/mistakes/', StudentDiagnostMistakesAPIView.as_view()),
     path('my-diagnost-subject/<int:subject_id>/chapters/', SubjectChaptersAPIView.as_view()),

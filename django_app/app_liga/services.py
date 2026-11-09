@@ -8,7 +8,9 @@ from django.db.models import F, Q, Sum
 from django.utils import timezone
 
 from django_app.app_payments.models import Subscription
+from django_app.app_student.gol import award_gol
 from django_app.app_student.math_answer_check import advanced_math_check
+from django_app.app_student.models import StudentPointLog
 
 from .models import (
     LigaAnswer, LigaAttempt, LigaChoice, LigaParticipant, LigaPointLog, LigaQuestion, LigaSeason, LigaTest, LigaWinner,
@@ -190,6 +192,17 @@ def _finalize(attempt, status):
     )
     if participant:
         award_points(participant, LigaPointLog.SOURCE_TEST, attempt.id, attempt.score)
+
+    # Haftalik test uchun gol: to'g'ri javoblar balli (har savol odatda 1) — shuncha gol.
+    # Bir urinish uchun bir marta (ref = urinish id), tarixi StudentPointLog'da
+    award_gol(
+        attempt.student_id,
+        StudentPointLog.SOURCE_WEEKLY_TEST,
+        attempt.score,
+        ref=attempt.id,
+        date=timezone.localtime(finished_at).date(),
+        comment=f"Haftalik test: {attempt.test} — {attempt.correct_count}/{attempt.total_questions} to'g'ri",
+    )
     return attempt
 
 

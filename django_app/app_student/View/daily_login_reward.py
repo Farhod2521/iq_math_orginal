@@ -1,31 +1,32 @@
 """
-Kundalik kirish mukofoti.
+Kundalik kirish mukofoti (gol).
 
-Har kuni saytga kirib "Bugungi mukofotni olish" bosilganda ball (StudentScore.score) qo'shiladi:
-    1-kun → +1, 2-kun → +2, ... 7-kun → +7 ball.
+Har kuni saytga kirib "Bugungi mukofotni olish" bosilganda gol qo'shiladi (ball emas):
+    1-kun → 1 gol, 2-kun → 2 gol, ... 7-kun → 7 gol.
 Bir kun o'tkazib yuborilsa — ketma-ketlik 1-kundan qayta boshlanadi.
-7-kundan keyin yangi hafta 1-kundan boshlanadi.
+7-kundan keyin (8-kun) yangi hafta yana 1-kundan boshlanadi.
 
-Har bir mukofot StudentPointLog'ga yoziladi (manba: daily_login) — kim, qachon, nechanchi kun,
-necha ball oldi va keyingi balans.
+Har bir mukofot StudentPointLog'ga (gol tarixi) yoziladi: manba, nechanchi kun, necha gol, jami gol.
 
 GET  /api/v1/func_student/daily-reward/        — holat (modal uchun)
 POST /api/v1/func_student/daily-reward/claim/  — bugungi mukofotni olish
+GET  /api/v1/func_student/my-gol-log/          — o'quvchining gol tarixi
 """
 from datetime import timedelta
 
-from django.db import IntegrityError, transaction
 from django.utils import timezone
 from rest_framework import status
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from django_app.app_student.gol import award_gol
 from django_app.app_student.models import StudentPointLog, StudentScore
 
-# Ketma-ketlik kuni → ball (1-kun 1 ball, ..., 7-kun 7 ball)
-DAILY_REWARDS = [1, 2, 3, 4, 5, 6, 7]
-CYCLE_DAYS = len(DAILY_REWARDS)
+# Ketma-ketlik kuni → gol (1-kun 1 gol, ..., 7-kun 7 gol)
+DAILY_GOLS = [1, 2, 3, 4, 5, 6, 7]
+CYCLE_DAYS = len(DAILY_GOLS)
 SOURCE = StudentPointLog.SOURCE_DAILY_LOGIN
 
 
@@ -40,9 +41,9 @@ def _logs(student):
 def _state(student, today):
     """
     Bugungi holat:
-      claimed     — bugun olinganmi
-      anchor      — joriy ketma-ketlikning oxirgi yozuvi (bugungi yoki kechagi), yo'q bo'lsa None
-      next_day    — bugun olinadigan (yoki olingan) kun raqami (1..7)
+      claimed  — bugun olinganmi
+      anchor   — joriy ketma-ketlikning oxirgi yozuvi (bugungi yoki kechagi), yo'q bo'lsa None
+      day      — bugun olinadigan (yoki olingan) kun raqami (1..7)
     """
     today_log = _logs(student).filter(date=today).first()
     if today_log:
@@ -51,38 +52,38 @@ def _state(student, today):
     yesterday_log = _logs(student).filter(date=today - timedelta(days=1)).first()
     if yesterday_log and (yesterday_log.streak_day or 0) < CYCLE_DAYS:
         return False, yesterday_log, (yesterday_log.streak_day or 0) + 1
-    # Kecha kirmagan yoki hafta tugagan — 1-kundan
+    # Kecha kirmagan yoki 7 kun tugagan — 1-kundan
     return False, None, 1
 
 
 def _payload(student, today):
-    claimed, anchor, next_day = _state(student, today)
+    claimed, anchor, day_number = _state(student, today)
     streak = (anchor.streak_day or 0) if anchor else 0
 
-    # Joriy hafta (ketma-ketlik) davomida to'plangan ball
+    # Joriy hafta (ketma-ketlik) davomida to'plangan gol
     week_total = 0
     if anchor:
         start = anchor.date - timedelta(days=(anchor.streak_day or 1) - 1)
-        week_total = sum(_logs(student).filter(date__gte=start, date__lte=anchor.date).values_list("points", flat=True))
+        week_total = sum(_logs(student).filter(date__gte=start, date__lte=anchor.date).values_list("gol", flat=True))
 
     days = []
-    for index, points in enumerate(DAILY_REWARDS, start=1):
+    for index, gol in enumerate(DAILY_GOLS, start=1):
         if index <= streak:
             state = "claimed"
-        elif index == next_day and not claimed:
+        elif index == day_number and not claimed:
             state = "today"
         else:
             state = "locked"
-        days.append({"day": index, "points": points, "state": state})
+        days.append({"day": index, "gol": gol, "state": state})
 
-    score = StudentScore.objects.filter(student=student).values_list("score", flat=True).first() or 0
+    gol_total = StudentScore.objects.filter(student=student).values_list("gol", flat=True).first() or 0
     return {
         "claimed_today": claimed,
-        "today_day": next_day,
-        "today_points": DAILY_REWARDS[next_day - 1],
+        "today_day": day_number,
+        "today_gol": DAILY_GOLS[day_number - 1],
         "streak": streak,
         "week_total": week_total,
-        "score": score,
+        "gol_total": gol_total,
         "days": days,
     }
 
@@ -107,28 +108,62 @@ class DailyLoginRewardClaimAPIView(APIView):
 
         today = timezone.localdate()
         awarded = 0
-        try:
-            with transaction.atomic():
-                # Bir vaqtda ikki so'rov kelsa — ball ikki marta qo'shilmasin
-                score, _ = StudentScore.objects.select_for_update().get_or_create(student=student)
-                claimed, _anchor, day = _state(student, today)
-                if not claimed:
-                    awarded = DAILY_REWARDS[day - 1]
-                    score.score += awarded
-                    score.save(update_fields=["score"])
-                    StudentPointLog.objects.create(
-                        student=student,
-                        source=SOURCE,
-                        points=awarded,
-                        date=today,
-                        streak_day=day,
-                        score_after=score.score,
-                        comment=f"Kundalik kirish: {day}-kun",
-                    )
-        except IntegrityError:
-            # Parallel so'rov allaqachon yozib bo'lgan
-            awarded = 0
+        claimed, _anchor, day_number = _state(student, today)
+        if not claimed:
+            log = award_gol(
+                student.id,
+                SOURCE,
+                DAILY_GOLS[day_number - 1],
+                date=today,
+                streak_day=day_number,
+                comment=f"Kundalik kirish: {day_number}-kun",
+            )
+            awarded = log.gol if log else 0
 
         data = _payload(student, today)
         data["awarded"] = awarded
         return Response(data, status=status.HTTP_200_OK)
+
+
+class GolLogPagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = "page_size"
+    max_page_size = 100
+
+
+class MyGolLogAPIView(APIView):
+    """O'quvchining gol tarixi: qayerdan (manba), qachon va qancha gol olgani."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        student = _student(request)
+        if student is None:
+            return Response({"detail": "Faqat o'quvchilar uchun."}, status=status.HTTP_403_FORBIDDEN)
+
+        logs = StudentPointLog.objects.filter(student=student).order_by("-created_at")
+        source = request.query_params.get("source")
+        if source:
+            logs = logs.filter(source=source)
+
+        paginator = GolLogPagination()
+        page = paginator.paginate_queryset(logs, request, view=self)
+        rows = [
+            {
+                "id": log.id,
+                "source": log.source,
+                "source_display": log.get_source_display(),
+                "gol": log.gol,
+                "gol_after": log.gol_after,
+                "streak_day": log.streak_day,
+                "ref": log.ref,
+                "comment": log.comment,
+                "date": log.date,
+                "created_at": log.created_at,
+            }
+            for log in page
+        ]
+        response = paginator.get_paginated_response(rows)
+        response.data["gol_total"] = (
+            StudentScore.objects.filter(student=student).values_list("gol", flat=True).first() or 0
+        )
+        return response

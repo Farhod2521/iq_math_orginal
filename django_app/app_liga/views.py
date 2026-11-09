@@ -349,7 +349,7 @@ def _attempts_xlsx(filename, rows, with_grade=False):
         filename, "Natijalar",
         grade_head + [
             "O'rin", "F.I.Sh.", "Telefon", "Viloyat", "Tuman", "Maktab", "Holat", "Boshlagan", "Yakunlagan",
-            "Ishlagan vaqti", "Savollar", "Javob berilgan", "To'g'ri", "Noto'g'ri", "Ball", "Maksimal ball",
+            "Ishlagan vaqti", "Savollar", "Javob berilgan", "To'g'ri", "Noto'g'ri", "Gol", "Maksimal gol",
         ],
         [
             ([row['grade']] if with_grade else []) + [

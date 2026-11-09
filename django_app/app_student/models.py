@@ -1,4 +1,4 @@
-﻿from django.db import models
+from django.db import models
 from django_app.app_user.models import Student, Teacher
 from django_app.app_teacher.models import Topic, Question, Chapter
 from django_app.app_management.models import Product, Coupon_Tutor_Student, Referral_Tutor_Student
@@ -57,6 +57,8 @@ class StudentScore(models.Model):
     score = models.PositiveIntegerField(default=0)
     coin = models.PositiveIntegerField(default=0)
     som =  models.PositiveIntegerField(default=0)
+    # Gol — balldan alohida hisob: kundalik kirish va haftalik testlar uchun (tarixi: StudentPointLog)
+    gol = models.PositiveIntegerField(default=0, verbose_name="Gol")
     created_at = models.DateTimeField(auto_now_add=True)
     
 
@@ -420,37 +422,51 @@ class StudentAchievement(models.Model):
 
 class StudentPointLog(models.Model):
     """
-    O'quvchi ball (StudentScore.score) olgan har bir holat — qayerdan va nima uchun.
-    Savollar uchun ball StudentScoreLog'da; bu jadval qolgan manbalar uchun (kundalik kirish va h.k.).
+    Gol tarixi: o'quvchi qayerdan (manba), qachon va qancha gol olgani.
+    Gol — balldan (StudentScore.score) alohida; jami StudentScore.gol'da.
+      - daily_login: kundalik kirish (ketma-ketlik kuni 1..7 → 1..7 gol), kuniga bir marta
+      - weekly_test: haftalik (liga) test natijasi, ref = urinish id — bir test uchun bir marta
     """
     SOURCE_DAILY_LOGIN = "daily_login"
+    SOURCE_WEEKLY_TEST = "weekly_test"
     SOURCE_CHOICES = (
-        (SOURCE_DAILY_LOGIN, "Kundalik kirish mukofoti"),
+        (SOURCE_DAILY_LOGIN, "Kundalik kirish"),
+        (SOURCE_WEEKLY_TEST, "Haftalik test"),
     )
 
     student = models.ForeignKey(
         Student, on_delete=models.CASCADE, related_name="point_logs", verbose_name="O'quvchi"
     )
     source = models.CharField(max_length=30, choices=SOURCE_CHOICES, verbose_name="Manba")
-    points = models.PositiveIntegerField(verbose_name="Ball")
+    gol = models.PositiveIntegerField(verbose_name="Gol")
     date = models.DateField(verbose_name="Sana (mahalliy)")
+    # Manba obyekti (haftalik test: LigaAttempt id); kundalik kirishda bo'sh
+    ref = models.CharField(max_length=50, blank=True, default="", verbose_name="Manba ID")
     # Kundalik kirish: ketma-ketlikning nechanchi kuni (1..7)
     streak_day = models.PositiveSmallIntegerField(null=True, blank=True, verbose_name="Ketma-ketlik kuni")
-    score_after = models.PositiveIntegerField(default=0, verbose_name="Balans (keyin)")
+    gol_after = models.PositiveIntegerField(default=0, verbose_name="Jami gol (keyin)")
     comment = models.CharField(max_length=255, blank=True, default="", verbose_name="Izoh")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Vaqti")
 
     class Meta:
-        verbose_name = "Ball tarixi (bonuslar)"
-        verbose_name_plural = "Ball tarixi (bonuslar)"
+        verbose_name = "Gol tarixi"
+        verbose_name_plural = "Gol tarixi"
         ordering = ["-created_at"]
         constraints = [
-            # Kundalik mukofot kuniga bir marta
+            # Kundalik kirish — kuniga bir marta
             models.UniqueConstraint(
-                fields=["student", "source", "date"], name="uniq_student_point_source_date"
+                fields=["student", "source", "date"],
+                condition=models.Q(source="daily_login"),
+                name="uniq_gol_daily_login",
+            ),
+            # Boshqa manbalar — bitta obyekt (masalan test urinishi) uchun bir marta
+            models.UniqueConstraint(
+                fields=["student", "source", "ref"],
+                condition=~models.Q(ref=""),
+                name="uniq_gol_source_ref",
             ),
         ]
         indexes = [models.Index(fields=["student", "source", "-date"], name="student_point_log_idx")]
 
     def __str__(self):
-        return f"{self.student.full_name} | {self.get_source_display()} | +{self.points} | {self.date}"
+        return f"{self.student.full_name} | {self.get_source_display()} | +{self.gol} gol | {self.date}"
