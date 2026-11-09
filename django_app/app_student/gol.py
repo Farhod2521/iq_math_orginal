@@ -2,13 +2,14 @@
 Gol — balldan (StudentScore.score) alohida hisob. Jami: StudentScore.gol, tarixi: StudentPointLog.
 
 Manbalar:
-  - Kundalik kirish (daily_login_reward.py): ketma-ketlik kuni 1..7 → 1..7 gol
+  - Kundalik kirish (daily_login_reward.py): har kuni kirganda +1 gol (ketma-ketlik 1..7 kun)
   - Haftalik test (app_liga.services._finalize): test natijasi (to'g'ri javoblar balli) → shuncha gol
 """
 from django.db import IntegrityError, transaction
 from django.utils import timezone
 
 from .models import StudentPointLog, StudentScore
+from .wallet import Log, log_wallet
 
 
 def award_gol(student_id, source, gol, *, ref="", date=None, streak_day=None, comment=""):
@@ -30,7 +31,7 @@ def award_gol(student_id, source, gol, *, ref="", date=None, streak_day=None, co
                 return None
             score.gol += gol
             score.save(update_fields=["gol"])
-            return StudentPointLog.objects.create(
+            log = StudentPointLog.objects.create(
                 student_id=student_id,
                 source=source,
                 gol=gol,
@@ -40,5 +41,8 @@ def award_gol(student_id, source, gol, *, ref="", date=None, streak_day=None, co
                 gol_after=score.gol,
                 comment=comment[:255],
             )
+            # Umumiy hamyon tarixiga ham (manba nomlari bir xil: daily_login / weekly_test)
+            log_wallet(student_id, Log.CURRENCY_GOL, gol, source, comment, balance_after=score.gol, ref=f"gol:{log.id}")
+            return log
     except IntegrityError:
         return None

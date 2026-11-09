@@ -189,6 +189,16 @@ class SomTransferConfirmAPIView(APIView):
         transfer.confirmed_at = timezone.now()
         transfer.save()
 
+        from django_app.app_student.wallet import Log, log_wallet
+        log_wallet(
+            transfer.sender_id, Log.CURRENCY_SOM, -transfer.amount, Log.SOURCE_TRANSFER,
+            f"{transfer.receiver.full_name}ga o'tkazildi", balance_after=sender_score.som, ref=f"transfer:{transfer.id}",
+        )
+        log_wallet(
+            transfer.receiver_id, Log.CURRENCY_SOM, transfer.amount, Log.SOURCE_TRANSFER,
+            f"{transfer.sender.full_name}dan qabul qilindi", balance_after=receiver_score.som, ref=f"transfer:{transfer.id}",
+        )
+
         return Response({
             "message": "So'm muvaffaqiyatli o'tkazildi.",
             "sender": sender.full_name,

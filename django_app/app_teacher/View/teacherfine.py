@@ -163,6 +163,12 @@ class TeacherFineAPIView(APIView):
                 reason=reason,
             )
 
+            from django_app.app_student.wallet import Log, log_wallet
+            log_wallet(
+                student.id, fine_type, -amount, Log.SOURCE_FINE, f"Jarima: {reason}",
+                balance_after=getattr(score_obj, fine_type), ref=f"fine:{fine.id}",
+            )
+
         return Response({
             "detail":         "Jarima muvaffaqiyatli qo'yildi.",
             "fine_id":        fine.id,

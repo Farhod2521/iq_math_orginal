@@ -17,6 +17,12 @@ from  django_app.app_teacher.serializers import (
 )
 
 
+
+def _log_reward(student, currency, amount, balance, reason, log_id):
+    from django_app.app_student.wallet import Log, log_wallet
+    text = f"O'qituvchi rag'bati: {reason}" if reason else "O'qituvchi rag'bati"
+    log_wallet(student.id, currency, amount, Log.SOURCE_REWARD, text, balance_after=balance, ref=f"reward:{log_id}")
+
 class IsSuperAdminOnly(BasePermission):
     def has_permission(self, request, view):
         return bool(
@@ -49,7 +55,7 @@ class TeacherRewardAPIView(APIView):
                 return Response({'detail': "O'quvchi topilmadi"}, status=status.HTTP_404_NOT_FOUND)
 
             # Log yozamiz
-            TeacherRewardLog.objects.create(
+            reward_log = TeacherRewardLog.objects.create(
                 teacher=teacher,
                 student=student,
                 reward_type=reward_type,
@@ -62,11 +68,13 @@ class TeacherRewardAPIView(APIView):
                 score_obj, _ = StudentScore.objects.get_or_create(student=student)
                 score_obj.score += amount
                 score_obj.save()
+                _log_reward(student, 'score', amount, score_obj.score, reason, reward_log.id)
 
             elif reward_type == 'coin':
                 score_obj, _ = StudentScore.objects.get_or_create(student=student)
                 score_obj.coin += amount
                 score_obj.save()
+                _log_reward(student, 'coin', amount, score_obj.coin, reason, reward_log.id)
 
             elif reward_type == 'subscription_day':
                 sub_obj, created = Subscription.objects.get_or_create(

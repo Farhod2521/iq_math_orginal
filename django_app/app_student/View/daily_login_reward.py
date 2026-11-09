@@ -1,10 +1,9 @@
 """
 Kundalik kirish mukofoti (gol).
 
-Har kuni saytga kirib "Bugungi mukofotni olish" bosilganda gol qo'shiladi (ball emas):
-    1-kun → 1 gol, 2-kun → 2 gol, ... 7-kun → 7 gol.
-Bir kun o'tkazib yuborilsa — ketma-ketlik 1-kundan qayta boshlanadi.
-7-kundan keyin (8-kun) yangi hafta yana 1-kundan boshlanadi.
+Har kuni saytga kirganda (frontend avtomatik claim qiladi, tugma yo'q) +1 gol qo'shiladi (ball emas).
+Ketma-ketlik 1..7 kun kartalarida ko'rsatiladi: bir kun o'tkazib yuborilsa — 1-kundan qayta,
+7-kundan keyin (8-kun) yangi hafta yana 1-kundan boshlanadi. Har kuni gol bir xil: +1.
 
 Har bir mukofot StudentPointLog'ga (gol tarixi) yoziladi: manba, nechanchi kun, necha gol, jami gol.
 
@@ -24,8 +23,8 @@ from rest_framework.views import APIView
 from django_app.app_student.gol import award_gol
 from django_app.app_student.models import StudentPointLog, StudentScore
 
-# Ketma-ketlik kuni → gol (1-kun 1 gol, ..., 7-kun 7 gol)
-DAILY_GOLS = [1, 2, 3, 4, 5, 6, 7]
+# Ketma-ketlik kuni → gol: har kuni +1 gol (kopayib bormaydi)
+DAILY_GOLS = [1, 1, 1, 1, 1, 1, 1]
 CYCLE_DAYS = len(DAILY_GOLS)
 SOURCE = StudentPointLog.SOURCE_DAILY_LOGIN
 
@@ -116,7 +115,7 @@ class DailyLoginRewardClaimAPIView(APIView):
                 DAILY_GOLS[day_number - 1],
                 date=today,
                 streak_day=day_number,
-                comment=f"Kundalik kirish: {day_number}-kun",
+                comment=f"Saytga ketma-ket {day_number}-kun kirdingiz",
             )
             awarded = log.gol if log else 0
 

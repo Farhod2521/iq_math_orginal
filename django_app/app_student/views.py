@@ -660,6 +660,7 @@ class CheckAnswersAPIView(APIView):
         question_details = []
         index = 1
         last_question_topic = None
+        awarded_totals = {'coin': 0, 'score': 0}  # hamyon tarixi uchun
         today_coin_count = get_today_coin_count(student_score) if not is_staff_user else 0
         daily_limit = get_daily_coin_limit() if not is_staff_user else 0
         daily_log = get_or_create_daily_log(student_instance) if not is_staff_user else None
@@ -685,6 +686,7 @@ class CheckAnswersAPIView(APIView):
                         # Kunlik chegara to'lgan: faqat ball beriladi
                         student_score.score += 1
 
+                    awarded_totals['coin' if give_coin else 'score'] += 1
                     StudentScoreLog.objects.create(
                         student_score=student_score,
                         question=question,
@@ -805,6 +807,19 @@ class CheckAnswersAPIView(APIView):
             student_score.save()
             if daily_log is not None:
                 daily_log.save()
+
+            # Hamyon tarixi: bitta topshiriq uchun bitta yozuv (tanga va ball alohida)
+            from django_app.app_student.wallet import Log, log_wallet
+            topic_name = getattr(last_question_topic, 'name', '') or ''
+            lesson_text = f"“{topic_name}” mavzusi" if topic_name else "Mashq"
+            for currency, balance in ((Log.CURRENCY_COIN, student_score.coin), (Log.CURRENCY_SCORE, student_score.score)):
+                gained = awarded_totals[currency]
+                if gained:
+                    log_wallet(
+                        student_instance.id, currency, gained, Log.SOURCE_LESSON,
+                        f"{lesson_text}: {gained} ta yangi to'g'ri javob", balance_after=balance,
+                        ref=f"topic:{last_question_topic.id}" if last_question_topic else "",
+                    )
 
             # Hech bo'lmasa bitta javob yuborilgandagina mavzu natijasi yoziladi
             if last_question_topic and total_answers:

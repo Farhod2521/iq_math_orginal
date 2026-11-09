@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Diagnost_Student, TopicProgress, StudentScore, StudentScoreLog, ChapterProgress, ProductExchange, TopicHelpRequestIndependent, StudentDailyCoinLog, ConversionHistory, StudentPointLog
+from .models import Diagnost_Student, TopicProgress, StudentScore, StudentScoreLog, ChapterProgress, ProductExchange, TopicHelpRequestIndependent, StudentDailyCoinLog, ConversionHistory, StudentPointLog, StudentWalletLog
 from modeltranslation.admin import TranslationAdmin
 
 admin.site.register(Diagnost_Student)
@@ -163,3 +163,18 @@ class StudentPointLogAdmin(admin.ModelAdmin):
     ordering = ("-created_at",)
     list_select_related = ("student",)
     readonly_fields = ("student", "source", "gol", "date", "ref", "streak_day", "gol_after", "comment", "created_at")
+
+
+@admin.register(StudentWalletLog)
+class StudentWalletLogAdmin(admin.ModelAdmin):
+    """Hamyon tarixi: ball, tanga, so'm va gol bo'yicha barcha kirim/chiqimlar."""
+    list_display = ("student", "source", "currency", "amount", "balance_after", "description", "created_at")
+    list_filter = ("currency", "source", "created_at")
+    search_fields = ("student__full_name", "student__user__username", "student__user__phone", "description")
+    list_select_related = ("student",)
+    readonly_fields = ("student", "currency", "source", "amount", "balance_after", "description", "ref", "created_at")
+    date_hierarchy = "created_at"
+    ordering = ("-created_at",)
+
+    def has_add_permission(self, request):
+        return False

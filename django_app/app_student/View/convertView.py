@@ -5,6 +5,16 @@ from django_app.app_student.models import StudentScore, ConversionHistory
 from django_app.app_management.models import ConversionRate
 
 
+
+def _log_convert(student_score, changes, text):
+    """Almashtirish: har bir valyuta uchun alohida yozuv (chiqim manfiy, kirim musbat)."""
+    from django_app.app_student.wallet import Log, log_wallet
+    for currency, amount in changes:
+        log_wallet(
+            student_score.student_id, currency, amount, Log.SOURCE_CONVERT, text,
+            balance_after=getattr(student_score, currency),
+        )
+
 class ConvertView(APIView):
     """
     Ball → Tanga → So'm konvertatsiya tizimi
@@ -64,6 +74,7 @@ class ConvertView(APIView):
             student_score.coin += amount
             student_score.save()
 
+            _log_convert(student_score, [("score", -required_score), ("coin", amount)], f"{required_score} ball → {amount} tanga")
             ConversionHistory.objects.create(
                 student=student_score.student,
                 conversion_type="SCORE_TO_COIN",
@@ -103,6 +114,7 @@ class ConvertView(APIView):
             student_score.som += som
             student_score.save()
 
+            _log_convert(student_score, [("score", -used_score), ("som", som)], f"{used_score} ball → {som} so'm")
             ConversionHistory.objects.create(
                 student=student_score.student,
                 conversion_type="SCORE_TO_SOM",
@@ -131,6 +143,7 @@ class ConvertView(APIView):
             student_score.som += som
             student_score.save()
 
+            _log_convert(student_score, [("coin", -amount), ("som", som)], f"{amount} tanga → {som} so'm")
             ConversionHistory.objects.create(
                 student=student_score.student,
                 conversion_type="COIN_TO_SOM",

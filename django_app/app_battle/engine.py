@@ -257,6 +257,11 @@ def _award_battle_win_reward(student):
     student_score.coin += BATTLE_WIN_COIN_REWARD
     student_score.save(update_fields=['score', 'coin'])
 
+    from django_app.app_student.wallet import Log, log_wallet
+    text = "Bellashuvda g'alaba qozondingiz"
+    log_wallet(student.id, Log.CURRENCY_SCORE, BATTLE_WIN_SCORE_REWARD, Log.SOURCE_BATTLE, text, balance_after=student_score.score)
+    log_wallet(student.id, Log.CURRENCY_COIN, BATTLE_WIN_COIN_REWARD, Log.SOURCE_BATTLE, text, balance_after=student_score.coin)
+
 
 def finish_battle(room_id):
     results_payload = []

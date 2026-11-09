@@ -65,6 +65,12 @@ class ProductExchangeView(APIView):
             delivery_status="new"
         )
 
+        from django_app.app_student.wallet import Log, log_wallet
+        log_wallet(
+            student.id, Log.CURRENCY_COIN, -product.coin, Log.SOURCE_SHOP,
+            f"“{product.name}” sotib olindi", balance_after=student_score.coin, ref=f"exchange:{exchange.id}",
+        )
+
         return Response({
             'message_uz': f"{product.name} mahsuloti muvaffaqiyatli olindi.",
             'message_ru': f"Товар {product.name} успешно получен.",

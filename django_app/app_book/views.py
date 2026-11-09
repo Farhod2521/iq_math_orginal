@@ -516,6 +516,14 @@ class BookPurchaseAPIView(APIView):
                 paid_amount=paid_amount,
             )
 
+            if payment_method in ('som', 'coin', 'score'):
+                from django_app.app_student.wallet import Log, log_wallet
+                log_wallet(
+                    student.id, payment_method, -int(paid_amount), Log.SOURCE_BOOK,
+                    f"“{book.name}” kitobi sotib olindi", balance_after=getattr(student_score, payment_method),
+                    ref=f"book:{purchase.id}",
+                )
+
             # Oflayn kitob uchun buyurtma yozivi
             if book.is_offline:
                 OfflineBookOrder.objects.create(

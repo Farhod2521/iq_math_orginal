@@ -470,3 +470,69 @@ class StudentPointLog(models.Model):
 
     def __str__(self):
         return f"{self.student.full_name} | {self.get_source_display()} | +{self.gol} gol | {self.date}"
+
+
+class StudentWalletLog(models.Model):
+    """
+    O'quvchining umumiy hamyon tarixi: ball, tanga, so'm va gol bo'yicha har bir kirim/chiqim.
+    Balans o'zgaradigan har bir joy yozuv qo'shadi (app_student/wallet.py → log_wallet).
+    amount — ishorali: kirim musbat, chiqim manfiy. balance_after — amaldan keyingi qoldiq.
+    """
+    CURRENCY_SCORE = "score"
+    CURRENCY_COIN = "coin"
+    CURRENCY_SOM = "som"
+    CURRENCY_GOL = "gol"
+    CURRENCY_CHOICES = (
+        (CURRENCY_SCORE, "Ball"),
+        (CURRENCY_COIN, "Tanga"),
+        (CURRENCY_SOM, "So'm"),
+        (CURRENCY_GOL, "Gol"),
+    )
+
+    SOURCE_DAILY_LOGIN = "daily_login"
+    SOURCE_LESSON = "lesson"
+    SOURCE_WEEKLY_TEST = "weekly_test"
+    SOURCE_BATTLE = "battle"
+    SOURCE_REWARD = "reward"
+    SOURCE_FINE = "fine"
+    SOURCE_CONVERT = "convert"
+    SOURCE_SHOP = "shop"
+    SOURCE_BOOK = "book"
+    SOURCE_TRANSFER = "transfer"
+    SOURCE_OTHER = "other"
+    SOURCE_CHOICES = (
+        (SOURCE_DAILY_LOGIN, "Kundalik kirish"),
+        (SOURCE_LESSON, "Dars"),
+        (SOURCE_WEEKLY_TEST, "Haftalik test"),
+        (SOURCE_BATTLE, "O'yin"),
+        (SOURCE_REWARD, "Rag'bat"),
+        (SOURCE_FINE, "Jarima"),
+        (SOURCE_CONVERT, "Almashtirish"),
+        (SOURCE_SHOP, "Do'kon"),
+        (SOURCE_BOOK, "Kitob"),
+        (SOURCE_TRANSFER, "O'tkazma"),
+        (SOURCE_OTHER, "Boshqa"),
+    )
+
+    student = models.ForeignKey(
+        Student, on_delete=models.CASCADE, related_name="wallet_logs", verbose_name="O'quvchi"
+    )
+    currency = models.CharField(max_length=10, choices=CURRENCY_CHOICES, verbose_name="Turi")
+    source = models.CharField(max_length=20, choices=SOURCE_CHOICES, verbose_name="Bo'lim (manba)")
+    amount = models.IntegerField(verbose_name="Miqdor")
+    balance_after = models.IntegerField(null=True, blank=True, verbose_name="Qoldiq")
+    description = models.CharField(max_length=255, blank=True, default="", verbose_name="Tavsif")
+    ref = models.CharField(max_length=50, blank=True, default="", verbose_name="Bog'liq yozuv")
+    created_at = models.DateTimeField(default=timezone.now, db_index=True, verbose_name="Vaqti")
+
+    def __str__(self):
+        sign = "+" if self.amount > 0 else ""
+        return f"{self.student} | {self.get_source_display()} | {sign}{self.amount} {self.get_currency_display()}"
+
+    class Meta:
+        verbose_name = "Hamyon tarixi"
+        verbose_name_plural = "Hamyon tarixi"
+        ordering = ["-created_at", "-id"]
+        indexes = [
+            models.Index(fields=["student", "currency", "-created_at"], name="student_wallet_log_idx"),
+        ]
