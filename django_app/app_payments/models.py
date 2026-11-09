@@ -218,7 +218,9 @@ class SubscriptionPlan(models.Model):
         return full_price - discount_amount
 
     def __str__(self):
-        return f"{self.get_months_display()} ({self.discount_percent}% chegirma)"
+        # Start / Start Pro farqlanishi uchun nomi ham ko'rsatiladi
+        prefix = f"{self.name} — " if self.name else ""
+        return f"{prefix}{self.get_months_display()} ({self.discount_percent}% chegirma)"
 
     class Meta:
         verbose_name = "Obuna rejasi"

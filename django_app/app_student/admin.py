@@ -1,5 +1,5 @@
 ﻿from django.contrib import admin
-from .models import Diagnost_Student, TopicProgress, StudentScore, StudentScoreLog, ChapterProgress, ProductExchange, TopicHelpRequestIndependent, StudentDailyCoinLog, ConversionHistory
+from .models import Diagnost_Student, TopicProgress, StudentScore, StudentScoreLog, ChapterProgress, ProductExchange, TopicHelpRequestIndependent, StudentDailyCoinLog, ConversionHistory, StudentPointLog
 from modeltranslation.admin import TranslationAdmin
 
 admin.site.register(Diagnost_Student)
@@ -151,3 +151,15 @@ class StudentAchievementAdmin(admin.ModelAdmin):
     search_fields = ("student__full_name", "student__user__phone")
     raw_id_fields = ("student",)
     readonly_fields = ("awarded_at",)
+
+
+@admin.register(StudentPointLog)
+class StudentPointLogAdmin(admin.ModelAdmin):
+    """Bonus ballar tarixi: kim, qayerdan (manba), qachon va necha ball olgan."""
+    list_display = ("student", "source", "points", "streak_day", "score_after", "date", "created_at")
+    list_filter = ("source", "date")
+    search_fields = ("student__full_name", "student__user__username", "student__user__phone")
+    date_hierarchy = "date"
+    ordering = ("-created_at",)
+    list_select_related = ("student",)
+    readonly_fields = ("student", "source", "points", "date", "streak_day", "score_after", "comment", "created_at")

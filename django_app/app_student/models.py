@@ -416,3 +416,41 @@ class StudentAchievement(models.Model):
 
     def __str__(self):
         return f"{self.student.full_name} — {self.achievement.title_uz}"
+
+
+class StudentPointLog(models.Model):
+    """
+    O'quvchi ball (StudentScore.score) olgan har bir holat — qayerdan va nima uchun.
+    Savollar uchun ball StudentScoreLog'da; bu jadval qolgan manbalar uchun (kundalik kirish va h.k.).
+    """
+    SOURCE_DAILY_LOGIN = "daily_login"
+    SOURCE_CHOICES = (
+        (SOURCE_DAILY_LOGIN, "Kundalik kirish mukofoti"),
+    )
+
+    student = models.ForeignKey(
+        Student, on_delete=models.CASCADE, related_name="point_logs", verbose_name="O'quvchi"
+    )
+    source = models.CharField(max_length=30, choices=SOURCE_CHOICES, verbose_name="Manba")
+    points = models.PositiveIntegerField(verbose_name="Ball")
+    date = models.DateField(verbose_name="Sana (mahalliy)")
+    # Kundalik kirish: ketma-ketlikning nechanchi kuni (1..7)
+    streak_day = models.PositiveSmallIntegerField(null=True, blank=True, verbose_name="Ketma-ketlik kuni")
+    score_after = models.PositiveIntegerField(default=0, verbose_name="Balans (keyin)")
+    comment = models.CharField(max_length=255, blank=True, default="", verbose_name="Izoh")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Vaqti")
+
+    class Meta:
+        verbose_name = "Ball tarixi (bonuslar)"
+        verbose_name_plural = "Ball tarixi (bonuslar)"
+        ordering = ["-created_at"]
+        constraints = [
+            # Kundalik mukofot kuniga bir marta
+            models.UniqueConstraint(
+                fields=["student", "source", "date"], name="uniq_student_point_source_date"
+            ),
+        ]
+        indexes = [models.Index(fields=["student", "source", "-date"], name="student_point_log_idx")]
+
+    def __str__(self):
+        return f"{self.student.full_name} | {self.get_source_display()} | +{self.points} | {self.date}"
