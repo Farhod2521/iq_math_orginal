@@ -11,6 +11,7 @@ from django_app.app_payments.models import Subscription
 from django_app.app_student.gol import award_gol
 from django_app.app_student.math_answer_check import advanced_math_check
 from django_app.app_student.models import StudentPointLog
+from django_app.app_user.models import Class
 
 from .models import (
     LigaAnswer, LigaAttempt, LigaChoice, LigaParticipant, LigaPointLog, LigaQuestion, LigaSeason, LigaTest, LigaWinner,
@@ -38,12 +39,18 @@ def is_subscription_active(student):
     ).exists()
 
 
-def join_season(season, student):
+def join_season(season, student, grade_id=None):
+    """Ligaga qo'shilish. Sinfni o'quvchi o'zi tanlaydi (sovrin topshirishda hujjat bilan tekshiriladi);
+    tanlanmasa — profildagi sinf. Qo'shilgach sinf o'zgarmaydi."""
     if season.is_closed or not season.is_published:
         raise LigaError("Mavsum ochiq emas")
-    grade_id = student_grade_id(student)
+    if grade_id is not None:
+        if not Class.objects.filter(pk=grade_id).exists():
+            raise LigaError("Sinf noto'g'ri tanlangan")
+    else:
+        grade_id = student_grade_id(student)
     if not grade_id:
-        raise LigaError("Profilingizda sinf ko'rsatilmagan")
+        raise LigaError("Sinfingizni tanlang")
     if not is_subscription_active(student):
         raise LigaError("Ligada qatnashish uchun obuna faol bo'lishi kerak")
     participant, _ = LigaParticipant.objects.get_or_create(

@@ -68,6 +68,14 @@ def _winner_row(winner):
     }
 
 
+def _grade_options():
+    """Sinflar: raqam bo'yicha tartiblangan (1, 2, ... 11), raqamsizlari oxirida."""
+    def order(item):
+        digits = ''.join(ch for ch in item['name'] if ch.isdigit())
+        return (int(digits) if digits else 999, item['name'])
+    return sorted(Class.objects.values('id', 'name'), key=order)
+
+
 def _standing_row(participant):
     return {
         'rank': participant.rank,
@@ -186,6 +194,9 @@ class CurrentSeasonAPIView(APIView):
 
         data.update({
             'grade': Class.objects.filter(pk=grade_id).values_list('name', flat=True).first(),
+            # Qo'shilish oynasi uchun: sinflar ro'yxati va profildagi sinf (oldindan belgilanadi)
+            'grades': _grade_options() if not participant else [],
+            'profile_grade_id': services.student_grade_id(student),
             'subscription_active': services.is_subscription_active(student),
             'joined': bool(participant),
             'points': participant.points if participant else 0,
@@ -207,8 +218,19 @@ class JoinSeasonAPIView(APIView):
         if not student:
             return Response({'message': "O'quvchi topilmadi"}, status=404)
         season = get_object_or_404(LigaSeason, id=season_id, is_published=True)
+        # Sinf tanlanadi va qoidalarga rozilik beriladi (eski ilova versiyalari grade yubormaydi — profildagi sinf)
+        grade_id = request.data.get('grade')
+        if grade_id not in (None, ''):
+            if str(request.data.get('accept_rules')).lower() not in ('true', '1'):
+                return Response({'message': "Qoidalarga rozilik bildiring"}, status=400)
+            try:
+                grade_id = int(grade_id)
+            except (TypeError, ValueError):
+                return Response({'message': "Sinf noto'g'ri tanlangan"}, status=400)
+        else:
+            grade_id = None
         try:
-            services.join_season(season, student)
+            services.join_season(season, student, grade_id=grade_id)
         except services.LigaError as exc:
             return Response({'message': str(exc)}, status=400)
         # Qo'shilgan kuni ham kirgani uchun ball beriladi
