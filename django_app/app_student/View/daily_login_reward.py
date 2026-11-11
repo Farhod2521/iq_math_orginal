@@ -2,6 +2,8 @@
 Kundalik kirish mukofoti (gol).
 
 Har kuni saytga kirganda (frontend avtomatik claim qiladi, tugma yo'q) +1 gol qo'shiladi (ball emas).
+Gol faqat ligaga qo'shilgan o'quvchilarga beriladi (ochiq, e'lon qilingan mavsum ishtirokchisi).
+Qo'shilmaganlarga gol yozilmaydi va javobda "liga_joined": false qaytadi — frontend gol'ni ko'rsatmaydi.
 Ketma-ketlik 1..7 kun kartalarida ko'rsatiladi: bir kun o'tkazib yuborilsa — 1-kundan qayta,
 7-kundan keyin (8-kun) yangi hafta yana 1-kundan boshlanadi. Har kuni gol bir xil: +1.
 
@@ -20,6 +22,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from django_app.app_liga.models import LigaParticipant
 from django_app.app_student.gol import award_gol
 from django_app.app_student.models import StudentPointLog, StudentScore
 
@@ -31,6 +34,13 @@ SOURCE = StudentPointLog.SOURCE_DAILY_LOGIN
 
 def _student(request):
     return getattr(request.user, "student_profile", None)
+
+
+def _liga_joined(student):
+    """Gol yig'ish faqat ligaga qo'shilgandan keyin: ochiq mavsum ishtirokchisi bo'lishi kerak."""
+    return LigaParticipant.objects.filter(
+        student=student, season__closed_at__isnull=True, season__is_published=True,
+    ).exists()
 
 
 def _logs(student):
@@ -77,6 +87,7 @@ def _payload(student, today):
 
     gol_total = StudentScore.objects.filter(student=student).values_list("gol", flat=True).first() or 0
     return {
+        "liga_joined": _liga_joined(student),
         "claimed_today": claimed,
         "today_day": day_number,
         "today_gol": DAILY_GOLS[day_number - 1],
@@ -108,7 +119,7 @@ class DailyLoginRewardClaimAPIView(APIView):
         today = timezone.localdate()
         awarded = 0
         claimed, _anchor, day_number = _state(student, today)
-        if not claimed:
+        if not claimed and _liga_joined(student):
             log = award_gol(
                 student.id,
                 SOURCE,
