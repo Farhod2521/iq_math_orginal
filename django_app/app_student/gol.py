@@ -4,12 +4,27 @@ Gol — balldan (StudentScore.score) alohida hisob. Jami: StudentScore.gol, tari
 Manbalar:
   - Kundalik kirish (daily_login_reward.py): har kuni kirganda +1 gol (ketma-ketlik 1..7 kun)
   - Haftalik test (app_liga.services._finalize): test natijasi (to'g'ri javoblar balli) → shuncha gol
+  - Mavzu misollari (views.py, javoblarni tekshirish): har bir yangi yechilgan misol → 1 gol (ball/tangadan tashqari)
+
+Gol faqat ligaga qo'shilgan o'quvchiga yig'iladi (is_liga_joined).
 """
 from django.db import IntegrityError, transaction
 from django.utils import timezone
 
 from .models import StudentPointLog, StudentScore
 from .wallet import Log, log_wallet
+
+LESSON_GOL_PER_QUESTION = 1
+
+
+def is_liga_joined(student_id):
+    """Gol yig'ish faqat ligaga qo'shilgandan keyin: ochiq mavsum ishtirokchisi bo'lishi kerak."""
+    # Ichkarida import: app_liga.services shu modulni import qiladi
+    from django_app.app_liga.models import LigaParticipant
+
+    return LigaParticipant.objects.filter(
+        student_id=student_id, season__closed_at__isnull=True, season__is_published=True,
+    ).exists()
 
 
 def award_gol(student_id, source, gol, *, ref="", date=None, streak_day=None, comment=""):

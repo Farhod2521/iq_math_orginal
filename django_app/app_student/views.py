@@ -14,7 +14,7 @@ from collections import defaultdict
 from bs4 import BeautifulSoup  # HTML teglarini tozalash uchun
 from django.utils.html import strip_tags
 from random import sample
-from .models import Diagnost_Student, TopicProgress, StudentScoreLog, StudentScore
+from .models import Diagnost_Student, TopicProgress, StudentScoreLog, StudentScore, StudentPointLog
 from rest_framework import status
 from django.utils import timezone
 import re
@@ -661,6 +661,8 @@ class CheckAnswersAPIView(APIView):
         index = 1
         last_question_topic = None
         awarded_totals = {'coin': 0, 'score': 0}  # hamyon tarixi uchun
+        new_log_ids = []  # shu topshiriqda yangi yechilgan misollar (gol uchun)
+        gol_awarded = 0
         today_coin_count = get_today_coin_count(student_score) if not is_staff_user else 0
         daily_limit = get_daily_coin_limit() if not is_staff_user else 0
         daily_log = get_or_create_daily_log(student_instance) if not is_staff_user else None
@@ -687,13 +689,14 @@ class CheckAnswersAPIView(APIView):
                         student_score.score += 1
 
                     awarded_totals['coin' if give_coin else 'score'] += 1
-                    StudentScoreLog.objects.create(
+                    score_log = StudentScoreLog.objects.create(
                         student_score=student_score,
                         question=question,
                         awarded_coin=give_coin,
                         award_type='coin' if give_coin else 'score',
                         awarded_at=timezone.now()
                     )
+                    new_log_ids.append(score_log.id)
 
         # TEXT SAVOLLAR
         for answer in serializer.validated_data.get('text_answers', []):
@@ -821,6 +824,21 @@ class CheckAnswersAPIView(APIView):
                         ref=f"topic:{last_question_topic.id}" if last_question_topic else "",
                     )
 
+            # Gol: har bir yangi yechilgan misol uchun 1 gol (ball/tangadan tashqari).
+            # Faqat ligaga qo'shilgan o'quvchiga. Bitta topshiriq — bitta yozuv (ref = birinchi ball logi)
+            from django_app.app_student.gol import LESSON_GOL_PER_QUESTION, award_gol, is_liga_joined
+            if new_log_ids and is_liga_joined(student_instance.id):
+                gol_gained = len(new_log_ids) * LESSON_GOL_PER_QUESTION
+                gol_log = award_gol(
+                    student_instance.id,
+                    StudentPointLog.SOURCE_LESSON,
+                    gol_gained,
+                    ref=f"lesson:{min(new_log_ids)}",
+                    comment=f"{lesson_text}: {len(new_log_ids)} ta yangi yechilgan misol",
+                )
+                if gol_log:
+                    gol_awarded = gol_gained
+
             # Hech bo'lmasa bitta javob yuborilgandagina mavzu natijasi yoziladi
             if last_question_topic and total_answers:
                 topic_progress, _ = TopicProgress.objects.get_or_create(
@@ -857,6 +875,7 @@ class CheckAnswersAPIView(APIView):
                 check_achievements_safe(student_instance)
 
         response_data = {
+            "gol_gained": gol_awarded,  # shu topshiriq uchun berilgan gol (ligaga qo'shilmagan bo'lsa 0)
             "question": question_details,
             "result": [{
                 "total_answers": total_answers,

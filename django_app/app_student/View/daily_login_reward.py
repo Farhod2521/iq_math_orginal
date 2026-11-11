@@ -22,8 +22,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from django_app.app_liga.models import LigaParticipant
-from django_app.app_student.gol import award_gol
+from django_app.app_student.gol import award_gol, is_liga_joined
 from django_app.app_student.models import StudentPointLog, StudentScore
 
 # Ketma-ketlik kuni → gol: har kuni +1 gol (kopayib bormaydi)
@@ -38,9 +37,7 @@ def _student(request):
 
 def _liga_joined(student):
     """Gol yig'ish faqat ligaga qo'shilgandan keyin: ochiq mavsum ishtirokchisi bo'lishi kerak."""
-    return LigaParticipant.objects.filter(
-        student=student, season__closed_at__isnull=True, season__is_published=True,
-    ).exists()
+    return is_liga_joined(student.id)
 
 
 def _logs(student):

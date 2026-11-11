@@ -426,12 +426,15 @@ class StudentPointLog(models.Model):
     Gol — balldan (StudentScore.score) alohida; jami StudentScore.gol'da.
       - daily_login: kundalik kirish (ketma-ketlik kuni 1..7 → 1..7 gol), kuniga bir marta
       - weekly_test: haftalik (liga) test natijasi, ref = urinish id — bir test uchun bir marta
+      - lesson: mavzu misollari — har bir yangi yechilgan misol uchun 1 gol (ball/tangadan tashqari)
     """
     SOURCE_DAILY_LOGIN = "daily_login"
     SOURCE_WEEKLY_TEST = "weekly_test"
+    SOURCE_LESSON = "lesson"
     SOURCE_CHOICES = (
         (SOURCE_DAILY_LOGIN, "Kundalik kirish"),
         (SOURCE_WEEKLY_TEST, "Haftalik test"),
+        (SOURCE_LESSON, "Mavzu misollari"),
     )
 
     student = models.ForeignKey(
