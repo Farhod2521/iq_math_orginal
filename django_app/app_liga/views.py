@@ -307,6 +307,236 @@ class AttemptFinishAPIView(StudentAttemptView):
         return Response(_attempt_summary(attempt))
 
 
+# ---------- O'quvchi: mavsumlar tarixi va shaxsiy tarix ----------
+
+WEEK_TOP = 3
+
+
+def _season_points(season, grade_id):
+    """Sinf ishtirokchilari va mavsumda to'plagan ballari, o'rni bilan.
+    Yopilgan mavsumda ballar nolga tushgani uchun ball tarixidan (LigaPointLog) yig'iladi."""
+    if not season.is_closed:
+        return [(item.student_id, item.student.full_name, item.points, item.rank) for item in services.standings(season, grade_id)]
+    rows = list(
+        season.participants.filter(grade_id=grade_id)
+        .annotate(total=Sum('point_logs__points'))
+        .values_list('student_id', 'student__full_name', 'total', 'joined_at')
+    )
+    rows.sort(key=lambda row: (-(row[2] or 0), row[3]))
+    return [(sid, name, total or 0, index) for index, (sid, name, total, _) in enumerate(rows, start=1)]
+
+
+def _default_grade(student):
+    last = LigaParticipant.objects.filter(student=student).order_by('-season__number').first()
+    return last.grade_id if last else services.student_grade_id(student)
+
+
+class SeasonListAPIView(APIView):
+    """Mavsumlar ro'yxati (ochiq va tugaganlar) + sinf filtri uchun sinflar."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        student = _get_student(request)
+        seasons = (
+            LigaSeason.objects.filter(is_published=True)
+            .annotate(tests_count=Count('tests', filter=Q(tests__is_published=True), distinct=True))
+            .order_by('-number')
+        )
+        return Response({
+            'grade_id': _default_grade(student) if student else None,
+            'grades': _grade_options(),
+            'seasons': [
+                {
+                    'id': season.id,
+                    'number': season.number,
+                    'is_closed': season.is_closed,
+                    'closed_at': season.closed_at,
+                    'weeks_count': season.weeks_count,
+                    'tests_count': season.tests_count,
+                }
+                for season in seasons
+            ],
+        })
+
+
+class SeasonResultsAPIView(APIView):
+    """Bitta mavsum: sinf g'oliblari (ochiq mavsumda — hozirgi yetakchilar) va har hafta testining g'oliblari."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, season_id):
+        student = _get_student(request)
+        season = get_object_or_404(LigaSeason, id=season_id, is_published=True)
+        try:
+            grade_id = int(request.query_params.get('grade') or 0) or (_default_grade(student) if student else None)
+        except ValueError:
+            grade_id = None
+
+        ranked = _season_points(season, grade_id) if grade_id else []
+        mine = next((row for row in ranked if student and row[0] == student.id), None)
+        if season.is_closed:
+            winners = [
+                _winner_row(winner)
+                for winner in season.winners.filter(grade_id=grade_id).select_related('student', 'grade').order_by('place')
+            ]
+        else:
+            winners = [
+                {'place': rank, 'full_name': public_name(name), 'points': points, 'is_disqualified': False}
+                for _, name, points, rank in ranked[:WEEK_TOP] if points > 0
+            ]
+
+        weeks = []
+        tests = season.tests.filter(is_published=True, grade_id=grade_id).order_by('week_number')
+        for test in tests:
+            row = {
+                'test_id': test.id,
+                'week_number': test.week_number,
+                'start_at': test.start_at,
+                'end_at': test.end_at,
+                'status': test.status,
+                'participants': 0,
+                'top': [],
+                'my': None,
+            }
+            if test.status == LigaTest.STATUS_FINISHED:
+                services.finalize_expired(test)
+                attempts = services.ranked_attempts(test)
+                row['participants'] = len(attempts)
+                row['top'] = [
+                    {
+                        'rank': attempt.rank,
+                        'full_name': public_name(attempt.student.full_name),
+                        'score': attempt.score,
+                        'max_score': attempt.max_score,
+                        'duration_seconds': attempt.duration_seconds,
+                    }
+                    for attempt in attempts if attempt.rank <= WEEK_TOP
+                ]
+                my = next((attempt for attempt in attempts if student and attempt.student_id == student.id), None)
+                if my:
+                    row['my'] = {'attempt_id': my.id, 'rank': my.rank, 'score': my.score, 'max_score': my.max_score}
+            weeks.append(row)
+
+        return Response({
+            'season': PublicSeasonSerializer(season).data,
+            'grade_id': grade_id,
+            'grade': Class.objects.filter(pk=grade_id).values_list('name', flat=True).first(),
+            'participants_count': len(ranked),
+            'winners': winners,
+            'me': {'points': mine[2], 'rank': mine[3]} if mine else None,
+            'weeks': weeks,
+            'viewer': _viewer(student) if student else None,
+        })
+
+
+class MyHistoryAPIView(APIView):
+    """O'quvchining liga tarixi: har mavsumda to'plagan ballari, o'rni, yutuqlari va testlari."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        student = _get_student(request)
+        if not student:
+            return Response({'message': "O'quvchi topilmadi"}, status=404)
+
+        participations = list(
+            LigaParticipant.objects.filter(student=student, season__is_published=True)
+            .select_related('season', 'grade').order_by('-season__number')
+        )
+        wins = {
+            win.season_id: win
+            for win in LigaWinner.objects.filter(student=student).select_related('season')
+        }
+        attempts = list(
+            LigaAttempt.objects.filter(student=student).exclude(status=LigaAttempt.STATUS_IN_PROGRESS)
+            .select_related('test', 'test__season').order_by('-test__season__number', 'test__week_number')
+        )
+        by_source = {
+            (row['participant_id'], row['source']): row['total']
+            for row in LigaPointLog.objects.filter(participant__in=participations)
+            .values('participant_id', 'source').annotate(total=Sum('points'))
+        }
+
+        seasons = []
+        for participant in participations:
+            season = participant.season
+            ranked = _season_points(season, participant.grade_id)
+            mine = next((row for row in ranked if row[0] == student.id), None)
+            sources = {key: by_source.get((participant.id, key), 0) or 0 for key, _ in LigaPointLog.SOURCES}
+            win = wins.get(season.id)
+            seasons.append({
+                'season_id': season.id,
+                'number': season.number,
+                'is_closed': season.is_closed,
+                'grade': participant.grade.name,
+                'joined_at': participant.joined_at,
+                'points': sum(sources.values()),
+                'sources': sources,
+                'rank': mine[3] if mine else None,
+                'participants_count': len(ranked),
+                'win': {
+                    'place': win.place,
+                    'prize_uz': win.prize_uz,
+                    'prize_ru': win.prize_ru,
+                    'is_disqualified': win.is_disqualified,
+                } if win else None,
+                'tests': [
+                    {
+                        'attempt_id': attempt.id,
+                        'week_number': attempt.test.week_number,
+                        'finished_at': attempt.finished_at,
+                        'status': attempt.status,
+                        'score': attempt.score,
+                        'max_score': attempt.max_score,
+                        'correct_count': attempt.correct_count,
+                        'total_questions': attempt.total_questions,
+                        'duration_seconds': attempt.duration_seconds,
+                    }
+                    for attempt in attempts if attempt.test.season_id == season.id
+                ],
+            })
+
+        return Response({
+            'summary': {
+                'total_points': sum(item['points'] for item in seasons),
+                'seasons': len(seasons),
+                'tests': len(attempts),
+                'wins': sum(1 for win in wins.values() if not win.is_disqualified),
+                'best_rank': min((item['rank'] for item in seasons if item['rank']), default=None),
+            },
+            'seasons': seasons,
+            'viewer': _viewer(student),
+        })
+
+
+class MyPointsAPIView(APIView):
+    """Liga ballari qayerdan kelgani (kunlik kirish, fanlar, haftalik test). ?season=&source=&page="""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        student = _get_student(request)
+        if not student:
+            return Response({'message': "O'quvchi topilmadi"}, status=404)
+        logs = LigaPointLog.objects.filter(participant__student=student).select_related('participant__season')
+        season = request.query_params.get('season')
+        if season and season.isdigit():
+            logs = logs.filter(participant__season_id=int(season))
+        source = request.query_params.get('source')
+        if source in dict(LigaPointLog.SOURCES):
+            logs = logs.filter(source=source)
+
+        paginator = StandardResultsSetPagination()
+        page = paginator.paginate_queryset(logs.order_by('-created_at', '-id'), request, view=self)
+        return paginator.get_paginated_response([
+            {
+                'id': log.id,
+                'season': log.participant.season.number,
+                'source': log.source,
+                'points': log.points,
+                'created_at': log.created_at,
+            }
+            for log in page
+        ])
+
+
 # ---------- Mentor / admin ----------
 
 def _xlsx(filename, sheet_title, header, rows):
@@ -409,13 +639,15 @@ class AdminMetaAPIView(APIView):
         })
 
 
-class AdminSeasonViewSet(ProtectedDestroyMixin, viewsets.ModelViewSet):
+class AdminSeasonViewSet(viewsets.ModelViewSet):
     queryset = LigaSeason.objects.all()
     serializer_class = AdminSeasonSerializer
     permission_classes = [IsLigaAdmin]
 
-    def has_results(self, instance):
-        return instance.participants.exists() or LigaAttempt.objects.filter(test__season=instance).exists()
+    def destroy(self, request, *args, **kwargs):
+        """Mavsum unga bog'liq hamma narsa bilan o'chadi (oldindan ogohlantiriladi)."""
+        info = services.delete_season(self.get_object())
+        return Response({'deleted': True, **info})
 
     @action(detail=True, methods=['post'])
     def close(self, request, pk=None):
@@ -562,7 +794,7 @@ class AdminSeasonViewSet(ProtectedDestroyMixin, viewsets.ModelViewSet):
 WEEK_FIELDS = ('week_number', 'start_at', 'end_at', 'duration_minutes', 'question_count')
 
 
-class AdminTestViewSet(ProtectedDestroyMixin, viewsets.ModelViewSet):
+class AdminTestViewSet(viewsets.ModelViewSet):
     serializer_class = AdminTestSerializer
     permission_classes = [IsLigaAdmin]
 
@@ -575,8 +807,10 @@ class AdminTestViewSet(ProtectedDestroyMixin, viewsets.ModelViewSet):
                 queryset = queryset.filter(**{field: value})
         return queryset
 
-    def has_results(self, instance):
-        return instance.attempts.exists()
+    def destroy(self, request, *args, **kwargs):
+        """Test savollari, o'quvchilar natijalari va shu test uchun berilgan liga ballari bilan o'chadi."""
+        info = services.delete_tests([self.get_object().id])
+        return Response({'deleted': True, **info})
 
     @action(detail=False, methods=['post'], url_path='bulk-create')
     def bulk_create(self, request):
@@ -609,10 +843,8 @@ class AdminTestViewSet(ProtectedDestroyMixin, viewsets.ModelViewSet):
             return Response({'message': "Bu haftada testlar yo'q"}, status=404)
 
         if request.method == 'DELETE':
-            if LigaAttempt.objects.filter(test__in=tests).exists():
-                return Response({'message': "Natijalari bor haftani o'chirib bo'lmaydi"}, status=400)
-            tests.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
+            info = services.delete_tests(tests.values_list('id', flat=True))
+            return Response({'deleted': True, **info})
 
         changes = {name: request.data[name] for name in WEEK_FIELDS if name in request.data}
         with transaction.atomic():

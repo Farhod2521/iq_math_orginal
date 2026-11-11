@@ -316,3 +316,36 @@ def close_finished_seasons():
             close_season(season.id)
             closed += 1
     return closed
+
+
+# ---------- O'chirish (mentor) ----------
+
+def delete_tests(test_ids):
+    """Testlarni ularga bog'liq hamma narsa bilan o'chiradi: savollar, variantlar, urinishlar, javoblar.
+    Ochiq mavsumda shu testlar uchun berilgan liga ballari ishtirokchilardan ayirib tashlanadi.
+    (Haftalik test uchun berilgan gollar o'quvchida qoladi.)"""
+    from django.db.models.functions import Greatest
+
+    test_ids = list(test_ids)
+    with transaction.atomic():
+        attempt_ids = list(LigaAttempt.objects.filter(test_id__in=test_ids).values_list('id', flat=True))
+        logs = LigaPointLog.objects.filter(source=LigaPointLog.SOURCE_TEST, ref__in=[str(pk) for pk in attempt_ids])
+        totals = logs.filter(participant__season__closed_at__isnull=True).values('participant_id').annotate(total=Sum('points'))
+        for row in totals:
+            LigaParticipant.objects.filter(pk=row['participant_id']).update(points=Greatest(F('points') - row['total'], 0))
+        logs.delete()
+        LigaAnswer.objects.filter(attempt_id__in=attempt_ids).delete()
+        LigaAttempt.objects.filter(id__in=attempt_ids).delete()
+        LigaAnswer.objects.filter(question__test_id__in=test_ids).delete()
+        deleted, _ = LigaTest.objects.filter(id__in=test_ids).delete()
+    return {'tests': len(test_ids), 'attempts': len(attempt_ids), 'rows': deleted}
+
+
+def delete_season(season):
+    """Mavsumni butunlay o'chiradi: testlar (natijalari bilan), ishtirokchilar, ball tarixi, g'oliblar."""
+    with transaction.atomic():
+        info = delete_tests(season.tests.values_list('id', flat=True))
+        info['participants'] = season.participants.count()
+        season.winners.all().delete()
+        season.delete()  # ishtirokchilar va ball tarixi CASCADE bilan o'chadi
+    return info

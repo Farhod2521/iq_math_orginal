@@ -471,12 +471,15 @@ class AdminApiTests(LigaFixtureMixin, TestCase):
         url = f'/api/v1/liga/admin/seasons/{self.season.id}/'
         self.assertEqual(self.mentor.patch(url, {'weeks_count': 5}, format='json').status_code, 400)
 
-    def test_season_delete(self):
+    def test_season_delete_removes_everything(self):
+        # Ishtirokchisi va natijasi bo'lsa ham mavsum bog'liq hamma narsa bilan o'chadi
+        services.start_attempt(self.test, self.student)
         url = f'/api/v1/liga/admin/seasons/{self.season.id}/'
-        self.assertEqual(self.mentor.delete(url).status_code, 400)  # ishtirokchisi bor
-        self.participant.delete()
-        self.assertEqual(self.mentor.delete(url).status_code, 204)
+        self.assertEqual(self.mentor.delete(url).status_code, 200)
+        self.assertFalse(LigaSeason.objects.filter(pk=self.season.pk).exists())
         self.assertFalse(LigaTest.objects.filter(pk=self.test.pk).exists())
+        self.assertFalse(LigaParticipant.objects.filter(pk=self.participant.pk).exists())
+        self.assertFalse(LigaAttempt.objects.filter(student=self.student).exists())
 
     def test_week_update_changes_only_sent_fields_in_all_grades(self):
         other = self._test(week=1, klass=Class.objects.create(name='9'), duration_minutes=45)
@@ -515,15 +518,16 @@ class AdminApiTests(LigaFixtureMixin, TestCase):
             start_at=self.test.start_at, end_at=self.test.end_at,
         )
         response = self.mentor.delete(f'/api/v1/liga/admin/tests/week/?season={self.season.id}&week_number=1')
-        self.assertEqual(response.status_code, 204)
+        self.assertEqual(response.status_code, 200)
         self.assertFalse(LigaTest.objects.filter(pk=self.test.pk).exists())
         self.assertTrue(LigaTest.objects.filter(pk=kept.pk).exists())
 
-    def test_week_with_results_is_not_deleted(self):
-        services.start_attempt(self.test, self.student)
+    def test_week_with_results_is_deleted_with_results(self):
+        attempt = services.start_attempt(self.test, self.student)
         url = f'/api/v1/liga/admin/tests/week/?season={self.season.id}&week_number=1'
-        self.assertEqual(self.mentor.delete(url).status_code, 400)
-        self.assertTrue(LigaTest.objects.filter(pk=self.test.pk).exists())
+        self.assertEqual(self.mentor.delete(url).status_code, 200)
+        self.assertFalse(LigaTest.objects.filter(pk=self.test.pk).exists())
+        self.assertFalse(LigaAttempt.objects.filter(pk=attempt.pk).exists())
 
     def test_week_request_needs_season_and_week(self):
         self.assertEqual(self.mentor.delete('/api/v1/liga/admin/tests/week/').status_code, 400)
