@@ -194,6 +194,7 @@ class SubscriptionPlanSerializer(serializers.ModelSerializer):
 
 class PaymentTeacherSerializer(serializers.ModelSerializer):
     student_name = serializers.CharField(source="student.full_name", read_only=True)
+    student_phone = serializers.CharField(source="student.user.phone", read_only=True, default="")
     coupon_code = serializers.CharField(source="coupon.code", read_only=True)
 
     class Meta:
@@ -201,6 +202,7 @@ class PaymentTeacherSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "student_name",
+            "student_phone",
             "amount",
             "original_amount",
             "discount_percent",

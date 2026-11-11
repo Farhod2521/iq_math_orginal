@@ -885,7 +885,7 @@ class PaymentTeacherListAPIView(APIView):
             )
 
         # barcha to'lovlarni olish (so'nggi to'lovlar yuqorida)
-        payments = Payment.objects.select_related("student", "coupon").order_by("-created_at")
+        payments = Payment.objects.select_related("student__user", "coupon").order_by("-created_at")
 
         # filtrlash parametrlari (ixtiyoriy)
         status_filter = request.GET.get("status")
@@ -903,6 +903,7 @@ class PaymentTeacherListAPIView(APIView):
             "columns": [
                 "ID",
                 "Student",
+                "Phone",
                 "Amount",
                 "Original Amount",
                 "Discount (%)",
