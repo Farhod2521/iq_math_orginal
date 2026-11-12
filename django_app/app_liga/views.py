@@ -12,6 +12,7 @@ from rest_framework.permissions import AllowAny, BasePermission, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from django_app.app_student.models import StudentScoreLog
 from django_app.app_student.paginations import StandardResultsSetPagination
 from django_app.app_student.privacy import public_name
 from django_app.app_user.models import Class, Student, Subject
@@ -683,6 +684,55 @@ class AdminAttemptDetailAPIView(APIView):
         return Response(data)
 
 
+def _point_rows(logs):
+    """Ball yozuvlari tafsiloti bilan: kunlik kirish — sana, fan — qaysi fan/mavzu savoli, test — qaysi hafta va natija."""
+    source_labels = dict(LigaPointLog.SOURCES)
+    refs = {source: [log.ref for log in logs if log.source == source and log.ref.isdigit()] for source in source_labels}
+    score_logs = {
+        str(item.id): item
+        for item in StudentScoreLog.objects.filter(id__in=refs[LigaPointLog.SOURCE_SUBJECT])
+        .select_related('question__topic__chapter__subject')
+    }
+    attempts = {
+        str(item.id): item
+        for item in LigaAttempt.objects.filter(id__in=refs[LigaPointLog.SOURCE_TEST]).select_related('test')
+    }
+
+    rows = []
+    for log in logs:
+        detail, attempt_id = '', None
+        if log.source == LigaPointLog.SOURCE_DAILY:
+            detail = f"{log.ref} kuni ilovaga/saytga kirgani uchun"
+        elif log.source == LigaPointLog.SOURCE_SUBJECT:
+            item = score_logs.get(log.ref)
+            if item:
+                topic = item.question.topic
+                subject = topic.chapter.subject.name if topic.chapter and topic.chapter.subject else ''
+                detail = f"{subject} — {topic.name} (savol #{item.question_id})".lstrip(' —')
+            else:
+                detail = f"Savol yechgani uchun (#{log.ref})"
+        elif log.source == LigaPointLog.SOURCE_TEST:
+            item = attempts.get(log.ref)
+            if item:
+                attempt_id = item.id
+                detail = (
+                    f"{item.test.week_number}-hafta testi: {item.correct_count}/{item.total_questions} to'g'ri, "
+                    f"{item.score}/{item.max_score} gol"
+                )
+            else:
+                detail = "Haftalik test"
+        rows.append({
+            'id': log.id,
+            'source': log.source,
+            'source_label': source_labels.get(log.source, log.source),
+            'detail': detail,
+            'attempt_id': attempt_id,
+            'points': log.points,
+            'created_at': log.created_at,
+        })
+    return rows
+
+
 class ProtectedDestroyMixin:
     def has_results(self, instance):
         raise NotImplementedError
@@ -831,6 +881,46 @@ class AdminSeasonViewSet(viewsets.ModelViewSet):
 
         paginator = StandardResultsSetPagination()
         return paginator.get_paginated_response(paginator.paginate_queryset(rows, request, view=self))
+
+    @action(detail=True, methods=['get'])
+    def points(self, request, pk=None):
+        """O'quvchining mavsum ballari qayerdan kelgani: ?student=, ?source=daily|subject|test, ?page=, ?page_size=20"""
+        season = self.get_object()
+        student_id = request.query_params.get('student') or ''
+        if not student_id.isdigit():
+            raise ValidationError({'message': "O'quvchini ko'rsating"})
+        participant = get_object_or_404(
+            LigaParticipant.objects.select_related('student', 'student__user', 'grade'),
+            season=season, student_id=int(student_id),
+        )
+
+        all_logs = LigaPointLog.objects.filter(participant=participant)
+        summary = {
+            row['source']: {'points': row['points'] or 0, 'count': row['count']}
+            for row in all_logs.values('source').annotate(points=Sum('points'), count=Count('id'))
+        }
+        logs = all_logs
+        source = request.query_params.get('source')
+        if source in dict(LigaPointLog.SOURCES):
+            logs = logs.filter(source=source)
+
+        paginator = StandardResultsSetPagination()
+        paginator.page_size = 20
+        page = paginator.paginate_queryset(logs.order_by('-created_at', '-id'), request, view=self)
+        response = paginator.get_paginated_response(_point_rows(page))
+        response.data['participant'] = {
+            'student_id': participant.student_id,
+            'full_name': participant.student.full_name,
+            'phone': participant.student.user.phone,
+            'grade': participant.grade.name,
+            'points': participant.points,
+            'joined_at': participant.joined_at,
+        }
+        response.data['summary'] = [
+            {'source': key, 'label': label, **summary.get(key, {'points': 0, 'count': 0})}
+            for key, label in LigaPointLog.SOURCES
+        ]
+        return response
 
     @action(detail=True, methods=['get'])
     def participants(self, request, pk=None):
