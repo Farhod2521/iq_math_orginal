@@ -26,6 +26,26 @@ class StudentQuestionSerializer(serializers.ModelSerializer):
         )
 
 
+# ---------- Natija tahlili: test oynasi yopilgandan keyingina (yoki mentor/admin uchun) ----------
+
+class ReviewChoiceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LigaChoice
+        fields = ('id', 'letter', 'text_uz', 'text_ru', 'image', 'is_correct')
+
+
+class ReviewQuestionSerializer(serializers.ModelSerializer):
+    subject_name = serializers.CharField(source='subject.name', read_only=True)
+    choices = ReviewChoiceSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = LigaQuestion
+        fields = (
+            'id', 'subject', 'subject_name', 'question_type',
+            'question_text_uz', 'question_text_ru', 'image', 'score', 'correct_text_answer', 'choices',
+        )
+
+
 class PublicSeasonSerializer(serializers.ModelSerializer):
     is_closed = serializers.BooleanField(read_only=True)
 

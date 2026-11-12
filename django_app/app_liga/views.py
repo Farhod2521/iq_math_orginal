@@ -20,7 +20,8 @@ from . import services
 from .models import LigaAttempt, LigaParticipant, LigaPointLog, LigaQuestion, LigaSeason, LigaTest, LigaWinner
 from .serializers import (
     AdminQuestionSerializer, AdminSeasonSerializer, AdminTestSerializer, AdminWinnerSerializer,
-    AnswerInputSerializer, BulkTestSerializer, PublicSeasonSerializer, StudentQuestionSerializer, WeekSerializer,
+    AnswerInputSerializer, BulkTestSerializer, PublicSeasonSerializer, ReviewQuestionSerializer,
+    StudentQuestionSerializer, WeekSerializer,
 )
 
 TOP_SIZE = 10
@@ -129,15 +130,59 @@ def _attempt_summary(attempt):
     return data
 
 
+def _ordered_questions(attempt):
+    questions = LigaQuestion.objects.filter(id__in=attempt.question_order).select_related('subject').prefetch_related('choices')
+    by_id = {question.id: question for question in questions}
+    return [by_id[pk] for pk in attempt.question_order if pk in by_id]
+
+
+def _attempt_review(attempt, request):
+    """Har bir savol: o'quvchi nima belgilagani, to'g'ri javob, to'g'ri/xato/javobsiz va olingan gol."""
+    answers = {answer.question_id: answer for answer in attempt.answers.select_related('selected_choice')}
+    items = []
+    for number, question in enumerate(_ordered_questions(attempt), start=1):
+        answer = answers.get(question.id)
+        answered = bool(answer and (answer.selected_choice_id or (answer.text_answer or '').strip()))
+        is_correct = bool(answered and answer.is_correct)
+        correct_choice = next((choice for choice in question.choices.all() if choice.is_correct), None)
+        items.append({
+            'number': number,
+            'question': ReviewQuestionSerializer(question, context={'request': request}).data,
+            'selected_choice': answer.selected_choice_id if answered else None,
+            'selected_letter': answer.selected_choice.letter if answered and answer.selected_choice else None,
+            'text_answer': answer.text_answer if answered else None,
+            'correct_choice': correct_choice.id if correct_choice else None,
+            'correct_letter': correct_choice.letter if correct_choice else None,
+            'result': 'correct' if is_correct else ('wrong' if answered else 'skipped'),
+            'is_correct': is_correct,
+            'earned_score': question.score if is_correct else 0,
+            'max_score': question.score,
+        })
+    return items
+
+
+def _review_block(attempt, request, force=False):
+    """O'quvchiga to'g'ri javoblar test oynasi yopilgandan keyin ochiladi — boshqalar hali ishlayotgan bo'lishi mumkin."""
+    if attempt.status == LigaAttempt.STATUS_IN_PROGRESS:
+        return {}
+    available = force or timezone.now() >= attempt.test.end_at
+    review = _attempt_review(attempt, request) if available else None
+    return {
+        'review_available': available,
+        'review_available_at': attempt.test.end_at,
+        'skipped_count': attempt.total_questions - attempt.answered_count,
+        'review': review,
+    }
+
+
 def _attempt_payload(attempt, request):
     data = _attempt_summary(attempt)
     data.update({'week_number': attempt.test.week_number, 'grade_name': attempt.test.grade.name})
     if attempt.status != LigaAttempt.STATUS_IN_PROGRESS:
+        data.update(_review_block(attempt, request))
         return data
 
-    questions = LigaQuestion.objects.filter(id__in=attempt.question_order).select_related('subject').prefetch_related('choices')
-    by_id = {question.id: question for question in questions}
-    ordered = [by_id[pk] for pk in attempt.question_order if pk in by_id]
+    ordered = _ordered_questions(attempt)
     data.update({
         'viewer': _viewer(attempt.student),
         'remaining_seconds': max(0, int((attempt.deadline_at - timezone.now()).total_seconds())),
@@ -304,7 +349,7 @@ class AttemptAnswerAPIView(StudentAttemptView):
 class AttemptFinishAPIView(StudentAttemptView):
     def post(self, request, attempt_id):
         attempt = services.finish_attempt(self.get_attempt(request, attempt_id).id)
-        return Response(_attempt_summary(attempt))
+        return Response({**_attempt_summary(attempt), **_review_block(attempt, request)})
 
 
 # ---------- O'quvchi: mavsumlar tarixi va shaxsiy tarix ----------
@@ -613,6 +658,29 @@ def _attempts_xlsx(filename, rows, with_grade=False):
             for row in rows
         ],
     )
+
+
+class AdminAttemptDetailAPIView(APIView):
+    """Mentor/admin: o'quvchi natijasini ochganda — har bir savol, belgilagan javobi, to'g'ri javob va goli."""
+    permission_classes = [IsLigaAdmin]
+
+    def get(self, request, attempt_id):
+        attempt = get_object_or_404(
+            LigaAttempt.objects.select_related('test', 'test__grade', 'test__season', 'student', 'student__user'),
+            id=attempt_id,
+        )
+        attempt = services.finalize_if_expired(attempt)
+        data = _attempt_row(attempt)
+        data.update({
+            'test': attempt.test_id,
+            'season_number': attempt.test.season.number,
+            'week_number': attempt.test.week_number,
+            'grade': attempt.test.grade.name,
+        })
+        if attempt.status != LigaAttempt.STATUS_IN_PROGRESS:
+            data['by_subject'] = _subject_stats(attempt)
+            data.update(_review_block(attempt, request, force=True))
+        return Response(data)
 
 
 class ProtectedDestroyMixin:
