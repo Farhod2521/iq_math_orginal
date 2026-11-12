@@ -691,8 +691,12 @@ def _point_rows(logs):
     score_logs = {
         str(item.id): item
         for item in StudentScoreLog.objects.filter(id__in=refs[LigaPointLog.SOURCE_SUBJECT])
-        .select_related('question__topic__chapter__subject')
+        .select_related('question__topic__chapter__subject__category', 'question__topic__chapter__subject__classes')
     }
+
+    def uz(obj):
+        """Mentor panelida nomlar doim o'zbekcha: so'rov tili ruscha bo'lsa ham."""
+        return (getattr(obj, 'name_uz', None) or obj.name) if obj else ''
     attempts = {
         str(item.id): item
         for item in LigaAttempt.objects.filter(id__in=refs[LigaPointLog.SOURCE_TEST]).select_related('test')
@@ -700,15 +704,24 @@ def _point_rows(logs):
 
     rows = []
     for log in logs:
-        detail, attempt_id = '', None
+        detail, attempt_id, work = '', None, None
         if log.source == LigaPointLog.SOURCE_DAILY:
             detail = f"{log.ref} kuni ilovaga/saytga kirgani uchun"
         elif log.source == LigaPointLog.SOURCE_SUBJECT:
             item = score_logs.get(log.ref)
             if item:
                 topic = item.question.topic
-                subject = topic.chapter.subject.name if topic.chapter and topic.chapter.subject else ''
-                detail = f"{subject} — {topic.name} (savol #{item.question_id})".lstrip(' —')
+                chapter = topic.chapter
+                subject = chapter.subject if chapter else None
+                grade = subject.classes.name if subject and subject.classes else ''
+                work = {
+                    'subject': uz(subject.category) if subject and subject.category else uz(subject),
+                    'book': f"{uz(subject)} ({grade}-sinf)" if subject and grade else uz(subject),
+                    'chapter': uz(chapter),
+                    'topic': uz(topic),
+                    'question_id': item.question_id,
+                }
+                detail = f"{work['book']} › {work['chapter']} › {work['topic']}"
             else:
                 detail = f"Savol yechgani uchun (#{log.ref})"
         elif log.source == LigaPointLog.SOURCE_TEST:
@@ -726,6 +739,7 @@ def _point_rows(logs):
             'source': log.source,
             'source_label': source_labels.get(log.source, log.source),
             'detail': detail,
+            'work': work,
             'attempt_id': attempt_id,
             'points': log.points,
             'created_at': log.created_at,
@@ -871,7 +885,7 @@ class AdminSeasonViewSet(viewsets.ModelViewSet):
         if request.query_params.get('export') == 'xlsx':
             return _xlsx(
                 f'liga_{season.number}_reyting', "Reyting",
-                ["O'rin", "Sinf", "F.I.Sh.", "Telefon", "Viloyat", "Maktab", "Ballar", "Ishlangan testlar", "Test ballari"],
+                ["O'rin", "Sinf", "F.I.Sh.", "Telefon", "Viloyat", "Maktab", "Gol", "Ishlangan testlar", "Test goli"],
                 [
                     [row['rank'], row['grade'], row['full_name'], row['phone'], row['region'], row['school'],
                      row['points'], row['tests_taken'], row['test_score']]
