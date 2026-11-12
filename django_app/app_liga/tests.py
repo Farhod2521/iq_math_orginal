@@ -110,8 +110,13 @@ class PointsTests(LigaFixtureMixin, TestCase):
         subject = Subject.objects.create(name='Fan', classes=self.klass, category=category)
         topic = Topic.objects.create(name='T', chapter=Chapter.objects.create(name='C', subject=subject))
         question = Question.objects.create(topic=topic, question_text='1', question_type='choice', level=1)
+        other = Question.objects.create(topic=topic, question_text='2', question_type='choice', level=1)
         score = StudentScore.objects.create(student=self.student)
-        StudentScoreLog.objects.create(student_score=score, question=question)
+        # Tanga berilgan savol — 1 gol
+        StudentScoreLog.objects.create(student_score=score, question=question, award_type='coin', awarded_coin=True)
+        self.assertEqual(self._points(), 1)
+        # Kunlik tanga chegarasi to'lib, ball berilgan savol — gol qo'shilmaydi
+        StudentScoreLog.objects.create(student_score=score, question=other, award_type='score')
         self.assertEqual(self._points(), 1)
 
     def test_not_joined_student_gets_no_points(self):

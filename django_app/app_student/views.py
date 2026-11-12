@@ -824,17 +824,19 @@ class CheckAnswersAPIView(APIView):
                         ref=f"topic:{last_question_topic.id}" if last_question_topic else "",
                     )
 
-            # Gol: har bir yangi yechilgan misol uchun 1 gol (ball/tangadan tashqari).
+            # Gol: olingan tanga soniga teng (1 tanga = 1 gol). Tanga kunlik chegarali (masalan 15),
+            # chegara to'lgach faqat ball beriladi va gol qo'shilmaydi — misollar cheksiz gol bermaydi.
             # Faqat ligaga qo'shilgan o'quvchiga. Bitta topshiriq — bitta yozuv (ref = birinchi ball logi)
-            from django_app.app_student.gol import LESSON_GOL_PER_QUESTION, award_gol, is_liga_joined
-            if new_log_ids and is_liga_joined(student_instance.id):
-                gol_gained = len(new_log_ids) * LESSON_GOL_PER_QUESTION
+            from django_app.app_student.gol import LESSON_GOL_PER_COIN, award_gol, is_liga_joined
+            coins_gained = awarded_totals['coin']
+            if coins_gained and new_log_ids and is_liga_joined(student_instance.id):
+                gol_gained = coins_gained * LESSON_GOL_PER_COIN
                 gol_log = award_gol(
                     student_instance.id,
                     StudentPointLog.SOURCE_LESSON,
                     gol_gained,
                     ref=f"lesson:{min(new_log_ids)}",
-                    comment=f"{lesson_text}: {len(new_log_ids)} ta yangi yechilgan misol",
+                    comment=f"{lesson_text}: {coins_gained} tanga olindi",
                 )
                 if gol_log:
                     gol_awarded = gol_gained

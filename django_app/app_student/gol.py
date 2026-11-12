@@ -4,7 +4,8 @@ Gol — balldan (StudentScore.score) alohida hisob. Jami: StudentScore.gol, tari
 Manbalar:
   - Kundalik kirish (daily_login_reward.py): har kuni kirganda +1 gol (ketma-ketlik 1..7 kun)
   - Haftalik test (app_liga.services._finalize): test natijasi (to'g'ri javoblar balli) → shuncha gol
-  - Mavzu misollari (views.py, javoblarni tekshirish): har bir yangi yechilgan misol → 1 gol (ball/tangadan tashqari)
+  - Mavzu misollari (views.py, javoblarni tekshirish): olingan tanga soniga teng gol (1 tanga = 1 gol).
+    Tanga kunlik chegarali (DailyCoinSettings), chegara to'lgach ball beriladi va gol qo'shilmaydi.
 
 Gol faqat ligaga qo'shilgan o'quvchiga yig'iladi (is_liga_joined).
 """
@@ -14,7 +15,8 @@ from django.utils import timezone
 from .models import StudentPointLog, StudentScore
 from .wallet import Log, log_wallet
 
-LESSON_GOL_PER_QUESTION = 1
+LESSON_GOL_PER_COIN = 1
+LESSON_GOL_PER_QUESTION = LESSON_GOL_PER_COIN  # eski nom — boshqa joylar buzilmasin
 
 
 def is_liga_joined(student_id):
