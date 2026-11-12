@@ -4,7 +4,7 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     CurrentSeasonAPIView, JoinSeasonAPIView, WinnersHistoryAPIView, StartTestAPIView, AttemptDetailAPIView,
     AttemptAnswerAPIView, AttemptFinishAPIView, AdminMetaAPIView, AdminSeasonViewSet, AdminTestViewSet,
-    AdminQuestionViewSet, AdminWinnerViewSet, AdminAttemptDetailAPIView, SeasonListAPIView, SeasonResultsAPIView, MyHistoryAPIView, MyPointsAPIView,
+    AdminQuestionViewSet, AdminWinnerViewSet, AdminAttemptDetailAPIView, AdminStudentWalletAPIView, SeasonListAPIView, SeasonResultsAPIView, MyHistoryAPIView, MyPointsAPIView,
 )
 
 router = DefaultRouter()
@@ -29,5 +29,6 @@ urlpatterns = [
     # Mentor / admin
     path("admin/meta/", AdminMetaAPIView.as_view()),
     path("admin/attempts/<int:attempt_id>/", AdminAttemptDetailAPIView.as_view()),
+    path("admin/students/<int:student_id>/wallet/", AdminStudentWalletAPIView.as_view()),
     path("admin/", include(router.urls)),
 ]

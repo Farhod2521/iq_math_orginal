@@ -12,7 +12,8 @@ from rest_framework.permissions import AllowAny, BasePermission, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from django_app.app_student.models import StudentScoreLog
+from django_app.app_student.models import StudentScore, StudentScoreLog, StudentWalletLog
+from django_app.app_teacher.models import Topic
 from django_app.app_student.paginations import StandardResultsSetPagination
 from django_app.app_student.privacy import public_name
 from django_app.app_user.models import Class, Student, Subject
@@ -684,6 +685,87 @@ class AdminAttemptDetailAPIView(APIView):
         return Response(data)
 
 
+def _uz_name(obj):
+    """Mentor panelida nomlar doim o'zbekcha: so'rov tili ruscha bo'lsa ham."""
+    return (getattr(obj, 'name_uz', None) or obj.name) if obj else ''
+
+
+def _topic_work(topic, question_id=None):
+    chapter = topic.chapter
+    subject = chapter.subject if chapter else None
+    return {
+        'subject': _uz_name(subject),
+        'grade': subject.classes.name if subject and subject.classes else '',
+        'chapter': _uz_name(chapter),
+        'topic': _uz_name(topic),
+        'question_id': question_id,
+    }
+
+
+class AdminStudentWalletAPIView(APIView):
+    """Mentor: o'quvchining ball yoki tangasi qayerdan kelgani (va qayerga ketgani).
+    GET admin/students/<student_id>/wallet/?currency=score|coin&source=&page=&page_size=20"""
+    permission_classes = [IsLigaAdmin]
+
+    def get(self, request, student_id):
+        student = get_object_or_404(Student, id=student_id)
+        currency = request.query_params.get('currency') or StudentWalletLog.CURRENCY_SCORE
+        if currency not in dict(StudentWalletLog.CURRENCY_CHOICES):
+            raise ValidationError({'message': "Noto'g'ri tur"})
+
+        all_logs = StudentWalletLog.objects.filter(student=student, currency=currency)
+        source_labels = dict(StudentWalletLog.SOURCE_CHOICES)
+        summary = [
+            {
+                'source': row['source'],
+                'label': source_labels.get(row['source'], row['source']),
+                'income': row['income'] or 0,
+                'expense': -(row['expense'] or 0),
+                'count': row['count'],
+            }
+            for row in all_logs.values('source').annotate(
+                income=Sum('amount', filter=Q(amount__gt=0)),
+                expense=Sum('amount', filter=Q(amount__lt=0)),
+                count=Count('id'),
+            ).order_by('-income')
+        ]
+
+        logs = all_logs
+        source = request.query_params.get('source')
+        if source in source_labels:
+            logs = logs.filter(source=source)
+
+        paginator = StandardResultsSetPagination()
+        paginator.page_size = 20
+        page = paginator.paginate_queryset(logs.order_by('-created_at', '-id'), request, view=self)
+
+        topic_ids = {int(log.ref[6:]) for log in page if log.ref.startswith('topic:') and log.ref[6:].isdigit()}
+        topics = {
+            topic.id: topic
+            for topic in Topic.objects.filter(id__in=topic_ids).select_related('chapter__subject__classes')
+        }
+        rows = []
+        for log in page:
+            topic = topics.get(int(log.ref[6:])) if log.ref.startswith('topic:') and log.ref[6:].isdigit() else None
+            rows.append({
+                'id': log.id,
+                'source': log.source,
+                'source_label': source_labels.get(log.source, log.source),
+                'detail': log.description,
+                'work': _topic_work(topic) if topic else None,
+                'points': log.amount,
+                'balance_after': log.balance_after,
+                'created_at': log.created_at,
+            })
+
+        balance = StudentScore.objects.filter(student=student).values('score', 'coin').first() or {}
+        response = paginator.get_paginated_response(rows)
+        response.data['currency'] = currency
+        response.data['balance'] = balance.get(currency, 0)
+        response.data['summary'] = summary
+        return response
+
+
 def _point_rows(logs):
     """Ball yozuvlari tafsiloti bilan: kunlik kirish — sana, fan — qaysi fan/mavzu savoli, test — qaysi hafta va natija."""
     source_labels = dict(LigaPointLog.SOURCES)
@@ -691,12 +773,8 @@ def _point_rows(logs):
     score_logs = {
         str(item.id): item
         for item in StudentScoreLog.objects.filter(id__in=refs[LigaPointLog.SOURCE_SUBJECT])
-        .select_related('question__topic__chapter__subject__category', 'question__topic__chapter__subject__classes')
+        .select_related('question__topic__chapter__subject__classes')
     }
-
-    def uz(obj):
-        """Mentor panelida nomlar doim o'zbekcha: so'rov tili ruscha bo'lsa ham."""
-        return (getattr(obj, 'name_uz', None) or obj.name) if obj else ''
     attempts = {
         str(item.id): item
         for item in LigaAttempt.objects.filter(id__in=refs[LigaPointLog.SOURCE_TEST]).select_related('test')
@@ -710,18 +788,9 @@ def _point_rows(logs):
         elif log.source == LigaPointLog.SOURCE_SUBJECT:
             item = score_logs.get(log.ref)
             if item:
-                topic = item.question.topic
-                chapter = topic.chapter
-                subject = chapter.subject if chapter else None
-                grade = subject.classes.name if subject and subject.classes else ''
-                work = {
-                    'subject': uz(subject.category) if subject and subject.category else uz(subject),
-                    'book': f"{uz(subject)} ({grade}-sinf)" if subject and grade else uz(subject),
-                    'chapter': uz(chapter),
-                    'topic': uz(topic),
-                    'question_id': item.question_id,
-                }
-                detail = f"{work['book']} › {work['chapter']} › {work['topic']}"
+                work = _topic_work(item.question.topic, item.question_id)
+                grade = work['grade']
+                detail = f"{work['subject']} ({grade}-sinf) › {work['chapter']} › {work['topic']}"
             else:
                 detail = f"Savol yechgani uchun (#{log.ref})"
         elif log.source == LigaPointLog.SOURCE_TEST:
@@ -860,6 +929,10 @@ class AdminSeasonViewSet(viewsets.ModelViewSet):
             .values('student').annotate(tests=Count('id'), score=Sum('score'))
         }
         grade_names = dict(Class.objects.values_list('id', 'name'))
+        wallets = {
+            row['student_id']: row
+            for row in StudentScore.objects.filter(student__liga_participations__season=season).values('student_id', 'score', 'coin')
+        }
         rows = []
         for current in grade_ids:
             for item in services.standings(season, current):
@@ -875,6 +948,8 @@ class AdminSeasonViewSet(viewsets.ModelViewSet):
                     'points': item.points,
                     'tests_taken': taken.get(student.id, {}).get('tests', 0),
                     'test_score': taken.get(student.id, {}).get('score') or 0,
+                    'score': wallets.get(student.id, {}).get('score', 0),
+                    'coin': wallets.get(student.id, {}).get('coin', 0),
                     'joined_at': item.joined_at,
                 })
 
