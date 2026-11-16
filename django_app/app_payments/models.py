@@ -84,6 +84,21 @@ class Payment(models.Model):
         related_name="payments", verbose_name="Tarif"
     )
     
+    # To'lov nima uchun: obuna (tarif) yoki liga kirish to'lovi
+    PURPOSE_SUBSCRIPTION = "subscription"
+    PURPOSE_LIGA = "liga"
+    purpose = models.CharField(
+        max_length=20,
+        choices=[(PURPOSE_SUBSCRIPTION, "Obuna"), (PURPOSE_LIGA, "Liga")],
+        default=PURPOSE_SUBSCRIPTION,
+        db_index=True,
+        verbose_name="To'lov maqsadi",
+    )
+    liga_season = models.ForeignKey(
+        "app_liga.LigaSeason", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="entry_payments", verbose_name="Liga mavsumi",
+    )
+
     # Cashback fields
     student_cashback_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Studentga keshbek")
     teacher_cashback_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Teacherga keshbek")

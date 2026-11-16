@@ -21,6 +21,7 @@ from .VIEW.upload_setting_crud import UploadSettingCRUDAPIView
 from .VIEW.logentry_crud import LogEntryCRUDAPIView
 from .VIEW.site_statistics import SiteVisitTrackAPIView, SiteStatisticsAPIView, SiteRegistrationsListAPIView
 from .VIEW.dashboard_overview import DashboardOverviewAPIView
+from .VIEW.revenue_report import RevenueReportAPIView
 from .VIEW.ai_solutions import (
     AISolutionClassesAPIView, AISolutionConfigAPIView, AISolutionDigitizeAPIView, AISolutionSolveAPIView,
     AISolutionSubjectQueueAPIView, AISolutionTopicAPIView, AISolutionTranslateAPIView, AISolutionTreeAPIView,
@@ -36,6 +37,7 @@ urlpatterns = [
     path('products/', ProductListView.as_view(), name='product-list'),
     path('statistics/', FullStatisticsAPIView.as_view(), name='statistics'),
     path('statistics/overview/', DashboardOverviewAPIView.as_view(), name='statistics-overview'),
+    path('statistics/revenue/', RevenueReportAPIView.as_view(), name='statistics-revenue'),
     path('ai-solutions/config/', AISolutionConfigAPIView.as_view(), name='ai-solutions-config'),
     path('ai-solutions/classes/', AISolutionClassesAPIView.as_view(), name='ai-solutions-classes'),
     path('ai-solutions/tree/', AISolutionTreeAPIView.as_view(), name='ai-solutions-tree'),

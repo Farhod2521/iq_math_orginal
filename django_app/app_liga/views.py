@@ -244,7 +244,11 @@ class CurrentSeasonAPIView(APIView):
             # Qo'shilish oynasi uchun: sinflar ro'yxati va profildagi sinf (oldindan belgilanadi)
             'grades': _grade_options() if not participant else [],
             'profile_grade_id': services.student_grade_id(student),
-            'subscription_active': services.is_subscription_active(student),
+            # Eski ilovalar uchun nomi saqlandi: "qatnasha oladimi" (obuna yoki liga kirish to'lovi)
+            'subscription_active': services.can_participate(season, student),
+            'payment_required': season.is_paid_entry,
+            'entry_fee': float(season.entry_fee or 0),
+            'entry_paid': services.has_paid_entry(season, student) if season.is_paid_entry else False,
             'joined': bool(participant),
             'points': participant.points if participant else 0,
             'rank': me.rank if me else None,

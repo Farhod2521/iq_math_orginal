@@ -39,6 +39,27 @@ def is_subscription_active(student):
     ).exists()
 
 
+def has_paid_entry(season, student):
+    """O'quvchi shu mavsum uchun liga kirish to'lovini muvaffaqiyatli qilganmi."""
+    from django_app.app_payments.models import Payment
+    return Payment.objects.filter(
+        student=student, liga_season=season, purpose=Payment.PURPOSE_LIGA, status='success',
+    ).exists()
+
+
+def can_participate(season, student):
+    """Mavsumda kirish to'lovi yoqilgan bo'lsa — shu to'lov, aks holda faol obuna talab qilinadi."""
+    if season.is_paid_entry:
+        return has_paid_entry(season, student)
+    return is_subscription_active(student)
+
+
+def participation_error(season):
+    if season.is_paid_entry:
+        return "Ligada qatnashish uchun kirish to'lovini amalga oshiring"
+    return "Ligada qatnashish uchun obuna faol bo'lishi kerak"
+
+
 def join_season(season, student, grade_id=None):
     """Ligaga qo'shilish. Sinfni o'quvchi o'zi tanlaydi (sovrin topshirishda hujjat bilan tekshiriladi);
     tanlanmasa — profildagi sinf. Qo'shilgach sinf o'zgarmaydi."""
@@ -51,8 +72,8 @@ def join_season(season, student, grade_id=None):
         grade_id = student_grade_id(student)
     if not grade_id:
         raise LigaError("Sinfingizni tanlang")
-    if not is_subscription_active(student):
-        raise LigaError("Ligada qatnashish uchun obuna faol bo'lishi kerak")
+    if not can_participate(season, student):
+        raise LigaError(participation_error(season))
     participant, _ = LigaParticipant.objects.get_or_create(
         season=season, student=student, defaults={'grade_id': grade_id},
     )
@@ -110,8 +131,8 @@ def start_attempt(test, student):
         raise LigaError("Avval ligaga qo'shiling")
     if participant.grade_id != test.grade_id:
         raise LigaError("Bu test sizning sinfingiz uchun emas")
-    if not is_subscription_active(student):
-        raise LigaError("Ligada qatnashish uchun obuna faol bo'lishi kerak")
+    if not can_participate(test.season, student):
+        raise LigaError(participation_error(test.season))
 
     pool = list(test.questions.values_list('id', flat=True))
     if not pool:

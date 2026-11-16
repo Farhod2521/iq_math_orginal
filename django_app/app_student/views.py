@@ -376,6 +376,18 @@ class StudentSubjectListAPIView(APIView):
             result = []
             is_open = is_subscription_valid or is_free_trial_active
 
+            # Demo: obunasiz o'quvchiga har sinfning 2 ta bepul mavzusi bor fan ochiq ko'rinadi
+            demo_subject_ids = set()
+            if not is_open:
+                from .demo_access import demo_topic_ids_for_class
+                demo_ids = set()
+                for class_id in {s.classes_id for s in all_subjects if s.classes_id}:
+                    demo_ids |= demo_topic_ids_for_class(class_id)
+                if demo_ids:
+                    demo_subject_ids = set(
+                        Topic.objects.filter(id__in=demo_ids).values_list('chapter__subject_id', flat=True)
+                    )
+
             # Diagnostika va tugatilgan mavzular — har fan uchun alohida emas, bitta so'rovda
             diagnost_subject_ids = set(
                 Diagnost_Student.objects.filter(student=student).values_list('subject_id', flat=True)
@@ -393,12 +405,14 @@ class StudentSubjectListAPIView(APIView):
 
             for subject in all_subjects:
                 row = progress_map.get(subject.id, {})
+                is_demo = not is_open and subject.id in demo_subject_ids
                 serialized = SubjectSerializer(subject, context={
-                    "is_open": is_open,
+                    "is_open": is_open or is_demo,
                     "is_diagnost_open": subject.id in diagnost_subject_ids,
                     "completed_topics": row.get('done', 0),
                     "in_progress_topics": row.get('started', 0),
                 }).data
+                serialized["is_demo"] = is_demo
 
                 result.append(serialized)
 
@@ -562,21 +576,34 @@ class TopicListByChapterAPIView(APIView):
         if not student:
             return Response({"detail": "Foydalanuvchi uchun student profili topilmadi"}, status=status.HTTP_400_BAD_REQUEST)
 
-        try:
-            subscription = student.subscription
-        except Subscription.DoesNotExist:
-            return Response({"detail": "Obuna mavjud emas. To'lovni amalga oshiring"}, status=status.HTTP_403_FORBIDDEN)
-
-        if subscription.end_date < timezone.now():
-            return Response({"detail": "Obuna muddati tugagan. Iltimos, to'lovni amalga oshiring."}, status=status.HTTP_403_FORBIDDEN)
+        from .demo_access import student_has_full_access, demo_topic_ids_for_class
 
         try:
-            chapter = Chapter.objects.get(id=chapter_id)
-            topics = Topic.objects.filter(chapter=chapter).order_by('order')
-            serializer = TopicSerializer(topics, many=True, context={'request': request})
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            chapter = Chapter.objects.select_related('subject').get(id=chapter_id)
         except Chapter.DoesNotExist:
             return Response({"detail": "Chapter topilmadi"}, status=status.HTTP_404_NOT_FOUND)
+
+        topics = Topic.objects.filter(chapter=chapter).order_by('order')
+
+        if student_has_full_access(student):
+            serializer = TopicSerializer(topics, many=True, context={'request': request})
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        # Obunasiz: faqat sinfning demo mavzulari ochiq, qolganlari to'lov talab qiladi
+        demo_ids = demo_topic_ids_for_class(chapter.subject.classes_id if chapter.subject else None)
+        if not any(t.id in demo_ids for t in topics) and not Topic.objects.filter(
+            id__in=demo_ids, chapter__subject_id=chapter.subject_id
+        ).exists():
+            return Response({"detail": "Obuna mavjud emas. To'lovni amalga oshiring"}, status=status.HTTP_403_FORBIDDEN)
+
+        data = TopicSerializer(topics, many=True, context={'request': request}).data
+        for item in data:
+            is_demo = item['id'] in demo_ids
+            item['is_open'] = is_demo
+            item['is_locked'] = not is_demo
+            item['is_demo'] = is_demo
+            item['requires_payment'] = not is_demo
+        return Response(data, status=status.HTTP_200_OK)
 
 class QuestionListByTopicAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -585,7 +612,14 @@ class QuestionListByTopicAPIView(APIView):
         level = request.query_params.get('level', None)
 
         try:
-            topic = Topic.objects.get(id=topic_id)
+            topic = Topic.objects.select_related('chapter__subject').get(id=topic_id)
+
+            from .demo_access import is_topic_available
+            if not is_topic_available(request.user, topic):
+                return Response(
+                    {"detail": "Obuna mavjud emas. To'lovni amalga oshiring", "requires_payment": True},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
 
             if level is not None:
                 questions = Question.objects.filter(topic=topic, level=level)

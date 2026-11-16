@@ -54,6 +54,7 @@ class PublicSeasonSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'number', 'description_uz', 'description_ru', 'weeks_count', 'is_closed', 'closed_at',
             'prize_1_uz', 'prize_1_ru', 'prize_2_uz', 'prize_2_ru', 'prize_3_uz', 'prize_3_ru',
+            'payment_required', 'entry_fee',
         )
 
 
@@ -75,7 +76,8 @@ class AdminSeasonSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'number', 'description_uz', 'description_ru', 'weeks_count',
             'prize_1_uz', 'prize_1_ru', 'prize_2_uz', 'prize_2_ru', 'prize_3_uz', 'prize_3_ru',
-            'is_published', 'is_closed', 'closed_at', 'tests_count', 'participants_count', 'created_at',
+            'is_published', 'payment_required', 'entry_fee',
+            'is_closed', 'closed_at', 'tests_count', 'participants_count', 'created_at',
         )
         read_only_fields = ('closed_at', 'created_at')
         extra_kwargs = {

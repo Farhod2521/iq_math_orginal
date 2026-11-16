@@ -18,6 +18,9 @@ class LigaSeason(models.Model):
     prize_3_uz = models.CharField(max_length=100, default="Quloqchin", verbose_name="3-o'rin sovg'asi (uz)")
     prize_3_ru = models.CharField(max_length=100, default="Наушники", verbose_name="3-o'rin sovg'asi (ru)")
     is_published = models.BooleanField(default=False, verbose_name="E'lon qilinganmi?")
+    # Ligaga alohida to'lov (keyinroq ishlatiladi): yoqilsa obuna o'rniga kirish to'lovi talab qilinadi
+    payment_required = models.BooleanField(default=False, verbose_name="Ligaga alohida to'lov talab qilinadimi?")
+    entry_fee = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Ligaga kirish narxi (so'm)")
     closed_at = models.DateTimeField(null=True, blank=True, verbose_name="Yopilgan vaqti")
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -32,6 +35,11 @@ class LigaSeason(models.Model):
     @property
     def is_closed(self):
         return self.closed_at is not None
+
+    @property
+    def is_paid_entry(self):
+        """Kirish pullikmi (sozlama yoqilgan va narx > 0)."""
+        return bool(self.payment_required and self.entry_fee and self.entry_fee > 0)
 
 
 class LigaTest(models.Model):

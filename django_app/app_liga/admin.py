@@ -6,7 +6,7 @@ from .models import LigaAttempt, LigaChoice, LigaParticipant, LigaQuestion, Liga
 
 @admin.register(LigaSeason)
 class LigaSeasonAdmin(TranslationAdmin):
-    list_display = ('number', 'weeks_count', 'is_published', 'closed_at')
+    list_display = ('number', 'weeks_count', 'is_published', 'payment_required', 'entry_fee', 'closed_at')
     list_filter = ('is_published',)
     readonly_fields = ('closed_at',)
 

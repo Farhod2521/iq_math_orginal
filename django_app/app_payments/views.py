@@ -237,6 +237,93 @@ class InitiatePaymentAPIView(APIView):
             }
         }, status=200)
 
+class LigaEntryPaymentAPIView(APIView):
+    """
+    Ligaga kirish to'lovi (mavsumda "payment_required" yoqilgan bo'lsa).
+    POST /api/v1/payments/liga-entry/  {"season_id": 3}
+    Javob: checkout_url — Multicard to'lov sahifasi. To'lovdan keyin "Ligaga qo'shilish" ochiladi.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        from django_app.app_liga.models import LigaSeason
+        from django_app.app_liga.services import has_paid_entry
+
+        student = getattr(request.user, "student_profile", None)
+        if student is None:
+            return Response({"error": "Talaba topilmadi"}, status=status.HTTP_404_NOT_FOUND)
+
+        season = LigaSeason.objects.filter(
+            id=request.data.get("season_id"), is_published=True, closed_at__isnull=True
+        ).first()
+        if season is None:
+            return Response({"error": "Mavsum topilmadi yoki yopilgan"}, status=status.HTTP_400_BAD_REQUEST)
+        if not season.is_paid_entry:
+            return Response({"error": "Bu mavsumda liga to'lovi talab qilinmaydi"}, status=status.HTTP_400_BAD_REQUEST)
+        if has_paid_entry(season, student):
+            return Response({"error": "To'lov allaqachon qilingan", "entry_paid": True}, status=status.HTTP_400_BAD_REQUEST)
+
+        expire_pending_payments(student=student)
+
+        try:
+            token = get_multicard_token()
+        except Exception as e:
+            return Response({"error": "Token olishda xatolik", "details": str(e)}, status=500)
+
+        price = season.entry_fee
+        transaction_id = str(uuid.uuid4())
+        amount_in_tiyin = int(price * 100)
+        data = {
+            "store_id": 1915,
+            "amount": amount_in_tiyin,
+            "invoice_id": transaction_id,
+            "return_url": "https://iqmath.uz/liga",
+            "callback_url": "https://api.iqmath.uz/api/v1/payments/payment-callback/",
+            "ofd": [
+                {
+                    "vat": 0,
+                    "price": amount_in_tiyin,
+                    "qty": 1,
+                    "name": f"IQMATH Liga {season.number}-mavsum ishtirok to'lovi",
+                    "package_code": "1165336",
+                    "mxik": "10899001001000000",
+                    "total": amount_in_tiyin,
+                }
+            ],
+        }
+        try:
+            response = requests.post(
+                f"{URL_DEV}/payment/invoice",
+                headers={"Authorization": f"Bearer {token}"},
+                json=data,
+                timeout=20,
+            )
+        except requests.exceptions.RequestException as e:
+            return Response({"error": "Multicard bilan bog'lanishda xatolik", "details": str(e)}, status=500)
+        if response.status_code != 200:
+            return Response({"error": "To'lov yaratilishda xatolik", "details": response.text}, status=500)
+
+        payment = Payment.objects.create(
+            student=student,
+            amount=price,
+            original_amount=price,
+            transaction_id=transaction_id,
+            status="pending",
+            payment_gateway="multicard",
+            purpose=Payment.PURPOSE_LIGA,
+            liga_season=season,
+            subscription_months=0,
+        )
+
+        payment_data = response.json()
+        return Response({
+            "payment_data": payment_data,
+            "checkout_url": (payment_data.get("data") or {}).get("checkout_url") if isinstance(payment_data, dict) else None,
+            "payment_id": payment.id,
+            "amount": float(price),
+        }, status=200)
+
+
 import logging
 
 logger = logging.getLogger(__name__)
@@ -312,6 +399,11 @@ class PaymentCallbackAPIView(APIView):
                 payment.card_pan = str(card_pan)[:32]
             payment.save()
             logger.info(f"✅ Payment status updated to SUCCESS: {payment.id}")
+
+            # Liga kirish to'lovi: obuna uzaytirilmaydi, keshbek berilmaydi
+            if payment.purpose == Payment.PURPOSE_LIGA:
+                logger.info(f"🏆 Liga entry payment processed: {payment.id} (season={payment.liga_season_id})")
+                return Response({"status": "ok", "message": "Payment processed successfully"}, status=status.HTTP_200_OK)
 
             # 5. KESHBEK LOGIKASI
             self._process_cashback(payment)

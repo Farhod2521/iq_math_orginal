@@ -3,7 +3,7 @@ from django.urls import path
 from .views import (
     PaymentCallbackAPIView, InitiatePaymentAPIView, 
     SubscriptionTrialDaysAPIView, MyPaymentsAPIView, CheckCouponAPIView, SubscriptionPlanListAPIView, PaymentTeacherListAPIView,
-    PaymentSuperAdminAPIView
+    PaymentSuperAdminAPIView, LigaEntryPaymentAPIView
 )
 from .VIEW.subscriptionplancrud import SubscriptionPlanCRUDAPIView, SubscriptionCategoryCRUDAPIView, SubscriptionBenefitCRUDAPIView
 from .VIEW.subscription_setting_crud import SubscriptionSettingCRUDAPIView
@@ -11,6 +11,7 @@ from .VIEW.subscription_crud import SubscriptionCRUDAPIView, MySubscriptionAPIVi
 urlpatterns = [
     path("payment-callback/", PaymentCallbackAPIView.as_view(), name="payment-callback"),
     path("initiate-payment/", InitiatePaymentAPIView.as_view(), name="initiate-payment"),
+    path("liga-entry/", LigaEntryPaymentAPIView.as_view(), name="liga-entry-payment"),
     path("subscription/trial_days/", SubscriptionTrialDaysAPIView.as_view(), name="initiate-payment"),
     path('my-payments/', MyPaymentsAPIView.as_view(), name='my-payments'),
     path('check-coupon/', CheckCouponAPIView.as_view(), name='my-payments'),
