@@ -138,13 +138,16 @@ class Command(BaseCommand):
             name_uz = (plan.name_uz or '').strip()
             name_ru = (plan.name_ru or '').strip()
 
-            # O2: to'g'ri nomlar o'zbekchada (Start / Start Pro) — ruscha nom unga tenglashtiriladi
-            if name_uz and name_uz != name_ru:
-                self.note(f"#{plan.id} ({plan.months} oy): ruscha nomi «{name_ru}» -> «{name_uz}»")
+            # O2: barcha tariflar ikkala tilda ham faqat "Start" yoki "Start Pro" deb nomlanadi
+            is_pro = 'pro' in f"{name_uz} {name_ru}".lower().split()
+            target = 'Start Pro' if is_pro else 'Start'
+            if name_uz != target or name_ru != target:
+                self.note(f"#{plan.id} ({plan.months} oy): nomi «{name_uz}» / «{name_ru}» -> «{target}»")
                 if apply_changes:
-                    plan.name_ru = name_uz
-                    plan.save(update_fields=['name_ru'])
-                name_ru = name_uz
+                    plan.name_uz = target
+                    plan.name_ru = target
+                    plan.save(update_fields=['name_uz', 'name_ru'])
+                name_uz = name_ru = target
 
             # K-3: Pro tariflar asosiy imkoniyatlarsiz ko'rinmasin
             if 'pro' in f"{name_uz} {name_ru}".lower().split():
