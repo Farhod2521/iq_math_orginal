@@ -119,6 +119,48 @@ class PointsTests(LigaFixtureMixin, TestCase):
         StudentScoreLog.objects.create(student_score=score, question=other, award_type='score')
         self.assertEqual(self._points(), 1)
 
+    def _coin_log(self, text='1'):
+        category = Subject_Category.objects.create(name=f'F{text}')
+        subject = Subject.objects.create(name='Fan', classes=self.klass, category=category)
+        topic = Topic.objects.create(name='T', chapter=Chapter.objects.create(name='C', subject=subject))
+        question = Question.objects.create(topic=topic, question_text=text, question_type='choice', level=1)
+        score, _ = StudentScore.objects.get_or_create(student=self.student)
+        return StudentScoreLog.objects.create(student_score=score, question=question, award_type='coin', awarded_coin=True)
+
+    def test_same_question_gives_gol_once(self):
+        from django.db import IntegrityError, transaction
+        log = self._coin_log()
+        # Bir misol uchun gol qayta chaqirilsa ham qo'shilmaydi
+        services.award_subject_work(self.student.id, log.id)
+        services.award_subject_work(self.student.id, log.id)
+        self.assertEqual(self._points(), 1)
+        self.assertEqual(LigaPointLog.objects.filter(source=LigaPointLog.SOURCE_SUBJECT).count(), 1)
+        # Bir misolni qayta yechish yangi tanga yozuvi yaratmaydi (student_score + question yagona)
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            StudentScoreLog.objects.create(student_score=log.student_score, question=log.question, award_type='coin')
+        self.assertEqual(self._points(), 1)
+
+    def test_fix_script_matches_coins_and_is_idempotent(self):
+        import gol_sript
+        coin = self._coin_log('1')
+        participant = LigaParticipant.objects.get(student=self.student, season=self.season)
+        # Eski qoidada ball berilgan misol uchun ham gol yozilgan edi, bitta tanga uchun esa gol yo'q
+        LigaPointLog.objects.filter(participant=participant, source=LigaPointLog.SOURCE_SUBJECT).delete()
+        LigaPointLog.objects.create(participant=participant, source=LigaPointLog.SOURCE_SUBJECT, ref='999999', points=1)
+        LigaPointLog.objects.create(participant=participant, source=LigaPointLog.SOURCE_DAILY, ref='2026-11-10', points=1)
+        LigaParticipant.objects.filter(pk=participant.pk).update(points=50)
+
+        gol_sript.fix_season(self.season)
+        refs = set(LigaPointLog.objects.filter(participant=participant, source=LigaPointLog.SOURCE_SUBJECT).values_list('ref', flat=True))
+        self.assertEqual(refs, {str(coin.id)})
+        total = sum(LigaPointLog.objects.filter(participant=participant).values_list('points', flat=True))
+        self.assertEqual(self._points(), total)  # 50 emas — yozuvlardan qayta hisoblangan
+
+        # Ikkinchi marta — hech narsa o'zgarmaydi
+        before = self._points()
+        self.assertEqual(gol_sript.fix_season(self.season), (0, 0))
+        self.assertEqual(self._points(), before)
+
     def test_not_joined_student_gets_no_points(self):
         student = self._student('+998900000002')
         StudentLoginHistory.objects.create(student=student)

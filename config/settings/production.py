@@ -2,12 +2,17 @@
 from .base import *
 import os
 from dotenv import load_dotenv
-DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+load_dotenv()
 
+# DEBUG productionda o'chiq: yoqilganda xato sahifalarida kod va sozlamalar tashqariga ko'rinadi.
+# Vaqtincha yoqish kerak bo'lsa — .env ga DJANGO_DEBUG=True yozing.
+DEBUG = os.getenv('DJANGO_DEBUG', 'False').strip().lower() in ('1', 'true', 'yes')
 
-load_dotenv() 
+# Standart holat o'zgarmadi ('*'). Cheklash uchun .env ga yozing, masalan:
+# DJANGO_ALLOWED_HOSTS=api.iqmath.uz,www.api.iqmath.uz,backend.iq-math.uz,127.0.0.1,localhost
+ALLOWED_HOSTS = [h.strip() for h in os.getenv('DJANGO_ALLOWED_HOSTS', '*').split(',') if h.strip()]
+
 
 DATABASES = {
     'default': {

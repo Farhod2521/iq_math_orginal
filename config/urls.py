@@ -1,7 +1,8 @@
 
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path
 from rest_framework import permissions
+from config.media import media_serve
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from django.conf import settings
@@ -40,4 +41,7 @@ urlpatterns = [
 
 if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+# Yuklangan fayllar (rasm, video, hujjat). DEBUG ga bog'liq emas va faqat media fayllarni beradi —
+# oldingi static(MEDIA_URL) loyiha papkasidagi hamma faylni (.env, kod) ochib qo'ygan edi.
+urlpatterns += [re_path(r'^(?P<path>.+)$', media_serve)]
