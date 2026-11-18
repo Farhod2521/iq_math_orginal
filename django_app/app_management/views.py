@@ -323,10 +323,9 @@ class FullStatisticsAPIView(APIView):
             end_date__gte=today
         ).count()
 
-        total_payments = Payment.objects.count()
-        pending_payments = Payment.objects.filter(status='pending').count()
+        # Faqat muvaffaqiyatli to'lovlar — urinish / to'lanmaganlar hisoblanmaydi
         success_payments = Payment.objects.filter(status='success').count()
-        failed_payments = Payment.objects.filter(status='failed').count()
+        total_payments = success_payments
 
         return Response({
             # 🔹 1–10 statistikalar
@@ -348,9 +347,7 @@ class FullStatisticsAPIView(APIView):
             "total_tutors": total_tutors,
             "students_due_within_5_days": due_soon_subscriptions,
             "total_payments": total_payments,
-            "pending_payments": pending_payments,
             "successful_payments": success_payments,
-            "failed_payments": failed_payments,
         })
 
 

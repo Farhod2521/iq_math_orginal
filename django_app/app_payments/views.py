@@ -838,7 +838,7 @@ class MyPaymentsAPIView(APIView):
         student = request.user.student_profile    # Agar Student modelida OneToOneField bo'lsa
         expire_pending_payments(student=student)
         payments = (
-            Payment.objects.filter(student=student)
+            Payment.objects.filter(student=student, status="success")
             .select_related("coupon", "paid_by_parent", "student")
             .order_by("-payment_date", "-created_at")
         )
@@ -976,15 +976,16 @@ class PaymentTeacherListAPIView(APIView):
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        # barcha to'lovlarni olish (so'nggi to'lovlar yuqorida)
-        payments = Payment.objects.select_related("student__user", "coupon").order_by("-created_at")
+        # faqat muvaffaqiyatli to'lovlar (urinish / to'lanmaganlar ko'rsatilmaydi)
+        payments = (
+            Payment.objects.filter(status="success")
+            .select_related("student__user", "coupon")
+            .order_by("-payment_date", "-created_at")
+        )
 
         # filtrlash parametrlari (ixtiyoriy)
-        status_filter = request.GET.get("status")
         coupon_type = request.GET.get("coupon_type")
 
-        if status_filter:
-            payments = payments.filter(status=status_filter)
         if coupon_type:
             payments = payments.filter(coupon_type=coupon_type)
 
@@ -1036,17 +1037,19 @@ class PaymentSuperAdminAPIView(APIView):
             serializer = PaymentSuperAdminSerializer(payment)
             return Response(serializer.data, status=status.HTTP_200_OK)
 
-        payments = Payment.objects.select_related("student__user", "coupon").order_by("-created_at")
+        # Faqat muvaffaqiyatli to'lovlar — urinish / to'lanmaganlar ko'rsatilmaydi
+        payments = (
+            Payment.objects.filter(status="success")
+            .select_related("student__user", "coupon")
+            .order_by("-payment_date", "-created_at")
+        )
 
         # Filterlar
-        status_filter = request.GET.get("status")
         subscription_months = request.GET.get("subscription_months")
         student_name = request.GET.get("student_name")
         date_from = request.GET.get("date_from")
         date_to = request.GET.get("date_to")
 
-        if status_filter:
-            payments = payments.filter(status=status_filter)
         if subscription_months:
             payments = payments.filter(subscription_months=subscription_months)
         if student_name:

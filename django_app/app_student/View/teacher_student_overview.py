@@ -23,8 +23,6 @@ class TeacherStudentOverviewAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, student_id):
-        from django.db.models import Count, Q
-
         from django_app.app_payments.models import Payment
 
         if request.user.role not in ALLOWED_ROLES:
@@ -50,9 +48,8 @@ class TeacherStudentOverviewAPIView(APIView):
         }
         for row in data["subjects"]:
             row["image"] = images.get(row["id"])
-        data["payment_status_count"] = Payment.objects.filter(student=student).aggregate(
-            pending=Count("id", filter=Q(status="pending")),
-            success=Count("id", filter=Q(status="success")),
-            failed=Count("id", filter=Q(status="failed")),
-        )
+        # Faqat muvaffaqiyatli to'lovlar soni (urinishlar ko'rsatilmaydi)
+        data["payment_status_count"] = {
+            "success": Payment.objects.filter(student=student, status="success").count(),
+        }
         return Response(data)

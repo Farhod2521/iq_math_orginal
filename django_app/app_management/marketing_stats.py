@@ -369,19 +369,6 @@ def build_stats(start, end):
     for t in tariffs:
         t['pct'] = pct(t['count'], tariff_total)
 
-    # ── to'lov holatlari (shu davrda yaratilgan) ──
-    st = Payment.objects.filter(created_at__gte=s, created_at__lt=e).aggregate(
-        ok=Count('id', filter=Q(status='success')), pending=Count('id', filter=Q(status='pending')),
-        failed=Count('id', filter=Q(status='failed')),
-        lost=Coalesce(Sum('amount', filter=Q(status__in=['pending', 'failed'])), ZERO),
-    )
-    st_total = st['ok'] + st['pending'] + st['failed']
-    pay_status = {
-        'ok': fmt_int(st['ok']), 'pending': fmt_int(st['pending']), 'failed': fmt_int(st['failed']),
-        'ok_pct': pct(st['ok'], st_total), 'pending_pct': pct(st['pending'], st_total),
-        'failed_pct': pct(st['failed'], st_total), 'lost': fmt_money(st['lost']), 'total': fmt_int(st_total),
-    }
-
     # ── viloyatlar ──
     region_total = defaultdict(int)
     region_new = defaultdict(int)
@@ -464,14 +451,14 @@ def build_stats(start, end):
         heat[local.weekday()][local.hour] += 1
     heat_max = max(max(r) for r in heat) or 1
 
-    # ── so'nggi to'lovlar ──
+    # ── so'nggi to'lovlar (faqat muvaffaqiyatli) ──
     recent = []
-    for p in (Payment.objects.filter(created_at__gte=s, created_at__lt=e).select_related('student', 'plan')
-              .order_by('-created_at')[:12]):
+    for p in (_paid_payments().filter(paid_at__gte=s, paid_at__lt=e).select_related('student', 'plan')
+              .order_by('-paid_at')[:12]):
         recent.append({
             'name': p.student.full_name if p.student_id else '—',
             'what': 'Liga' if p.purpose == Payment.PURPOSE_LIGA else (p.plan.name if p.plan_id and p.plan.name else f"{p.subscription_months} oylik obuna"),
-            'amount': fmt_money(p.amount), 'status': p.status,
+            'amount': fmt_money(p.amount),
             'gateway': (p.payment_gateway or 'multicard').capitalize(),
             'coupon': f"-{p.discount_percent}%" if p.discount_percent else '',
             'date': timezone.localtime(p.payment_date or p.created_at).strftime('%d.%m.%Y %H:%M'),
@@ -488,7 +475,6 @@ def build_stats(start, end):
         'devices': devices, 'dev_total': fmt_int(dev_total),
         'sources': sources, 'rev_total': fmt_money(rev['total']),
         'tariffs': tariffs,
-        'pay_status': pay_status,
         'subs': {k: fmt_int(v) for k, v in subs.items()},
         'regions': regions, 'all_students': fmt_int(all_students),
         'coupons': coupons,

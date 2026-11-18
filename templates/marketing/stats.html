@@ -148,8 +148,6 @@
   .rank.r1 { background: #f6c443; color: #3d2b00; } .rank.r2 { background: #cfd4dd; color: #2a2f3a; } .rank.r3 { background: #e0a26c; color: #3d1f00; }
   .pill { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; }
   .pill.success { background: var(--good-soft); color: var(--good-ink); }
-  .pill.pending { background: var(--warn-soft); color: var(--warn-ink); }
-  .pill.failed { background: var(--bad-soft); color: var(--bad-ink); }
   .tag { font-size: 11.5px; color: var(--ink-2); background: var(--card-2); padding: 2px 7px; border-radius: 6px; }
   .empty { color: var(--muted); text-align: center; padding: 28px 0; font-size: 13px; }
   .foot { color: var(--muted); font-size: 12px; text-align: center; margin-top: 24px; }
@@ -261,16 +259,6 @@
         <div class="tile"><div class="t"><span class="ic warn">!</span>7 kunda tugaydi</div><b>{{ d.subs.expiring }}</b></div>
         <div class="tile"><div class="t"><span class="ic bad">✕</span>Muddati tugagan</div><b>{{ d.subs.expired }}</b></div>
       </div>
-      <div class="head" style="margin: 20px 0 0"><h2>To'lov urinishlari</h2><small>jami {{ d.pay_status.total }}</small></div>
-      <div class="stack" role="img" aria-label="To'lov holatlari ulushi">
-        <div style="width: {{ d.pay_status.ok_pct }}%; background: var(--good)" title="Muvaffaqiyatli {{ d.pay_status.ok_pct }}%"></div>
-        <div style="width: {{ d.pay_status.pending_pct }}%; background: var(--warn)" title="Kutilmoqda {{ d.pay_status.pending_pct }}%"></div>
-        <div style="width: {{ d.pay_status.failed_pct }}%; background: var(--bad)" title="Muvaffaqiyatsiz {{ d.pay_status.failed_pct }}%"></div>
-      </div>
-      <div class="kv"><span><span class="ic good">✓</span>Muvaffaqiyatli</span><b>{{ d.pay_status.ok }} · {{ d.pay_status.ok_pct }}%</b></div>
-      <div class="kv"><span><span class="ic warn">◷</span>Kutilmoqda (to'lanmagan)</span><b>{{ d.pay_status.pending }} · {{ d.pay_status.pending_pct }}%</b></div>
-      <div class="kv"><span><span class="ic bad">✕</span>Muvaffaqiyatsiz</span><b>{{ d.pay_status.failed }} · {{ d.pay_status.failed_pct }}%</b></div>
-      <div class="kv"><span>Yo'qotilgan potensial daromad</span><b>{{ d.pay_status.lost }}</b></div>
     </div>
   </section>
 
@@ -368,13 +356,12 @@
   <!-- So'nggi to'lovlar -->
   <section class="grid">
     <div class="card c12">
-      <div class="head"><h2>So'nggi to'lovlar</h2><small>tanlangan davr ichida, oxirgi 12 ta</small></div>
+      <div class="head"><h2>So'nggi to'lovlar</h2><small>muvaffaqiyatli, tanlangan davr ichida, oxirgi 12 ta</small></div>
       {% if d.recent %}
       <div class="tbl-wrap"><table>
-        <thead><tr><th>O'quvchi</th><th>Nima uchun</th><th class="num">Summa</th><th>Kupon</th><th>To'lov tizimi</th><th>Holat</th><th class="num">Sana</th></tr></thead>
+        <thead><tr><th>O'quvchi</th><th>Nima uchun</th><th class="num">Summa</th><th>Kupon</th><th>To'lov tizimi</th><th class="num">Sana</th></tr></thead>
         <tbody>{% for p in d.recent %}
           <tr><td><b>{{ p.name }}</b></td><td>{{ p.what }}</td><td class="num"><b>{{ p.amount }}</b></td><td>{% if p.coupon %}<span class="tag">{{ p.coupon }}</span>{% else %}<span style="color:var(--muted)">—</span>{% endif %}</td><td>{{ p.gateway }}</td>
-            <td>{% if p.status == 'success' %}<span class="pill success">✓ To'langan</span>{% elif p.status == 'pending' %}<span class="pill pending">◷ Kutilmoqda</span>{% else %}<span class="pill failed">✕ Muvaffaqiyatsiz</span>{% endif %}</td>
             <td class="num">{{ p.date }}</td></tr>
         {% endfor %}</tbody>
       </table></div>

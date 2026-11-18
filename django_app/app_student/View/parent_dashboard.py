@@ -655,8 +655,7 @@ def _payments_payload(child, months_param):
 
     now = timezone.now()
     payments = list(
-        Payment.objects.filter(student=child)
-        .exclude(status="failed")
+        Payment.objects.filter(student=child, status="success")
         .select_related("coupon", "paid_by_parent")
         .order_by("-payment_date", "-created_at")
     )

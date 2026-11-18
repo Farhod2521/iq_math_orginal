@@ -17,12 +17,8 @@ class StudentStatisticsDetailAPIView(APIView):
     def get(self, request, student_id):
         student = get_object_or_404(Student, id=student_id)
         score_data = StudentScore.objects.filter(student=student).first()
-        all_payments = Payment.objects.filter(student=student)
-
-        # Payment status counts
-        success_payments = all_payments.filter(status='success')
-        pending_payments = all_payments.filter(status='pending')
-        failed_payments = all_payments.filter(status='failed')
+        # Faqat muvaffaqiyatli to'lovlar hisobga olinadi (urinishlar ko'rsatilmaydi)
+        success_payments = Payment.objects.filter(student=student, status='success')
 
         last_payment = success_payments.order_by('-payment_date').first()
         last_payment_date = last_payment.payment_date.strftime("%d/%m/%Y") if last_payment else None
@@ -109,9 +105,7 @@ class StudentStatisticsDetailAPIView(APIView):
             'last_payment_time': last_payment_time,
             'last_payment_amount': last_payment_amount,
             'payment_status_count': {
-                'pending': pending_payments.count(),
                 'success': success_payments.count(),
-                'failed': failed_payments.count(),
             },
             'total_paid_amount': float(total_paid_amount),
             'is_active': is_active,

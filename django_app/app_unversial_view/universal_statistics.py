@@ -22,10 +22,8 @@ from django_app.app_tutor.models import TutorCouponTransaction, TutorReferralTra
 def _student_data(student):
     """Student uchun to'liq statistika."""
     score_data = StudentScore.objects.filter(student=student).first()
-    all_payments = Payment.objects.filter(student=student)
-    success_payments = all_payments.filter(status='success')
-    pending_payments = all_payments.filter(status='pending')
-    failed_payments  = all_payments.filter(status='failed')
+    # Faqat muvaffaqiyatli to'lovlar hisobga olinadi (urinishlar ko'rsatilmaydi)
+    success_payments = Payment.objects.filter(student=student, status='success')
     last_payment     = success_payments.order_by('-payment_date').first()
     total_paid       = success_payments.aggregate(total=Sum('amount'))['total'] or 0
 
@@ -98,9 +96,7 @@ def _student_data(student):
         "last_payment_amount": float(last_payment.amount) if last_payment else 0,
         "total_paid_amount":   float(total_paid),
         "payment_status_count": {
-            "pending": pending_payments.count(),
             "success": success_payments.count(),
-            "failed":  failed_payments.count(),
         },
         "student_diagnost":       diagnostika,
         "referral_students_count": len(referral_students),

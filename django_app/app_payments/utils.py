@@ -62,6 +62,35 @@ def expire_pending_payments(student=None):
     return qs.update(status="failed", updated_at=now)
 
 
+def get_unpaid_payment_retention_hours():
+    """To'lanmagan (pending/failed) yozuv necha soatdan keyin o'chiriladi."""
+    value = getattr(settings, "PAYMENT_UNPAID_RETENTION_HOURS", 24)
+    try:
+        hours = int(value)
+    except (TypeError, ValueError):
+        hours = 24
+    return max(hours, 1)
+
+
+def delete_unpaid_payments():
+    """
+    Bazada faqat muvaffaqiyatli to'lovlar qolsin.
+
+    Yozuv to'lov boshlanganda yaratilishi shart — Multicard callback uni
+    transaction_id bo'yicha topadi (tarif, kupon, keshbek shu yozuvda). Foydalanuvchi
+    kechikib to'lasa ham callback "failed" yozuvni success qiladi, shuning uchun
+    yozuv darhol emas, saqlash muddati (standart 24 soat) o'tgach o'chiriladi.
+    Shu vaqt ichida pending/failed yozuvlar hech qayerda ko'rsatilmaydi.
+    """
+    from .models import Payment  # Local import to avoid circular imports.
+
+    cutoff = timezone.now() - timedelta(hours=get_unpaid_payment_retention_hours())
+    deleted, _ = Payment.objects.filter(
+        status__in=["pending", "failed"], created_at__lt=cutoff
+    ).delete()
+    return deleted
+
+
 def plan_base_price(plan):
     """Tarifning o'z chegirmasi bilan narxi (`price_per_month` — tarifning to'liq narxi)."""
     price = float(plan.price_per_month)
