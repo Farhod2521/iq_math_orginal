@@ -25,8 +25,9 @@ from django.views.decorators.http import require_http_methods
 from django_app.app_battle.models import BattleParticipant
 from django_app.app_book.models import BookPayment, BookPurchase
 from django_app.app_liga.models import LigaParticipant
+from django_app.app_management.models import Coupon_Tutor_Student, SiteVisit
 from django_app.app_payments.models import Payment, Subscription
-from django_app.app_student.models import Diagnost_Student
+from django_app.app_student.models import Diagnost_Student, TopicProgress
 from django_app.app_tutor.models import TutorCouponTransaction, TutorReferralTransaction
 from django_app.app_user.models import Referral, Student, User
 
@@ -48,12 +49,21 @@ MAX_RANGE_DAYS = 731
 ROLE_LABELS = {
     'student': "O'quvchi",
     'teacher': 'Mentor',
-    'tutor': "Tutor (o'qituvchi)",
+    'tutor': 'Tutor',
     'parent': 'Ota-ona',
 }
 USER_ROLES = list(ROLE_LABELS.keys())
 PRESETS = [('1', 'Bugun'), ('7', '7 kun'), ('30', '30 kun'), ('90', '90 kun'), ('365', '1 yil')]
 WEEKDAYS = ['Du', 'Se', 'Ch', 'Pa', 'Ju', 'Sh', 'Ya']
+
+# To'lov tizimi -> (nom, belgi rangi, harf)
+GATEWAYS = {
+    'uzum': ('Uzum', '#7000FF', 'U'), 'payme': ('Payme', '#14B8B8', 'P'), 'click': ('Click', '#0073FF', 'C'),
+    'uzcard': ('Uzcard', '#1A3D7C', 'U'), 'humo': ('Humo', '#0F2A44', 'H'), 'visa': ('Visa', '#1A1F71', 'V'),
+    'mastercard': ('Mastercard', '#EB001B', 'M'), 'multicard': ('Multicard', '#0F8A4B', 'M'),
+    'anorbank': ('Anorbank', '#E11D48', 'A'), 'alif': ('Alif', '#16A34A', 'A'), 'oson': ('Oson', '#F97316', 'O'),
+    'xazna': ('Xazna', '#0EA5E9', 'X'), 'apelsin': ('Apelsin', '#FB923C', 'A'), 'beepul': ('Beepul', '#334155', 'B'),
+}
 
 ZERO = Value(Decimal('0'), output_field=DecimalField(max_digits=16, decimal_places=2))
 
@@ -278,19 +288,25 @@ def build_stats(start, end):
     )
 
     kpis = [
-        {'key': 'new', 'label': "Yangi ro'yxatdan o'tganlar", 'value': fmt_int(new_users),
-         'delta': delta(new_users, new_users_prev), 'hint': f"Oldingi davr: {fmt_int(new_users_prev)}"},
-        {'key': 'revenue', 'label': 'Umumiy daromad', 'value': fmt_short_money(rev['total']) + " so'm",
-         'delta': delta(rev['total'], rev_prev['total']), 'hint': fmt_money(rev['total'])},
-        {'key': 'payments', 'label': "Muvaffaqiyatli to'lovlar", 'value': fmt_int(rev['count']),
-         'delta': delta(rev['count'], rev_prev['count']), 'hint': f"{fmt_int(rev['payers'])} ta to'lovchi o'quvchi"},
-        {'key': 'conv', 'label': "Ro'yxatdan → to'lov konversiyasi", 'value': f"{conv}%",
+        {'key': 'new', 'icon': 'user-plus', 'label': "Yangi ro'yxatdan o'tganlar", 'value': fmt_int(new_users),
+         'delta': delta(new_users, new_users_prev), 'prev': fmt_int(new_users_prev),
+         'title': f"Barcha rollar bo'yicha"},
+        {'key': 'revenue', 'icon': 'coins', 'label': 'Jami daromad', 'value': fmt_short_money(rev['total']) + " so'm",
+         'delta': delta(rev['total'], rev_prev['total']), 'prev': fmt_short_money(rev_prev['total']),
+         'title': fmt_money(rev['total'])},
+        {'key': 'payments', 'icon': 'card', 'label': "Muvaffaqiyatli to'lovlar", 'value': fmt_int(rev['count']),
+         'delta': delta(rev['count'], rev_prev['count']), 'prev': fmt_int(rev_prev['count']),
+         'title': f"{fmt_int(rev['payers'])} ta to'lovchi o'quvchi"},
+        {'key': 'conv', 'icon': 'percent', 'label': 'Konversiya darajasi', 'value': f"{conv}%",
          'delta': round(conv - conv_prev, 1) if coh_total_prev else None, 'delta_unit': 'pp',
-         'hint': f"{fmt_int(coh_paid)} / {fmt_int(coh_total)} yangi o'quvchi"},
-        {'key': 'arppu', 'label': "O'rtacha to'lov (ARPPU)", 'value': fmt_short_money(arppu) + " so'm",
-         'delta': delta(arppu, arppu_prev), 'hint': "Obuna + liga / to'lovchi"},
-        {'key': 'active', 'label': 'Faol foydalanuvchilar (7 kun)', 'value': fmt_int(active_7),
-         'delta': None, 'hint': f"24 soat: {fmt_int(active_1)} · 30 kun: {fmt_int(active_30)}"},
+         'prev': f"{conv_prev}%", 'title': f"{fmt_int(coh_paid)} / {fmt_int(coh_total)} yangi o'quvchi to'lov qildi"},
+        {'key': 'arppu', 'icon': 'bars', 'label': "O'rtacha to'lov qiymati", 'value': fmt_short_money(arppu) + " so'm",
+         'delta': delta(arppu, arppu_prev), 'prev': fmt_short_money(arppu_prev),
+         'title': "Obuna + liga to'lovlari / to'lovchi o'quvchilar"},
+        {'key': 'active', 'icon': 'user', 'label': 'Faol foydalanuvchilar', 'value': fmt_int(active_7),
+         'delta': None, 'prev': None,
+         'note': f"24 soat: {fmt_int(active_1)} · 30 kun: {fmt_int(active_30)}",
+         'title': "So'nggi 7 kunda kirganlar"},
     ]
 
     # ── kunlik dinamika ──
@@ -318,15 +334,22 @@ def build_stats(start, end):
     f_sub = Subscription.objects.filter(student__in=cohort).count()
     f_repeat = (Payment.objects.filter(status='success', student__in=cohort)
                 .values('student').annotate(c=Count('id')).filter(c__gte=2).count())
-    funnel = [
-        {'label': "Ro'yxatdan o'tdi", 'value': coh_total},
-        {'label': 'Diagnostika testini ishladi', 'value': f_diag},
-        {'label': 'Tekin muddat / obuna ochildi', 'value': f_sub},
-        {'label': "Birinchi to'lov", 'value': coh_paid},
-        {'label': "Qayta to'lov (2+)", 'value': f_repeat},
+    visitors = (SiteVisit.objects.filter(created_at__gte=s, created_at__lt=e)
+                .values('visitor_id').distinct().count())
+    funnel = []
+    if visitors:
+        funnel.append({'icon': 'globe', 'label': 'Saytga kirganlar', 'value': visitors})
+    funnel += [
+        {'icon': 'user-plus', 'label': "Ro'yxatdan o'tganlar", 'value': coh_total},
+        {'icon': 'clipboard', 'label': 'Diagnostika ishlaganlar', 'value': f_diag},
+        {'icon': 'gift', 'label': 'Tekin muddat / obuna', 'value': f_sub},
+        {'icon': 'card', 'label': "To'lov qilganlar", 'value': coh_paid},
+        {'icon': 'repeat', 'label': "Qayta to'lov (2+)", 'value': f_repeat},
     ]
+    funnel_base = max(f['value'] for f in funnel) or 1
     for step in funnel:
-        step['pct'] = pct(step['value'], coh_total)
+        step['pct'] = pct(step['value'], funnel_base)
+        step['bar'] = max(round(step['value'] * 100 / funnel_base, 1), 3 if step['value'] else 0)
         step['fmt'] = fmt_int(step['value'])
 
     # ── foydalanuvchilar tarkibi ──
@@ -378,13 +401,19 @@ def build_stats(start, end):
         region_new[(reg or '').strip() or "Ko'rsatilmagan"] += c
     all_students = sum(region_total.values())
     regions_sorted = sorted(region_total.items(), key=lambda x: -x[1])
+    def _growth(total, new):
+        # davr boshidagi songa nisbatan o'sish: new / (total - new)
+        before = total - new
+        return round(new * 100 / before, 1) if before > 0 else (100.0 if new else 0.0)
+
     regions = [{'label': k, 'value': v, 'fmt': fmt_int(v), 'pct': pct(v, all_students),
-                'new': fmt_int(region_new.get(k, 0))} for k, v in regions_sorted[:14]]
-    if len(regions_sorted) > 14:
-        rest = sum(v for _, v in regions_sorted[14:])
-        rest_new = sum(region_new.get(k, 0) for k, _ in regions_sorted[14:])
+                'new': fmt_int(region_new.get(k, 0)), 'growth': _growth(v, region_new.get(k, 0))}
+               for k, v in regions_sorted[:8]]
+    if len(regions_sorted) > 8:
+        rest = sum(v for _, v in regions_sorted[8:])
+        rest_new = sum(region_new.get(k, 0) for k, _ in regions_sorted[8:])
         regions.append({'label': 'Boshqalar', 'value': rest, 'fmt': fmt_int(rest), 'pct': pct(rest, all_students),
-                        'new': fmt_int(rest_new)})
+                        'new': fmt_int(rest_new), 'growth': _growth(rest, rest_new)})
     region_max = max([r['value'] for r in regions] or [1]) or 1
     for r in regions:
         r['bar'] = round(r['value'] * 100 / region_max, 1)
@@ -405,6 +434,26 @@ def build_stats(start, end):
             'cashback': fmt_money(_num(row['cb']) + _num(row['cbt'])),
         })
 
+    cp = (_paid_payments().filter(paid_at__gte=s, paid_at__lt=e, coupon__isnull=False)
+          .aggregate(c=Count('id'), orig=Coalesce(Sum('original_amount'), ZERO), paid=Coalesce(Sum('amount'), ZERO)))
+    cp_given = max(_num(cp['orig']) - _num(cp['paid']), 0)
+    coupon_summary = {
+        'active': fmt_int(Coupon_Tutor_Student.objects.filter(is_active=True, valid_until__gte=now).count()),
+        'used': fmt_int(cp['c']),
+        'given': fmt_money(cp_given),
+        'avg': fmt_money(cp_given / cp['c'] if cp['c'] else 0),
+    }
+
+    # ── eng mashhur fanlar (shu davrda mavzu tugatgan noyob o'quvchilar) ──
+    subj_rows = (TopicProgress.objects.filter(completed_at__gte=s, completed_at__lt=e)
+                 .values('topic__chapter__subject__name')
+                 .annotate(c=Count('user', distinct=True)).order_by('-c')[:5])
+    subjects = [{'label': r['topic__chapter__subject__name'] or '—', 'value': r['c'], 'fmt': fmt_int(r['c'])}
+                for r in subj_rows]
+    subj_max = max([x['value'] for x in subjects] or [1]) or 1
+    for x in subjects:
+        x['bar'] = round(x['value'] * 100 / subj_max, 1)
+
     # ── tutorlar (referal + kupon) ──
     tutors = defaultdict(lambda: {'name': '', 'students': set(), 'revenue': 0.0, 'bonus': 0.0, 'ref': 0, 'cpn': 0})
     for row in (TutorReferralTransaction.objects.filter(used_at__gte=s, used_at__lt=e)
@@ -423,7 +472,7 @@ def build_stats(start, end):
         t['revenue'] += _num(row['payment_amount'])
         t['bonus'] += _num(row['cashback_amount'])
         t['cpn'] += 1
-    top_tutors = sorted(tutors.values(), key=lambda x: -x['revenue'])[:8]
+    top_tutors = sorted(tutors.values(), key=lambda x: -x['revenue'])[:5]
     top_tutors = [{'name': t['name'] or '—', 'students': fmt_int(len(t['students'])), 'ref': fmt_int(t['ref']),
                    'cpn': fmt_int(t['cpn']), 'revenue': fmt_money(t['revenue']), 'bonus': fmt_money(t['bonus'])}
                   for t in top_tutors]
@@ -454,12 +503,14 @@ def build_stats(start, end):
     # ── so'nggi to'lovlar (faqat muvaffaqiyatli) ──
     recent = []
     for p in (_paid_payments().filter(paid_at__gte=s, paid_at__lt=e).select_related('student', 'plan')
-              .order_by('-paid_at')[:12]):
+              .order_by('-paid_at')[:8]):
+        gw = (p.payment_gateway or 'multicard').strip().lower()
+        gw_name, gw_color, gw_mark = GATEWAYS.get(gw, (gw.capitalize() or '—', '#64748B', gw[:1].upper() or '•'))
         recent.append({
             'name': p.student.full_name if p.student_id else '—',
             'what': 'Liga' if p.purpose == Payment.PURPOSE_LIGA else (p.plan.name if p.plan_id and p.plan.name else f"{p.subscription_months} oylik obuna"),
             'amount': fmt_money(p.amount),
-            'gateway': (p.payment_gateway or 'multicard').capitalize(),
+            'gateway': gw_name, 'gw_color': gw_color, 'gw_mark': gw_mark,
             'coupon': f"-{p.discount_percent}%" if p.discount_percent else '',
             'date': timezone.localtime(p.payment_date or p.created_at).strftime('%d.%m.%Y %H:%M'),
         })
@@ -477,8 +528,10 @@ def build_stats(start, end):
         'tariffs': tariffs,
         'subs': {k: fmt_int(v) for k, v in subs.items()},
         'regions': regions, 'all_students': fmt_int(all_students),
-        'coupons': coupons,
+        'coupons': coupons, 'coupon_summary': coupon_summary,
+        'subjects': subjects,
         'tutors': top_tutors,
+        'reg_total': fmt_int(new_users), 'rev_total_short': fmt_short_money(rev['total']) + " so'm",
         'engagement': engagement,
         'heat': heat, 'heat_max': heat_max, 'weekdays': WEEKDAYS,
         'recent': recent,
@@ -507,6 +560,49 @@ def _export_csv(data):
     return response
 
 
+def _export_xlsx(data):
+    """Excel (XLSX): Umumiy, Kunlik, Viloyatlar, To'lovlar varaqlari."""
+    try:
+        from openpyxl import Workbook
+        from openpyxl.styles import Alignment, Font, PatternFill
+        from openpyxl.utils import get_column_letter
+    except ImportError:  # openpyxl yo'q bo'lsa — CSV
+        return _export_csv(data)
+
+    wb = Workbook()
+    head_font = Font(bold=True, color='FFFFFF')
+    head_fill = PatternFill('solid', fgColor='1D4ED8')
+
+    def sheet(ws, title, header, rows):
+        ws.title = title
+        ws.append(header)
+        for c in ws[1]:
+            c.font, c.fill = head_font, head_fill
+            c.alignment = Alignment(vertical='center')
+        for r in rows:
+            ws.append(r)
+        for i, col in enumerate(ws.columns, 1):
+            width = max(len(str(c.value or '')) for c in col)
+            ws.column_dimensions[get_column_letter(i)].width = min(max(12, width + 2), 48)
+        ws.freeze_panes = 'A2'
+
+    sheet(wb.active, 'Umumiy', ["Ko'rsatkich", 'Qiymat', "O'tgan davr", "O'zgarish %"],
+          [[f"Davr: {data['range']['label']}", '', '', '']] +
+          [[k['label'], k['value'], k.get('prev') or '', '' if k['delta'] is None else k['delta']] for k in data['kpis']])
+    sheet(wb.create_sheet(), 'Kunlik', ['Sana', "Ro'yxatdan o'tganlar", "Daromad (so'm)"],
+          [[d['date'], d['reg'], d['rev']] for d in data['daily']])
+    sheet(wb.create_sheet(), 'Viloyatlar', ['Viloyat', "Jami o'quvchi", 'Shu davrda yangi', "O'sish %"],
+          [[r['label'], r['value'], r['new'], r.get('growth', '')] for r in data['regions']])
+    sheet(wb.create_sheet(), "To'lovlar", ["O'quvchi", 'Tarif', 'Summa', "To'lov turi", 'Sana'],
+          [[p['name'], p['what'], p['amount'], p['gateway'], p['date']] for p in data['recent']])
+
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = (
+        f'attachment; filename="marketing_{data["range"]["start"]}_{data["range"]["end"]}.xlsx"')
+    wb.save(response)
+    return response
+
+
 # ───────────────────────── view ─────────────────────────
 
 @never_cache
@@ -527,6 +623,8 @@ def market_stats_view(request):
 
     if request.GET.get('export') == 'csv':
         return _export_csv(data)
+    if request.GET.get('export') == 'xlsx':
+        return _export_xlsx(data)
 
     return render(request, 'marketing/stats.html', {
         'data': data,
