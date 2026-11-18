@@ -1,0 +1,516 @@
+{% load l10n %}{% localize off %}<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Marketing statistikasi · IQMath</title>
+<style>
+  :root {
+    color-scheme: light;
+    --page: #f4f5f8; --card: #ffffff; --card-2: #f7f8fb;
+    --ink: #0f1222; --ink-2: #52556a; --muted: #898c9c;
+    --line: #e6e8ef; --grid: #eceef3; --axis: #c9ccd6;
+    --brand: #4f46e5; --brand-soft: #eef0ff;
+    --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100; --s5: #e87ba4; --s6: #008300; --s7: #6250d6; --s8: #e34948;
+    --q1: #e9eef6; --q2: #cde2fb; --q3: #9ec5f4; --q4: #6da7ec; --q5: #3987e5; --q6: #256abf; --q7: #184f95;
+    --f1: #104281; --f2: #1c5cab; --f3: #2a78d6; --f4: #5598e7; --f5: #86b6ef;
+    --good: #0ca30c; --good-ink: #006300; --good-soft: #e6f6e6;
+    --warn: #fab219; --warn-ink: #8a5a00; --warn-soft: #fff4dc;
+    --bad: #d03b3b; --bad-ink: #b02a2a; --bad-soft: #fdecec;
+    --shadow: 0 1px 2px rgba(16, 18, 40, .04), 0 8px 24px -16px rgba(16, 18, 40, .18);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color-scheme: dark;
+      --page: #0c0d12; --card: #15171f; --card-2: #1b1e28;
+      --ink: #f1f2f6; --ink-2: #b9bccb; --muted: #80849a;
+      --line: #252834; --grid: #23262f; --axis: #3a3d48;
+      --brand: #7c74ff; --brand-soft: #1f2140;
+      --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181; --s6: #0ca30c; --s7: #9085e9; --s8: #e66767;
+      --q1: #1d2230; --q2: #104281; --q3: #184f95; --q4: #1c5cab; --q5: #2a78d6; --q6: #5598e7; --q7: #9ec5f4;
+      --f1: #9ec5f4; --f2: #6da7ec; --f3: #3987e5; --f4: #256abf; --f5: #184f95;
+      --good-ink: #3ccf3c; --good-soft: #10291a; --warn-ink: #fab219; --warn-soft: #2e2410;
+      --bad-ink: #ef7a7a; --bad-soft: #341616;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .3);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { background: var(--page); color: var(--ink); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  a { color: inherit; }
+
+  /* ── header ── */
+  .top { position: sticky; top: 0; z-index: 20; background: color-mix(in srgb, var(--page) 86%, transparent);
+    backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+  .top-in { max-width: 1520px; margin: 0 auto; padding: 14px 24px; display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+  .brand { display: flex; gap: 12px; align-items: center; margin-right: auto; min-width: 0; }
+  .logo { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; flex: none;
+    background: linear-gradient(135deg, #4f46e5, #6366f1); color: #fff; font-weight: 800; letter-spacing: -.5px; }
+  .brand h1 { margin: 0; font-size: 18px; letter-spacing: -.2px; }
+  .brand p { margin: 0; color: var(--muted); font-size: 12.5px; }
+  .filters { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .seg { display: flex; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 3px; }
+  .seg a { padding: 6px 11px; border-radius: 7px; text-decoration: none; color: var(--ink-2); font-weight: 500; font-size: 13px; white-space: nowrap; }
+  .seg a:hover { background: var(--card-2); color: var(--ink); }
+  .seg a.on { background: var(--brand); color: #fff; }
+  .range { display: flex; gap: 6px; align-items: center; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 3px 3px 3px 10px; }
+  .range input { border: 0; background: transparent; color: var(--ink); font: inherit; font-size: 13px; width: 124px; }
+  .range span { color: var(--muted); }
+  .btn { display: inline-flex; gap: 6px; align-items: center; height: 34px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line);
+    background: var(--card); color: var(--ink); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none; white-space: nowrap; }
+  .btn:hover { background: var(--card-2); }
+  .btn.primary { background: var(--brand); border-color: var(--brand); color: #fff; }
+  .btn.primary:hover { filter: brightness(1.08); }
+  .range .btn { height: 30px; }
+
+  /* ── layout ── */
+  .wrap { max-width: 1520px; margin: 0 auto; padding: 20px 24px 40px; }
+  .grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 16px; margin-bottom: 16px; }
+  .c3 { grid-column: span 3; } .c4 { grid-column: span 4; } .c5 { grid-column: span 5; } .c6 { grid-column: span 6; }
+  .c7 { grid-column: span 7; } .c8 { grid-column: span 8; } .c12 { grid-column: span 12; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px; box-shadow: var(--shadow); min-width: 0; }
+  .card h2 { margin: 0; font-size: 15px; font-weight: 650; letter-spacing: -.1px; }
+  .card .head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 14px; }
+  .card .head small { color: var(--muted); font-size: 12px; }
+  .section-title { margin: 28px 0 12px; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 700; }
+
+  /* ── KPI ── */
+  .kpis { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 16px; margin-bottom: 16px; }
+  .kpi { padding: 16px 18px; }
+  .kpi .lbl { color: var(--ink-2); font-size: 12.5px; font-weight: 500; min-height: 34px; }
+  .kpi .val { font-size: 26px; font-weight: 750; letter-spacing: -.6px; margin: 4px 0 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .kpi .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .kpi .hint { color: var(--muted); font-size: 12px; }
+  .delta { display: inline-flex; align-items: center; gap: 3px; font-size: 12px; font-weight: 650; padding: 2px 7px; border-radius: 999px; font-variant-numeric: tabular-nums; }
+  .delta.up { background: var(--good-soft); color: var(--good-ink); }
+  .delta.down { background: var(--bad-soft); color: var(--bad-ink); }
+  .delta.flat { background: var(--card-2); color: var(--muted); }
+  .kpi.hero { background: linear-gradient(135deg, #4f46e5, #6d5df6); border: 0; color: #fff; }
+  .kpi.hero .lbl, .kpi.hero .hint { color: rgba(255, 255, 255, .8); }
+  .kpi.hero .delta.up, .kpi.hero .delta.down, .kpi.hero .delta.flat { background: rgba(255, 255, 255, .18); color: #fff; }
+
+  /* ── charts ── */
+  .chart { position: relative; height: 260px; }
+  .chart.sm { height: 200px; }
+  .donut-wrap { display: grid; grid-template-columns: 170px 1fr; gap: 18px; align-items: center; }
+  .donut { position: relative; height: 170px; }
+  .donut .center { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; pointer-events: none; }
+  .donut .center b { display: block; font-size: 20px; letter-spacing: -.4px; }
+  .donut .center span { color: var(--muted); font-size: 11.5px; }
+  .legend { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; }
+  .legend li { display: grid; grid-template-columns: 10px 1fr auto auto; gap: 10px; align-items: center; font-size: 13px; }
+  .legend .dot { width: 10px; height: 10px; border-radius: 3px; }
+  .legend .n { font-weight: 650; font-variant-numeric: tabular-nums; }
+  .legend .p { color: var(--muted); font-variant-numeric: tabular-nums; width: 48px; text-align: right; }
+
+  /* ── funnel ── */
+  .funnel { display: grid; gap: 10px; }
+  .fstep { display: grid; grid-template-columns: minmax(150px, 210px) 1fr; gap: 14px; align-items: center; }
+  .fstep .name { font-size: 13px; color: var(--ink-2); }
+  .fstep .track { position: relative; height: 34px; background: var(--card-2); border-radius: 8px; }
+  .fstep .bar { height: 100%; border-radius: 8px; min-width: 4px; }
+  .fstep .num { position: absolute; left: 10px; top: 0; bottom: 0; display: flex; align-items: center; gap: 8px; font-weight: 650; font-variant-numeric: tabular-nums; }
+  .fstep .num em { font-style: normal; font-weight: 500; color: var(--ink-2); font-size: 12px; }
+  .fstep .num.inv { color: #fff; } .fstep .num.inv em { color: rgba(255, 255, 255, .85); }
+  .drop { color: var(--muted); font-size: 11.5px; padding-left: calc(min(210px, 40%) + 14px); margin-top: -4px; }
+
+  /* ── tiles ── */
+  .tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .tile { background: var(--card-2); border-radius: 12px; padding: 12px 14px; }
+  .tile .t { font-size: 12px; color: var(--ink-2); display: flex; gap: 6px; align-items: center; }
+  .tile b { display: block; font-size: 22px; letter-spacing: -.4px; margin-top: 2px; }
+  .ic { width: 18px; height: 18px; border-radius: 6px; display: inline-grid; place-items: center; font-size: 11px; font-weight: 800; color: #fff; flex: none; }
+  .ic.good { background: var(--good); } .ic.warn { background: var(--warn); color: #0b0b0b; } .ic.bad { background: var(--bad); } .ic.info { background: var(--s1); }
+  .stack { display: flex; height: 12px; border-radius: 999px; overflow: hidden; gap: 2px; margin: 16px 0 10px; background: var(--card-2); }
+  .stack > div { height: 100%; }
+  .kv { display: flex; justify-content: space-between; font-size: 13px; padding: 6px 0; border-top: 1px dashed var(--line); }
+  .kv:first-of-type { border-top: 0; }
+  .kv span { color: var(--ink-2); display: flex; gap: 8px; align-items: center; }
+  .kv b { font-variant-numeric: tabular-nums; }
+
+  /* ── bar list (regions, tariffs) ── */
+  .blist { display: grid; gap: 8px; }
+  .brow { display: grid; grid-template-columns: 22px minmax(110px, 170px) 1fr 64px 60px; gap: 10px; align-items: center; font-size: 13px; }
+  .brow .i { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .brow .l { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .brow .tr { height: 8px; background: var(--card-2); border-radius: 999px; overflow: hidden; }
+  .brow .tr div { height: 100%; background: var(--s1); border-radius: 999px; }
+  .brow .v { text-align: right; font-weight: 650; font-variant-numeric: tabular-nums; }
+  .brow .nw { text-align: right; color: var(--good-ink); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .bhead { color: var(--muted); font-size: 11.5px; text-transform: uppercase; letter-spacing: .05em; }
+  .bhead .v, .bhead .nw { font-weight: 600; color: var(--muted); }
+
+  /* ── heatmap ── */
+  .heat { display: grid; grid-template-columns: 26px repeat(24, minmax(0, 1fr)); gap: 3px; font-size: 10.5px; }
+  .heat .d { color: var(--muted); display: flex; align-items: center; }
+  .heat .h { color: var(--muted); text-align: center; }
+  .heat .cell { aspect-ratio: 1; border-radius: 4px; background: var(--q1); position: relative; }
+  .heat .cell:hover { outline: 2px solid var(--ink); outline-offset: 1px; z-index: 2; }
+  .scale { display: flex; gap: 4px; align-items: center; justify-content: flex-end; margin-top: 12px; color: var(--muted); font-size: 11.5px; }
+  .scale i { width: 16px; height: 10px; border-radius: 3px; display: inline-block; }
+
+  /* ── tables ── */
+  .tbl-wrap { overflow-x: auto; margin: 0 -4px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; font-weight: 600; color: var(--muted); font-size: 11.5px; text-transform: uppercase; letter-spacing: .04em; padding: 8px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  td { padding: 10px; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  tbody tr:hover td { background: var(--card-2); }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-weight: 650; background: var(--brand-soft); color: var(--brand); padding: 2px 7px; border-radius: 6px; font-size: 12px; }
+  .rank { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; font-size: 11px; font-weight: 800; background: var(--card-2); color: var(--ink-2); }
+  .rank.r1 { background: #f6c443; color: #3d2b00; } .rank.r2 { background: #cfd4dd; color: #2a2f3a; } .rank.r3 { background: #e0a26c; color: #3d1f00; }
+  .pill { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+  .pill.success { background: var(--good-soft); color: var(--good-ink); }
+  .pill.pending { background: var(--warn-soft); color: var(--warn-ink); }
+  .pill.failed { background: var(--bad-soft); color: var(--bad-ink); }
+  .tag { font-size: 11.5px; color: var(--ink-2); background: var(--card-2); padding: 2px 7px; border-radius: 6px; }
+  .empty { color: var(--muted); text-align: center; padding: 28px 0; font-size: 13px; }
+  .foot { color: var(--muted); font-size: 12px; text-align: center; margin-top: 24px; }
+
+  @media (max-width: 1280px) {
+    .kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .c3, .c4, .c5 { grid-column: span 6; } .c7, .c8 { grid-column: span 12; }
+  }
+  @media (max-width: 820px) {
+    .top-in, .wrap { padding-left: 16px; padding-right: 16px; }
+    .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .grid { gap: 12px; }
+    .c3, .c4, .c5, .c6, .c7, .c8 { grid-column: span 12; }
+    .donut-wrap { grid-template-columns: 1fr; } .donut { max-width: 190px; margin: 0 auto; width: 100%; }
+    .fstep { grid-template-columns: 1fr; gap: 4px; } .drop { padding-left: 0; }
+    .brow { grid-template-columns: 18px minmax(80px, 1fr) 1fr 54px; } .brow .nw { display: none; }
+    .heat { font-size: 9px; gap: 2px; }
+    .kpi .val { font-size: 22px; }
+  }
+</style>
+</head>
+<body>
+{% with d=data %}
+<header class="top">
+  <div class="top-in">
+    <div class="brand">
+      <div class="logo">IQ</div>
+      <div>
+        <h1>Marketing statistikasi</h1>
+        <p>{{ d.range.label }} · oldingi davr bilan solishtiriladi ({{ d.range.prev_label }})</p>
+      </div>
+    </div>
+    <div class="filters">
+      <nav class="seg" aria-label="Davr">
+        {% for val, label in presets %}<a href="?p={{ val }}" class="{% if preset == val %}on{% endif %}">{{ label }}</a>{% endfor %}
+      </nav>
+      <form class="range" method="get">
+        <input type="date" name="from" value="{{ d.range.start }}" aria-label="Boshlanish sanasi">
+        <span>–</span>
+        <input type="date" name="to" value="{{ d.range.end }}" aria-label="Tugash sanasi">
+        <button class="btn" type="submit">Ko'rsatish</button>
+      </form>
+      <a class="btn primary" href="?from={{ d.range.start }}&to={{ d.range.end }}&export=csv">⭳ Excel (CSV)</a>
+      <form method="post" style="margin:0">{% csrf_token %}<input type="hidden" name="action" value="logout">
+        <button class="btn" type="submit" title="Chiqish">Chiqish</button></form>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- KPI -->
+  <section class="kpis">
+    {% for k in d.kpis %}
+    <div class="card kpi {% if k.key == 'revenue' %}hero{% endif %}">
+      <div class="lbl">{{ k.label }}</div>
+      <div class="val" title="{{ k.value }}">{{ k.value }}</div>
+      <div class="row">
+        {% if k.delta is None %}
+          <span class="delta flat">—</span>
+        {% elif k.delta > 0 %}
+          <span class="delta up">▲ {{ k.delta }}{% if k.delta_unit %} p.p.{% else %}%{% endif %}</span>
+        {% elif k.delta < 0 %}
+          <span class="delta down">▼ {{ k.delta }}{% if k.delta_unit %} p.p.{% else %}%{% endif %}</span>
+        {% else %}
+          <span class="delta flat">0%</span>
+        {% endif %}
+        <span class="hint">{{ k.hint }}</span>
+      </div>
+    </div>
+    {% endfor %}
+  </section>
+
+  <!-- Dinamika -->
+  <section class="grid">
+    <div class="card c6">
+      <div class="head"><h2>Ro'yxatdan o'tganlar</h2><small>kunlik, barcha rollar</small></div>
+      <div class="chart"><canvas id="chReg" aria-label="Kunlik ro'yxatdan o'tganlar grafigi" role="img"></canvas></div>
+    </div>
+    <div class="card c6">
+      <div class="head"><h2>Daromad</h2><small>kunlik, so'm · obuna + liga + kitob</small></div>
+      <div class="chart"><canvas id="chRev" aria-label="Kunlik daromad grafigi" role="img"></canvas></div>
+    </div>
+  </section>
+
+  <!-- Voronka + obunalar -->
+  <section class="grid">
+    <div class="card c7">
+      <div class="head"><h2>Konversiya voronkasi</h2><small>shu davrda ro'yxatdan o'tgan o'quvchilar</small></div>
+      {% if d.funnel.0.value %}
+      <div class="funnel">
+        {% for f in d.funnel %}
+        <div class="fstep" title="{{ f.label }}: {{ f.fmt }} ({{ f.pct }}%)">
+          <div class="name">{{ f.label }}</div>
+          <div class="track">
+            <div class="bar" style="width: {{ f.pct }}%; background: var(--f{{ forloop.counter }});"></div>
+            <div class="num {% if f.pct >= 30 and forloop.counter <= 3 %}inv{% endif %}">{{ f.fmt }} <em>{{ f.pct }}%</em></div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}<div class="empty">Bu davrda yangi o'quvchi ro'yxatdan o'tmagan</div>{% endif %}
+    </div>
+
+    <div class="card c5">
+      <div class="head"><h2>Obunalar holati</h2><small>hozirgi holat</small></div>
+      <div class="tiles">
+        <div class="tile"><div class="t"><span class="ic good">✓</span>Faol pullik obuna</div><b>{{ d.subs.paid }}</b></div>
+        <div class="tile"><div class="t"><span class="ic info">7</span>Tekin muddatda</div><b>{{ d.subs.trial }}</b></div>
+        <div class="tile"><div class="t"><span class="ic warn">!</span>7 kunda tugaydi</div><b>{{ d.subs.expiring }}</b></div>
+        <div class="tile"><div class="t"><span class="ic bad">✕</span>Muddati tugagan</div><b>{{ d.subs.expired }}</b></div>
+      </div>
+      <div class="head" style="margin: 20px 0 0"><h2>To'lov urinishlari</h2><small>jami {{ d.pay_status.total }}</small></div>
+      <div class="stack" role="img" aria-label="To'lov holatlari ulushi">
+        <div style="width: {{ d.pay_status.ok_pct }}%; background: var(--good)" title="Muvaffaqiyatli {{ d.pay_status.ok_pct }}%"></div>
+        <div style="width: {{ d.pay_status.pending_pct }}%; background: var(--warn)" title="Kutilmoqda {{ d.pay_status.pending_pct }}%"></div>
+        <div style="width: {{ d.pay_status.failed_pct }}%; background: var(--bad)" title="Muvaffaqiyatsiz {{ d.pay_status.failed_pct }}%"></div>
+      </div>
+      <div class="kv"><span><span class="ic good">✓</span>Muvaffaqiyatli</span><b>{{ d.pay_status.ok }} · {{ d.pay_status.ok_pct }}%</b></div>
+      <div class="kv"><span><span class="ic warn">◷</span>Kutilmoqda (to'lanmagan)</span><b>{{ d.pay_status.pending }} · {{ d.pay_status.pending_pct }}%</b></div>
+      <div class="kv"><span><span class="ic bad">✕</span>Muvaffaqiyatsiz</span><b>{{ d.pay_status.failed }} · {{ d.pay_status.failed_pct }}%</b></div>
+      <div class="kv"><span>Yo'qotilgan potensial daromad</span><b>{{ d.pay_status.lost }}</b></div>
+    </div>
+  </section>
+
+  <!-- Auditoriya -->
+  <div class="section-title">Auditoriya va daromad tarkibi</div>
+  <section class="grid">
+    <div class="card c4">
+      <div class="head"><h2>Foydalanuvchilar tarkibi</h2><small>jami</small></div>
+      <div class="donut-wrap">
+        <div class="donut"><canvas id="chRoles"></canvas><div class="center"><div><b>{{ d.total_users }}</b><span>jami</span></div></div></div>
+        <ul class="legend">
+          {% for r in d.roles %}<li title="Shu davrda yangi: {{ r.new }}"><i class="dot" style="background: var(--s{{ forloop.counter }})"></i>{{ r.label }}<span class="n">{{ r.fmt }}</span><span class="p">{{ r.pct }}%</span></li>{% endfor %}
+        </ul>
+      </div>
+    </div>
+    <div class="card c4">
+      <div class="head"><h2>Qurilma bo'yicha</h2><small>yangi ro'yxatdan o'tganlar</small></div>
+      {% if d.devices %}
+      <div class="donut-wrap">
+        <div class="donut"><canvas id="chDev"></canvas><div class="center"><div><b>{{ d.dev_total }}</b><span>yangi</span></div></div></div>
+        <ul class="legend">
+          {% for r in d.devices %}<li><i class="dot" style="background: var(--s{{ forloop.counter }})"></i>{{ r.label }}<span class="n">{{ r.fmt }}</span><span class="p">{{ r.pct }}%</span></li>{% endfor %}
+        </ul>
+      </div>
+      {% else %}<div class="empty">Ma'lumot yo'q</div>{% endif %}
+    </div>
+    <div class="card c4">
+      <div class="head"><h2>Daromad manbalari</h2><small>{{ d.rev_total }}</small></div>
+      <div class="stack" style="height:14px; margin-top: 6px" role="img" aria-label="Daromad manbalari ulushi">
+        {% for s in d.sources %}{% if s.pct %}<div style="width: {{ s.pct }}%; background: var(--s{{ forloop.counter }})" title="{{ s.label }} {{ s.pct }}%"></div>{% endif %}{% endfor %}
+      </div>
+      <ul class="legend" style="margin-bottom: 14px">
+        {% for s in d.sources %}<li><i class="dot" style="background: var(--s{{ forloop.counter }})"></i>{{ s.label }}<span class="n">{{ s.fmt }}</span><span class="p">{{ s.pct }}%</span></li>{% endfor %}
+      </ul>
+      <div class="head" style="margin: 16px 0 8px"><h2 style="font-size:13.5px">Tariflar bo'yicha sotuv</h2></div>
+      {% for t in d.tariffs %}
+        <div class="kv"><span>{{ t.label }} · <span class="tag">{{ t.fmt_count }} ta · {{ t.pct }}%</span></span><b>{{ t.fmt }}</b></div>
+      {% empty %}<div class="empty" style="padding:10px 0">Bu davrda obuna sotilmagan</div>{% endfor %}
+    </div>
+  </section>
+
+  <!-- Geografiya va vaqt -->
+  <section class="grid">
+    <div class="card c6">
+      <div class="head"><h2>Viloyatlar bo'yicha o'quvchilar</h2><small>jami {{ d.all_students }}</small></div>
+      <div class="blist">
+        <div class="brow bhead"><span class="i">#</span><span>Viloyat</span><span></span><span class="v">Jami</span><span class="nw">Yangi</span></div>
+        {% for r in d.regions %}
+        <div class="brow" title="{{ r.label }}: {{ r.fmt }} ({{ r.pct }}%), shu davrda +{{ r.new }}">
+          <span class="i">{{ forloop.counter }}</span><span class="l">{{ r.label }}</span>
+          <div class="tr"><div style="width: {{ r.bar }}%"></div></div>
+          <span class="v">{{ r.fmt }}</span><span class="nw">+{{ r.new }}</span>
+        </div>
+        {% empty %}<div class="empty">Ma'lumot yo'q</div>{% endfor %}
+      </div>
+    </div>
+    <div class="card c6">
+      <div class="head"><h2>Ro'yxatdan o'tish vaqtlari</h2><small>hafta kuni × soat — reklama uchun eng yaxshi vaqt</small></div>
+      <div class="heat" id="heat"></div>
+      <div class="scale">Kam <i style="background:var(--q1)"></i><i style="background:var(--q2)"></i><i style="background:var(--q3)"></i><i style="background:var(--q4)"></i><i style="background:var(--q5)"></i><i style="background:var(--q6)"></i><i style="background:var(--q7)"></i> Ko'p</div>
+      <div class="head" style="margin: 22px 0 8px"><h2>Bo'limlar faolligi</h2><small>noyob o'quvchilar, shu davrda</small></div>
+      <div class="chart sm"><canvas id="chEng" aria-label="Bo'limlar faolligi" role="img"></canvas></div>
+    </div>
+  </section>
+
+  <!-- Hamkorlar -->
+  <div class="section-title">Kuponlar va hamkorlar</div>
+  <section class="grid">
+    <div class="card c6">
+      <div class="head"><h2>Kupon samaradorligi</h2><small>top 10, olib kelgan daromad bo'yicha</small></div>
+      {% if d.coupons %}
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Kupon</th><th>Turi</th><th class="num">Ishlatildi</th><th class="num">Chegirma</th><th class="num">Daromad</th><th class="num">Berilgan chegirma</th><th class="num">Keshbek</th></tr></thead>
+        <tbody>{% for c in d.coupons %}
+          <tr><td><span class="code">{{ c.code }}</span></td><td><span class="tag">{{ c.type }}</span></td><td class="num">{{ c.count }}</td>
+            <td class="num">{{ c.disc }}%</td><td class="num"><b>{{ c.revenue }}</b></td><td class="num">{{ c.given }}</td><td class="num">{{ c.cashback }}</td></tr>
+        {% endfor %}</tbody>
+      </table></div>
+      {% else %}<div class="empty">Bu davrda kupon bilan to'lov bo'lmagan</div>{% endif %}
+    </div>
+    <div class="card c6">
+      <div class="head"><h2>Eng samarali tutorlar</h2><small>referal havola + kupon orqali</small></div>
+      {% if d.tutors %}
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>#</th><th>Tutor</th><th class="num">O'quvchilar</th><th class="num">Referal / Kupon</th><th class="num">Olib kelgan to'lov</th><th class="num">Bonus</th></tr></thead>
+        <tbody>{% for t in d.tutors %}
+          <tr><td><span class="rank {% if forloop.counter <= 3 %}r{{ forloop.counter }}{% endif %}">{{ forloop.counter }}</span></td><td><b>{{ t.name }}</b></td>
+            <td class="num">{{ t.students }}</td><td class="num">{{ t.ref }} / {{ t.cpn }}</td><td class="num"><b>{{ t.revenue }}</b></td><td class="num">{{ t.bonus }}</td></tr>
+        {% endfor %}</tbody>
+      </table></div>
+      {% else %}<div class="empty">Bu davrda tutorlar orqali to'lov bo'lmagan</div>{% endif %}
+    </div>
+  </section>
+
+  <!-- So'nggi to'lovlar -->
+  <section class="grid">
+    <div class="card c12">
+      <div class="head"><h2>So'nggi to'lovlar</h2><small>tanlangan davr ichida, oxirgi 12 ta</small></div>
+      {% if d.recent %}
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>O'quvchi</th><th>Nima uchun</th><th class="num">Summa</th><th>Kupon</th><th>To'lov tizimi</th><th>Holat</th><th class="num">Sana</th></tr></thead>
+        <tbody>{% for p in d.recent %}
+          <tr><td><b>{{ p.name }}</b></td><td>{{ p.what }}</td><td class="num"><b>{{ p.amount }}</b></td><td>{% if p.coupon %}<span class="tag">{{ p.coupon }}</span>{% else %}<span style="color:var(--muted)">—</span>{% endif %}</td><td>{{ p.gateway }}</td>
+            <td>{% if p.status == 'success' %}<span class="pill success">✓ To'langan</span>{% elif p.status == 'pending' %}<span class="pill pending">◷ Kutilmoqda</span>{% else %}<span class="pill failed">✕ Muvaffaqiyatsiz</span>{% endif %}</td>
+            <td class="num">{{ p.date }}</td></tr>
+        {% endfor %}</tbody>
+      </table></div>
+      {% else %}<div class="empty">Bu davrda to'lov bo'lmagan</div>{% endif %}
+    </div>
+  </section>
+
+  <div class="foot">Ma'lumotlar yangilangan vaqt: {{ d.generated_at }} · IQMath marketing</div>
+</main>
+
+{{ chart_data|json_script:"chart-data" }}
+{% endwith %}
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+(function () {
+  var D = JSON.parse(document.getElementById('chart-data').textContent);
+  var css = getComputedStyle(document.documentElement);
+  var v = function (n) { return css.getPropertyValue(n).trim(); };
+  var fmt = function (n) { return Math.round(n || 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' '); };
+  var short = function (n) {
+    n = n || 0;
+    if (Math.abs(n) >= 1e9) return (n / 1e9).toFixed(1).replace('.0', '') + ' mlrd';
+    if (Math.abs(n) >= 1e6) return (n / 1e6).toFixed(1).replace('.0', '') + ' mln';
+    if (Math.abs(n) >= 1e3) return Math.round(n / 1e3) + ' ming';
+    return fmt(n);
+  };
+
+  /* ── heatmap (Chart.js'siz) ── */
+  var heat = document.getElementById('heat');
+  var ramp = ['--q1', '--q2', '--q3', '--q4', '--q5', '--q6', '--q7'];
+  var hMax = Math.max.apply(null, D.heat.map(function (r) { return Math.max.apply(null, r); })) || 1;
+  var html = '<span></span>';
+  for (var h = 0; h < 24; h++) html += '<span class="h">' + (h % 3 === 0 ? h : '') + '</span>';
+  D.heat.forEach(function (row, di) {
+    html += '<span class="d">' + D.weekdays[di] + '</span>';
+    row.forEach(function (val, hi) {
+      var lvl = val === 0 ? 0 : Math.min(6, 1 + Math.floor((val / hMax) * 5.999));
+      html += '<span class="cell" style="background:var(' + ramp[lvl] + ')" title="' + D.weekdays[di] + ', ' +
+        String(hi).padStart(2, '0') + ':00–' + String(hi).padStart(2, '0') + ':59 — ' + fmt(val) + ' ta"></span>';
+    });
+  });
+  heat.innerHTML = html;
+
+  if (!window.Chart) return;
+
+  Chart.defaults.font.family = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
+  Chart.defaults.font.size = 11.5;
+  Chart.defaults.color = v('--muted');
+  Chart.defaults.borderColor = v('--grid');
+  var tooltip = {
+    backgroundColor: v('--card'), titleColor: v('--ink'), bodyColor: v('--ink-2'), borderColor: v('--line'),
+    borderWidth: 1, padding: 10, cornerRadius: 10, displayColors: true, boxPadding: 4,
+    titleFont: { weight: '600' }
+  };
+  var labels = D.daily.map(function (d) { return d.label; });
+  var axes = function (fmtY) {
+    return {
+      x: { grid: { display: false }, border: { color: v('--axis') }, ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 10 } },
+      y: { beginAtZero: true, border: { display: false }, grid: { color: v('--grid') },
+        ticks: { maxTicksLimit: 5, precision: 0, callback: fmtY } }
+    };
+  };
+
+  new Chart(document.getElementById('chReg'), {
+    type: 'bar',
+    data: { labels: labels, datasets: [{ label: "Ro'yxatdan o'tganlar", data: D.daily.map(function (d) { return d.reg; }),
+      backgroundColor: v('--s1'), hoverBackgroundColor: v('--q6'), borderRadius: 4, borderSkipped: 'bottom',
+      maxBarThickness: 22, categoryPercentage: .8, barPercentage: .9 }] },
+    options: { maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { display: false }, tooltip: Object.assign({}, tooltip, { callbacks: {
+        title: function (i) { return D.daily[i[0].dataIndex].date.split('-').reverse().join('.'); },
+        label: function (c) { return ' ' + fmt(c.parsed.y) + " ta ro'yxatdan o'tdi"; } } }) },
+      scales: axes(function (x) { return fmt(x); }) }
+  });
+
+  var revCtx = document.getElementById('chRev');
+  var grad = revCtx.getContext('2d').createLinearGradient(0, 0, 0, 260);
+  grad.addColorStop(0, v('--s3') + '55'); grad.addColorStop(1, v('--s3') + '00');
+  new Chart(revCtx, {
+    type: 'line',
+    data: { labels: labels, datasets: [{ label: 'Daromad', data: D.daily.map(function (d) { return d.rev; }),
+      borderColor: v('--s3'), backgroundColor: grad, fill: true, borderWidth: 2, tension: .35,
+      pointRadius: D.daily.length > 45 ? 0 : 3, pointHoverRadius: 5, pointBackgroundColor: v('--card'),
+      pointBorderColor: v('--s3'), pointBorderWidth: 2 }] },
+    options: { maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { display: false }, tooltip: Object.assign({}, tooltip, { callbacks: {
+        title: function (i) { return D.daily[i[0].dataIndex].date.split('-').reverse().join('.'); },
+        label: function (c) { return ' ' + fmt(c.parsed.y) + " so'm"; } } }) },
+      scales: axes(function (x) { return short(x); }) }
+  });
+
+  var donut = function (id, rows, unit) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    new Chart(el, {
+      type: 'doughnut',
+      data: { labels: rows.map(function (r) { return r.label; }), datasets: [{ data: rows.map(function (r) { return r.value; }),
+        backgroundColor: rows.map(function (_, i) { return v('--s' + (i + 1)); }),
+        borderColor: v('--card'), borderWidth: 2, hoverOffset: 4 }] },
+      options: { maintainAspectRatio: false, cutout: '72%',
+        plugins: { legend: { display: false }, tooltip: Object.assign({}, tooltip, { callbacks: {
+          label: function (c) { return ' ' + c.label + ': ' + fmt(c.parsed) + ' ' + unit + ' (' + rows[c.dataIndex].pct + '%)'; } } }) } }
+    });
+  };
+  donut('chRoles', D.roles, 'ta');
+  donut('chDev', D.devices, 'ta');
+
+  new Chart(document.getElementById('chEng'), {
+    type: 'bar',
+    data: { labels: D.engagement.map(function (e) { return e.label; }), datasets: [{ label: "O'quvchilar",
+      data: D.engagement.map(function (e) { return e.value; }), backgroundColor: v('--s7'), borderRadius: 4,
+      borderSkipped: 'start', maxBarThickness: 18 }] },
+    options: { indexAxis: 'y', maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: Object.assign({}, tooltip, { callbacks: {
+        label: function (c) { return ' ' + fmt(c.parsed.x) + " ta noyob o'quvchi"; } } }) },
+      scales: { x: { beginAtZero: true, border: { display: false }, grid: { color: v('--grid') }, ticks: { maxTicksLimit: 5, precision: 0, callback: function (x) { return fmt(x); } } },
+        y: { grid: { display: false }, border: { color: v('--axis') }, ticks: { color: v('--ink-2') } } } }
+  });
+})();
+</script>
+</body>
+</html>
+{% endlocalize %}

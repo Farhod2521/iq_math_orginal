@@ -3,6 +3,7 @@ from django.contrib import admin
 from django.urls import path, include, re_path
 from rest_framework import permissions
 from config.media import media_serve
+from django_app.app_management.marketing_stats import market_stats_view
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from django.conf import settings
@@ -36,6 +37,9 @@ urlpatterns = [
     path('api/v1/battle/', include("django_app.app_battle.urls")),
     path('api/v1/liga/', include("django_app.app_liga.urls")),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='swagger-docs'),
+    # Marketing bo'limi statistikasi (4 xonali kod .env: MARKET_STATS_CODE).
+    # Slashsiz variant ham kerak — aks holda pastdagi media catch-all uni ushlab 404 beradi.
+    re_path(r'^market-statistika/?$', market_stats_view, name='market-statistika'),
 ]
 
 
